@@ -1,0 +1,77 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    app: new-task
+    deployment.kubernetes.io/revision: "31"
+  labels:
+    app: new-task
+  name: new-task
+  namespace: tt
+spec:
+  progressDeadlineSeconds: 600
+  # 实例数量
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: new-task
+  # 更新策略
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      annotations:
+        app: new-task
+      labels:
+        app: new-task
+    spec:
+      containers:
+        - image: registry.haokaixin.win/haikx/tk_new:20240518.1d10fa97-local
+          imagePullPolicy: IfNotPresent
+          livenessProbe:
+            failureThreshold: 2
+            initialDelaySeconds: 90
+            periodSeconds: 60
+            successThreshold: 1
+            tcpSocket:
+              port: 8000
+            timeoutSeconds: 2
+          name: tt-task
+          ports:
+            - containerPort: 8000
+              name: http
+              protocol: TCP
+          readinessProbe:
+            failureThreshold: 2
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            successThreshold: 1
+            tcpSocket:
+              port: 8000
+            timeoutSeconds: 2
+          resources:
+            limits:
+              cpu: "2"
+              memory: 4Gi
+            requests:
+              cpu: 100m
+              memory: 128Mi
+          volumeMounts:
+            - name: config
+              mountPath: "/config/"
+              readOnly: true
+          command: ["/app/task", "-conf", "/config/config.yaml"]
+      dnsPolicy: ClusterFirstWithHostNet
+      imagePullSecrets:
+        - name: tk-new
+      restartPolicy: Always
+      securityContext: {}
+      terminationGracePeriodSeconds: 30
+      volumes:
+        - name: config
+          configMap:
+            name: tk-new

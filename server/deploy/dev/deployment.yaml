@@ -1,0 +1,77 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    app: webapp-template  
+    deployment.kubernetes.io/revision: "31"
+  labels:
+    app: webapp-template
+  name: webapp-template
+  namespace: webapp-template
+spec:
+  progressDeadlineSeconds: 600
+  # 实例数量
+  replicas: 1
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: webapp-template
+  # 更新策略
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      annotations:
+        app: webapp-template
+      labels:
+        app: webapp-template
+    spec:
+      containers:
+        - image: registry.xxxx/webapp-template:latest
+          imagePullPolicy: IfNotPresent
+          livenessProbe:
+            failureThreshold: 2
+            initialDelaySeconds: 90
+            periodSeconds: 60
+            successThreshold: 1
+            tcpSocket:
+              port: 8000
+            timeoutSeconds: 2
+          name: webapp-template
+          ports:
+            - containerPort: 8000
+              name: http
+              protocol: TCP
+          readinessProbe:
+            failureThreshold: 2
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            successThreshold: 1
+            tcpSocket:
+              port: 8000
+            timeoutSeconds: 2
+          resources:
+            limits:
+              cpu: "2"
+              memory: 4Gi
+            requests:
+              cpu: 100m
+              memory: 128Mi
+          volumeMounts:
+            - name: config
+              mountPath: "/config/"
+              readOnly: true
+          command: ["/app/server", "-conf", "/config/config.yaml"]
+      dnsPolicy: ClusterFirstWithHostNet
+      imagePullSecrets:
+        - name: webapp-template
+      restartPolicy: Always
+      securityContext: {}
+      terminationGracePeriodSeconds: 30
+      volumes:
+        - name: config
+          configMap:
+            name: webapp-template

@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    kubeasy.com/autoCreate: "true"
+  labels:
+    app: new-task
+  name: new-task
+  namespace: tt
+spec:
+  internalTrafficPolicy: Cluster
+  ipFamilies:
+    - IPv4
+  ipFamilyPolicy: SingleStack
+  ports:
+    - name: http
+      port: 80
+      protocol: TCP
+      targetPort: 8000
+  selector:
+    app: new-task
+  sessionAffinity: None
+  type: ClusterIP

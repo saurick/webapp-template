@@ -1,0 +1,55 @@
+# server/configs/dev/config.yaml
+server:
+  http:
+    addr: 0.0.0.0:8000
+    timeout: 1s
+  grpc:
+    addr: 0.0.0.0:9000
+    timeout: 1s
+
+log:
+  debug: true
+
+# 链路追踪服务器
+trace:
+  jaeger:
+    traceName: ""
+    # http endpoint
+    endpoint: 192.168.0.106:4318
+    # endpoint: http://192.168.0.106:4318/v1/traces
+    # gRPC endpoint
+    # endpoint: http://192.168.0.106:4317
+    # 采集率,ratio>=1表示采集所有
+    ratio: 1
+
+# 数据相关
+data:
+  # 主数据库，保存核心数据
+  mysql:
+    # if true output sql
+    debug: true
+    dsn: "root:YP*H%k%a7xK1*q@tcp(192.168.0.106:3306)/test_database?charset=utf8mb4&parseTime=True&loc=Local&interpolateParams=true"
+
+  # 缓存服务
+  # redis:
+  #   network: tcp
+  #   address: 192.168.0.106:6379
+  #   password: ""
+  #   database: 0
+  #   readTimeout: 0.2s
+  #   writeTimeout: 0.2s
+  etcd:
+    hosts:
+      - 192.168.0.106:2379
+  # 认证相关
+  auth:
+    jwtSecret: "eB6Cc5Mz/OB/WrHyKJMQLnmj160ropjq3j167pkIGUI="
+    jwtExpireSeconds: 604800 # 7 days
+    admin:
+      username: "admin"
+      password: "adminadmin"
+
+# notify:
+#   telegram:
+#     apiToken: "6835874767:AAHqdz2jT8B_fInZ8ff5EmUT8ndsWVzO--M"
+#     chatId: -4184591934

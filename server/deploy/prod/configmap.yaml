@@ -1,0 +1,70 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: tk-new
+  namespace: tt
+data:
+  # 类文件键
+  config.yaml: |
+    server:
+      http:
+        addr: 0.0.0.0:8000
+        timeout: 1s
+      grpc:
+        addr: 0.0.0.0:9000
+        timeout: 1s
+
+    log:
+      debug: false
+
+    # 链路追踪服务器
+    trace:
+      jaeger:
+        traceName: ""
+        # http endpoint
+        endpoint: jaeger.orb.local:4318
+        # endpoint: http://jaeger.jaeger.orb.local:4318/v1/traces
+        # gRPC endpoint
+        # endpoint: http://jaeger.jaeger.orb.local:4317
+        # 采集率,ratio>=1表示采集所有
+        ratio: 0.01
+
+    # 数据相关
+    data:
+      # 主数据库，保存核心数据
+      mysql:
+        # if true output sql
+        debug: false
+        dsn: root:opop2M_@tcp(mysql.server.orb.local:3306)/sale?charset=utf8mb4&parseTime=True&loc=Local&interpolateParams=true
+      # 临时数据库，保存临时数据，不需要长期存储
+      mongo:
+        uri: mongodb://root:opop4M@mongo.server.orb.local:27017/?authSource=admin
+        database: sale
+      # 缓存服务
+      redis:
+        network: tcp
+        address: redis.server.orb.local:6379
+        password: ""
+        database: 0
+        readTimeout: 0.2s
+        writeTimeout: 0.2s
+      # message queue
+      pulsar:
+        # 是否输出debug日志
+        debug: false
+        # 多broker负载
+        # url: pulsar://localhost:6550,localhost:6651
+        url: pulsar://pulsar.pulsar.orb.local:6650
+      # kafka:
+      #   brokers:
+      #     - kafka.server.orb.local:9092
+      #     - kafka.server.orb.local:9093
+      #     - kafka.server.orb.local:9094
+      etcd:
+        hosts:
+          - etcd.server.orb.local:2379
+
+    notify:
+      telegram:
+        apiToken: "6835874767:AAHqdz2jT8B_fInZ8ff5EmUT8ndsWVzO--M"
+        chatId: -4184591934

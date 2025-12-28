@@ -1,0 +1,28 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: kubernetes-dashboard-ingress
+  namespace: kubernetes-dashboard
+  annotations:
+    # ingress-nginx specific annotations
+    nginx.ingress.kubernetes.io/backend-protocol: "HTTP" # Dashboard web UI runs on HTTP
+    nginx.ingress.kubernetes.io/ssl-redirect: "true" # Force HTTPS redirect
+    # If you have cert-manager, use these annotations for automatic TLS
+    # cert-manager.io/cluster-issuer: "your-cluster-issuer-name" # Replace with your cert-manager cluster issuer name
+spec:
+  ingressClassName: nginx
+  rules:
+  - host: k8s.orb.local # 使用您的域名
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: kubernetes-dashboard-kong-proxy
+            port:
+              number: 80 # 路由到 Kong 代理的 HTTP 端口
+  tls: # 启用 TLS
+  - hosts:
+    - k8s.orb.local
+    secretName: kubernetes-dashboard-tls # 这个 Secret 将包含您的 TLS 证书 

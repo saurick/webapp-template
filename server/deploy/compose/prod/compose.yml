@@ -1,0 +1,58 @@
+services:
+  mysql:
+    image: mysql:8
+    container_name: mysql8
+    restart: always
+    ports:
+      - 3306:3306
+    environment:
+      MYSQL_ROOT_PASSWORD: YP*H%k%a7xK1*q
+      MYSQL_DATABASE: test_database_atlas
+      MYSQL_USER: test_user
+      MYSQL_PASSWORD: 2@&0kq%qFafA4d
+    mem_limit: 2g
+    mem_reservation: 1g
+    volumes:
+      - /data/template/mysql/data:/var/lib/mysql
+      - /data/template/mysql/conf/mysql8.cnf:/etc/mysql/conf.d/mysql8.cnf:ro
+    networks: {}
+
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    container_name: jaeger
+    restart: always
+    ports:
+      - 5775:5775/udp
+      - 6831:6831/udp
+      - 6832:6832/udp
+      - 5778:5778
+      - 16686:16686
+      - 14268:14268
+      - 14250:14250
+      - 9411:9411
+      - 4317:4317 # ⭐ gRPC OTLP
+      - 4318:4318 # ⭐ HTTP OTLP
+    labels:
+      - dev.orbstack.http-port=16686
+      - dev.orbstack.domains=jaeger.orb.local
+    environment:
+      PROMETHEUS_QUERY_SUPPORT_SPANMETRICS_CONNECTOR: true
+      METRICS_STORAGE_TYPE: prometheus
+      PROMETHEUS_SERVER_URL: http://192.168.0.106:3004
+    networks: {}
+
+  template-server:
+    image: template-server:20251210T212529-local
+    container_name: template-server
+    restart: always
+    depends_on:
+      - mysql
+      - jaeger
+    ports:
+      - 8000:8000   # HTTP
+      - 9000:9000   # gRPC
+    environment:
+      TZ: Asia/Shanghai
+    mem_limit: 1g
+    mem_reservation: 512m
+    networks: {}
