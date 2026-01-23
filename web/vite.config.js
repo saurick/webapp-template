@@ -85,6 +85,7 @@ export default defineConfig(({ command, mode }) => {
     cacheDir: mode === 'development' ? '/tmp/.vite-cache' : 'build/.vite-cache',
 
     server: {
+      host: '0.0.0.0', // 监听所有地址，方便局域网测试
       port: 5173,
       open: true,
       proxy: {
