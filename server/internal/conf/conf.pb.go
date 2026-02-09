@@ -147,7 +147,6 @@ type Data struct {
 	Mysql                 *Data_Mysql            `protobuf:"bytes,1,opt,name=mysql,proto3" json:"mysql,omitempty"`
 	Etcd                  *Data_Etcd             `protobuf:"bytes,2,opt,name=etcd,proto3" json:"etcd,omitempty"`
 	Auth                  *Data_Auth             `protobuf:"bytes,3,opt,name=auth,proto3" json:"auth,omitempty"`
-	AdminAuth             *Data_AdminAuth        `protobuf:"bytes,4,opt,name=admin_auth,json=adminAuth,proto3" json:"admin_auth,omitempty"`
 	UserExpiryWarningDays int32                  `protobuf:"varint,5,opt,name=user_expiry_warning_days,json=userExpiryWarningDays,proto3" json:"user_expiry_warning_days,omitempty"` // 默认几天算过期
 	unknownFields         protoimpl.UnknownFields
 	sizeCache             protoimpl.SizeCache
@@ -200,13 +199,6 @@ func (x *Data) GetEtcd() *Data_Etcd {
 func (x *Data) GetAuth() *Data_Auth {
 	if x != nil {
 		return x.Auth
-	}
-	return nil
-}
-
-func (x *Data) GetAdminAuth() *Data_AdminAuth {
-	if x != nil {
-		return x.AdminAuth
 	}
 	return nil
 }
@@ -626,66 +618,6 @@ func (x *Data_Auth) GetAdmin() *Data_Auth_Admin {
 	return nil
 }
 
-type Data_AdminAuth struct {
-	state            protoimpl.MessageState `protogen:"open.v1"`
-	JwtSecret        string                 `protobuf:"bytes,1,opt,name=jwtSecret,proto3" json:"jwtSecret,omitempty"`
-	JwtExpireSeconds int32                  `protobuf:"varint,2,opt,name=jwtExpireSeconds,proto3" json:"jwtExpireSeconds,omitempty"`
-	Admin            *Data_AdminAuth_Admin  `protobuf:"bytes,3,opt,name=admin,proto3" json:"admin,omitempty"`
-	unknownFields    protoimpl.UnknownFields
-	sizeCache        protoimpl.SizeCache
-}
-
-func (x *Data_AdminAuth) Reset() {
-	*x = Data_AdminAuth{}
-	mi := &file_conf_conf_proto_msgTypes[11]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *Data_AdminAuth) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*Data_AdminAuth) ProtoMessage() {}
-
-func (x *Data_AdminAuth) ProtoReflect() protoreflect.Message {
-	mi := &file_conf_conf_proto_msgTypes[11]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use Data_AdminAuth.ProtoReflect.Descriptor instead.
-func (*Data_AdminAuth) Descriptor() ([]byte, []int) {
-	return file_conf_conf_proto_rawDescGZIP(), []int{2, 3}
-}
-
-func (x *Data_AdminAuth) GetJwtSecret() string {
-	if x != nil {
-		return x.JwtSecret
-	}
-	return ""
-}
-
-func (x *Data_AdminAuth) GetJwtExpireSeconds() int32 {
-	if x != nil {
-		return x.JwtExpireSeconds
-	}
-	return 0
-}
-
-func (x *Data_AdminAuth) GetAdmin() *Data_AdminAuth_Admin {
-	if x != nil {
-		return x.Admin
-	}
-	return nil
-}
-
 type Data_Auth_Admin struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Username      string                 `protobuf:"bytes,1,opt,name=username,proto3" json:"username,omitempty"`
@@ -696,7 +628,7 @@ type Data_Auth_Admin struct {
 
 func (x *Data_Auth_Admin) Reset() {
 	*x = Data_Auth_Admin{}
-	mi := &file_conf_conf_proto_msgTypes[12]
+	mi := &file_conf_conf_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -708,7 +640,7 @@ func (x *Data_Auth_Admin) String() string {
 func (*Data_Auth_Admin) ProtoMessage() {}
 
 func (x *Data_Auth_Admin) ProtoReflect() protoreflect.Message {
-	mi := &file_conf_conf_proto_msgTypes[12]
+	mi := &file_conf_conf_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -738,58 +670,6 @@ func (x *Data_Auth_Admin) GetPassword() string {
 	return ""
 }
 
-type Data_AdminAuth_Admin struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Username      string                 `protobuf:"bytes,1,opt,name=username,proto3" json:"username,omitempty"`
-	Password      string                 `protobuf:"bytes,2,opt,name=password,proto3" json:"password,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *Data_AdminAuth_Admin) Reset() {
-	*x = Data_AdminAuth_Admin{}
-	mi := &file_conf_conf_proto_msgTypes[13]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *Data_AdminAuth_Admin) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*Data_AdminAuth_Admin) ProtoMessage() {}
-
-func (x *Data_AdminAuth_Admin) ProtoReflect() protoreflect.Message {
-	mi := &file_conf_conf_proto_msgTypes[13]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use Data_AdminAuth_Admin.ProtoReflect.Descriptor instead.
-func (*Data_AdminAuth_Admin) Descriptor() ([]byte, []int) {
-	return file_conf_conf_proto_rawDescGZIP(), []int{2, 3, 0}
-}
-
-func (x *Data_AdminAuth_Admin) GetUsername() string {
-	if x != nil {
-		return x.Username
-	}
-	return ""
-}
-
-func (x *Data_AdminAuth_Admin) GetPassword() string {
-	if x != nil {
-		return x.Password
-	}
-	return ""
-}
-
 type Trace_Jaeger struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	TraceName     string                 `protobuf:"bytes,1,opt,name=traceName,proto3" json:"traceName,omitempty"` // trace name, 因为配置公用，直接在main.go中硬编码
@@ -801,7 +681,7 @@ type Trace_Jaeger struct {
 
 func (x *Trace_Jaeger) Reset() {
 	*x = Trace_Jaeger{}
-	mi := &file_conf_conf_proto_msgTypes[14]
+	mi := &file_conf_conf_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -813,7 +693,7 @@ func (x *Trace_Jaeger) String() string {
 func (*Trace_Jaeger) ProtoMessage() {}
 
 func (x *Trace_Jaeger) ProtoReflect() protoreflect.Message {
-	mi := &file_conf_conf_proto_msgTypes[14]
+	mi := &file_conf_conf_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -860,7 +740,7 @@ type Notify_Telegram struct {
 
 func (x *Notify_Telegram) Reset() {
 	*x = Notify_Telegram{}
-	mi := &file_conf_conf_proto_msgTypes[15]
+	mi := &file_conf_conf_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -872,7 +752,7 @@ func (x *Notify_Telegram) String() string {
 func (*Notify_Telegram) ProtoMessage() {}
 
 func (x *Notify_Telegram) ProtoReflect() protoreflect.Message {
-	mi := &file_conf_conf_proto_msgTypes[15]
+	mi := &file_conf_conf_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -923,13 +803,11 @@ const file_conf_conf_proto_rawDesc = "" +
 	"\x04GRPC\x12\x18\n" +
 	"\anetwork\x18\x01 \x01(\tR\anetwork\x12\x12\n" +
 	"\x04addr\x18\x02 \x01(\tR\x04addr\x123\n" +
-	"\atimeout\x18\x03 \x01(\v2\x19.google.protobuf.DurationR\atimeout\"\xe5\x05\n" +
+	"\atimeout\x18\x03 \x01(\v2\x19.google.protobuf.DurationR\atimeout\"\xdf\x03\n" +
 	"\x04Data\x12,\n" +
 	"\x05mysql\x18\x01 \x01(\v2\x16.kratos.api.Data.MysqlR\x05mysql\x12)\n" +
 	"\x04etcd\x18\x02 \x01(\v2\x15.kratos.api.Data.EtcdR\x04etcd\x12)\n" +
-	"\x04auth\x18\x03 \x01(\v2\x15.kratos.api.Data.AuthR\x04auth\x129\n" +
-	"\n" +
-	"admin_auth\x18\x04 \x01(\v2\x1a.kratos.api.Data.AdminAuthR\tadminAuth\x127\n" +
+	"\x04auth\x18\x03 \x01(\v2\x15.kratos.api.Data.AuthR\x04auth\x127\n" +
 	"\x18user_expiry_warning_days\x18\x05 \x01(\x05R\x15userExpiryWarningDays\x1a/\n" +
 	"\x05Mysql\x12\x10\n" +
 	"\x03dsn\x18\x01 \x01(\tR\x03dsn\x12\x14\n" +
@@ -942,14 +820,7 @@ const file_conf_conf_proto_rawDesc = "" +
 	"\x05admin\x18\x03 \x01(\v2\x1b.kratos.api.Data.Auth.AdminR\x05admin\x1a?\n" +
 	"\x05Admin\x12\x1a\n" +
 	"\busername\x18\x01 \x01(\tR\busername\x12\x1a\n" +
-	"\bpassword\x18\x02 \x01(\tR\bpassword\x1a\xce\x01\n" +
-	"\tAdminAuth\x12\x1c\n" +
-	"\tjwtSecret\x18\x01 \x01(\tR\tjwtSecret\x12*\n" +
-	"\x10jwtExpireSeconds\x18\x02 \x01(\x05R\x10jwtExpireSeconds\x126\n" +
-	"\x05admin\x18\x03 \x01(\v2 .kratos.api.Data.AdminAuth.AdminR\x05admin\x1a?\n" +
-	"\x05Admin\x12\x1a\n" +
-	"\busername\x18\x01 \x01(\tR\busername\x12\x1a\n" +
-	"\bpassword\x18\x02 \x01(\tR\bpassword\"\x93\x01\n" +
+	"\bpassword\x18\x02 \x01(\tR\bpasswordJ\x04\b\x04\x10\x05\"\x93\x01\n" +
 	"\x05Trace\x120\n" +
 	"\x06jaeger\x18\x01 \x01(\v2\x18.kratos.api.Trace.JaegerR\x06jaeger\x1aX\n" +
 	"\x06Jaeger\x12\x1c\n" +
@@ -976,25 +847,23 @@ func file_conf_conf_proto_rawDescGZIP() []byte {
 	return file_conf_conf_proto_rawDescData
 }
 
-var file_conf_conf_proto_msgTypes = make([]protoimpl.MessageInfo, 16)
+var file_conf_conf_proto_msgTypes = make([]protoimpl.MessageInfo, 14)
 var file_conf_conf_proto_goTypes = []any{
-	(*Bootstrap)(nil),            // 0: kratos.api.Bootstrap
-	(*Server)(nil),               // 1: kratos.api.Server
-	(*Data)(nil),                 // 2: kratos.api.Data
-	(*Trace)(nil),                // 3: kratos.api.Trace
-	(*Log)(nil),                  // 4: kratos.api.Log
-	(*Notify)(nil),               // 5: kratos.api.Notify
-	(*Server_HTTP)(nil),          // 6: kratos.api.Server.HTTP
-	(*Server_GRPC)(nil),          // 7: kratos.api.Server.GRPC
-	(*Data_Mysql)(nil),           // 8: kratos.api.Data.Mysql
-	(*Data_Etcd)(nil),            // 9: kratos.api.Data.Etcd
-	(*Data_Auth)(nil),            // 10: kratos.api.Data.Auth
-	(*Data_AdminAuth)(nil),       // 11: kratos.api.Data.AdminAuth
-	(*Data_Auth_Admin)(nil),      // 12: kratos.api.Data.Auth.Admin
-	(*Data_AdminAuth_Admin)(nil), // 13: kratos.api.Data.AdminAuth.Admin
-	(*Trace_Jaeger)(nil),         // 14: kratos.api.Trace.Jaeger
-	(*Notify_Telegram)(nil),      // 15: kratos.api.Notify.Telegram
-	(*durationpb.Duration)(nil),  // 16: google.protobuf.Duration
+	(*Bootstrap)(nil),           // 0: kratos.api.Bootstrap
+	(*Server)(nil),              // 1: kratos.api.Server
+	(*Data)(nil),                // 2: kratos.api.Data
+	(*Trace)(nil),               // 3: kratos.api.Trace
+	(*Log)(nil),                 // 4: kratos.api.Log
+	(*Notify)(nil),              // 5: kratos.api.Notify
+	(*Server_HTTP)(nil),         // 6: kratos.api.Server.HTTP
+	(*Server_GRPC)(nil),         // 7: kratos.api.Server.GRPC
+	(*Data_Mysql)(nil),          // 8: kratos.api.Data.Mysql
+	(*Data_Etcd)(nil),           // 9: kratos.api.Data.Etcd
+	(*Data_Auth)(nil),           // 10: kratos.api.Data.Auth
+	(*Data_Auth_Admin)(nil),     // 11: kratos.api.Data.Auth.Admin
+	(*Trace_Jaeger)(nil),        // 12: kratos.api.Trace.Jaeger
+	(*Notify_Telegram)(nil),     // 13: kratos.api.Notify.Telegram
+	(*durationpb.Duration)(nil), // 14: google.protobuf.Duration
 }
 var file_conf_conf_proto_depIdxs = []int32{
 	1,  // 0: kratos.api.Bootstrap.server:type_name -> kratos.api.Server
@@ -1006,18 +875,16 @@ var file_conf_conf_proto_depIdxs = []int32{
 	8,  // 6: kratos.api.Data.mysql:type_name -> kratos.api.Data.Mysql
 	9,  // 7: kratos.api.Data.etcd:type_name -> kratos.api.Data.Etcd
 	10, // 8: kratos.api.Data.auth:type_name -> kratos.api.Data.Auth
-	11, // 9: kratos.api.Data.admin_auth:type_name -> kratos.api.Data.AdminAuth
-	14, // 10: kratos.api.Trace.jaeger:type_name -> kratos.api.Trace.Jaeger
-	15, // 11: kratos.api.Notify.telegram:type_name -> kratos.api.Notify.Telegram
-	16, // 12: kratos.api.Server.HTTP.timeout:type_name -> google.protobuf.Duration
-	16, // 13: kratos.api.Server.GRPC.timeout:type_name -> google.protobuf.Duration
-	12, // 14: kratos.api.Data.Auth.admin:type_name -> kratos.api.Data.Auth.Admin
-	13, // 15: kratos.api.Data.AdminAuth.admin:type_name -> kratos.api.Data.AdminAuth.Admin
-	16, // [16:16] is the sub-list for method output_type
-	16, // [16:16] is the sub-list for method input_type
-	16, // [16:16] is the sub-list for extension type_name
-	16, // [16:16] is the sub-list for extension extendee
-	0,  // [0:16] is the sub-list for field type_name
+	12, // 9: kratos.api.Trace.jaeger:type_name -> kratos.api.Trace.Jaeger
+	13, // 10: kratos.api.Notify.telegram:type_name -> kratos.api.Notify.Telegram
+	14, // 11: kratos.api.Server.HTTP.timeout:type_name -> google.protobuf.Duration
+	14, // 12: kratos.api.Server.GRPC.timeout:type_name -> google.protobuf.Duration
+	11, // 13: kratos.api.Data.Auth.admin:type_name -> kratos.api.Data.Auth.Admin
+	14, // [14:14] is the sub-list for method output_type
+	14, // [14:14] is the sub-list for method input_type
+	14, // [14:14] is the sub-list for extension type_name
+	14, // [14:14] is the sub-list for extension extendee
+	0,  // [0:14] is the sub-list for field type_name
 }
 
 func init() { file_conf_conf_proto_init() }
@@ -1031,7 +898,7 @@ func file_conf_conf_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_conf_conf_proto_rawDesc), len(file_conf_conf_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   16,
+			NumMessages:   14,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

@@ -15,15 +15,15 @@ import (
 func NewAdminTokenGenerator(c *conf.Data, logger log.Logger) biz.AdminTokenGenerator {
 	l := log.NewHelper(log.With(logger, "module", "data.admin_token"))
 
-	if c == nil || c.AdminAuth == nil || c.AdminAuth.JwtSecret == "" {
-		panic("NewAdminTokenGenerator: missing data.admin_auth.jwt_secret in config")
+	if c == nil || c.Auth == nil || c.Auth.JwtSecret == "" {
+		panic("NewAdminTokenGenerator: missing data.auth.jwt_secret in config")
 	}
 
-	secret := []byte(c.AdminAuth.JwtSecret)
+	secret := []byte(c.Auth.JwtSecret)
 
 	exp := 7 * 24 * time.Hour
-	if c.AdminAuth.JwtExpireSeconds > 0 {
-		exp = time.Duration(c.AdminAuth.JwtExpireSeconds) * time.Second
+	if c.Auth.JwtExpireSeconds > 0 {
+		exp = time.Duration(c.Auth.JwtExpireSeconds) * time.Second
 	}
 
 	cfg := jwtutil.Config{

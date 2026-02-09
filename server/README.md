@@ -22,7 +22,7 @@ server → service → biz → data
 # ✅ 模板内置公共能力
 
 - 用户注册/登录（JSON-RPC）
-- 管理员登录（独立 JWT 配置：`data.admin_auth`）
+- 管理员登录（与用户统一 JWT 配置：`data.auth`，管理员初始化配置：`data.auth.admin`）
 - 分级管理员体系（super/一级/二级）
 - 用户管理（分页、搜索、积分、有效期、禁用、到期统计）
 - 请求鉴权中间件（同时支持用户与管理员 token）

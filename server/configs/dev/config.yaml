@@ -49,13 +49,6 @@ data:
     admin:
       username: "admin"
       password: "adminadmin"
-  # 后台管理认证相关
-  admin_auth:
-    jwtSecret: "admin-jwt-secret"
-    jwtExpireSeconds: 604800 # 7 days
-    admin:
-      username: "admin"
-      password: "adminadmin"
 
 # notify:
 #   telegram:

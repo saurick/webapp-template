@@ -42,11 +42,8 @@ func AuthClaimsMiddleware(dc *conf.Data, logger log.Logger) middleware.Middlewar
 		}
 	}
 
+	// 单系统统一使用 data.auth.jwtSecret，避免维护两套密钥。
 	secret := []byte(dc.Auth.JwtSecret)
-	adminSecret := []byte("")
-	if dc.AdminAuth != nil && dc.AdminAuth.JwtSecret != "" {
-		adminSecret = []byte(dc.AdminAuth.JwtSecret)
-	}
 
 	return func(next middleware.Handler) middleware.Handler {
 		return func(ctx context.Context, req any) (any, error) {
@@ -66,9 +63,6 @@ func AuthClaimsMiddleware(dc *conf.Data, logger log.Logger) middleware.Middlewar
 			}
 
 			claims, err := jwtutil.ParseToken(secret, tok)
-			if err != nil && len(adminSecret) > 0 {
-				claims, err = jwtutil.ParseToken(adminSecret, tok)
-			}
 			if err == nil && claims != nil {
 				ctx = biz.NewContextWithClaims(ctx, &biz.AuthClaims{
 					UserID:   claims.UserID,
@@ -94,11 +88,12 @@ func AuthClaimsMiddleware(dc *conf.Data, logger log.Logger) middleware.Middlewar
 }
 
 // AdminAuthClaimsMiddleware：解析管理员 JWT -> 注入 ctx claims（不做授权）
+// 当前与普通用户统一使用 data.auth.jwtSecret。
 func AdminAuthClaimsMiddleware(dc *conf.Data, logger log.Logger) middleware.Middleware {
 	helper := log.NewHelper(log.With(logger, "module", "server.admin_auth"))
 
-	if dc == nil || dc.AdminAuth == nil || dc.AdminAuth.JwtSecret == "" {
-		helper.Warn("admin auth middleware disabled (missing data.admin_auth.jwt_secret)")
+	if dc == nil || dc.Auth == nil || dc.Auth.JwtSecret == "" {
+		helper.Warn("admin auth middleware disabled (missing data.auth.jwt_secret)")
 		return func(next middleware.Handler) middleware.Handler {
 			return func(ctx context.Context, req any) (any, error) {
 				ctx = biz.WithAuthState(ctx, biz.AuthNone)
@@ -107,7 +102,7 @@ func AdminAuthClaimsMiddleware(dc *conf.Data, logger log.Logger) middleware.Midd
 		}
 	}
 
-	secret := []byte(dc.AdminAuth.JwtSecret)
+	secret := []byte(dc.Auth.JwtSecret)
 
 	return func(next middleware.Handler) middleware.Handler {
 		return func(ctx context.Context, req any) (any, error) {

@@ -18,12 +18,12 @@ func InitAdminUsersIfNeeded(ctx context.Context, d *Data, cfg *conf.Data, l *log
 		return errors.New("InitAdminUsersIfNeeded: missing db")
 	}
 
-	if cfg == nil || cfg.AdminAuth == nil || cfg.AdminAuth.Admin == nil {
+	if cfg == nil || cfg.Auth == nil || cfg.Auth.Admin == nil {
 		return nil
 	}
 
-	username := cfg.AdminAuth.Admin.Username
-	password := cfg.AdminAuth.Admin.Password
+	username := cfg.Auth.Admin.Username
+	password := cfg.Auth.Admin.Password
 
 	if username == "" || password == "" {
 		return nil
