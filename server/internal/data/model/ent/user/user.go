@@ -21,10 +21,16 @@ const (
 	FieldInviteCode = "invite_code"
 	// FieldRole holds the string denoting the role field in the database.
 	FieldRole = "role"
+	// FieldAdminID holds the string denoting the admin_id field in the database.
+	FieldAdminID = "admin_id"
 	// FieldDisabled holds the string denoting the disabled field in the database.
 	FieldDisabled = "disabled"
 	// FieldLastLoginAt holds the string denoting the last_login_at field in the database.
 	FieldLastLoginAt = "last_login_at"
+	// FieldPoints holds the string denoting the points field in the database.
+	FieldPoints = "points"
+	// FieldExpiresAt holds the string denoting the expires_at field in the database.
+	FieldExpiresAt = "expires_at"
 	// FieldCreatedAt holds the string denoting the created_at field in the database.
 	FieldCreatedAt = "created_at"
 	// FieldUpdatedAt holds the string denoting the updated_at field in the database.
@@ -40,8 +46,11 @@ var Columns = []string{
 	FieldPasswordHash,
 	FieldInviteCode,
 	FieldRole,
+	FieldAdminID,
 	FieldDisabled,
 	FieldLastLoginAt,
+	FieldPoints,
+	FieldExpiresAt,
 	FieldCreatedAt,
 	FieldUpdatedAt,
 }
@@ -67,6 +76,8 @@ var (
 	DefaultRole int8
 	// DefaultDisabled holds the default value on creation for the "disabled" field.
 	DefaultDisabled bool
+	// DefaultPoints holds the default value on creation for the "points" field.
+	DefaultPoints int64
 	// DefaultCreatedAt holds the default value on creation for the "created_at" field.
 	DefaultCreatedAt func() time.Time
 	// DefaultUpdatedAt holds the default value on creation for the "updated_at" field.
@@ -103,6 +114,11 @@ func ByRole(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldRole, opts...).ToFunc()
 }
 
+// ByAdminID orders the results by the admin_id field.
+func ByAdminID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldAdminID, opts...).ToFunc()
+}
+
 // ByDisabled orders the results by the disabled field.
 func ByDisabled(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldDisabled, opts...).ToFunc()
@@ -111,6 +127,16 @@ func ByDisabled(opts ...sql.OrderTermOption) OrderOption {
 // ByLastLoginAt orders the results by the last_login_at field.
 func ByLastLoginAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldLastLoginAt, opts...).ToFunc()
+}
+
+// ByPoints orders the results by the points field.
+func ByPoints(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldPoints, opts...).ToFunc()
+}
+
+// ByExpiresAt orders the results by the expires_at field.
+func ByExpiresAt(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldExpiresAt, opts...).ToFunc()
 }
 
 // ByCreatedAt orders the results by the created_at field.

@@ -1,4 +1,5 @@
 GOHOSTOS:=$(shell go env GOHOSTOS)
+# ⚠️ 注意：数据库迁移必须使用 `make data` 生成，严禁手动修改 SQL 文件！详见 internal/data/AI_DB_WORKFLOW.md
 GOPATH:=$(shell go env GOPATH)
 
 # ========================
@@ -143,6 +144,22 @@ migrate_apply:
 		--dir "file://internal/data/model/migrate" \
 		--url "$$DB_URL"
 
+.PHONY: migrate_set
+# 标记某个 migration 已应用（用于修复已手动执行但迁移状态未记录的情况）
+migrate_set:
+	@if [ -z "$$DB_URL" ]; then \
+		echo "ERROR: DB_URL is not set. Example: export DB_URL=mysql://user:pass@tcp(127.0.0.1:3306)/dbname?parseTime=true"; \
+		exit 1; \
+	fi
+	@if [ -z "$$MIGRATE_VERSION" ]; then \
+		echo "ERROR: MIGRATE_VERSION is not set. Example: MIGRATE_VERSION=20260115080747"; \
+		exit 1; \
+	fi
+	atlas migrate set \
+		--dir "file://internal/data/model/migrate" \
+		--url "$$DB_URL" \
+		"$$MIGRATE_VERSION"
+
 .PHONY: ent_generate
 # 用 ent generate 生成 ent 代码
 ent_generate:
@@ -181,6 +198,37 @@ help:
 	{ lastLine = $$0 }' $(MAKEFILE_LIST)
 
 .DEFAULT_GOAL := help
+
+
+# ========================
+# Local Dev Run (替代 kratos run，避免 LuLu 每次弹窗)
+# ========================
+
+MAIN_PKG ?= ./cmd/server
+DEV_BIN ?= ./bin/server-dev
+ARGS ?=
+
+.PHONY: dev_build
+# build dev binary (stable path)
+dev_build:
+	@mkdir -p $(dir $(DEV_BIN))
+	@echo ">>> building $(DEV_BIN) from $(MAIN_PKG)"
+	@go build -ldflags "-X main.Version=$(VERSION)" -o $(DEV_BIN) $(MAIN_PKG)
+
+.PHONY: run
+# run dev binary (stable path)
+run: dev_build
+	@echo ">>> running: $(DEV_BIN) $(ARGS)"
+	@$(DEV_BIN) $(ARGS)
+
+.PHONY: dev
+# alias of run
+dev: run
+
+.PHONY: clean_dev
+# clean dev binary
+clean_dev:
+	@rm -f $(DEV_BIN)
 
 # 清理 dangling / builder 缓存
 .PHONY: docker_prune

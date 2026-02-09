@@ -24,11 +24,12 @@ trace:
 
 # 数据相关
 data:
+  user_expiry_warning_days: 5
   # 主数据库，保存核心数据
   mysql:
     # if true output sql
     debug: true
-    dsn: "root:YP*H%k%a7xK1*q@tcp(192.168.0.106:3306)/test_database?charset=utf8mb4&parseTime=True&loc=Local&interpolateParams=true"
+    dsn: "root:YP*H%k%a7xK1*q@tcp(192.168.0.106:3306)/test_database_atlas?charset=utf8mb4&parseTime=True&loc=Local&interpolateParams=true"
 
   # 缓存服务
   # redis:
@@ -44,6 +45,13 @@ data:
   # 认证相关
   auth:
     jwtSecret: "eB6Cc5Mz/OB/WrHyKJMQLnmj160ropjq3j167pkIGUI="
+    jwtExpireSeconds: 604800 # 7 days
+    admin:
+      username: "admin"
+      password: "adminadmin"
+  # 后台管理认证相关
+  admin_auth:
+    jwtSecret: "admin-jwt-secret"
     jwtExpireSeconds: 604800 # 7 days
     admin:
       username: "admin"

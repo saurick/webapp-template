@@ -43,6 +43,10 @@ func AuthClaimsMiddleware(dc *conf.Data, logger log.Logger) middleware.Middlewar
 	}
 
 	secret := []byte(dc.Auth.JwtSecret)
+	adminSecret := []byte("")
+	if dc.AdminAuth != nil && dc.AdminAuth.JwtSecret != "" {
+		adminSecret = []byte(dc.AdminAuth.JwtSecret)
+	}
 
 	return func(next middleware.Handler) middleware.Handler {
 		return func(ctx context.Context, req any) (any, error) {
@@ -62,6 +66,9 @@ func AuthClaimsMiddleware(dc *conf.Data, logger log.Logger) middleware.Middlewar
 			}
 
 			claims, err := jwtutil.ParseToken(secret, tok)
+			if err != nil && len(adminSecret) > 0 {
+				claims, err = jwtutil.ParseToken(adminSecret, tok)
+			}
 			if err == nil && claims != nil {
 				ctx = biz.NewContextWithClaims(ctx, &biz.AuthClaims{
 					UserID:   claims.UserID,
@@ -73,6 +80,61 @@ func AuthClaimsMiddleware(dc *conf.Data, logger log.Logger) middleware.Middlewar
 			}
 
 			// 带了 token 但解析失败：过期 or 无效
+			if errors.Is(err, jwt.ErrTokenExpired) {
+				ctx = biz.WithAuthState(ctx, biz.AuthExpired)
+				helper.WithContext(ctx).Warn("token expired")
+			} else {
+				ctx = biz.WithAuthState(ctx, biz.AuthInvalid)
+				helper.WithContext(ctx).Warnf("parse token failed: %v", err)
+			}
+
+			return next(ctx, req)
+		}
+	}
+}
+
+// AdminAuthClaimsMiddleware：解析管理员 JWT -> 注入 ctx claims（不做授权）
+func AdminAuthClaimsMiddleware(dc *conf.Data, logger log.Logger) middleware.Middleware {
+	helper := log.NewHelper(log.With(logger, "module", "server.admin_auth"))
+
+	if dc == nil || dc.AdminAuth == nil || dc.AdminAuth.JwtSecret == "" {
+		helper.Warn("admin auth middleware disabled (missing data.admin_auth.jwt_secret)")
+		return func(next middleware.Handler) middleware.Handler {
+			return func(ctx context.Context, req any) (any, error) {
+				ctx = biz.WithAuthState(ctx, biz.AuthNone)
+				return next(ctx, req)
+			}
+		}
+	}
+
+	secret := []byte(dc.AdminAuth.JwtSecret)
+
+	return func(next middleware.Handler) middleware.Handler {
+		return func(ctx context.Context, req any) (any, error) {
+			ctx = biz.WithAuthState(ctx, biz.AuthNone)
+
+			tr, ok := transport.FromServerContext(ctx)
+			if !ok || tr == nil {
+				return next(ctx, req)
+			}
+
+			auth := tr.RequestHeader().Get("Authorization")
+			tok := bearerToken(auth)
+			if tok == "" {
+				return next(ctx, req)
+			}
+
+			claims, err := jwtutil.ParseToken(secret, tok)
+			if err == nil && claims != nil {
+				ctx = biz.NewContextWithClaims(ctx, &biz.AuthClaims{
+					UserID:   claims.UserID,
+					Username: claims.Username,
+					Role:     biz.Role(claims.Role),
+				})
+				ctx = biz.WithAuthState(ctx, biz.AuthOK)
+				return next(ctx, req)
+			}
+
 			if errors.Is(err, jwt.ErrTokenExpired) {
 				ctx = biz.WithAuthState(ctx, biz.AuthExpired)
 				helper.WithContext(ctx).Warn("token expired")

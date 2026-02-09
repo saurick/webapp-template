@@ -44,10 +44,21 @@ message Data {
     }
     Admin admin = 3;
   }
+  message AdminAuth {
+    string jwtSecret = 1;
+    int32 jwtExpireSeconds = 2;
+    message Admin {
+      string username = 1;
+      string password = 2;
+    }
+    Admin admin = 3;
+  }
 
   Mysql mysql = 1;
   Etcd etcd = 2;
   Auth auth = 3;
+  AdminAuth admin_auth = 4;
+  int32 user_expiry_warning_days = 5; // 默认几天算过期
 }
 
 message Trace {

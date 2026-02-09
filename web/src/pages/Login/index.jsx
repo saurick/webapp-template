@@ -3,20 +3,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom'
 import CasinoScreen from '@/common/components/layout/CasinoScreen'
 import GoldFramePanel from '@/common/components/layout/GoldFramePanel'
 import { JsonRpc } from '@/common/utils/jsonRpc'
-
-function persistAuth(data) {
-  const token = data?.access_token
-  if (!token) throw new Error('missing access_token')
-
-  localStorage.setItem('access_token', String(token))
-  if (data?.expires_at != null)
-    localStorage.setItem('expires_at', String(data.expires_at))
-  if (data?.token_type)
-    localStorage.setItem('token_type', String(data.token_type))
-  if (data?.user_id != null)
-    localStorage.setItem('user_id', String(data.user_id))
-  if (data?.username) localStorage.setItem('username', String(data.username))
-}
+import { AUTH_SCOPE, persistAuth } from '@/common/auth/auth'
 
 export default function LoginPage() {
   const navigate = useNavigate()
@@ -52,7 +39,7 @@ export default function LoginPage() {
       })
 
       // 你的约定：result.data 才是 payload
-      persistAuth(result?.data)
+      persistAuth(result?.data, AUTH_SCOPE.USER)
       navigate(from, { replace: true })//
     } catch (err) {
       setErrMsg(err?.message || String(err))

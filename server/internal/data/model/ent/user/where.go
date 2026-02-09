@@ -74,6 +74,11 @@ func Role(v int8) predicate.User {
 	return predicate.User(sql.FieldEQ(FieldRole, v))
 }
 
+// AdminID applies equality check predicate on the "admin_id" field. It's identical to AdminIDEQ.
+func AdminID(v int) predicate.User {
+	return predicate.User(sql.FieldEQ(FieldAdminID, v))
+}
+
 // Disabled applies equality check predicate on the "disabled" field. It's identical to DisabledEQ.
 func Disabled(v bool) predicate.User {
 	return predicate.User(sql.FieldEQ(FieldDisabled, v))
@@ -82,6 +87,16 @@ func Disabled(v bool) predicate.User {
 // LastLoginAt applies equality check predicate on the "last_login_at" field. It's identical to LastLoginAtEQ.
 func LastLoginAt(v time.Time) predicate.User {
 	return predicate.User(sql.FieldEQ(FieldLastLoginAt, v))
+}
+
+// Points applies equality check predicate on the "points" field. It's identical to PointsEQ.
+func Points(v int64) predicate.User {
+	return predicate.User(sql.FieldEQ(FieldPoints, v))
+}
+
+// ExpiresAt applies equality check predicate on the "expires_at" field. It's identical to ExpiresAtEQ.
+func ExpiresAt(v time.Time) predicate.User {
+	return predicate.User(sql.FieldEQ(FieldExpiresAt, v))
 }
 
 // CreatedAt applies equality check predicate on the "created_at" field. It's identical to CreatedAtEQ.
@@ -339,6 +354,56 @@ func RoleLTE(v int8) predicate.User {
 	return predicate.User(sql.FieldLTE(FieldRole, v))
 }
 
+// AdminIDEQ applies the EQ predicate on the "admin_id" field.
+func AdminIDEQ(v int) predicate.User {
+	return predicate.User(sql.FieldEQ(FieldAdminID, v))
+}
+
+// AdminIDNEQ applies the NEQ predicate on the "admin_id" field.
+func AdminIDNEQ(v int) predicate.User {
+	return predicate.User(sql.FieldNEQ(FieldAdminID, v))
+}
+
+// AdminIDIn applies the In predicate on the "admin_id" field.
+func AdminIDIn(vs ...int) predicate.User {
+	return predicate.User(sql.FieldIn(FieldAdminID, vs...))
+}
+
+// AdminIDNotIn applies the NotIn predicate on the "admin_id" field.
+func AdminIDNotIn(vs ...int) predicate.User {
+	return predicate.User(sql.FieldNotIn(FieldAdminID, vs...))
+}
+
+// AdminIDGT applies the GT predicate on the "admin_id" field.
+func AdminIDGT(v int) predicate.User {
+	return predicate.User(sql.FieldGT(FieldAdminID, v))
+}
+
+// AdminIDGTE applies the GTE predicate on the "admin_id" field.
+func AdminIDGTE(v int) predicate.User {
+	return predicate.User(sql.FieldGTE(FieldAdminID, v))
+}
+
+// AdminIDLT applies the LT predicate on the "admin_id" field.
+func AdminIDLT(v int) predicate.User {
+	return predicate.User(sql.FieldLT(FieldAdminID, v))
+}
+
+// AdminIDLTE applies the LTE predicate on the "admin_id" field.
+func AdminIDLTE(v int) predicate.User {
+	return predicate.User(sql.FieldLTE(FieldAdminID, v))
+}
+
+// AdminIDIsNil applies the IsNil predicate on the "admin_id" field.
+func AdminIDIsNil() predicate.User {
+	return predicate.User(sql.FieldIsNull(FieldAdminID))
+}
+
+// AdminIDNotNil applies the NotNil predicate on the "admin_id" field.
+func AdminIDNotNil() predicate.User {
+	return predicate.User(sql.FieldNotNull(FieldAdminID))
+}
+
 // DisabledEQ applies the EQ predicate on the "disabled" field.
 func DisabledEQ(v bool) predicate.User {
 	return predicate.User(sql.FieldEQ(FieldDisabled, v))
@@ -397,6 +462,96 @@ func LastLoginAtIsNil() predicate.User {
 // LastLoginAtNotNil applies the NotNil predicate on the "last_login_at" field.
 func LastLoginAtNotNil() predicate.User {
 	return predicate.User(sql.FieldNotNull(FieldLastLoginAt))
+}
+
+// PointsEQ applies the EQ predicate on the "points" field.
+func PointsEQ(v int64) predicate.User {
+	return predicate.User(sql.FieldEQ(FieldPoints, v))
+}
+
+// PointsNEQ applies the NEQ predicate on the "points" field.
+func PointsNEQ(v int64) predicate.User {
+	return predicate.User(sql.FieldNEQ(FieldPoints, v))
+}
+
+// PointsIn applies the In predicate on the "points" field.
+func PointsIn(vs ...int64) predicate.User {
+	return predicate.User(sql.FieldIn(FieldPoints, vs...))
+}
+
+// PointsNotIn applies the NotIn predicate on the "points" field.
+func PointsNotIn(vs ...int64) predicate.User {
+	return predicate.User(sql.FieldNotIn(FieldPoints, vs...))
+}
+
+// PointsGT applies the GT predicate on the "points" field.
+func PointsGT(v int64) predicate.User {
+	return predicate.User(sql.FieldGT(FieldPoints, v))
+}
+
+// PointsGTE applies the GTE predicate on the "points" field.
+func PointsGTE(v int64) predicate.User {
+	return predicate.User(sql.FieldGTE(FieldPoints, v))
+}
+
+// PointsLT applies the LT predicate on the "points" field.
+func PointsLT(v int64) predicate.User {
+	return predicate.User(sql.FieldLT(FieldPoints, v))
+}
+
+// PointsLTE applies the LTE predicate on the "points" field.
+func PointsLTE(v int64) predicate.User {
+	return predicate.User(sql.FieldLTE(FieldPoints, v))
+}
+
+// ExpiresAtEQ applies the EQ predicate on the "expires_at" field.
+func ExpiresAtEQ(v time.Time) predicate.User {
+	return predicate.User(sql.FieldEQ(FieldExpiresAt, v))
+}
+
+// ExpiresAtNEQ applies the NEQ predicate on the "expires_at" field.
+func ExpiresAtNEQ(v time.Time) predicate.User {
+	return predicate.User(sql.FieldNEQ(FieldExpiresAt, v))
+}
+
+// ExpiresAtIn applies the In predicate on the "expires_at" field.
+func ExpiresAtIn(vs ...time.Time) predicate.User {
+	return predicate.User(sql.FieldIn(FieldExpiresAt, vs...))
+}
+
+// ExpiresAtNotIn applies the NotIn predicate on the "expires_at" field.
+func ExpiresAtNotIn(vs ...time.Time) predicate.User {
+	return predicate.User(sql.FieldNotIn(FieldExpiresAt, vs...))
+}
+
+// ExpiresAtGT applies the GT predicate on the "expires_at" field.
+func ExpiresAtGT(v time.Time) predicate.User {
+	return predicate.User(sql.FieldGT(FieldExpiresAt, v))
+}
+
+// ExpiresAtGTE applies the GTE predicate on the "expires_at" field.
+func ExpiresAtGTE(v time.Time) predicate.User {
+	return predicate.User(sql.FieldGTE(FieldExpiresAt, v))
+}
+
+// ExpiresAtLT applies the LT predicate on the "expires_at" field.
+func ExpiresAtLT(v time.Time) predicate.User {
+	return predicate.User(sql.FieldLT(FieldExpiresAt, v))
+}
+
+// ExpiresAtLTE applies the LTE predicate on the "expires_at" field.
+func ExpiresAtLTE(v time.Time) predicate.User {
+	return predicate.User(sql.FieldLTE(FieldExpiresAt, v))
+}
+
+// ExpiresAtIsNil applies the IsNil predicate on the "expires_at" field.
+func ExpiresAtIsNil() predicate.User {
+	return predicate.User(sql.FieldIsNull(FieldExpiresAt))
+}
+
+// ExpiresAtNotNil applies the NotNil predicate on the "expires_at" field.
+func ExpiresAtNotNil() predicate.User {
+	return predicate.User(sql.FieldNotNull(FieldExpiresAt))
 }
 
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.

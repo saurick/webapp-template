@@ -284,6 +284,19 @@ func (r *memAuthRepoForData) GetUserByUsername(ctx context.Context, username str
 	return &cp, nil
 }
 
+func (r *memAuthRepoForData) GetUserByID(ctx context.Context, id int) (*biz.User, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	for _, u := range r.users {
+		if u.ID == id {
+			cp := *u
+			return &cp, nil
+		}
+	}
+	return nil, errors.New("not found")
+}
+
 func (r *memAuthRepoForData) CreateUser(ctx context.Context, u *biz.User) (*biz.User, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()

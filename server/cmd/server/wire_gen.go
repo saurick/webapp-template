@@ -30,8 +30,12 @@ func wireApp(confServer *conf.Server, confData *conf.Data, logger log.Logger, tr
 		return nil, nil, err
 	}
 	authRepo := data.NewAuthRepo(dataData, logger)
+	adminAuthRepo := data.NewAdminAuthRepo(dataData, logger)
+	adminManageRepo := data.NewAdminManageRepo(dataData, logger)
 	tokenGenerator := data.NewTokenGenerator(confData, logger)
-	jsonrpcData := data.NewJsonrpcData(confData, logger, authRepo, tokenGenerator, tracerProvider)
+	adminTokenGenerator := data.NewAdminTokenGenerator(confData, logger)
+	userAdminRepo := data.NewUserAdminRepo(dataData, logger)
+	jsonrpcData := data.NewJsonrpcData(dataData, confData, logger, authRepo, adminAuthRepo, adminManageRepo, tokenGenerator, adminTokenGenerator, userAdminRepo, tracerProvider)
 	jsonrpcUsecase := biz.NewJsonrpcUsecase(jsonrpcData, logger, tracerProvider)
 	jsonrpcService := service.NewJsonrpcService(jsonrpcUsecase, logger)
 	grpcServer := server.NewGRPCServer(confServer, logger, jsonrpcService, tracerProvider, dataData)

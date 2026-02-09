@@ -6,6 +6,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"server/internal/data/model/ent/adminuser"
 	"server/internal/data/model/ent/invitecode"
 	"server/internal/data/model/ent/predicate"
 	"server/internal/data/model/ent/user"
@@ -25,9 +26,825 @@ const (
 	OpUpdateOne = ent.OpUpdateOne
 
 	// Node types.
+	TypeAdminUser  = "AdminUser"
 	TypeInviteCode = "InviteCode"
 	TypeUser       = "User"
 )
+
+// AdminUserMutation represents an operation that mutates the AdminUser nodes in the graph.
+type AdminUserMutation struct {
+	config
+	op            Op
+	typ           string
+	id            *int
+	username      *string
+	password_hash *string
+	level         *int8
+	addlevel      *int8
+	parent_id     *int
+	addparent_id  *int
+	disabled      *bool
+	last_login_at *time.Time
+	created_at    *time.Time
+	updated_at    *time.Time
+	clearedFields map[string]struct{}
+	done          bool
+	oldValue      func(context.Context) (*AdminUser, error)
+	predicates    []predicate.AdminUser
+}
+
+var _ ent.Mutation = (*AdminUserMutation)(nil)
+
+// adminuserOption allows management of the mutation configuration using functional options.
+type adminuserOption func(*AdminUserMutation)
+
+// newAdminUserMutation creates new mutation for the AdminUser entity.
+func newAdminUserMutation(c config, op Op, opts ...adminuserOption) *AdminUserMutation {
+	m := &AdminUserMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeAdminUser,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withAdminUserID sets the ID field of the mutation.
+func withAdminUserID(id int) adminuserOption {
+	return func(m *AdminUserMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *AdminUser
+		)
+		m.oldValue = func(ctx context.Context) (*AdminUser, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().AdminUser.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withAdminUser sets the old AdminUser of the mutation.
+func withAdminUser(node *AdminUser) adminuserOption {
+	return func(m *AdminUserMutation) {
+		m.oldValue = func(context.Context) (*AdminUser, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m AdminUserMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m AdminUserMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *AdminUserMutation) ID() (id int, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *AdminUserMutation) IDs(ctx context.Context) ([]int, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []int{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().AdminUser.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetUsername sets the "username" field.
+func (m *AdminUserMutation) SetUsername(s string) {
+	m.username = &s
+}
+
+// Username returns the value of the "username" field in the mutation.
+func (m *AdminUserMutation) Username() (r string, exists bool) {
+	v := m.username
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUsername returns the old "username" field's value of the AdminUser entity.
+// If the AdminUser object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AdminUserMutation) OldUsername(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUsername is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUsername requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUsername: %w", err)
+	}
+	return oldValue.Username, nil
+}
+
+// ResetUsername resets all changes to the "username" field.
+func (m *AdminUserMutation) ResetUsername() {
+	m.username = nil
+}
+
+// SetPasswordHash sets the "password_hash" field.
+func (m *AdminUserMutation) SetPasswordHash(s string) {
+	m.password_hash = &s
+}
+
+// PasswordHash returns the value of the "password_hash" field in the mutation.
+func (m *AdminUserMutation) PasswordHash() (r string, exists bool) {
+	v := m.password_hash
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPasswordHash returns the old "password_hash" field's value of the AdminUser entity.
+// If the AdminUser object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AdminUserMutation) OldPasswordHash(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPasswordHash is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPasswordHash requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPasswordHash: %w", err)
+	}
+	return oldValue.PasswordHash, nil
+}
+
+// ResetPasswordHash resets all changes to the "password_hash" field.
+func (m *AdminUserMutation) ResetPasswordHash() {
+	m.password_hash = nil
+}
+
+// SetLevel sets the "level" field.
+func (m *AdminUserMutation) SetLevel(i int8) {
+	m.level = &i
+	m.addlevel = nil
+}
+
+// Level returns the value of the "level" field in the mutation.
+func (m *AdminUserMutation) Level() (r int8, exists bool) {
+	v := m.level
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLevel returns the old "level" field's value of the AdminUser entity.
+// If the AdminUser object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AdminUserMutation) OldLevel(ctx context.Context) (v int8, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldLevel is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldLevel requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLevel: %w", err)
+	}
+	return oldValue.Level, nil
+}
+
+// AddLevel adds i to the "level" field.
+func (m *AdminUserMutation) AddLevel(i int8) {
+	if m.addlevel != nil {
+		*m.addlevel += i
+	} else {
+		m.addlevel = &i
+	}
+}
+
+// AddedLevel returns the value that was added to the "level" field in this mutation.
+func (m *AdminUserMutation) AddedLevel() (r int8, exists bool) {
+	v := m.addlevel
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetLevel resets all changes to the "level" field.
+func (m *AdminUserMutation) ResetLevel() {
+	m.level = nil
+	m.addlevel = nil
+}
+
+// SetParentID sets the "parent_id" field.
+func (m *AdminUserMutation) SetParentID(i int) {
+	m.parent_id = &i
+	m.addparent_id = nil
+}
+
+// ParentID returns the value of the "parent_id" field in the mutation.
+func (m *AdminUserMutation) ParentID() (r int, exists bool) {
+	v := m.parent_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldParentID returns the old "parent_id" field's value of the AdminUser entity.
+// If the AdminUser object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AdminUserMutation) OldParentID(ctx context.Context) (v *int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldParentID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldParentID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldParentID: %w", err)
+	}
+	return oldValue.ParentID, nil
+}
+
+// AddParentID adds i to the "parent_id" field.
+func (m *AdminUserMutation) AddParentID(i int) {
+	if m.addparent_id != nil {
+		*m.addparent_id += i
+	} else {
+		m.addparent_id = &i
+	}
+}
+
+// AddedParentID returns the value that was added to the "parent_id" field in this mutation.
+func (m *AdminUserMutation) AddedParentID() (r int, exists bool) {
+	v := m.addparent_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearParentID clears the value of the "parent_id" field.
+func (m *AdminUserMutation) ClearParentID() {
+	m.parent_id = nil
+	m.addparent_id = nil
+	m.clearedFields[adminuser.FieldParentID] = struct{}{}
+}
+
+// ParentIDCleared returns if the "parent_id" field was cleared in this mutation.
+func (m *AdminUserMutation) ParentIDCleared() bool {
+	_, ok := m.clearedFields[adminuser.FieldParentID]
+	return ok
+}
+
+// ResetParentID resets all changes to the "parent_id" field.
+func (m *AdminUserMutation) ResetParentID() {
+	m.parent_id = nil
+	m.addparent_id = nil
+	delete(m.clearedFields, adminuser.FieldParentID)
+}
+
+// SetDisabled sets the "disabled" field.
+func (m *AdminUserMutation) SetDisabled(b bool) {
+	m.disabled = &b
+}
+
+// Disabled returns the value of the "disabled" field in the mutation.
+func (m *AdminUserMutation) Disabled() (r bool, exists bool) {
+	v := m.disabled
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDisabled returns the old "disabled" field's value of the AdminUser entity.
+// If the AdminUser object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AdminUserMutation) OldDisabled(ctx context.Context) (v bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDisabled is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDisabled requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDisabled: %w", err)
+	}
+	return oldValue.Disabled, nil
+}
+
+// ResetDisabled resets all changes to the "disabled" field.
+func (m *AdminUserMutation) ResetDisabled() {
+	m.disabled = nil
+}
+
+// SetLastLoginAt sets the "last_login_at" field.
+func (m *AdminUserMutation) SetLastLoginAt(t time.Time) {
+	m.last_login_at = &t
+}
+
+// LastLoginAt returns the value of the "last_login_at" field in the mutation.
+func (m *AdminUserMutation) LastLoginAt() (r time.Time, exists bool) {
+	v := m.last_login_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldLastLoginAt returns the old "last_login_at" field's value of the AdminUser entity.
+// If the AdminUser object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AdminUserMutation) OldLastLoginAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldLastLoginAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldLastLoginAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldLastLoginAt: %w", err)
+	}
+	return oldValue.LastLoginAt, nil
+}
+
+// ClearLastLoginAt clears the value of the "last_login_at" field.
+func (m *AdminUserMutation) ClearLastLoginAt() {
+	m.last_login_at = nil
+	m.clearedFields[adminuser.FieldLastLoginAt] = struct{}{}
+}
+
+// LastLoginAtCleared returns if the "last_login_at" field was cleared in this mutation.
+func (m *AdminUserMutation) LastLoginAtCleared() bool {
+	_, ok := m.clearedFields[adminuser.FieldLastLoginAt]
+	return ok
+}
+
+// ResetLastLoginAt resets all changes to the "last_login_at" field.
+func (m *AdminUserMutation) ResetLastLoginAt() {
+	m.last_login_at = nil
+	delete(m.clearedFields, adminuser.FieldLastLoginAt)
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *AdminUserMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *AdminUserMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the AdminUser entity.
+// If the AdminUser object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AdminUserMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *AdminUserMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *AdminUserMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *AdminUserMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the AdminUser entity.
+// If the AdminUser object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AdminUserMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *AdminUserMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+}
+
+// Where appends a list predicates to the AdminUserMutation builder.
+func (m *AdminUserMutation) Where(ps ...predicate.AdminUser) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the AdminUserMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *AdminUserMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.AdminUser, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *AdminUserMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *AdminUserMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (AdminUser).
+func (m *AdminUserMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *AdminUserMutation) Fields() []string {
+	fields := make([]string, 0, 8)
+	if m.username != nil {
+		fields = append(fields, adminuser.FieldUsername)
+	}
+	if m.password_hash != nil {
+		fields = append(fields, adminuser.FieldPasswordHash)
+	}
+	if m.level != nil {
+		fields = append(fields, adminuser.FieldLevel)
+	}
+	if m.parent_id != nil {
+		fields = append(fields, adminuser.FieldParentID)
+	}
+	if m.disabled != nil {
+		fields = append(fields, adminuser.FieldDisabled)
+	}
+	if m.last_login_at != nil {
+		fields = append(fields, adminuser.FieldLastLoginAt)
+	}
+	if m.created_at != nil {
+		fields = append(fields, adminuser.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, adminuser.FieldUpdatedAt)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *AdminUserMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case adminuser.FieldUsername:
+		return m.Username()
+	case adminuser.FieldPasswordHash:
+		return m.PasswordHash()
+	case adminuser.FieldLevel:
+		return m.Level()
+	case adminuser.FieldParentID:
+		return m.ParentID()
+	case adminuser.FieldDisabled:
+		return m.Disabled()
+	case adminuser.FieldLastLoginAt:
+		return m.LastLoginAt()
+	case adminuser.FieldCreatedAt:
+		return m.CreatedAt()
+	case adminuser.FieldUpdatedAt:
+		return m.UpdatedAt()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *AdminUserMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case adminuser.FieldUsername:
+		return m.OldUsername(ctx)
+	case adminuser.FieldPasswordHash:
+		return m.OldPasswordHash(ctx)
+	case adminuser.FieldLevel:
+		return m.OldLevel(ctx)
+	case adminuser.FieldParentID:
+		return m.OldParentID(ctx)
+	case adminuser.FieldDisabled:
+		return m.OldDisabled(ctx)
+	case adminuser.FieldLastLoginAt:
+		return m.OldLastLoginAt(ctx)
+	case adminuser.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case adminuser.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	}
+	return nil, fmt.Errorf("unknown AdminUser field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *AdminUserMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case adminuser.FieldUsername:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUsername(v)
+		return nil
+	case adminuser.FieldPasswordHash:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPasswordHash(v)
+		return nil
+	case adminuser.FieldLevel:
+		v, ok := value.(int8)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLevel(v)
+		return nil
+	case adminuser.FieldParentID:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetParentID(v)
+		return nil
+	case adminuser.FieldDisabled:
+		v, ok := value.(bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDisabled(v)
+		return nil
+	case adminuser.FieldLastLoginAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetLastLoginAt(v)
+		return nil
+	case adminuser.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case adminuser.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	}
+	return fmt.Errorf("unknown AdminUser field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *AdminUserMutation) AddedFields() []string {
+	var fields []string
+	if m.addlevel != nil {
+		fields = append(fields, adminuser.FieldLevel)
+	}
+	if m.addparent_id != nil {
+		fields = append(fields, adminuser.FieldParentID)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *AdminUserMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case adminuser.FieldLevel:
+		return m.AddedLevel()
+	case adminuser.FieldParentID:
+		return m.AddedParentID()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *AdminUserMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case adminuser.FieldLevel:
+		v, ok := value.(int8)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddLevel(v)
+		return nil
+	case adminuser.FieldParentID:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddParentID(v)
+		return nil
+	}
+	return fmt.Errorf("unknown AdminUser numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *AdminUserMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(adminuser.FieldParentID) {
+		fields = append(fields, adminuser.FieldParentID)
+	}
+	if m.FieldCleared(adminuser.FieldLastLoginAt) {
+		fields = append(fields, adminuser.FieldLastLoginAt)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *AdminUserMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *AdminUserMutation) ClearField(name string) error {
+	switch name {
+	case adminuser.FieldParentID:
+		m.ClearParentID()
+		return nil
+	case adminuser.FieldLastLoginAt:
+		m.ClearLastLoginAt()
+		return nil
+	}
+	return fmt.Errorf("unknown AdminUser nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *AdminUserMutation) ResetField(name string) error {
+	switch name {
+	case adminuser.FieldUsername:
+		m.ResetUsername()
+		return nil
+	case adminuser.FieldPasswordHash:
+		m.ResetPasswordHash()
+		return nil
+	case adminuser.FieldLevel:
+		m.ResetLevel()
+		return nil
+	case adminuser.FieldParentID:
+		m.ResetParentID()
+		return nil
+	case adminuser.FieldDisabled:
+		m.ResetDisabled()
+		return nil
+	case adminuser.FieldLastLoginAt:
+		m.ResetLastLoginAt()
+		return nil
+	case adminuser.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case adminuser.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	}
+	return fmt.Errorf("unknown AdminUser field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *AdminUserMutation) AddedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *AdminUserMutation) AddedIDs(name string) []ent.Value {
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *AdminUserMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *AdminUserMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *AdminUserMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 0)
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *AdminUserMutation) EdgeCleared(name string) bool {
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *AdminUserMutation) ClearEdge(name string) error {
+	return fmt.Errorf("unknown AdminUser unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *AdminUserMutation) ResetEdge(name string) error {
+	return fmt.Errorf("unknown AdminUser edge %s", name)
+}
 
 // InviteCodeMutation represents an operation that mutates the InviteCode nodes in the graph.
 type InviteCodeMutation struct {
@@ -781,8 +1598,13 @@ type UserMutation struct {
 	invite_code   *string
 	role          *int8
 	addrole       *int8
+	admin_id      *int
+	addadmin_id   *int
 	disabled      *bool
 	last_login_at *time.Time
+	points        *int64
+	addpoints     *int64
+	expires_at    *time.Time
 	created_at    *time.Time
 	updated_at    *time.Time
 	clearedFields map[string]struct{}
@@ -1066,6 +1888,76 @@ func (m *UserMutation) ResetRole() {
 	m.addrole = nil
 }
 
+// SetAdminID sets the "admin_id" field.
+func (m *UserMutation) SetAdminID(i int) {
+	m.admin_id = &i
+	m.addadmin_id = nil
+}
+
+// AdminID returns the value of the "admin_id" field in the mutation.
+func (m *UserMutation) AdminID() (r int, exists bool) {
+	v := m.admin_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldAdminID returns the old "admin_id" field's value of the User entity.
+// If the User object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UserMutation) OldAdminID(ctx context.Context) (v *int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldAdminID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldAdminID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldAdminID: %w", err)
+	}
+	return oldValue.AdminID, nil
+}
+
+// AddAdminID adds i to the "admin_id" field.
+func (m *UserMutation) AddAdminID(i int) {
+	if m.addadmin_id != nil {
+		*m.addadmin_id += i
+	} else {
+		m.addadmin_id = &i
+	}
+}
+
+// AddedAdminID returns the value that was added to the "admin_id" field in this mutation.
+func (m *UserMutation) AddedAdminID() (r int, exists bool) {
+	v := m.addadmin_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ClearAdminID clears the value of the "admin_id" field.
+func (m *UserMutation) ClearAdminID() {
+	m.admin_id = nil
+	m.addadmin_id = nil
+	m.clearedFields[user.FieldAdminID] = struct{}{}
+}
+
+// AdminIDCleared returns if the "admin_id" field was cleared in this mutation.
+func (m *UserMutation) AdminIDCleared() bool {
+	_, ok := m.clearedFields[user.FieldAdminID]
+	return ok
+}
+
+// ResetAdminID resets all changes to the "admin_id" field.
+func (m *UserMutation) ResetAdminID() {
+	m.admin_id = nil
+	m.addadmin_id = nil
+	delete(m.clearedFields, user.FieldAdminID)
+}
+
 // SetDisabled sets the "disabled" field.
 func (m *UserMutation) SetDisabled(b bool) {
 	m.disabled = &b
@@ -1149,6 +2041,111 @@ func (m *UserMutation) LastLoginAtCleared() bool {
 func (m *UserMutation) ResetLastLoginAt() {
 	m.last_login_at = nil
 	delete(m.clearedFields, user.FieldLastLoginAt)
+}
+
+// SetPoints sets the "points" field.
+func (m *UserMutation) SetPoints(i int64) {
+	m.points = &i
+	m.addpoints = nil
+}
+
+// Points returns the value of the "points" field in the mutation.
+func (m *UserMutation) Points() (r int64, exists bool) {
+	v := m.points
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPoints returns the old "points" field's value of the User entity.
+// If the User object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UserMutation) OldPoints(ctx context.Context) (v int64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPoints is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPoints requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPoints: %w", err)
+	}
+	return oldValue.Points, nil
+}
+
+// AddPoints adds i to the "points" field.
+func (m *UserMutation) AddPoints(i int64) {
+	if m.addpoints != nil {
+		*m.addpoints += i
+	} else {
+		m.addpoints = &i
+	}
+}
+
+// AddedPoints returns the value that was added to the "points" field in this mutation.
+func (m *UserMutation) AddedPoints() (r int64, exists bool) {
+	v := m.addpoints
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetPoints resets all changes to the "points" field.
+func (m *UserMutation) ResetPoints() {
+	m.points = nil
+	m.addpoints = nil
+}
+
+// SetExpiresAt sets the "expires_at" field.
+func (m *UserMutation) SetExpiresAt(t time.Time) {
+	m.expires_at = &t
+}
+
+// ExpiresAt returns the value of the "expires_at" field in the mutation.
+func (m *UserMutation) ExpiresAt() (r time.Time, exists bool) {
+	v := m.expires_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldExpiresAt returns the old "expires_at" field's value of the User entity.
+// If the User object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UserMutation) OldExpiresAt(ctx context.Context) (v *time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldExpiresAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldExpiresAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldExpiresAt: %w", err)
+	}
+	return oldValue.ExpiresAt, nil
+}
+
+// ClearExpiresAt clears the value of the "expires_at" field.
+func (m *UserMutation) ClearExpiresAt() {
+	m.expires_at = nil
+	m.clearedFields[user.FieldExpiresAt] = struct{}{}
+}
+
+// ExpiresAtCleared returns if the "expires_at" field was cleared in this mutation.
+func (m *UserMutation) ExpiresAtCleared() bool {
+	_, ok := m.clearedFields[user.FieldExpiresAt]
+	return ok
+}
+
+// ResetExpiresAt resets all changes to the "expires_at" field.
+func (m *UserMutation) ResetExpiresAt() {
+	m.expires_at = nil
+	delete(m.clearedFields, user.FieldExpiresAt)
 }
 
 // SetCreatedAt sets the "created_at" field.
@@ -1257,7 +2254,7 @@ func (m *UserMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *UserMutation) Fields() []string {
-	fields := make([]string, 0, 8)
+	fields := make([]string, 0, 11)
 	if m.username != nil {
 		fields = append(fields, user.FieldUsername)
 	}
@@ -1270,11 +2267,20 @@ func (m *UserMutation) Fields() []string {
 	if m.role != nil {
 		fields = append(fields, user.FieldRole)
 	}
+	if m.admin_id != nil {
+		fields = append(fields, user.FieldAdminID)
+	}
 	if m.disabled != nil {
 		fields = append(fields, user.FieldDisabled)
 	}
 	if m.last_login_at != nil {
 		fields = append(fields, user.FieldLastLoginAt)
+	}
+	if m.points != nil {
+		fields = append(fields, user.FieldPoints)
+	}
+	if m.expires_at != nil {
+		fields = append(fields, user.FieldExpiresAt)
 	}
 	if m.created_at != nil {
 		fields = append(fields, user.FieldCreatedAt)
@@ -1298,10 +2304,16 @@ func (m *UserMutation) Field(name string) (ent.Value, bool) {
 		return m.InviteCode()
 	case user.FieldRole:
 		return m.Role()
+	case user.FieldAdminID:
+		return m.AdminID()
 	case user.FieldDisabled:
 		return m.Disabled()
 	case user.FieldLastLoginAt:
 		return m.LastLoginAt()
+	case user.FieldPoints:
+		return m.Points()
+	case user.FieldExpiresAt:
+		return m.ExpiresAt()
 	case user.FieldCreatedAt:
 		return m.CreatedAt()
 	case user.FieldUpdatedAt:
@@ -1323,10 +2335,16 @@ func (m *UserMutation) OldField(ctx context.Context, name string) (ent.Value, er
 		return m.OldInviteCode(ctx)
 	case user.FieldRole:
 		return m.OldRole(ctx)
+	case user.FieldAdminID:
+		return m.OldAdminID(ctx)
 	case user.FieldDisabled:
 		return m.OldDisabled(ctx)
 	case user.FieldLastLoginAt:
 		return m.OldLastLoginAt(ctx)
+	case user.FieldPoints:
+		return m.OldPoints(ctx)
+	case user.FieldExpiresAt:
+		return m.OldExpiresAt(ctx)
 	case user.FieldCreatedAt:
 		return m.OldCreatedAt(ctx)
 	case user.FieldUpdatedAt:
@@ -1368,6 +2386,13 @@ func (m *UserMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetRole(v)
 		return nil
+	case user.FieldAdminID:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetAdminID(v)
+		return nil
 	case user.FieldDisabled:
 		v, ok := value.(bool)
 		if !ok {
@@ -1381,6 +2406,20 @@ func (m *UserMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetLastLoginAt(v)
+		return nil
+	case user.FieldPoints:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPoints(v)
+		return nil
+	case user.FieldExpiresAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetExpiresAt(v)
 		return nil
 	case user.FieldCreatedAt:
 		v, ok := value.(time.Time)
@@ -1407,6 +2446,12 @@ func (m *UserMutation) AddedFields() []string {
 	if m.addrole != nil {
 		fields = append(fields, user.FieldRole)
 	}
+	if m.addadmin_id != nil {
+		fields = append(fields, user.FieldAdminID)
+	}
+	if m.addpoints != nil {
+		fields = append(fields, user.FieldPoints)
+	}
 	return fields
 }
 
@@ -1417,6 +2462,10 @@ func (m *UserMutation) AddedField(name string) (ent.Value, bool) {
 	switch name {
 	case user.FieldRole:
 		return m.AddedRole()
+	case user.FieldAdminID:
+		return m.AddedAdminID()
+	case user.FieldPoints:
+		return m.AddedPoints()
 	}
 	return nil, false
 }
@@ -1433,6 +2482,20 @@ func (m *UserMutation) AddField(name string, value ent.Value) error {
 		}
 		m.AddRole(v)
 		return nil
+	case user.FieldAdminID:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddAdminID(v)
+		return nil
+	case user.FieldPoints:
+		v, ok := value.(int64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddPoints(v)
+		return nil
 	}
 	return fmt.Errorf("unknown User numeric field %s", name)
 }
@@ -1444,8 +2507,14 @@ func (m *UserMutation) ClearedFields() []string {
 	if m.FieldCleared(user.FieldInviteCode) {
 		fields = append(fields, user.FieldInviteCode)
 	}
+	if m.FieldCleared(user.FieldAdminID) {
+		fields = append(fields, user.FieldAdminID)
+	}
 	if m.FieldCleared(user.FieldLastLoginAt) {
 		fields = append(fields, user.FieldLastLoginAt)
+	}
+	if m.FieldCleared(user.FieldExpiresAt) {
+		fields = append(fields, user.FieldExpiresAt)
 	}
 	return fields
 }
@@ -1464,8 +2533,14 @@ func (m *UserMutation) ClearField(name string) error {
 	case user.FieldInviteCode:
 		m.ClearInviteCode()
 		return nil
+	case user.FieldAdminID:
+		m.ClearAdminID()
+		return nil
 	case user.FieldLastLoginAt:
 		m.ClearLastLoginAt()
+		return nil
+	case user.FieldExpiresAt:
+		m.ClearExpiresAt()
 		return nil
 	}
 	return fmt.Errorf("unknown User nullable field %s", name)
@@ -1487,11 +2562,20 @@ func (m *UserMutation) ResetField(name string) error {
 	case user.FieldRole:
 		m.ResetRole()
 		return nil
+	case user.FieldAdminID:
+		m.ResetAdminID()
+		return nil
 	case user.FieldDisabled:
 		m.ResetDisabled()
 		return nil
 	case user.FieldLastLoginAt:
 		m.ResetLastLoginAt()
+		return nil
+	case user.FieldPoints:
+		m.ResetPoints()
+		return nil
+	case user.FieldExpiresAt:
+		m.ResetExpiresAt()
 		return nil
 	case user.FieldCreatedAt:
 		m.ResetCreatedAt()

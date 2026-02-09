@@ -1,19 +1,18 @@
 // web/src/common/utils/jsonRpc.js
 import { RpcError } from '@/common/utils/rpcError'
-import { getToken } from '@/common/auth/auth'
-import { logout } from '@/common/auth/auth'
-import { casinoAlert } from '@/common/components/modal/alertBridge'
+import { getToken, logout, getLoginPath } from '@/common/auth/auth'
 import { authBus } from '@/common/auth/authBus'
 
 let globalRpcId = 0
 
 export class JsonRpc {
-  constructor({ url, basePath = '/rpc' }) {
+  constructor({ url, basePath = '/rpc', authScope = 'user' }) {
     if (!url) {
       throw new Error('JsonRpc: url is required, e.g. "system" or "auth"')
     }
     this.url = url
     this.basePath = basePath
+    this.authScope = authScope
   }
 
   async call(method, params = {}, options = {}) {
@@ -24,7 +23,7 @@ export class JsonRpc {
     let json
 
     // ✅ 自动带 token
-    const token = getToken()
+    const token = getToken(this.authScope)
     const headers = {
       Accept: 'application/json',
       'Content-Type': 'application/json',
@@ -81,9 +80,9 @@ export class JsonRpc {
     }
 
     // 4) 业务错误 result.code != 0
-    const result = json.result
+    const { result } = json
     if (result && typeof result.code === 'number' && result.code !== 0) {
-      handleAuthError(result.code, result.message)
+      handleAuthError(result.code, result.message, this.authScope)
       const err = RpcError.fromBiz(json)
       if (receiveError) return err
       throw err
@@ -93,12 +92,12 @@ export class JsonRpc {
   }
 }
 
-function handleAuthError(code, message) {
+function handleAuthError(code, message, authScope) {
   // 10005=过期 40302=未登录 10006=无权限(可选)
   if (code !== 10005 && code !== 40302 && code !== 10006) return
 
   // 1) 清 token
-  logout()
+  logout(authScope)
 
   // 2) 通知 UI：弹窗 + 跳转交给 React
   authBus.emitUnauthorized?.({
@@ -108,5 +107,6 @@ function handleAuthError(code, message) {
       hash: window.location.hash,
     },
     message: message || '请重新登录',
+    loginPath: getLoginPath(authScope),
   })
 }

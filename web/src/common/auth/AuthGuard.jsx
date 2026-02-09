@@ -1,7 +1,7 @@
 // web/src/common/auth/AuthGuard.jsx
 import React from 'react'
 import { Navigate, useLocation } from 'react-router-dom'
-import { getCurrentUser } from '@/common/auth/auth'
+import { AUTH_SCOPE, getCurrentUser, getLoginPath } from '@/common/auth/auth'
 
 /**
  * AuthGuard 保护路由
@@ -11,17 +11,17 @@ import { getCurrentUser } from '@/common/auth/auth'
  */
 export default function AuthGuard({ requireAdmin = false, children }) {
   const location = useLocation()
-  const user = getCurrentUser()
+  const authScope = requireAdmin ? AUTH_SCOPE.ADMIN : AUTH_SCOPE.USER
+  const user = getCurrentUser(authScope)
 
   // 未登录 → 去登录页
   if (!user) {
-    return <Navigate to="/login" replace state={{ from: location }} />
+    return <Navigate to={getLoginPath(authScope)} replace state={{ from: location }} />
   }
 
   // 需要管理员但不是 admin
   if (requireAdmin && user.role !== 'admin') {
-    console.log('需要管理员但不是 admin')
-    return <Navigate to="/" replace />
+    return <Navigate to={getLoginPath(AUTH_SCOPE.ADMIN)} replace state={{ from: location }} />
   }
 
   return children

@@ -24,6 +24,7 @@ var (
 
 type AuthRepo interface {
 	GetUserByUsername(ctx context.Context, username string) (*User, error)
+	GetUserByID(ctx context.Context, id int) (*User, error)
 	CreateUser(ctx context.Context, u *User) (*User, error)
 	UpdateUserLastLogin(ctx context.Context, id int, t time.Time) error
 }
@@ -34,6 +35,7 @@ type User struct {
 	PasswordHash string
 	Disabled     bool
 	Role         int8 // 0=user, 1=admin
+	AdminID      *int
 	Points       int64
 	ExpiresAt    *time.Time
 	CreatedAt    time.Time
@@ -41,6 +43,7 @@ type User struct {
 }
 
 type TokenGenerator func(userID int, username string, role int8) (token string, expireAt time.Time, err error)
+type AdminTokenGenerator func(userID int, username string, role int8) (token string, expireAt time.Time, err error)
 
 type AuthUsecase struct {
 	// 日志
@@ -244,4 +247,34 @@ func (uc *AuthUsecase) Login(ctx context.Context, username, password string) (to
 	l.Infof("Login success user_id=%d username=%s", usr.ID, usr.Username)
 
 	return token, expireAt, usr, nil
+}
+
+// GetCurrentUser 获取当前登录用户信息（用于 auth.me 等接口）
+func (uc *AuthUsecase) GetCurrentUser(ctx context.Context, userID int) (*User, error) {
+	ctx, span := uc.Tracer().Start(ctx, "auth.get_current_user",
+		trace.WithAttributes(
+			attribute.Int("auth.user_id", userID),
+		),
+	)
+	defer span.End()
+
+	l := uc.log.WithContext(ctx)
+	if userID <= 0 {
+		err := errors.New("user_id is required")
+		span.RecordError(err)
+		span.SetStatus(codes.Error, "invalid argument")
+		l.Warnf("GetCurrentUser invalid user_id=%d", userID)
+		return nil, err
+	}
+
+	u, err := uc.repo.GetUserByID(ctx, userID)
+	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, "get user failed")
+		l.Errorf("GetCurrentUser failed user_id=%d err=%v", userID, err)
+		return nil, err
+	}
+
+	span.SetStatus(codes.Ok, "OK")
+	return u, nil
 }

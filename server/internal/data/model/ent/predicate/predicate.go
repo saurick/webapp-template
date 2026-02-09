@@ -6,6 +6,9 @@ import (
 	"entgo.io/ent/dialect/sql"
 )
 
+// AdminUser is the predicate function for adminuser builders.
+type AdminUser func(*sql.Selector)
+
 // InviteCode is the predicate function for invitecode builders.
 type InviteCode func(*sql.Selector)
 
