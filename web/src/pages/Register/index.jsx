@@ -20,7 +20,6 @@ export default function RegisterPage() {
   const authRpc = useMemo(() => new JsonRpc({ url: 'auth' }), [])
 
   const [username, setUsername] = useState('')
-  const [inviteCode, setInviteCode] = useState('')
   const [password, setPassword] = useState('')
   const [password2, setPassword2] = useState('')
   const [submitting, setSubmitting] = useState(false)
@@ -35,11 +34,11 @@ export default function RegisterPage() {
 
   const canSubmit = useMemo(() => {
     if (submitting) return false
-    if (!username.trim() || !inviteCode.trim() || !password || !password2) return false
+    if (!username.trim() || !password || !password2) return false
     if (password.length < 6) return false
     if (password !== password2) return false
     return true
-  }, [username, inviteCode, password, password2, submitting])
+  }, [username, password, password2, submitting])
 
   const onSubmit = async (e) => {
     e.preventDefault()
@@ -52,7 +51,6 @@ export default function RegisterPage() {
       const result = await authRpc.call('register', {
         username: username.trim(),
         password,
-        invite_code: inviteCode.trim(),
       })
 
       persistAuth(result?.data)
@@ -69,7 +67,6 @@ export default function RegisterPage() {
       <div className="w-full max-w-[560px]">
         <div className="text-center mb-6">
           <div className="text-2xl font-extrabold tracking-wide text-amber-200">创建账号</div>
-          <div className="text-amber-100/70 mt-1 text-sm">需要邀请码才能注册</div>
         </div>
 
         <GoldFramePanel className="p-4 sm:p-6">
@@ -83,16 +80,6 @@ export default function RegisterPage() {
                   autoComplete="username"
                   className="w-full rounded-xl bg-black/25 border border-amber-200/30 px-4 py-3 text-amber-100 outline-none focus:border-amber-200/60 focus:ring-2 focus:ring-amber-200/20"
                   placeholder="输入用户名"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm text-amber-100/80 mb-1">邀请码</label>
-                <input
-                  value={inviteCode}
-                  onChange={(e) => setInviteCode(e.target.value)}
-                  className="w-full rounded-xl bg-black/25 border border-amber-200/30 px-4 py-3 text-amber-100 outline-none focus:border-amber-200/60 focus:ring-2 focus:ring-amber-200/20"
-                  placeholder="输入邀请码"
                 />
               </div>
 

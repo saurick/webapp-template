@@ -1,3 +1,4 @@
+// server/internal/biz/auth.go
 package biz
 
 import (
@@ -15,49 +16,28 @@ import (
 )
 
 var (
-	ErrUserExists         = errors.New("user already exists")
-	ErrUserNotFound       = errors.New("user not found")
-	ErrInvalidPassword    = errors.New("invalid password")
-	ErrUserDisabled       = errors.New("user disabled")
-	ErrInviteCodeNotFound = errors.New("invite code not found")
-	ErrInviteCodeUsedUp   = errors.New("invite code used up")
-	ErrInviteCodeExpired  = errors.New("invite code expired")
-	ErrInviteCodeDisabled = errors.New("invite code disabled")
+	ErrUserExists      = errors.New("user already exists")
+	ErrUserNotFound    = errors.New("user not found")
+	ErrInvalidPassword = errors.New("invalid password")
+	ErrUserDisabled    = errors.New("user disabled")
 )
 
 type AuthRepo interface {
 	GetUserByUsername(ctx context.Context, username string) (*User, error)
 	CreateUser(ctx context.Context, u *User) (*User, error)
 	UpdateUserLastLogin(ctx context.Context, id int, t time.Time) error
-
-	GetInviteCode(ctx context.Context, code string) (*InviteCode, error)
-	IncreaseInviteCodeUsage(ctx context.Context, id int) error
-
-	// ✅ 邀请码管理（给前端页面用）
-	ListInviteCodes(ctx context.Context, limit, offset int) ([]*InviteCode, error)
-	CreateInviteCode(ctx context.Context, ic *InviteCode) (*InviteCode, error)
-	SetInviteCodeDisabled(ctx context.Context, id int, disabled bool) error
-
-	// ✅ 可选：测试用（你的前端 used+1 按钮）
-	IncreaseInviteCodeUsageBy(ctx context.Context, id int, delta int) error
 }
 
 type User struct {
 	ID           int
 	Username     string
 	PasswordHash string
-	InviteCode   *string
 	Disabled     bool
 	Role         int8 // 0=user, 1=admin
-}
-
-type InviteCode struct {
-	ID        int
-	Code      string
-	MaxUses   int
-	UsedCount int
-	ExpiresAt *time.Time
-	Disabled  bool
+	Points       int64
+	ExpiresAt    *time.Time
+	CreatedAt    time.Time
+	UpdatedAt    time.Time
 }
 
 type TokenGenerator func(userID int, username string, role int8) (token string, expireAt time.Time, err error)
@@ -106,66 +86,28 @@ func (uc *AuthUsecase) Tracer(opts ...trace.TracerOption) trace.Tracer {
 }
 
 // ======================
-// 注册（带邀请码）
+// 注册
 // ======================
 
-func (uc *AuthUsecase) Register(ctx context.Context, username, password, inviteCode string) (token string, expireAt time.Time, u *User, err error) {
+func (uc *AuthUsecase) Register(ctx context.Context, username, password string) (token string, expireAt time.Time, u *User, err error) {
 	ctx, span := uc.Tracer().Start(ctx, "auth.register",
 		trace.WithAttributes(
 			attribute.String("auth.username", username),
-			attribute.String("auth.invite_code", inviteCode),
 		),
 	)
 	defer span.End()
 
 	l := uc.log.WithContext(ctx)
 
-	if username == "" || password == "" || inviteCode == "" {
-		err = errors.New("missing username/password/invite_code")
+	if username == "" || password == "" {
+		err = errors.New("missing username or password")
 		span.RecordError(err)
 		span.SetStatus(codes.Error, "invalid argument")
-		l.Warnf("Register invalid args username=%q invite_code=%q", username, inviteCode)
+		l.Warnf("Register invalid args username=%q", username)
 		return "", time.Time{}, nil, err
 	}
 
-	l.Infof("Register start username=%s invite_code=%s", username, inviteCode)
-
-	// 1) 校验邀请码
-	ic, e := uc.repo.GetInviteCode(ctx, inviteCode)
-	if e != nil || ic == nil {
-		err = ErrInviteCodeNotFound
-		span.RecordError(e)
-		span.SetStatus(codes.Error, err.Error())
-		l.Infof("Register invite code not found invite_code=%s err=%v", inviteCode, e)
-		return "", time.Time{}, nil, err
-	}
-
-	span.SetAttributes(
-		attribute.Int("auth.invite_id", ic.ID),
-		attribute.Int("auth.invite_used_count", ic.UsedCount),
-		attribute.Int("auth.invite_max_uses", ic.MaxUses),
-		attribute.Bool("auth.invite_disabled", ic.Disabled),
-	)
-
-	if ic.Disabled {
-		err = ErrInviteCodeDisabled
-		span.SetStatus(codes.Error, err.Error())
-		l.Infof("Register invite code disabled invite_code=%s", inviteCode)
-		return "", time.Time{}, nil, err
-	}
-	if ic.MaxUses > 0 && ic.UsedCount >= ic.MaxUses {
-		err = ErrInviteCodeUsedUp
-		span.SetStatus(codes.Error, err.Error())
-		l.Infof("Register invite code used up invite_code=%s used=%d max=%d", inviteCode, ic.UsedCount, ic.MaxUses)
-		return "", time.Time{}, nil, err
-	}
-	if ic.ExpiresAt != nil && ic.ExpiresAt.Before(time.Now()) {
-		err = ErrInviteCodeExpired
-		span.SetAttributes(attribute.Int64("auth.invite_expires_at", ic.ExpiresAt.Unix()))
-		span.SetStatus(codes.Error, err.Error())
-		l.Infof("Register invite code expired invite_code=%s expires_at=%s", inviteCode, ic.ExpiresAt.Format(time.RFC3339))
-		return "", time.Time{}, nil, err
-	}
+	l.Infof("Register start username=%s", username)
 
 	// 2) 用户名是否已存在
 	exist, e := uc.repo.GetUserByUsername(ctx, username)
@@ -187,11 +129,9 @@ func (uc *AuthUsecase) Register(ctx context.Context, username, password, inviteC
 		return "", time.Time{}, nil, err
 	}
 
-	inviteCodeCopy := inviteCode
 	newUser := &User{
 		Username:     username,
 		PasswordHash: string(hash),
-		InviteCode:   &inviteCodeCopy,
 	}
 
 	// 4) 创建用户
@@ -206,16 +146,7 @@ func (uc *AuthUsecase) Register(ctx context.Context, username, password, inviteC
 
 	span.SetAttributes(attribute.Int("auth.user_id", created.ID))
 
-	// 5) 更新邀请码使用次数
-	if e := uc.repo.IncreaseInviteCodeUsage(ctx, ic.ID); e != nil {
-		err = e
-		span.RecordError(err)
-		span.SetStatus(codes.Error, "increase invite usage failed")
-		l.Errorf("Register increase invite usage failed invite_id=%d invite_code=%s err=%v", ic.ID, inviteCode, err)
-		return "", time.Time{}, nil, err
-	}
-
-	// 6) 创建 token
+	// 5) 创建 token
 	// 注册出来的用户默认 Role=0（普通用户）
 	created.Role = 0
 	token, expireAt, e = uc.genTok(created.ID, created.Username, created.Role)
@@ -229,7 +160,7 @@ func (uc *AuthUsecase) Register(ctx context.Context, username, password, inviteC
 
 	span.SetAttributes(attribute.Int64("auth.token_expires_at", expireAt.Unix()))
 
-	// 7) 更新 last_login_at（失败不影响主流程）
+	// 6) 更新 last_login_at（失败不影响主流程）
 	if e := uc.repo.UpdateUserLastLogin(ctx, created.ID, time.Now()); e != nil {
 		span.RecordError(e)
 		l.Warnf("Register update last_login_at failed user_id=%d err=%v", created.ID, e)

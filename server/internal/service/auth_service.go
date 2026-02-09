@@ -17,9 +17,8 @@ func NewAuthService(uc *biz.AuthUsecase) *AuthService {
 
 // JSON-RPC: auth.register
 type RegisterRequest struct {
-	Username   string `json:"username"`
-	Password   string `json:"password"`
-	InviteCode string `json:"invite_code"`
+	Username string `json:"username"`
+	Password string `json:"password"`
 }
 
 type AuthReply struct {
@@ -30,7 +29,7 @@ type AuthReply struct {
 }
 
 func (s *AuthService) Register(ctx context.Context, req *RegisterRequest) (*AuthReply, error) {
-	token, expiresAt, user, err := s.uc.Register(ctx, req.Username, req.Password, req.InviteCode)
+	token, expiresAt, user, err := s.uc.Register(ctx, req.Username, req.Password)
 	if err != nil {
 		// 这里你可以转成 JSON-RPC error（比如用 code 映射）
 		return nil, err

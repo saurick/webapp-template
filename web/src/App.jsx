@@ -7,9 +7,9 @@ import Login from '@/pages/Login'
 import Register from '@/pages/Register'
 import AuthGuard from '@/common/auth/AuthGuard'
 import { BlankPage } from '@/pages/blankPage'
-import InviteCodesPage from '@/pages/InviteCodes'
 import { authBus } from '@/common/auth/authBus'
 import { casinoAlert } from '@/common/components/modal/alertBridge'
+import AdminUsersPage from '@/pages/AdminUsers'
 
 import 'normalize.css/normalize.css'
 
@@ -49,7 +49,7 @@ const App = () => {
           {/* <Route path="/about" element={<About />} />  // 匹配/about路径，显示About组件 */}
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
-          <Route path="/invite-codes" element={<AuthGuard requireAdmin><InviteCodesPage /></AuthGuard>} />
+          <Route path="/admin-users" element={<AuthGuard requireAdmin><AdminUsersPage /></AuthGuard>} />
           <Route path="/" element={<BlankPage />} />
         </Routes>
       </Suspense>
