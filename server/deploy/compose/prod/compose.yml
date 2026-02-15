@@ -4,17 +4,23 @@ services:
     container_name: mysql8
     restart: always
     ports:
-      - 3306:3306
+      - "${MYSQL_PORT:-3306}:3306"
     environment:
-      MYSQL_ROOT_PASSWORD: YP*H%k%a7xK1*q
-      MYSQL_DATABASE: test_database_atlas
-      MYSQL_USER: test_user
-      MYSQL_PASSWORD: 2@&0kq%qFafA4d
+      MYSQL_ROOT_PASSWORD: "${MYSQL_ROOT_PASSWORD:-YP*H%k%a7xK1*q}"
+      MYSQL_DATABASE: "${MYSQL_DATABASE:-test_database_atlas}"
+      MYSQL_USER: "${MYSQL_USER:-test_user}"
+      MYSQL_PASSWORD: "${MYSQL_PASSWORD:-2@&0kq%qFafA4d}"
     mem_limit: 2g
     mem_reservation: 1g
     volumes:
-      - /data/template/mysql/data:/var/lib/mysql
-      - /data/template/mysql/conf/mysql8.cnf:/etc/mysql/conf.d/mysql8.cnf:ro
+      - "${MYSQL_DATA_DIR:-/data/template/mysql/data}:/var/lib/mysql"
+      - "${MYSQL_CONF_FILE:-/data/template/mysql/conf/mysql8.cnf}:/etc/mysql/conf.d/mysql8.cnf:ro"
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p\"$${MYSQL_ROOT_PASSWORD}\" --silent"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 15s
     networks: {}
 
   jaeger:
@@ -22,37 +28,42 @@ services:
     container_name: jaeger
     restart: always
     ports:
-      - 5775:5775/udp
-      - 6831:6831/udp
-      - 6832:6832/udp
-      - 5778:5778
-      - 16686:16686
-      - 14268:14268
-      - 14250:14250
-      - 9411:9411
-      - 4317:4317 # ⭐ gRPC OTLP
-      - 4318:4318 # ⭐ HTTP OTLP
+      - "${JAEGER_5775_PORT:-5775}:5775/udp"
+      - "${JAEGER_6831_PORT:-6831}:6831/udp"
+      - "${JAEGER_6832_PORT:-6832}:6832/udp"
+      - "${JAEGER_5778_PORT:-5778}:5778"
+      - "${JAEGER_UI_PORT:-16686}:16686"
+      - "${JAEGER_14268_PORT:-14268}:14268"
+      - "${JAEGER_14250_PORT:-14250}:14250"
+      - "${JAEGER_9411_PORT:-9411}:9411"
+      - "${JAEGER_OTLP_GRPC_PORT:-4317}:4317" # ⭐ gRPC OTLP
+      - "${JAEGER_OTLP_HTTP_PORT:-4318}:4318" # ⭐ HTTP OTLP
     labels:
       - dev.orbstack.http-port=16686
       - dev.orbstack.domains=jaeger.orb.local
     environment:
       PROMETHEUS_QUERY_SUPPORT_SPANMETRICS_CONNECTOR: true
       METRICS_STORAGE_TYPE: prometheus
-      PROMETHEUS_SERVER_URL: http://192.168.0.106:3004
+      # 迁移兜底：默认通过 host-gateway 访问宿主机指标服务，避免固定私网 IP。
+      PROMETHEUS_SERVER_URL: "${PROMETHEUS_SERVER_URL:-http://host.docker.internal:3004}"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     networks: {}
 
   template-server:
-    image: template-server:20251210T212529-local
+    image: "${TEMPLATE_SERVER_IMAGE:-template-server:20251210T212529-local}"
     container_name: template-server
     restart: always
     depends_on:
-      - mysql
-      - jaeger
+      mysql:
+        condition: service_healthy
+      jaeger:
+        condition: service_started
     ports:
-      - 8000:8000   # HTTP
-      - 9000:9000   # gRPC
+      - "${APP_HTTP_PORT:-8000}:8000"   # HTTP
+      - "${APP_GRPC_PORT:-9000}:9000"   # gRPC
     environment:
-      TZ: Asia/Shanghai
+      TZ: "${TZ:-Asia/Shanghai}"
     mem_limit: 1g
     mem_reservation: 512m
     networks: {}

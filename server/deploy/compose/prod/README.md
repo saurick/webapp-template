@@ -21,6 +21,30 @@ sh deploy_server.sh /data/release/template-server.tar
 - `stop + rm` 仅重建 `template-server` 服务容器
 - `docker compose up -d template-server` 拉起新容器
 
+## 运行配置约定
+
+- 当前采用镜像部署：服务读取镜像内 `/app/configs/config.yaml`。
+- 该文件在构建阶段由 `server/configs/prod/config.yaml` 复制进入镜像。
+- 线上 compose 场景请使用容器服务名互联（如 `mysql:3306`、`jaeger:4318`），避免依赖宿主机私网 IP 漂移导致重启后不可用。
+- 如需修改配置，请先改 `server/configs/prod/config.yaml`，再重建并发布镜像。
+- 启动就绪策略：`template-server` 会等待 `mysql` healthcheck 通过后再启动，降低宿主机重启后因数据库未就绪导致的冷启动失败。
+- 迁移建议：将 `.env.example` 复制为 `.env` 后再启动，路径、端口、镜像、Prometheus 地址都通过变量管理，避免改动 `compose.yml`。
+
+## 迁移到新服务器（最小步骤）
+
+```bash
+cd /path/to/webapp-template/server/deploy/compose/prod
+
+# 1) 准备环境变量
+cp .env.example .env
+
+# 2) 按新机器实际情况调整 .env（至少检查数据目录和端口）
+#    MYSQL_DATA_DIR, MYSQL_CONF_FILE, TEMPLATE_SERVER_IMAGE, PROMETHEUS_SERVER_URL
+
+# 3) 启动
+docker compose -f compose.yml up -d
+```
+
 可选环境变量：
 
 ```bash
@@ -65,7 +89,7 @@ export MIG_DIR=/path/to/server/internal/data/model/migrate
 export MYSQL_SERVICE=mysql
 
 # 手动指定 DB_URL（未设置时脚本自动从 mysql 容器推导）
-export DB_URL='mysql://root:***@192.168.0.106:3306/test_database_atlas?charset=utf8mb4&parseTime=true&loc=Local&interpolateParams=true'
+export DB_URL='mysql://root:***@mysql:3306/test_database_atlas?charset=utf8mb4&parseTime=true&loc=Local&interpolateParams=true'
 
 # 指定 atlas 镜像（默认 arigaio/atlas:latest）
 export ATLAS_IMAGE=arigaio/atlas:latest
@@ -73,6 +97,7 @@ export ATLAS_IMAGE=arigaio/atlas:latest
 
 ## 说明
 
+- `compose.yml` 已参数化路径/端口/镜像，优先通过 `.env` 调整，避免机器迁移时改 YAML。
 - 脚本通过临时 Atlas 容器执行迁移，不依赖业务容器内安装 `atlas`。
 - 连接串中的密码会自动做 URL 编码兜底，避免 `%` 等字符导致解析失败。
 - 优先按 compose 服务名查找 MySQL 容器，查不到时会回退匹配 `mysql8` 或 `mysql:8`。

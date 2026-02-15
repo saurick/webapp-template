@@ -6,6 +6,7 @@ import (
 	"database/sql"
 	"database/sql/driver"
 	"fmt"
+	"time"
 
 	"server/internal/biz"
 	"server/internal/conf"
@@ -55,6 +56,43 @@ type Data struct {
 	conf  *conf.Data
 }
 
+const (
+	mysqlReadyTimeout  = 60 * time.Second
+	mysqlRetryInterval = 2 * time.Second
+)
+
+type pingContexter interface {
+	PingContext(ctx context.Context) error
+}
+
+// waitForMySQLReady 在启动阶段为数据库预留短暂恢复窗口，避免宿主机重启后的瞬时连接拒绝导致应用直接退出。
+func waitForMySQLReady(ctx context.Context, pinger pingContexter, interval time.Duration, l *log.Helper) error {
+	if interval <= 0 {
+		interval = time.Second
+	}
+
+	attempt := 0
+	var lastErr error
+	for {
+		attempt++
+		if err := pinger.PingContext(ctx); err == nil {
+			if attempt > 1 {
+				l.Infof("mysql ready after retry, attempt=%d", attempt)
+			}
+			return nil
+		} else {
+			lastErr = err
+			l.Warnf("mysql not ready yet, attempt=%d err=%v", attempt, err)
+		}
+
+		select {
+		case <-ctx.Done():
+			return fmt.Errorf("mysql not ready before timeout: %w, last_err=%v", ctx.Err(), lastErr)
+		case <-time.After(interval):
+		}
+	}
+}
+
 // SQLDB 返回底层 DB，用于健康检查与原生 SQL 查询。
 func (d *Data) SQLDB() *sql.DB {
 	return d.sqldb
@@ -98,7 +136,10 @@ func NewData(c *conf.Data, logger log.Logger) (*Data, func(), error) {
 		return nil, nil, err
 	}
 
-	if err := db.Ping(); err != nil {
+	// 启动兜底：给 MySQL 预留就绪窗口，避免重启后短暂不可达直接触发 panic。
+	pingCtx, cancelPing := context.WithTimeout(context.Background(), mysqlReadyTimeout)
+	defer cancelPing()
+	if err := waitForMySQLReady(pingCtx, db, mysqlRetryInterval, l); err != nil {
 		_ = db.Close()
 		l.Errorf("mysql ping failed: %v", err)
 		return nil, nil, err

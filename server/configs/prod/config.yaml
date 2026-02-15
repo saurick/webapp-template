@@ -15,10 +15,10 @@ trace:
   jaeger:
     traceName: ""
     # http endpoint
-    endpoint: 192.168.0.106:4318
-    # endpoint: http://192.168.0.106:4318/v1/traces
+    endpoint: jaeger:4318
+    # endpoint: http://jaeger:4318/v1/traces
     # gRPC endpoint
-    # endpoint: http://192.168.0.106:4317
+    # endpoint: http://jaeger:4317
     # 采集率,ratio>=1表示采集所有
     ratio: 1
 
@@ -29,7 +29,7 @@ data:
   mysql:
     # if true output sql
     debug: false
-    dsn: "root:YP*H%k%a7xK1*q@tcp(192.168.0.106:3306)/test_database_atlas?charset=utf8mb4&parseTime=True&loc=Local&interpolateParams=true"
+    dsn: "root:YP*H%k%a7xK1*q@tcp(mysql:3306)/test_database_atlas?charset=utf8mb4&parseTime=True&loc=Local&interpolateParams=true"
 
   # 缓存服务
   # redis:
@@ -41,7 +41,7 @@ data:
   #   writeTimeout: 0.2s
   etcd:
     hosts:
-      - 192.168.0.106:2379
+      - etcd:2379
   # 认证相关
   auth:
     jwtSecret: "eB6Cc5Mz/OB/WrHyKJMQLnmj160ropjq3j167pkIGUI="

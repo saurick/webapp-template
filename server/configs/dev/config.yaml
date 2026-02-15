@@ -41,7 +41,7 @@ data:
   #   writeTimeout: 0.2s
   etcd:
     hosts:
-      - 192.168.0.106:2379
+      - etcd:2379
   # 认证相关
   auth:
     jwtSecret: "eB6Cc5Mz/OB/WrHyKJMQLnmj160ropjq3j167pkIGUI="
