@@ -34,8 +34,13 @@ function fmtTs(ts) {
 export default function AdminHierarchyPage() {
   const navigate = useNavigate()
   const adminRpc = useMemo(
-    () => new JsonRpc({ url: 'admin', basePath: ADMIN_BASE_PATH, authScope: AUTH_SCOPE.ADMIN }),
-    [],
+    () =>
+      new JsonRpc({
+        url: 'admin',
+        basePath: ADMIN_BASE_PATH,
+        authScope: AUTH_SCOPE.ADMIN,
+      }),
+    []
   )
 
   const [loading, setLoading] = useState(false)
@@ -73,7 +78,7 @@ export default function AdminHierarchyPage() {
 
   const level1Admins = useMemo(
     () => admins.filter((a) => a.level === 1 && !a.disabled),
-    [admins],
+    [admins]
   )
 
   const adminStats = useMemo(() => {
@@ -94,7 +99,12 @@ export default function AdminHierarchyPage() {
     const keyword = searchName.trim().toLowerCase()
     return admins.filter((a) => {
       // 关键入口：列表筛选只影响展示，不影响下方管理表单候选集。
-      if (keyword && !String(a?.username || '').toLowerCase().includes(keyword)) {
+      if (
+        keyword &&
+        !String(a?.username || '')
+          .toLowerCase()
+          .includes(keyword)
+      ) {
         return false
       }
       if (statusFilter === 'enabled') return !a?.disabled
@@ -114,7 +124,7 @@ export default function AdminHierarchyPage() {
   const revokeTargetAdminID = clampInt(revokeForm.id, 0)
   const revokeTargetAdmin = useMemo(
     () => admins.find((a) => a.id === revokeTargetAdminID) || null,
-    [admins, revokeTargetAdminID],
+    [admins, revokeTargetAdminID]
   )
 
   const revokeTransferCandidates = useMemo(() => {
@@ -139,7 +149,13 @@ export default function AdminHierarchyPage() {
 
       return true
     })
-  }, [admins, currentAdmin?.id, currentAdmin?.level, revokeTargetAdmin?.level, revokeTargetAdminID])
+  }, [
+    admins,
+    currentAdmin?.id,
+    currentAdmin?.level,
+    revokeTargetAdmin?.level,
+    revokeTargetAdminID,
+  ])
 
   useEffect(() => {
     const selectedID = clampInt(revokeForm.transferTo, 0)
@@ -194,7 +210,9 @@ export default function AdminHierarchyPage() {
     try {
       const isPrimary = currentAdmin?.level === 1
       const level = isPrimary ? 2 : clampInt(createForm.level, 1)
-      const parentId = isPrimary ? currentAdmin?.id : clampInt(createForm.parentId, 0)
+      const parentId = isPrimary
+        ? currentAdmin?.id
+        : clampInt(createForm.parentId, 0)
       await adminRpc.call('create', {
         username: createForm.username.trim(),
         password: createForm.password,
@@ -263,9 +281,13 @@ export default function AdminHierarchyPage() {
     }
 
     const isPrimary = currentAdmin?.level === 1
-    const transferTo = isPrimary ? currentAdmin?.id : clampInt(revokeForm.transferTo, 0)
+    const transferTo = isPrimary
+      ? currentAdmin?.id
+      : clampInt(revokeForm.transferTo, 0)
     if (!isPrimary && transferTo > 0) {
-      const isAllowed = revokeTransferCandidates.some((a) => a.id === transferTo)
+      const isAllowed = revokeTransferCandidates.some(
+        (a) => a.id === transferTo
+      )
       if (!isAllowed) {
         setErrMsg('接管管理员选择不合法，请重新选择')
         return
@@ -359,7 +381,10 @@ export default function AdminHierarchyPage() {
                     管理员列表
                   </div>
                   <div className="mb-3 space-y-3 sm:mb-4">
-                    <form onSubmit={onSearch} className="flex flex-col gap-2 sm:flex-row sm:items-end">
+                    <form
+                      onSubmit={onSearch}
+                      className="flex flex-col gap-2 sm:flex-row sm:items-end"
+                    >
                       <div className="flex-1">
                         <label className="mb-1 block text-xs text-amber-100/80 sm:text-sm">
                           按账号搜索
@@ -396,13 +421,16 @@ export default function AdminHierarchyPage() {
                         <button
                           type="button"
                           onClick={() => {
-                            setStatusFilter(statusFilter === 'enabled' ? '' : 'enabled')
+                            setStatusFilter(
+                              statusFilter === 'enabled' ? '' : 'enabled'
+                            )
                             setPage(1)
                           }}
-                          className={`rounded-xl border px-4 py-2 text-sm font-bold transition-all ${statusFilter === 'enabled'
-                            ? 'border-emerald-500 bg-emerald-500/30 text-emerald-100 ring-2 ring-emerald-500/50'
-                            : 'border-emerald-500/40 bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/20'
-                            }`}
+                          className={`rounded-xl border px-4 py-2 text-sm font-bold transition-all ${
+                            statusFilter === 'enabled'
+                              ? 'border-emerald-500 bg-emerald-500/30 text-emerald-100 ring-2 ring-emerald-500/50'
+                              : 'border-emerald-500/40 bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/20'
+                          }`}
                         >
                           ✅ {adminStats.enabled} 位管理员启用中
                           {statusFilter === 'enabled' ? '（点击取消）' : ''}
@@ -410,13 +438,16 @@ export default function AdminHierarchyPage() {
                         <button
                           type="button"
                           onClick={() => {
-                            setStatusFilter(statusFilter === 'disabled' ? '' : 'disabled')
+                            setStatusFilter(
+                              statusFilter === 'disabled' ? '' : 'disabled'
+                            )
                             setPage(1)
                           }}
-                          className={`rounded-xl border px-4 py-2 text-sm font-bold transition-all ${statusFilter === 'disabled'
-                            ? 'border-red-500 bg-red-500/30 text-red-100 ring-2 ring-red-500/50'
-                            : 'border-red-500/40 bg-red-500/10 text-red-300 hover:bg-red-500/20'
-                            }`}
+                          className={`rounded-xl border px-4 py-2 text-sm font-bold transition-all ${
+                            statusFilter === 'disabled'
+                              ? 'border-red-500 bg-red-500/30 text-red-100 ring-2 ring-red-500/50'
+                              : 'border-red-500/40 bg-red-500/10 text-red-300 hover:bg-red-500/20'
+                          }`}
                         >
                           ⛔ {adminStats.disabled} 位管理员已禁用
                           {statusFilter === 'disabled' ? '（点击取消）' : ''}
@@ -436,7 +467,9 @@ export default function AdminHierarchyPage() {
                           <th className="px-3 py-2 text-left">上级</th>
                           <th className="px-3 py-2 text-left">状态</th>
                           <th className="px-3 py-2 text-left">直属用户数</th>
-                          <th className="px-3 py-2 text-left">可管理总用户数</th>
+                          <th className="px-3 py-2 text-left">
+                            可管理总用户数
+                          </th>
                           <th className="px-3 py-2 text-left">下级数</th>
                           <th className="px-3 py-2 text-left">最后登录</th>
                         </tr>
@@ -444,7 +477,10 @@ export default function AdminHierarchyPage() {
                       <tbody>
                         {filteredAdmins.length === 0 ? (
                           <tr>
-                            <td className="px-3 py-3 text-center text-amber-100/60" colSpan={9}>
+                            <td
+                              className="px-3 py-3 text-center text-amber-100/60"
+                              colSpan={9}
+                            >
                               {loading
                                 ? '加载中…'
                                 : admins.length === 0
@@ -454,22 +490,34 @@ export default function AdminHierarchyPage() {
                           </tr>
                         ) : (
                           pagedAdmins.map((a) => (
-                            <tr key={a.id} className="border-t border-amber-200/10">
+                            <tr
+                              key={a.id}
+                              className="border-t border-amber-200/10"
+                            >
                               <td className="px-3 py-2">{a.id}</td>
                               <td className="px-3 py-2">{a.username}</td>
-                              <td className="px-3 py-2">{levelLabel(a.level)}</td>
+                              <td className="px-3 py-2">
+                                {levelLabel(a.level)}
+                              </td>
                               <td className="px-3 py-2">
                                 {a.parent_id
-                                  ? adminNameMap[a.parent_id] || `#${a.parent_id}`
+                                  ? adminNameMap[a.parent_id] ||
+                                    `#${a.parent_id}`
                                   : '-'}
                               </td>
                               <td className="px-3 py-2">
                                 {a.disabled ? '已禁用' : '启用中'}
                               </td>
                               <td className="px-3 py-2">{a.user_count || 0}</td>
-                              <td className="px-3 py-2">{a.manageable_user_count || a.user_count || 0}</td>
-                              <td className="px-3 py-2">{a.child_admin_count || 0}</td>
-                              <td className="px-3 py-2">{fmtTs(a.last_login_at)}</td>
+                              <td className="px-3 py-2">
+                                {a.manageable_user_count || a.user_count || 0}
+                              </td>
+                              <td className="px-3 py-2">
+                                {a.child_admin_count || 0}
+                              </td>
+                              <td className="px-3 py-2">
+                                {fmtTs(a.last_login_at)}
+                              </td>
                             </tr>
                           ))
                         )}
@@ -479,7 +527,8 @@ export default function AdminHierarchyPage() {
                   {filteredAdmins.length > 0 ? (
                     <div className="mt-3 flex flex-col gap-2 text-xs text-amber-100/80 sm:mt-4 sm:flex-row sm:items-center sm:justify-between sm:text-sm">
                       <div>
-                        共 {filteredAdmins.length} 位管理员，当前第 {currentPage}/{totalPages} 页
+                        共 {filteredAdmins.length} 位管理员，当前第{' '}
+                        {currentPage}/{totalPages} 页
                       </div>
                       <div className="flex gap-2">
                         <button
@@ -492,7 +541,9 @@ export default function AdminHierarchyPage() {
                         </button>
                         <button
                           type="button"
-                          onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                          onClick={() =>
+                            setPage((p) => Math.min(totalPages, p + 1))
+                          }
                           disabled={currentPage >= totalPages}
                           className="rounded-xl border border-amber-200/30 bg-black/30 px-3 py-1.5 text-amber-100/90 hover:bg-black/40 disabled:cursor-not-allowed disabled:opacity-40"
                         >
@@ -508,128 +559,42 @@ export default function AdminHierarchyPage() {
                     管理操作
                   </div>
                   <div className="space-y-4 sm:space-y-6">
-                  <div className="rounded-xl border border-amber-200/20 bg-black/20 p-3 sm:p-4">
-                    <div className="mb-3 text-sm font-semibold tracking-wide text-amber-200 sm:text-base">
-                      创建管理员
-                    </div>
-                    <form onSubmit={onCreate} className="space-y-3">
-                      <div>
-                        <label className="mb-1 block text-xs text-amber-100/80 sm:text-sm">
-                          账号
-                        </label>
-                        <input
-                          value={createForm.username}
-                          onChange={(e) =>
-                            setCreateForm((prev) => ({
-                              ...prev,
-                              username: e.target.value,
-                            }))
-                          }
-                          className="w-full rounded-xl border border-amber-200/30 bg-black/25 px-3 py-2 text-sm text-amber-100 outline-none focus:border-amber-200/60"
-                          placeholder="输入账号"
-                        />
+                    <div className="rounded-xl border border-amber-200/20 bg-black/20 p-3 sm:p-4">
+                      <div className="mb-3 text-sm font-semibold tracking-wide text-amber-200 sm:text-base">
+                        创建管理员
                       </div>
-                      <div>
-                        <label className="mb-1 block text-xs text-amber-100/80 sm:text-sm">
-                          密码
-                        </label>
-                        <input
-                          type="password"
-                          value={createForm.password}
-                          onChange={(e) =>
-                            setCreateForm((prev) => ({
-                              ...prev,
-                              password: e.target.value,
-                            }))
-                          }
-                          className="w-full rounded-xl border border-amber-200/30 bg-black/25 px-3 py-2 text-sm text-amber-100 outline-none focus:border-amber-200/60"
-                          placeholder="输入密码"
-                        />
-                      </div>
-                      <div>
-                        <label className="mb-1 block text-xs text-amber-100/80 sm:text-sm">
-                          等级
-                        </label>
-                        {isPrimaryAdmin ? (
-                          <div className="rounded-xl border border-amber-200/20 bg-black/20 px-3 py-2 text-sm text-amber-100/70">
-                            二级管理员（一级管理员只能创建二级管理员）
-                          </div>
-                        ) : (
-                          <select
-                            value={createForm.level}
+                      <form onSubmit={onCreate} className="space-y-3">
+                        <div>
+                          <label className="mb-1 block text-xs text-amber-100/80 sm:text-sm">
+                            账号
+                          </label>
+                          <input
+                            value={createForm.username}
                             onChange={(e) =>
                               setCreateForm((prev) => ({
                                 ...prev,
-                                level: e.target.value,
+                                username: e.target.value,
                               }))
                             }
                             className="w-full rounded-xl border border-amber-200/30 bg-black/25 px-3 py-2 text-sm text-amber-100 outline-none focus:border-amber-200/60"
-                          >
-                            <option value="1">一级管理员</option>
-                            <option value="2">二级管理员</option>
-                          </select>
-                        )}
-                      </div>
-                      {createForm.level === '2' || isPrimaryAdmin ? (
-                        <div>
-                          <label className="mb-1 block text-xs text-amber-100/80 sm:text-sm">
-                            上级管理员
-                          </label>
-                          {isPrimaryAdmin ? (
-                            <div className="rounded-xl border border-amber-200/20 bg-black/20 px-3 py-2 text-xs text-amber-100/70">
-                              默认归属当前一级管理员
-                            </div>
-                          ) : (
-                            <select
-                              value={createForm.parentId}
-                              onChange={(e) =>
-                                setCreateForm((prev) => ({
-                                  ...prev,
-                                  parentId: e.target.value,
-                                }))
-                              }
-                              className="w-full rounded-xl border border-amber-200/30 bg-black/25 px-3 py-2 text-sm text-amber-100 outline-none focus:border-amber-200/60"
-                            >
-                              <option value="">请选择一级管理员</option>
-                              {level1Admins.map((a) => (
-                                <option key={a.id} value={a.id}>
-                                  {a.username} (ID: {a.id})
-                                </option>
-                              ))}
-                            </select>
-                          )}
+                            placeholder="输入账号"
+                          />
                         </div>
-                      ) : null}
-                      <button
-                        type="submit"
-                        disabled={loading}
-                        className="w-full rounded-2xl bg-amber-400 px-4 py-2.5 text-sm font-bold tracking-wide text-[#1b1b1b] hover:bg-amber-300 active:bg-amber-500 disabled:cursor-not-allowed disabled:bg-amber-400/40"
-                      >
-                        {loading ? '提交中…' : '创建管理员'}
-                      </button>
-                    </form>
-                  </div>
-
-                  <div className="space-y-4">
-                    <div className="rounded-xl border border-amber-200/20 bg-black/20 p-3 sm:p-4">
-                      <div className="mb-3 text-sm font-semibold tracking-wide text-amber-200 sm:text-base">
-                        调整管理员等级
-                      </div>
-                      <form onSubmit={onUpdate} className="space-y-3">
                         <div>
                           <label className="mb-1 block text-xs text-amber-100/80 sm:text-sm">
-                            管理员 ID
+                            密码
                           </label>
                           <input
-                            value={updateForm.id}
+                            type="password"
+                            value={createForm.password}
                             onChange={(e) =>
-                              setUpdateForm((prev) => ({
+                              setCreateForm((prev) => ({
                                 ...prev,
-                                id: e.target.value,
+                                password: e.target.value,
                               }))
                             }
                             className="w-full rounded-xl border border-amber-200/30 bg-black/25 px-3 py-2 text-sm text-amber-100 outline-none focus:border-amber-200/60"
-                            placeholder="输入管理员 ID"
+                            placeholder="输入密码"
                           />
                         </div>
                         <div>
@@ -638,13 +603,13 @@ export default function AdminHierarchyPage() {
                           </label>
                           {isPrimaryAdmin ? (
                             <div className="rounded-xl border border-amber-200/20 bg-black/20 px-3 py-2 text-sm text-amber-100/70">
-                              二级管理员（一级管理员只能管理二级管理员）
+                              二级管理员（一级管理员只能创建二级管理员）
                             </div>
                           ) : (
                             <select
-                              value={updateForm.level}
+                              value={createForm.level}
                               onChange={(e) =>
-                                setUpdateForm((prev) => ({
+                                setCreateForm((prev) => ({
                                   ...prev,
                                   level: e.target.value,
                                 }))
@@ -656,7 +621,7 @@ export default function AdminHierarchyPage() {
                             </select>
                           )}
                         </div>
-                        {updateForm.level === '2' || isPrimaryAdmin ? (
+                        {createForm.level === '2' || isPrimaryAdmin ? (
                           <div>
                             <label className="mb-1 block text-xs text-amber-100/80 sm:text-sm">
                               上级管理员
@@ -667,16 +632,16 @@ export default function AdminHierarchyPage() {
                               </div>
                             ) : (
                               <select
-                                value={updateForm.parentId}
+                                value={createForm.parentId}
                                 onChange={(e) =>
-                                  setUpdateForm((prev) => ({
+                                  setCreateForm((prev) => ({
                                     ...prev,
                                     parentId: e.target.value,
                                   }))
                                 }
                                 className="w-full rounded-xl border border-amber-200/30 bg-black/25 px-3 py-2 text-sm text-amber-100 outline-none focus:border-amber-200/60"
                               >
-                                <option value="">请选择上级管理员</option>
+                                <option value="">请选择一级管理员</option>
                                 {level1Admins.map((a) => (
                                   <option key={a.id} value={a.id}>
                                     {a.username} (ID: {a.id})
@@ -691,74 +656,162 @@ export default function AdminHierarchyPage() {
                           disabled={loading}
                           className="w-full rounded-2xl bg-amber-400 px-4 py-2.5 text-sm font-bold tracking-wide text-[#1b1b1b] hover:bg-amber-300 active:bg-amber-500 disabled:cursor-not-allowed disabled:bg-amber-400/40"
                         >
-                          {loading ? '提交中…' : '更新等级'}
+                          {loading ? '提交中…' : '创建管理员'}
                         </button>
                       </form>
                     </div>
 
-                    <div className="rounded-xl border border-amber-200/20 bg-black/20 p-3 sm:p-4">
-                      <div className="mb-3 text-sm font-semibold tracking-wide text-amber-200 sm:text-base">
-                        撤销管理员权限
-                      </div>
-                      <form onSubmit={onRevoke} className="space-y-3">
-                        <div>
-                          <label className="mb-1 block text-xs text-amber-100/80 sm:text-sm">
-                            管理员 ID
-                          </label>
-                          <input
-                            value={revokeForm.id}
-                            onChange={(e) =>
-                              setRevokeForm((prev) => ({
-                                ...prev,
-                                id: e.target.value,
-                              }))
-                            }
-                            className="w-full rounded-xl border border-amber-200/30 bg-black/25 px-3 py-2 text-sm text-amber-100 outline-none focus:border-amber-200/60"
-                            placeholder="输入管理员 ID"
-                          />
+                    <div className="space-y-4">
+                      <div className="rounded-xl border border-amber-200/20 bg-black/20 p-3 sm:p-4">
+                        <div className="mb-3 text-sm font-semibold tracking-wide text-amber-200 sm:text-base">
+                          调整管理员等级
                         </div>
-                        <div>
-                          <label className="mb-1 block text-xs text-amber-100/80 sm:text-sm">
-                            接管管理员（可选）
-                          </label>
-                          <select
-                            value={revokeForm.transferTo}
-                            onChange={(e) =>
-                              setRevokeForm((prev) => ({
-                                ...prev,
-                                transferTo: e.target.value,
-                              }))
-                            }
-                            disabled={isPrimaryAdmin}
-                            className="w-full rounded-xl border border-amber-200/30 bg-black/25 px-3 py-2 text-sm text-amber-100 outline-none focus:border-amber-200/60"
-                          >
+                        <form onSubmit={onUpdate} className="space-y-3">
+                          <div>
+                            <label className="mb-1 block text-xs text-amber-100/80 sm:text-sm">
+                              管理员 ID
+                            </label>
+                            <input
+                              value={updateForm.id}
+                              onChange={(e) =>
+                                setUpdateForm((prev) => ({
+                                  ...prev,
+                                  id: e.target.value,
+                                }))
+                              }
+                              className="w-full rounded-xl border border-amber-200/30 bg-black/25 px-3 py-2 text-sm text-amber-100 outline-none focus:border-amber-200/60"
+                              placeholder="输入管理员 ID"
+                            />
+                          </div>
+                          <div>
+                            <label className="mb-1 block text-xs text-amber-100/80 sm:text-sm">
+                              等级
+                            </label>
                             {isPrimaryAdmin ? (
-                              <option value="">默认由当前一级管理员接管</option>
+                              <div className="rounded-xl border border-amber-200/20 bg-black/20 px-3 py-2 text-sm text-amber-100/70">
+                                二级管理员（一级管理员只能管理二级管理员）
+                              </div>
                             ) : (
-                              <option value="">默认由超级管理员接管</option>
+                              <select
+                                value={updateForm.level}
+                                onChange={(e) =>
+                                  setUpdateForm((prev) => ({
+                                    ...prev,
+                                    level: e.target.value,
+                                  }))
+                                }
+                                className="w-full rounded-xl border border-amber-200/30 bg-black/25 px-3 py-2 text-sm text-amber-100 outline-none focus:border-amber-200/60"
+                              >
+                                <option value="1">一级管理员</option>
+                                <option value="2">二级管理员</option>
+                              </select>
                             )}
-                            {revokeTransferCandidates.map((a) => (
+                          </div>
+                          {updateForm.level === '2' || isPrimaryAdmin ? (
+                            <div>
+                              <label className="mb-1 block text-xs text-amber-100/80 sm:text-sm">
+                                上级管理员
+                              </label>
+                              {isPrimaryAdmin ? (
+                                <div className="rounded-xl border border-amber-200/20 bg-black/20 px-3 py-2 text-xs text-amber-100/70">
+                                  默认归属当前一级管理员
+                                </div>
+                              ) : (
+                                <select
+                                  value={updateForm.parentId}
+                                  onChange={(e) =>
+                                    setUpdateForm((prev) => ({
+                                      ...prev,
+                                      parentId: e.target.value,
+                                    }))
+                                  }
+                                  className="w-full rounded-xl border border-amber-200/30 bg-black/25 px-3 py-2 text-sm text-amber-100 outline-none focus:border-amber-200/60"
+                                >
+                                  <option value="">请选择上级管理员</option>
+                                  {level1Admins.map((a) => (
+                                    <option key={a.id} value={a.id}>
+                                      {a.username} (ID: {a.id})
+                                    </option>
+                                  ))}
+                                </select>
+                              )}
+                            </div>
+                          ) : null}
+                          <button
+                            type="submit"
+                            disabled={loading}
+                            className="w-full rounded-2xl bg-amber-400 px-4 py-2.5 text-sm font-bold tracking-wide text-[#1b1b1b] hover:bg-amber-300 active:bg-amber-500 disabled:cursor-not-allowed disabled:bg-amber-400/40"
+                          >
+                            {loading ? '提交中…' : '更新等级'}
+                          </button>
+                        </form>
+                      </div>
+
+                      <div className="rounded-xl border border-amber-200/20 bg-black/20 p-3 sm:p-4">
+                        <div className="mb-3 text-sm font-semibold tracking-wide text-amber-200 sm:text-base">
+                          撤销管理员权限
+                        </div>
+                        <form onSubmit={onRevoke} className="space-y-3">
+                          <div>
+                            <label className="mb-1 block text-xs text-amber-100/80 sm:text-sm">
+                              管理员 ID
+                            </label>
+                            <input
+                              value={revokeForm.id}
+                              onChange={(e) =>
+                                setRevokeForm((prev) => ({
+                                  ...prev,
+                                  id: e.target.value,
+                                }))
+                              }
+                              className="w-full rounded-xl border border-amber-200/30 bg-black/25 px-3 py-2 text-sm text-amber-100 outline-none focus:border-amber-200/60"
+                              placeholder="输入管理员 ID"
+                            />
+                          </div>
+                          <div>
+                            <label className="mb-1 block text-xs text-amber-100/80 sm:text-sm">
+                              接管管理员（可选）
+                            </label>
+                            <select
+                              value={revokeForm.transferTo}
+                              onChange={(e) =>
+                                setRevokeForm((prev) => ({
+                                  ...prev,
+                                  transferTo: e.target.value,
+                                }))
+                              }
+                              disabled={isPrimaryAdmin}
+                              className="w-full rounded-xl border border-amber-200/30 bg-black/25 px-3 py-2 text-sm text-amber-100 outline-none focus:border-amber-200/60"
+                            >
+                              {isPrimaryAdmin ? (
+                                <option value="">
+                                  默认由当前一级管理员接管
+                                </option>
+                              ) : (
+                                <option value="">默认由超级管理员接管</option>
+                              )}
+                              {revokeTransferCandidates.map((a) => (
                                 <option key={a.id} value={a.id}>
-                                  {a.username} ({levelLabel(a.level)} / ID: {a.id})
+                                  {a.username} ({levelLabel(a.level)} / ID:{' '}
+                                  {a.id})
                                 </option>
                               ))}
-                          </select>
-                        </div>
-                        <button
-                          type="submit"
-                          disabled={loading}
-                          className="w-full rounded-2xl bg-red-400 px-4 py-2.5 text-sm font-bold tracking-wide text-[#1b1b1b] hover:bg-red-300 active:bg-red-500 disabled:cursor-not-allowed disabled:bg-red-400/40"
-                        >
-                          {loading ? '提交中…' : '撤销权限并转移'}
-                        </button>
-                      </form>
+                            </select>
+                          </div>
+                          <button
+                            type="submit"
+                            disabled={loading}
+                            className="w-full rounded-2xl bg-red-400 px-4 py-2.5 text-sm font-bold tracking-wide text-[#1b1b1b] hover:bg-red-300 active:bg-red-500 disabled:cursor-not-allowed disabled:bg-red-400/40"
+                          >
+                            {loading ? '提交中…' : '撤销权限并转移'}
+                          </button>
+                        </form>
+                      </div>
                     </div>
-                  </div>
                   </div>
                 </div>
               </div>
             ) : null}
-
           </div>
         </GoldFramePanel>
       </div>

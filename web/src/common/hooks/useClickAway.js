@@ -12,7 +12,12 @@ const useClickAway = (triggerInsideRef, insideRef, callback) => {
       // console.log(event.target, 'event.target')
       // console.log(insideRef, 'insideRef')
       // console.log(triggerInsideRef, 'triggerInsideRef')
-      if (triggerInsideRef !== null && insideRef?.current && !insideRef?.current.contains(event.target) && event.target !== triggerInsideRef) {
+      if (
+        triggerInsideRef !== null &&
+        insideRef?.current &&
+        !insideRef?.current.contains(event.target) &&
+        event.target !== triggerInsideRef
+      ) {
         callback()
       }
     }

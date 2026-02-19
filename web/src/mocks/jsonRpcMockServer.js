@@ -85,7 +85,7 @@ export function setupJsonRpcMockServer() {
         {
           status: 400,
           headers: { 'Content-Type': 'application/json' },
-        },
+        }
       )
     }
 
@@ -111,7 +111,11 @@ export function setupJsonRpcMockServer() {
           version: { version: 'mock-1.0.0' },
         })
       } else {
-        responseBody = makeJsonRpcBizError(id, 400, `unknown system method: ${method}`)
+        responseBody = makeJsonRpcBizError(
+          id,
+          400,
+          `unknown system method: ${method}`
+        )
       }
     } else if (domain === 'auth') {
       if (method === 'login') {
@@ -133,11 +137,19 @@ export function setupJsonRpcMockServer() {
           },
         })
       } else {
-        responseBody = makeJsonRpcBizError(id, 400, `unknown auth method: ${method}`)
+        responseBody = makeJsonRpcBizError(
+          id,
+          400,
+          `unknown auth method: ${method}`
+        )
       }
     } else {
       // 未知领域
-      responseBody = makeJsonRpcBizError(id, 404, `unknown rpc domain: ${domain}`)
+      responseBody = makeJsonRpcBizError(
+        id,
+        404,
+        `unknown rpc domain: ${domain}`
+      )
     }
 
     return new Response(JSON.stringify(responseBody), {

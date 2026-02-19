@@ -7,16 +7,16 @@ import { useNavigate } from 'react-router-dom'
  * @returns {React.ReactNode} 空白页
  */
 export const BlankPage = () => {
-    const navigate = useNavigate()
-    useEffect(() => {
-        const timer = setTimeout(() => {
-            navigate(-1)
-        }, 0)
-        return () => clearTimeout(timer)
-    }, [])
+  const navigate = useNavigate()
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      navigate(-1)
+    }, 0)
+    return () => clearTimeout(timer)
+  }, [])
 
-    return (
-        <div>123</div>
+  return (
+    <div>123</div>
     //   <div />
-    )
+  )
 }

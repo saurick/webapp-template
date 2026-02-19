@@ -16,12 +16,24 @@ export default function AuthGuard({ requireAdmin = false, children }) {
 
   // 未登录 → 去登录页
   if (!user) {
-    return <Navigate to={getLoginPath(authScope)} replace state={{ from: location }} />
+    return (
+      <Navigate
+        to={getLoginPath(authScope)}
+        replace
+        state={{ from: location }}
+      />
+    )
   }
 
   // 需要管理员但不是 admin
   if (requireAdmin && user.role !== 'admin') {
-    return <Navigate to={getLoginPath(AUTH_SCOPE.ADMIN)} replace state={{ from: location }} />
+    return (
+      <Navigate
+        to={getLoginPath(AUTH_SCOPE.ADMIN)}
+        replace
+        state={{ from: location }}
+      />
+    )
   }
 
   return children

@@ -9,7 +9,7 @@ import { CasinoAlertProvider } from '@/common/components/modal/CasinoAlertProvid
 
 // 只在开发环境 & 打开开关时启用 mock
 if (import.meta.env.DEV && import.meta.env.VITE_ENABLE_RPC_MOCK === 'true') {
-  ;(async () => {
+  (async () => {
     const { setupJsonRpcMockServer } = await import('./mocks/jsonRpcMockServer')
     setupJsonRpcMockServer()
   })()

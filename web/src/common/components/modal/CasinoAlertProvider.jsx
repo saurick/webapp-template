@@ -1,5 +1,12 @@
 // web/src/common/components/modal/CasinoAlertProvider.jsx
-import React, { createContext, useCallback, useContext, useMemo, useState, useEffect } from 'react'
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useMemo,
+  useState,
+  useEffect,
+} from 'react'
 import CasinoAlertModal from '@/common/components/modal/CasinoAlertModal'
 import { registerAlert } from '@/common/components/modal/alertBridge'
 
@@ -15,7 +22,7 @@ export function CasinoAlertProvider({ children }) {
   })
 
   const close = useCallback(() => {
-    setState(s => ({ ...s, open: false }))
+    setState((s) => ({ ...s, open: false }))
   }, [])
 
   const alert = useCallback((opts = {}) => {
@@ -54,7 +61,9 @@ export function CasinoAlertProvider({ children }) {
 export function useCasinoAlert() {
   const ctx = useContext(AlertContext)
   if (!ctx) {
-    throw new Error('useCasinoAlert must be used within <CasinoAlertProvider />')
+    throw new Error(
+      'useCasinoAlert must be used within <CasinoAlertProvider />'
+    )
   }
   return ctx
 }

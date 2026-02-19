@@ -85,15 +85,17 @@ export const index = (color, index) => {
 }
 
 export const hsvToRgb = (H, S, V) => {
-  let R, G, B
+  let R
+  let G
+  let B
   let _H = H * 6
   if (_H === 6) {
     _H = 0
   }
   const i = Math.floor(_H)
   const v1 = V * (1 - S)
-  const v2 = V * (1 - (S * (_H - i)))
-  const v3 = V * (1 - (S * (1 - (_H - i))))
+  const v2 = V * (1 - S * (_H - i))
+  const v3 = V * (1 - S * (1 - (_H - i)))
   if (i === 0) {
     R = V
     G = v3
@@ -131,19 +133,28 @@ export const rgbToHsv = (r, g, b) => {
   r /= 255
   g /= 255
   b /= 255
-  let h, s, v
+  let h
+  let s
+  let v
   const min = Math.min(r, g, b)
-  const max = v = Math.max(r, g, b)
+  const max = (v = Math.max(r, g, b))
 
   const difference = max - min
   if (max === min) {
     h = 0
   } else {
     switch (max) {
-      case r: h = (g - b) / difference + (g < b ? 6 : 0); break
-      case g: h = 2.0 + (v - r) / difference; break
-      case b: h = 4.0 + (r - g) / difference; break
-      default: break
+      case r:
+        h = (g - b) / difference + (g < b ? 6 : 0)
+        break
+      case g:
+        h = 2.0 + (v - r) / difference
+        break
+      case b:
+        h = 4.0 + (r - g) / difference
+        break
+      default:
+        break
     }
     h = Math.round(h * 60)
   }

@@ -13,15 +13,15 @@ export default defineConfig(({ command, mode }) => {
   // 只在开发环境打印调试信息，避免打包时报一堆东西
   if (!isProd) {
     console.log('env =', env)
-    console.log('command =', command)  // 'serve' | 'build'
-    console.log('mode =', mode)        // 'development' | 'production' | 自定义的mode
+    console.log('command =', command) // 'serve' | 'build'
+    console.log('mode =', mode) // 'development' | 'production' | 自定义的mode
   }
 
   return {
-    base: isDev ? '/' : (env.VITE_BASE_URL || '/'),   // dev 在根，构建/预览在子路径
+    base: isDev ? '/' : env.VITE_BASE_URL || '/', // dev 在根，构建/预览在子路径
 
     plugins: [
-      react(),  // 处理react
+      react(), // 处理react
     ],
 
     /**
@@ -32,12 +32,12 @@ export default defineConfig(({ command, mode }) => {
       drop: isProd ? ['console', 'debugger'] : [],
     },
 
-    reportCompressedSize: false,  // 报告压缩大小
+    reportCompressedSize: false, // 报告压缩大小
 
     build: {
-      outDir: 'build',       // 输出目录
-      assetsDir: 'assets',   // 资源目录
-      sourcemap: !isProd,    // 生产关闭 sourcemap
+      outDir: 'build', // 输出目录
+      assetsDir: 'assets', // 资源目录
+      sourcemap: !isProd, // 生产关闭 sourcemap
       minify: 'esbuild',
       cssMinify: 'esbuild',
       target: 'es2018',
@@ -103,12 +103,7 @@ export default defineConfig(({ command, mode }) => {
     },
 
     optimizeDeps: {
-      include: [
-        'react',
-        'react-dom',
-        'react-router-dom',
-        'react-helmet-async',
-      ],
+      include: ['react', 'react-dom', 'react-router-dom', 'react-helmet-async'],
     },
   }
 })

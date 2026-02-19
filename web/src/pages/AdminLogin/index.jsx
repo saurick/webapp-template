@@ -16,8 +16,13 @@ export default function AdminLoginPage() {
     (location.state?.from?.hash || '')
 
   const authRpc = useMemo(
-    () => new JsonRpc({ url: 'auth', basePath: ADMIN_BASE_PATH, authScope: AUTH_SCOPE.ADMIN }),
-    [],
+    () =>
+      new JsonRpc({
+        url: 'auth',
+        basePath: ADMIN_BASE_PATH,
+        authScope: AUTH_SCOPE.ADMIN,
+      }),
+    []
   )
 
   const [username, setUsername] = useState('')
@@ -99,12 +104,11 @@ export default function AdminLoginPage() {
               <button
                 type="submit"
                 disabled={!canSubmit}
-                className={
-                  `w-full rounded-2xl px-4 py-2.5 text-sm font-bold tracking-wide sm:py-3 sm:text-base ${
+                className={`w-full rounded-2xl px-4 py-2.5 text-sm font-bold tracking-wide sm:py-3 sm:text-base ${
                   canSubmit
                     ? 'bg-amber-400 text-[#1b1b1b] hover:bg-amber-300 active:bg-amber-500'
-                    : 'cursor-not-allowed bg-amber-400/30 text-amber-100/60'}`
-                }
+                    : 'cursor-not-allowed bg-amber-400/30 text-amber-100/60'
+                }`}
               >
                 {submitting ? '登錄中…' : '登錄'}
               </button>

@@ -18,7 +18,7 @@ const useCallbackPrompt = (when) => {
     (nextLocation) => {
       console.log(nextLocation, 'nextLocation')
       if (
-        nextLocation.pathname !== '/' && 
+        nextLocation.pathname !== '/' &&
         !confirmedNavigation &&
         nextLocation.location.pathname !== location.pathname
       ) {
@@ -32,7 +32,6 @@ const useCallbackPrompt = (when) => {
   )
 
   const confirmNavigation = useCallback(() => {
- 
     setShowPrompt(false)
     setConfirmedNavigation(true)
   }, [])

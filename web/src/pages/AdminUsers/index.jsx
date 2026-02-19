@@ -43,12 +43,22 @@ export default function AdminUsersPage() {
   const navigate = useNavigate()
 
   const userRpc = useMemo(
-    () => new JsonRpc({ url: 'user', basePath: ADMIN_BASE_PATH, authScope: AUTH_SCOPE.ADMIN }),
-    [],
+    () =>
+      new JsonRpc({
+        url: 'user',
+        basePath: ADMIN_BASE_PATH,
+        authScope: AUTH_SCOPE.ADMIN,
+      }),
+    []
   )
   const subRpc = useMemo(
-    () => new JsonRpc({ url: 'subscription', basePath: ADMIN_BASE_PATH, authScope: AUTH_SCOPE.ADMIN }),
-    [],
+    () =>
+      new JsonRpc({
+        url: 'subscription',
+        basePath: ADMIN_BASE_PATH,
+        authScope: AUTH_SCOPE.ADMIN,
+      }),
+    []
   )
 
   const PAGE_SIZE = 30
@@ -66,7 +76,12 @@ export default function AdminUsersPage() {
   const [searchInput, setSearchInput] = useState('')
   const [searchName, setSearchName] = useState('') // 生效值
   const [filter, setFilter] = useState('') // '' | 'expired' | 'expiring_soon' | 'normal'
-  const [stats, setStats] = useState({ expired: 0, expiring_soon: 0, normal: 0, warning_days: 3 })
+  const [stats, setStats] = useState({
+    expired: 0,
+    expiring_soon: 0,
+    normal: 0,
+    warning_days: 3,
+  })
 
   // subscription options（可选，失败 fallback）
   const [subOptions, setSubOptions] = useState([])
@@ -171,7 +186,9 @@ export default function AdminUsersPage() {
       const next = { ...prev }
       for (const u of items) {
         const uid = u.id
-        if (next[uid] === undefined) { next[uid] = toDatetimeLocalValue(u.expires_at) }
+        if (next[uid] === undefined) {
+          next[uid] = toDatetimeLocalValue(u.expires_at)
+        }
       }
       return next
     })
@@ -334,60 +351,68 @@ export default function AdminUsersPage() {
             filter === 'expired' ||
             filter === 'expiring_soon' ||
             filter === 'normal') && (
-              <div className="mb-4 flex flex-wrap gap-3">
-                {(stats.expired > 0 || filter === 'expired') && (
-                  <button
-                    onClick={() => setFilter(filter === 'expired' ? '' : 'expired')}
-                    className={`flex items-center gap-2 rounded-xl border px-4 py-2 text-sm font-bold transition-all ${filter === 'expired'
+            <div className="mb-4 flex flex-wrap gap-3">
+              {(stats.expired > 0 || filter === 'expired') && (
+                <button
+                  onClick={() =>
+                    setFilter(filter === 'expired' ? '' : 'expired')
+                  }
+                  className={`flex items-center gap-2 rounded-xl border px-4 py-2 text-sm font-bold transition-all ${
+                    filter === 'expired'
                       ? 'border-red-500 bg-red-500/30 text-red-100 ring-2 ring-red-500/50'
                       : stats.expired > 0
                         ? 'border-red-500/50 bg-red-500/10 text-red-300 hover:bg-red-500/20'
                         : 'border-white/10 bg-black/20 text-white/40' // 0 expired but filter active (rare case if auto-refresh)
-                      }`}
-                  >
-                    <span className="text-base">⚠️</span>
-                    <span>{stats.expired} 位用户已过期</span>
-                    {filter === 'expired' && (
-                      <span className="ml-1 text-xs opacity-60">(点击取消)</span>
-                    )}
-                  </button>
-                )}
-                {(stats.expiring_soon > 0 || filter === 'expiring_soon') && (
-                  <button
-                    onClick={() =>
-                      setFilter(filter === 'expiring_soon' ? '' : 'expiring_soon')
-                    }
-                    className={`flex items-center gap-2 rounded-xl border px-4 py-2 text-sm font-bold transition-all ${filter === 'expiring_soon'
+                  }`}
+                >
+                  <span className="text-base">⚠️</span>
+                  <span>{stats.expired} 位用户已过期</span>
+                  {filter === 'expired' && (
+                    <span className="ml-1 text-xs opacity-60">(点击取消)</span>
+                  )}
+                </button>
+              )}
+              {(stats.expiring_soon > 0 || filter === 'expiring_soon') && (
+                <button
+                  onClick={() =>
+                    setFilter(filter === 'expiring_soon' ? '' : 'expiring_soon')
+                  }
+                  className={`flex items-center gap-2 rounded-xl border px-4 py-2 text-sm font-bold transition-all ${
+                    filter === 'expiring_soon'
                       ? 'border-yellow-500 bg-yellow-500/30 text-yellow-100 ring-2 ring-yellow-500/50'
                       : stats.expiring_soon > 0
                         ? 'border-yellow-500/50 bg-yellow-500/10 text-yellow-300 hover:bg-yellow-500/20'
                         : 'border-white/10 bg-black/20 text-white/40'
-                      }`}
-                  >
-                    <span className="text-base">⏰</span>
-                    <span>{stats.expiring_soon} 位用户即将过期（{stats.warning_days}天内）</span>
-                    {filter === 'expiring_soon' && (
-                      <span className="ml-1 text-xs opacity-60">(点击取消)</span>
-                    )}
-                  </button>
-                )}
-                {(stats.normal > 0 || filter === 'normal') && (
-                  <button
-                    onClick={() => setFilter(filter === 'normal' ? '' : 'normal')}
-                    className={`flex items-center gap-2 rounded-xl border px-4 py-2 text-sm font-bold transition-all ${filter === 'normal'
+                  }`}
+                >
+                  <span className="text-base">⏰</span>
+                  <span>
+                    {stats.expiring_soon} 位用户即将过期（{stats.warning_days}
+                    天内）
+                  </span>
+                  {filter === 'expiring_soon' && (
+                    <span className="ml-1 text-xs opacity-60">(点击取消)</span>
+                  )}
+                </button>
+              )}
+              {(stats.normal > 0 || filter === 'normal') && (
+                <button
+                  onClick={() => setFilter(filter === 'normal' ? '' : 'normal')}
+                  className={`flex items-center gap-2 rounded-xl border px-4 py-2 text-sm font-bold transition-all ${
+                    filter === 'normal'
                       ? 'border-emerald-500 bg-emerald-500/30 text-emerald-100 ring-2 ring-emerald-500/50'
                       : 'border-emerald-500/40 bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/20'
-                      }`}
-                  >
-                    <span className="text-base">✅</span>
-                    <span>{stats.normal} 位用户正常</span>
-                    {filter === 'normal' && (
-                      <span className="ml-1 text-xs opacity-60">(点击取消)</span>
-                    )}
-                  </button>
-                )}
-              </div>
-            )}
+                  }`}
+                >
+                  <span className="text-base">✅</span>
+                  <span>{stats.normal} 位用户正常</span>
+                  {filter === 'normal' && (
+                    <span className="ml-1 text-xs opacity-60">(点击取消)</span>
+                  )}
+                </button>
+              )}
+            </div>
+          )}
 
           {errMsg ? (
             <div className="mb-3 rounded-xl border border-red-400/40 bg-red-500/10 px-3 py-2 text-xs text-red-100 sm:mb-4 sm:px-4 sm:py-3 sm:text-sm">
@@ -476,7 +501,8 @@ export default function AdminUsersPage() {
                   {items.map((u) => {
                     const { id } = u
                     const disabled = !!u.disabled
-                    const roleText = Number(u.role) === 1 ? '超级管理员' : '普通用户'
+                    const roleText =
+                      Number(u.role) === 1 ? '超级管理员' : '普通用户'
 
                     return (
                       <tr key={String(id)} className="bg-black/10 align-top">
@@ -492,12 +518,11 @@ export default function AdminUsersPage() {
 
                         <td className="px-2 py-2 sm:px-4 sm:py-3">
                           <span
-                            className={
-                              `inline-flex rounded-full px-1.5 py-0.5 text-xs font-bold sm:px-2 sm:py-1 ${
+                            className={`inline-flex rounded-full px-1.5 py-0.5 text-xs font-bold sm:px-2 sm:py-1 ${
                               roleText === '超级管理员'
                                 ? 'bg-purple-500/15 text-purple-200'
-                                : 'bg-sky-500/15 text-sky-200'}`
-                            }
+                                : 'bg-sky-500/15 text-sky-200'
+                            }`}
                           >
                             {roleText}
                           </span>
@@ -509,12 +534,11 @@ export default function AdminUsersPage() {
 
                         <td className="px-2 py-2 sm:px-4 sm:py-3">
                           <span
-                            className={
-                              `inline-flex rounded-full px-1.5 py-0.5 text-xs font-bold sm:px-2 sm:py-1 ${
+                            className={`inline-flex rounded-full px-1.5 py-0.5 text-xs font-bold sm:px-2 sm:py-1 ${
                               disabled
                                 ? 'bg-zinc-500/15 text-zinc-200'
-                                : 'bg-emerald-500/15 text-emerald-200'}`
-                            }
+                                : 'bg-emerald-500/15 text-emerald-200'
+                            }`}
                           >
                             {disabled ? '已禁用' : '已启用'}
                           </span>
@@ -614,7 +638,7 @@ export default function AdminUsersPage() {
                                 if (typeof el.showPicker === 'function') {
                                   try {
                                     el.showPicker()
-                                  } catch { }
+                                  } catch {}
                                 }
                               }}
                               onPointerDown={(e) => {
@@ -623,7 +647,7 @@ export default function AdminUsersPage() {
                                 if (typeof el.showPicker === 'function') {
                                   try {
                                     el.showPicker()
-                                  } catch { }
+                                  } catch {}
                                 }
                               }}
                               className="cursor-pointer rounded-xl border border-amber-200/30 bg-black/25 px-2 py-1.5 text-xs text-amber-100 outline-none focus:border-amber-200/60 focus:ring-2 focus:ring-amber-200/20 sm:px-3 sm:py-2 sm:text-sm"

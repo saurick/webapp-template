@@ -9,8 +9,13 @@ import { AUTH_SCOPE, logout } from '@/common/auth/auth'
 export default function AdminMenuPage() {
   const navigate = useNavigate()
   const authRpc = useMemo(
-    () => new JsonRpc({ url: 'auth', basePath: ADMIN_BASE_PATH, authScope: AUTH_SCOPE.ADMIN }),
-    [],
+    () =>
+      new JsonRpc({
+        url: 'auth',
+        basePath: ADMIN_BASE_PATH,
+        authScope: AUTH_SCOPE.ADMIN,
+      }),
+    []
   )
 
   const handleLogout = async () => {
@@ -29,7 +34,9 @@ export default function AdminMenuPage() {
     <CasinoScreen className="flex items-center justify-center px-4 py-10">
       <div className="w-full max-w-[520px]">
         <div className="mb-6 text-center">
-          <div className="text-2xl font-extrabold tracking-wide text-amber-200">管理菜单</div>
+          <div className="text-2xl font-extrabold tracking-wide text-amber-200">
+            管理菜单
+          </div>
           <div className="mt-1 text-sm text-amber-100/70">模板公共后台入口</div>
         </div>
 

@@ -73,7 +73,7 @@ module.exports = {
   },
   settings: {
     react: {
-      version: 'detect',  // 检测react版本
+      version: 'detect', // 检测react版本
     },
   },
 }

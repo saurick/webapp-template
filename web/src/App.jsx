@@ -36,14 +36,17 @@ const App = () => {
         message: message || '登录已过期，请重新登录',
         confirmText: '去登录',
         onConfirm: () => {
-          navigate(targetLoginPath, { replace: true, state: { from: safeFrom } })
+          navigate(targetLoginPath, {
+            replace: true,
+            state: { from: safeFrom },
+          })
         },
       })
     })
   }, [navigate])
 
   return (
-    <React.Fragment>
+    <>
       <Helmet>
         <title>React App</title>
       </Helmet>
@@ -54,13 +57,34 @@ const App = () => {
           <Route path="/login" element={<Login />} />
           <Route path="/admin-login" element={<AdminLoginPage />} />
           <Route path="/register" element={<Register />} />
-          <Route path="/admin-menu" element={<AuthGuard requireAdmin><AdminMenuPage /></AuthGuard>} />
-          <Route path="/admin-users" element={<AuthGuard requireAdmin><AdminUsersPage /></AuthGuard>} />
-          <Route path="/admin-hierarchy" element={<AuthGuard requireAdmin><AdminHierarchyPage /></AuthGuard>} />
+          <Route
+            path="/admin-menu"
+            element={
+              <AuthGuard requireAdmin>
+                <AdminMenuPage />
+              </AuthGuard>
+            }
+          />
+          <Route
+            path="/admin-users"
+            element={
+              <AuthGuard requireAdmin>
+                <AdminUsersPage />
+              </AuthGuard>
+            }
+          />
+          <Route
+            path="/admin-hierarchy"
+            element={
+              <AuthGuard requireAdmin>
+                <AdminHierarchyPage />
+              </AuthGuard>
+            }
+          />
           <Route path="/" element={<BlankPage />} />
         </Routes>
       </Suspense>
-    </React.Fragment>
+    </>
   )
 }
 

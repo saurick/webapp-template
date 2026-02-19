@@ -1,8 +1,5 @@
 {
-  "extends": [
-    "stylelint-config-recommended",
-    "stylelint-config-tailwindcss"
-  ],
+  "extends": ["stylelint-config-recommended", "stylelint-config-tailwindcss"],
   "rules": {
     "selector-pseudo-class-no-unknown": [
       true,

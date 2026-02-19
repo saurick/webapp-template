@@ -19,7 +19,6 @@ export default function CasinoAlertModal({
   return (
     <CasinoModal open={open} onClose={onClose} className={className}>
       <div className="flex flex-col items-center gap-6 py-4">
-
         {/* 标题 */}
         {title && (
           <div className="text-center text-2xl font-semibold text-amber-100">
@@ -29,7 +28,7 @@ export default function CasinoAlertModal({
 
         {/* 内容（支持字符串 or JSX） */}
         {message && (
-          <div className="text-center text-lg leading-relaxed text-amber-100 whitespace-pre-line">
+          <div className="whitespace-pre-line text-center text-lg leading-relaxed text-amber-100">
             {message}
           </div>
         )}

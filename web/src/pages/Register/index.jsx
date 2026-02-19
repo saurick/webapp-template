@@ -55,47 +55,59 @@ export default function RegisterPage() {
   return (
     <CasinoScreen className="flex items-center justify-center px-4 py-10">
       <div className="w-full max-w-[560px]">
-        <div className="text-center mb-6">
-          <div className="text-2xl font-extrabold tracking-wide text-amber-200">创建账号</div>
+        <div className="mb-6 text-center">
+          <div className="text-2xl font-extrabold tracking-wide text-amber-200">
+            创建账号
+          </div>
         </div>
 
         <GoldFramePanel className="p-4 sm:p-6">
           <form onSubmit={onSubmit} className="p-4 sm:p-6">
             <div className="space-y-4">
               <div>
-                <label className="block text-sm text-amber-100/80 mb-1">用户名</label>
+                <label className="mb-1 block text-sm text-amber-100/80">
+                  用户名
+                </label>
                 <input
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   autoComplete="username"
-                  className="w-full rounded-xl bg-black/25 border border-amber-200/30 px-4 py-3 text-amber-100 outline-none focus:border-amber-200/60 focus:ring-2 focus:ring-amber-200/20"
+                  className="w-full rounded-xl border border-amber-200/30 bg-black/25 px-4 py-3 text-amber-100 outline-none focus:border-amber-200/60 focus:ring-2 focus:ring-amber-200/20"
                   placeholder="输入用户名"
                 />
               </div>
 
               <div>
-                <label className="block text-sm text-amber-100/80 mb-1">密码</label>
+                <label className="mb-1 block text-sm text-amber-100/80">
+                  密码
+                </label>
                 <input
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   type="password"
                   autoComplete="new-password"
-                  className="w-full rounded-xl bg-black/25 border border-amber-200/30 px-4 py-3 text-amber-100 outline-none focus:border-amber-200/60 focus:ring-2 focus:ring-amber-200/20"
+                  className="w-full rounded-xl border border-amber-200/30 bg-black/25 px-4 py-3 text-amber-100 outline-none focus:border-amber-200/60 focus:ring-2 focus:ring-amber-200/20"
                   placeholder="至少 6 位"
                 />
               </div>
 
               <div>
-                <label className="block text-sm text-amber-100/80 mb-1">确认密码</label>
+                <label className="mb-1 block text-sm text-amber-100/80">
+                  确认密码
+                </label>
                 <input
                   value={password2}
                   onChange={(e) => setPassword2(e.target.value)}
                   type="password"
                   autoComplete="new-password"
-                  className="w-full rounded-xl bg-black/25 border border-amber-200/30 px-4 py-3 text-amber-100 outline-none focus:border-amber-200/60 focus:ring-2 focus:ring-amber-200/20"
+                  className="w-full rounded-xl border border-amber-200/30 bg-black/25 px-4 py-3 text-amber-100 outline-none focus:border-amber-200/60 focus:ring-2 focus:ring-amber-200/20"
                   placeholder="再输入一次"
                 />
-                {pwdHint ? <div className="text-xs text-amber-200/90 mt-1">{pwdHint}</div> : null}
+                {pwdHint ? (
+                  <div className="mt-1 text-xs text-amber-200/90">
+                    {pwdHint}
+                  </div>
+                ) : null}
               </div>
 
               {errMsg ? (
@@ -107,19 +119,21 @@ export default function RegisterPage() {
               <button
                 type="submit"
                 disabled={!canSubmit}
-                className={
-                  'w-full rounded-2xl px-4 py-3 font-bold tracking-wide ' +
-                  (canSubmit
+                className={`w-full rounded-2xl px-4 py-3 font-bold tracking-wide ${
+                  canSubmit
                     ? 'bg-amber-400 text-[#1b1b1b] hover:bg-amber-300 active:bg-amber-500'
-                    : 'bg-amber-400/30 text-amber-100/60 cursor-not-allowed')
-                }
+                    : 'cursor-not-allowed bg-amber-400/30 text-amber-100/60'
+                }`}
               >
                 {submitting ? '注册中…' : '注册并登录'}
               </button>
 
-              <div className="text-sm text-amber-100/70 pt-1">
+              <div className="pt-1 text-sm text-amber-100/70">
                 已有账号？{' '}
-                <Link className="text-amber-200 hover:text-amber-100 underline" to="/login">
+                <Link
+                  className="text-amber-200 underline hover:text-amber-100"
+                  to="/login"
+                >
                   去登录
                 </Link>
               </div>

@@ -40,7 +40,7 @@ export default function LoginPage() {
 
       // 你的约定：result.data 才是 payload
       persistAuth(result?.data, AUTH_SCOPE.USER)
-      navigate(from, { replace: true })//
+      navigate(from, { replace: true }) //
     } catch (err) {
       setErrMsg(err?.message || String(err))
     } finally {
@@ -99,12 +99,11 @@ export default function LoginPage() {
               <button
                 type="submit"
                 disabled={!canSubmit}
-                className={
-                  'w-full rounded-2xl px-4 py-3 font-bold tracking-wide ' +
-                  (canSubmit
+                className={`w-full rounded-2xl px-4 py-3 font-bold tracking-wide ${
+                  canSubmit
                     ? 'bg-amber-400 text-[#1b1b1b] hover:bg-amber-300 active:bg-amber-500'
-                    : 'cursor-not-allowed bg-amber-400/30 text-amber-100/60')
-                }
+                    : 'cursor-not-allowed bg-amber-400/30 text-amber-100/60'
+                }`}
               >
                 {submitting ? '登录中…' : '登录'}
               </button>

@@ -5,7 +5,7 @@ import React from 'react'
 export default function CasinoScreen({ children, className = '' }) {
   return (
     <div
-      className={'min-h-screen w-full bg-[#3b1020] text-amber-100 ' + className}
+      className={`min-h-screen w-full bg-[#3b1020] text-amber-100 ${className}`}
     >
       {children}
     </div>
