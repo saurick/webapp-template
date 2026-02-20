@@ -1,3 +1,28 @@
+## 2026-02-20
+- 完成：将根目录 `README.md` 规范为统一同构结构（项目简介、目录结构、快速开始、质量命令、门禁、文档索引、数据库迁移约束），与同目录仓库保持一致。
+- 完成：保留模板项目差异内容（无前端 test 脚本说明）并归入统一章节。
+- 下一步：后续若新增前端 test 脚本，需同步更新根 README 的质量命令说明。
+- 阻塞/风险：无。
+
+## 2026-02-20
+- 完成：按统一规范重写根目录 `README.md`（项目简介、目录结构、快速开始、质量命令、门禁说明、文档索引），并补齐缺失的 `web/README.md`。
+- 完成：规范化 `server/README.md`，修复代码块围栏不闭合导致的渲染问题；新增 `docs/README.md` 说明根级 docs 定位。
+- 下一步：后续新增脚本或模块文档时，保持“目录就近 + 根 README 索引”同步更新。
+- 阻塞/风险：无。
+
+## 2026-02-19
+- 完成：按目录就近原则，将脚本文档从 `/Users/simon/projects/webapp-template/docs/qa-scripts.md` 调整为 `/Users/simon/projects/webapp-template/scripts/README.md`，与目录就近文档风格一致。
+- 完成：同步更新 `README.md` 中脚本文档入口链接，避免路径失效。
+- 下一步：后续脚本行为变更优先维护 `scripts/README.md`，并保持三个仓库同构。
+- 阻塞/风险：无。
+
+## 2026-02-19
+- 完成：为 6 项本地质量脚本补充统一可读文档 `/Users/simon/projects/webapp-template/docs/qa-scripts.md`，覆盖作用、执行时机、环境变量、失败处理与 hook 映射。
+- 完成：6 项脚本增加 `-h/--help` 说明，支持终端快速查看用途与参数，降低脚本心智负担。
+- 完成：`README.md` 补充 `docs/qa-scripts.md` 入口，避免脚本说明散落。
+- 下一步：后续如增加新门禁脚本，先补 `docs/qa-scripts.md` 再纳入 hooks。
+- 阻塞/风险：无。
+
 ## 2026-02-19
 - 完成：同步接入本地 Git hooks 方案（`.githooks` + `scripts/git-hooks` + `scripts/setup-git-hooks.sh`），用于无 CI 场景的自动质量门禁。
 - 完成：`pre-commit` 已配置为仅处理暂存的 `web/` 文件（`prettier` + `eslint --fix`），`pre-push` 已配置为执行 `web lint/css/test(若存在)/build` 与 `server go test/build`。
