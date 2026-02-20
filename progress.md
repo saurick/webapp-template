@@ -118,3 +118,8 @@
 - 验证：`bash scripts/qa/strict.sh` 已全通过；`bash scripts/git-hooks/pre-push.sh` 已全通过。
 - 下一步：继续按目录分批清理历史质量问题，优先做与业务改动同目录的小批次。
 - 阻塞/风险：无。
+
+## 2026-02-20
+- 完成：按三仓库同步审计结果新增根级 `.gitignore`，统一忽略项（`.cursor`、`.DS_Store`、`web/node_modules`、`web/build`、`server/bin`、`output/`、`.playwright-cli/`）。
+- 下一步：如后续新增工具缓存目录（如 coverage/sbom 报告目录），继续三仓库同批补充忽略规则。
+- 阻塞/风险：无。
