@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react'
+import React, { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import CasinoScreen from '@/common/components/layout/CasinoScreen'
 import GoldFramePanel from '@/common/components/layout/GoldFramePanel'
@@ -8,6 +8,7 @@ import { AUTH_SCOPE, logout } from '@/common/auth/auth'
 
 export default function AdminMenuPage() {
   const navigate = useNavigate()
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
   const authRpc = useMemo(
     () =>
       new JsonRpc({
@@ -19,12 +20,12 @@ export default function AdminMenuPage() {
   )
 
   const handleLogout = async () => {
-    if (!window.confirm('确认退出管理员登录吗？')) return
     try {
       await authRpc.call('logout')
     } catch (e) {
       console.warn('服务器 logout 失败', e)
     } finally {
+      setShowLogoutConfirm(false)
       logout(AUTH_SCOPE.ADMIN)
       navigate('/admin-login', { replace: true })
     }
@@ -60,11 +61,34 @@ export default function AdminMenuPage() {
 
             <button
               type="button"
-              onClick={handleLogout}
+              onClick={() => setShowLogoutConfirm(true)}
               className="w-full rounded-2xl bg-amber-400 px-4 py-3 font-bold text-[#1b1b1b] hover:bg-amber-300 active:bg-amber-500"
             >
               退出登录
             </button>
+            {showLogoutConfirm ? (
+              <div className="rounded-2xl border border-amber-300/30 bg-black/30 p-3">
+                <div className="mb-3 text-center text-sm text-amber-100">
+                  确认退出管理员登录吗？
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={handleLogout}
+                    className="rounded-xl bg-amber-400 px-3 py-2 text-sm font-bold text-[#1b1b1b] hover:bg-amber-300 active:bg-amber-500"
+                  >
+                    确认退出
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowLogoutConfirm(false)}
+                    className="rounded-xl border border-amber-300/40 bg-transparent px-3 py-2 text-sm font-bold text-amber-100 hover:bg-amber-300/10"
+                  >
+                    取消
+                  </button>
+                </div>
+              </div>
+            ) : null}
           </div>
         </GoldFramePanel>
       </div>

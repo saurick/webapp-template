@@ -9,7 +9,7 @@ export const int2hex = (numberT) => {
     numNew = Number(numberT)
   }
   let reuslt = numNew.toString(16)
-  if (reuslt.length % 2 != 0) {
+  if (reuslt.length % 2 !== 0) {
     reuslt = `0${reuslt}`
   }
   return numNew < 0 ? `-${reuslt}` : reuslt

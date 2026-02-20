@@ -1,4 +1,16 @@
 ## 2026-02-20
+- 完成：修复 `web` 的两个 ESLint warning：`util.js` 中 `!=` 改为 `!==`，`AdminMenu` 去除 `window.confirm` 改为页面内二次确认交互，消除 `no-alert` 告警。
+- 验证：执行 `pnpm --dir /Users/simon/projects/webapp-template/web lint`，当前无 warning。
+- 下一步：后续新增确认交互优先使用页面内确认或组件弹层，避免再次触发 `no-alert`。
+- 阻塞/风险：无。
+
+## 2026-02-20
+- 完成：修复 `/Users/simon/projects/webapp-template/web/tailwind.config.js` 的 `global-require` 告警，将插件 `require()` 从 `plugins` 数组内移动到文件顶部常量声明。
+- 验证：`pnpm exec eslint tailwind.config.js` 通过。
+- 下一步：后续新增 Tailwind 插件沿用顶部常量引用写法，避免再次触发 `global-require`。
+- 阻塞/风险：无。
+
+## 2026-02-20
 - 完成：将根目录 `README.md` 规范为统一同构结构（项目简介、目录结构、快速开始、质量命令、门禁、文档索引、数据库迁移约束），与同目录仓库保持一致。
 - 完成：保留模板项目差异内容（无前端 test 脚本说明）并归入统一章节。
 - 下一步：后续若新增前端 test 脚本，需同步更新根 README 的质量命令说明。
