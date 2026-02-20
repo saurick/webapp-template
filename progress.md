@@ -1,4 +1,9 @@
 ## 2026-02-20
+- 完成：删除 `/Users/simon/projects/webapp-template/web/link_node_modules.sh`，该脚本已不再使用。
+- 下一步：无。
+- 阻塞/风险：无。
+
+## 2026-02-20
 - 完成：修复 `web` 的两个 ESLint warning：`util.js` 中 `!=` 改为 `!==`，`AdminMenu` 去除 `window.confirm` 改为页面内二次确认交互，消除 `no-alert` 告警。
 - 验证：执行 `pnpm --dir /Users/simon/projects/webapp-template/web lint`，当前无 warning。
 - 下一步：后续新增确认交互优先使用页面内确认或组件弹层，避免再次触发 `no-alert`。
