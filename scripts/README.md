@@ -11,6 +11,9 @@
 | `scripts/qa/db-guard.sh` | 检查 Ent schema/ent 变更是否附带 migration | 改动数据模型后 |
 | `scripts/qa/secrets.sh` | 扫描变更文件中的疑似密钥泄露 | 提交前 / 推送前 |
 | `scripts/qa/shellcheck.sh` | 检查 shell 脚本静态问题 | 调整脚本后 |
+| `scripts/qa/go-vet.sh` | 执行 Go vet 静态检查 | 改动 Go 代码后 |
+| `scripts/qa/golangci-lint.sh` | 执行 golangci-lint（默认仅新增问题） | 改动 Go 代码后 |
+| `scripts/qa/yamllint.sh` | 检查 YAML 语法与风格（基线降噪） | 改动 YAML 后 |
 | `scripts/qa/fast.sh` | 快速检查（web lint+css、server 快速测试） | 日常开发高频执行 |
 | `scripts/qa/full.sh` | 全量检查（pre-push 默认调用） | 提交前 / 推送前 |
 | `scripts/qa/strict.sh` | 严格检查（warning 视为失败） | 发版前 / 主分支前 |
@@ -18,7 +21,11 @@
 
 ## Hook 对应关系
 
-- `pre-commit` -> `scripts/git-hooks/pre-commit.sh`（增量 prettier + eslint --fix）
+- `pre-commit` -> `scripts/git-hooks/pre-commit.sh`
+  - 增量 `prettier + eslint --fix`
+  - `gitleaks + shellcheck`
+  - Go 变更时执行 `go vet + golangci-lint`（仅改动包 + 仅新增问题）
+  - YAML 变更时执行 `yamllint`（仅暂存 YAML + .yamllint 降噪规则）
 - `pre-push` -> `scripts/git-hooks/pre-push.sh` -> `scripts/qa/shellcheck.sh`（`SHELLCHECK_STRICT=1`）-> `scripts/qa/full.sh`（`SECRETS_STRICT=1`）
 - `commit-msg` -> `scripts/git-hooks/commit-msg.sh`
 
@@ -40,7 +47,7 @@ bash scripts/doctor.sh
 ```
 
 - 检查必需依赖：`git`、`node`、`pnpm`、`go`
-- 检查可选依赖：`gitleaks`、`shellcheck`
+- 检查可选依赖：`gitleaks`、`shellcheck`、`golangci-lint`、`yamllint`
 - 检查 `core.hooksPath` 与关键脚本存在性
 - 若存在版本文件（`.n-node-version`、`.node-version`、`.nvmrc`），会提示当前 Node 版本是否一致
 
@@ -68,12 +75,12 @@ bash scripts/qa/secrets.sh
 - 默认扫描变更文件（工作区 + staged + 可用 upstream diff）
 - 依赖：`gitleaks`
 - 行为规则：
-  - 未安装 `gitleaks`：提示后跳过
-  - 命中疑似密钥：默认提示不阻断
-  - `SECRETS_STRICT=1`：命中时阻断
+  - 未安装 `gitleaks`：默认提示后跳过，`SECRETS_STRICT=1` 时阻断
+  - 命中疑似密钥：默认提示不阻断，`SECRETS_STRICT=1` 时阻断
 - 常用环境变量：
   - `SKIP_SECRETS_SCAN=1`
   - `SECRETS_STRICT=1`
+  - `SECRETS_STAGED_ONLY=1`（仅扫描 staged 内容）
   - `QA_BASE_RANGE=origin/main...HEAD`
 
 ## 5) shellcheck
@@ -87,7 +94,43 @@ bash scripts/qa/shellcheck.sh
   - `SKIP_SHELLCHECK=1`
   - `SHELLCHECK_STRICT=1`（未安装 shellcheck 时阻断；pre-push 默认开启）
 
-## 6) fast
+## 6) go-vet
+
+```bash
+bash scripts/qa/go-vet.sh
+```
+
+- 在 `server` 目录执行 `go vet`（默认 `./...`，可传包参数）。
+- 常用环境变量：
+  - `SKIP_GO_VET=1`
+
+## 7) golangci-lint
+
+```bash
+bash scripts/qa/golangci-lint.sh
+```
+
+- 在 `server` 目录执行 `golangci-lint run`。
+- 默认仅拦截“相对 `HEAD` 的新增问题”，降低历史基线噪音。
+- 常用环境变量：
+  - `SKIP_GOLANGCI_LINT=1`
+  - `GOLANGCI_STRICT=1`（未安装 golangci-lint 时阻断）
+  - `GOLANGCI_ONLY_NEW=1`（默认）
+
+## 8) yamllint
+
+```bash
+bash scripts/qa/yamllint.sh
+```
+
+- 检查 YAML 语法与风格（默认仅检查变更 YAML，`YAMLLINT_ALL=1` 才全量扫描）。
+- 默认读取根目录 `.yamllint` 规则，排除锁文件与生成目录，降低历史基线噪声。
+- 常用环境变量：
+  - `SKIP_YAMLLINT=1`
+  - `YAMLLINT_STRICT=1`（未安装 yamllint 时阻断）
+  - `YAMLLINT_ALL=1`（全量扫描仓库 YAML）
+
+## 9) fast
 
 ```bash
 bash scripts/qa/fast.sh
@@ -97,7 +140,7 @@ bash scripts/qa/fast.sh
 - server：优先执行 `go test ./internal/... ./pkg/...`（目录存在才执行）
 - 适合在开发中频繁执行，快速发现明显问题。
 
-## 7) full
+## 10) full
 
 ```bash
 bash scripts/qa/full.sh
@@ -110,7 +153,7 @@ bash scripts/qa/full.sh
   - server：`go test ./... -> make build`
 - 适合在提交前/推送前做最终兜底检查。
 
-## 8) strict
+## 11) strict
 
 ```bash
 bash scripts/qa/strict.sh
@@ -122,7 +165,7 @@ bash scripts/qa/strict.sh
   - 默认运行 `shellcheck`
 - 适合发版前或主分支合并前执行。
 
-## 9) commit-msg
+## 12) commit-msg
 
 ```bash
 printf "chore(hooks): 校验提交信息\n" > /tmp/commit-msg.txt

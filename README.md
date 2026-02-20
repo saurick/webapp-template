@@ -62,7 +62,7 @@ bash /Users/simon/projects/webapp-template/scripts/setup-git-hooks.sh
 
 ## 本地质量门禁（无 CI）
 
-- `pre-commit`：仅对暂存 `web/` 文件做增量 `Prettier + ESLint --fix`
+- `pre-commit`：增量 `Prettier + ESLint --fix`，并执行 `gitleaks + shellcheck + go vet + golangci-lint + yamllint`（Go/YAML 按改动触发，golangci-lint 仅拦截新增问题）
 - `pre-push`：先执行 `scripts/qa/shellcheck.sh`（严格）再执行 `SECRETS_STRICT=1 scripts/qa/full.sh`
 - `commit-msg`：校验提交信息（Conventional Commits）
 

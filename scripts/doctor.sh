@@ -11,7 +11,7 @@ print_help() {
 
 检查项:
   - 必需命令: git / node / pnpm / go
-  - 可选命令: gitleaks / shellcheck
+  - 可选命令: gitleaks / shellcheck / golangci-lint / yamllint
   - hooks 路径与关键脚本存在性
   - Node 版本与版本文件（.n-node-version/.node-version/.nvmrc）一致性（仅提示）
 USAGE
@@ -54,6 +54,12 @@ print_cmd_version() {
     shellcheck)
       shellcheck --version 2>/dev/null | head -n 1 || true
       ;;
+    golangci-lint)
+      golangci-lint version 2>/dev/null | head -n 1 || true
+      ;;
+    yamllint)
+      yamllint --version 2>/dev/null | head -n 1 || true
+      ;;
   esac
 }
 
@@ -69,7 +75,7 @@ for cmd in git node pnpm go; do
 done
 
 echo "[doctor] 检查可选命令"
-for cmd in gitleaks shellcheck; do
+for cmd in gitleaks shellcheck golangci-lint yamllint; do
   if command -v "$cmd" >/dev/null 2>&1; then
     printf "  - [OK] %s: " "$cmd"
     print_cmd_version "$cmd"
@@ -97,6 +103,9 @@ required_files=(
   scripts/qa/db-guard.sh
   scripts/qa/secrets.sh
   scripts/qa/shellcheck.sh
+  scripts/qa/go-vet.sh
+  scripts/qa/golangci-lint.sh
+  scripts/qa/yamllint.sh
   scripts/git-hooks/pre-commit.sh
   scripts/git-hooks/pre-push.sh
   scripts/git-hooks/commit-msg.sh
