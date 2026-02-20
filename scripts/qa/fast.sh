@@ -2,7 +2,7 @@
 set -euo pipefail
 
 print_help() {
-  cat <<'USAGE'
+	cat <<'USAGE'
 用法:
   bash scripts/qa/fast.sh
 
@@ -19,56 +19,56 @@ USAGE
 }
 
 if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
-  print_help
-  exit 0
+	print_help
+	exit 0
 fi
 
 if [[ $# -gt 0 ]]; then
-  echo "[qa:fast] 不支持的参数: $*"
-  print_help
-  exit 1
+	echo "[qa:fast] 不支持的参数: $*"
+	print_help
+	exit 1
 fi
 
 ROOT_DIR="$(git rev-parse --show-toplevel)"
 cd "$ROOT_DIR"
 
 if ! command -v pnpm >/dev/null 2>&1; then
-  echo "[qa:fast] 未找到 pnpm，请先安装 pnpm"
-  exit 1
+	echo "[qa:fast] 未找到 pnpm，请先安装 pnpm"
+	exit 1
 fi
 
 if ! command -v go >/dev/null 2>&1; then
-  echo "[qa:fast] 未找到 go，请先安装 Go"
-  exit 1
+	echo "[qa:fast] 未找到 go，请先安装 Go"
+	exit 1
 fi
 
 if [ -x "$ROOT_DIR/scripts/qa/db-guard.sh" ]; then
-  bash "$ROOT_DIR/scripts/qa/db-guard.sh"
+	bash "$ROOT_DIR/scripts/qa/db-guard.sh"
 fi
 
 echo "[qa:fast] 运行 web 快速检查"
 (
-  cd "$ROOT_DIR/web"
-  pnpm lint
-  pnpm css
+	cd "$ROOT_DIR/web"
+	pnpm lint
+	pnpm css
 )
 
 echo "[qa:fast] 运行 server 快速检查"
 (
-  cd "$ROOT_DIR/server"
-  pkgs=()
-  if [ -d internal ]; then
-    pkgs+=("./internal/...")
-  fi
-  if [ -d pkg ]; then
-    pkgs+=("./pkg/...")
-  fi
+	cd "$ROOT_DIR/server"
+	pkgs=()
+	if [ -d internal ]; then
+		pkgs+=("./internal/...")
+	fi
+	if [ -d pkg ]; then
+		pkgs+=("./pkg/...")
+	fi
 
-  if [ "${#pkgs[@]}" -gt 0 ]; then
-    go test "${pkgs[@]}"
-  else
-    echo "[qa:fast] 未发现 internal/pkg，跳过 Go 测试"
-  fi
+	if [ "${#pkgs[@]}" -gt 0 ]; then
+		go test "${pkgs[@]}"
+	else
+		echo "[qa:fast] 未发现 internal/pkg，跳过 Go 测试"
+	fi
 )
 
 echo "[qa:fast] 完成"

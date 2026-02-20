@@ -54,6 +54,12 @@ bash /Users/simon/projects/webapp-template/scripts/qa/full.sh
 # 发版前严格检查（warning 也阻断）
 bash /Users/simon/projects/webapp-template/scripts/qa/strict.sh
 
+# shell 脚本格式化
+bash /Users/simon/projects/webapp-template/scripts/qa/shfmt.sh
+
+# Go 漏洞扫描
+bash /Users/simon/projects/webapp-template/scripts/qa/govulncheck.sh
+
 # 首次启用本地 hooks
 bash /Users/simon/projects/webapp-template/scripts/setup-git-hooks.sh
 ```
@@ -62,7 +68,7 @@ bash /Users/simon/projects/webapp-template/scripts/setup-git-hooks.sh
 
 ## 本地质量门禁（无 CI）
 
-- `pre-commit`：增量 `Prettier + ESLint --fix`，并执行 `gitleaks + shellcheck + go vet + golangci-lint + yamllint`（Go/YAML 按改动触发，golangci-lint 仅拦截新增问题）
+- `pre-commit`：增量 `Prettier + ESLint --fix + shfmt`，并执行 `gitleaks + shellcheck + go vet + golangci-lint + yamllint`（Go/YAML 按改动触发，golangci-lint 仅拦截新增问题）
 - `pre-push`：先执行 `scripts/qa/shellcheck.sh`（严格）再执行 `SECRETS_STRICT=1 scripts/qa/full.sh`
 - `commit-msg`：校验提交信息（Conventional Commits）
 

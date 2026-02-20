@@ -14,6 +14,8 @@
 | `scripts/qa/go-vet.sh` | 执行 Go vet 静态检查 | 改动 Go 代码后 |
 | `scripts/qa/golangci-lint.sh` | 执行 golangci-lint（默认仅新增问题） | 改动 Go 代码后 |
 | `scripts/qa/yamllint.sh` | 检查 YAML 语法与风格（基线降噪） | 改动 YAML 后 |
+| `scripts/qa/shfmt.sh` | 统一 shell 脚本格式 | 调整脚本后 |
+| `scripts/qa/govulncheck.sh` | 扫描 Go 依赖与代码可达漏洞 | 推送前 / 发版前 |
 | `scripts/qa/fast.sh` | 快速检查（web lint+css、server 快速测试） | 日常开发高频执行 |
 | `scripts/qa/full.sh` | 全量检查（pre-push 默认调用） | 提交前 / 推送前 |
 | `scripts/qa/strict.sh` | 严格检查（warning 视为失败） | 发版前 / 主分支前 |
@@ -22,7 +24,7 @@
 ## Hook 对应关系
 
 - `pre-commit` -> `scripts/git-hooks/pre-commit.sh`
-  - 增量 `prettier + eslint --fix`
+  - 增量 `prettier + eslint --fix + shfmt`
   - `gitleaks + shellcheck`
   - Go 变更时执行 `go vet + golangci-lint`（仅改动包 + 仅新增问题）
   - YAML 变更时执行 `yamllint`（仅暂存 YAML + .yamllint 降噪规则）
@@ -47,7 +49,7 @@ bash scripts/doctor.sh
 ```
 
 - 检查必需依赖：`git`、`node`、`pnpm`、`go`
-- 检查可选依赖：`gitleaks`、`shellcheck`、`golangci-lint`、`yamllint`
+- 检查可选依赖：`gitleaks`、`shellcheck`、`golangci-lint`、`yamllint`、`shfmt`、`govulncheck`
 - 检查 `core.hooksPath` 与关键脚本存在性
 - 若存在版本文件（`.n-node-version`、`.node-version`、`.nvmrc`），会提示当前 Node 版本是否一致
 
@@ -130,7 +132,30 @@ bash scripts/qa/yamllint.sh
   - `YAMLLINT_STRICT=1`（未安装 yamllint 时阻断）
   - `YAMLLINT_ALL=1`（全量扫描仓库 YAML）
 
-## 9) fast
+## 9) shfmt
+
+```bash
+bash scripts/qa/shfmt.sh
+```
+
+- 格式化 `scripts/` 与 `.githooks/` 下 shell 脚本。
+- 常用环境变量：
+  - `SKIP_SHFMT=1`
+  - `SHFMT_STRICT=1`（未安装 shfmt 时阻断）
+  - `SHFMT_CHECK=1`（仅检查格式，不改写文件）
+
+## 10) govulncheck
+
+```bash
+bash scripts/qa/govulncheck.sh
+```
+
+- 在 `server` 目录执行 `govulncheck`（默认 `./...`）。
+- 常用环境变量：
+  - `SKIP_GOVULNCHECK=1`
+  - `GOVULNCHECK_STRICT=1`（非 0 退出码时阻断）
+
+## 11) fast
 
 ```bash
 bash scripts/qa/fast.sh
@@ -140,7 +165,7 @@ bash scripts/qa/fast.sh
 - server：优先执行 `go test ./internal/... ./pkg/...`（目录存在才执行）
 - 适合在开发中频繁执行，快速发现明显问题。
 
-## 10) full
+## 12) full
 
 ```bash
 bash scripts/qa/full.sh
@@ -148,12 +173,12 @@ bash scripts/qa/full.sh
 
 - pre-push 默认以 `SECRETS_STRICT=1` 执行此脚本
 - 执行顺序：
-  - `db-guard` -> `secrets`
+  - `db-guard` -> `secrets` -> `govulncheck`（默认提示模式）
   - web：`lint -> css -> (可选 test) -> build`
   - server：`go test ./... -> make build`
 - 适合在提交前/推送前做最终兜底检查。
 
-## 11) strict
+## 13) strict
 
 ```bash
 bash scripts/qa/strict.sh
@@ -162,10 +187,10 @@ bash scripts/qa/strict.sh
 - 在 `full` 基础上追加严格规则：
   - `eslint --max-warnings=0`
   - `stylelint --max-warnings=0`
-  - 默认运行 `shellcheck`
+  - 默认运行 `shellcheck + shfmt(check) + govulncheck(strict)`
 - 适合发版前或主分支合并前执行。
 
-## 12) commit-msg
+## 14) commit-msg
 
 ```bash
 printf "chore(hooks): 校验提交信息\n" > /tmp/commit-msg.txt
