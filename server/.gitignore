@@ -31,7 +31,8 @@ Thumbs.db
 *.key
 *.log
 bin/
-server
+# 仅忽略项目根目录产出的 server 可执行文件，避免误伤 internal/server 与 cmd/server 目录。
+/server
 .env
 .env.local
 .env.*.local

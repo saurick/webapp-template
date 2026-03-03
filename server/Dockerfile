@@ -3,7 +3,7 @@
 # ======================
 # 1) 构建前端静态文件
 # ======================
-FROM node:24 AS web-builder
+FROM --platform=linux/amd64 node:24 AS web-builder
 
 WORKDIR /web
 
@@ -13,18 +13,23 @@ RUN npm install -g pnpm && \
     pnpm config set registry https://registry.npmmirror.com && \
     pnpm install --frozen-lockfile
 
-COPY web/ .
+COPY web/src ./src
+COPY web/public ./public
+COPY web/index.html ./
+COPY web/vite.config.js ./
+COPY web/tailwind.config.js ./
+COPY web/postcss.config.js ./
 RUN pnpm run build   # 输出到 web/build
 
 # ======================
 # 2) Builder 阶段
 # ======================
-FROM golang:1.24.1 AS builder
+FROM --platform=linux/amd64 golang:1.24.1 AS builder
 
 WORKDIR /src
 
-ADD ./go.mod ./go.mod
-ADD ./go.sum ./go.sum
+ADD server/go.mod ./go.mod
+ADD server/go.sum ./go.sum
 
 RUN go env -w GOPROXY=https://goproxy.cn,direct
 
@@ -32,7 +37,7 @@ RUN --mount=type=cache,id=gomod,target=/go/pkg/mod \
     --mount=type=cache,id=gobuild,target=/root/.cache/go-build \
     go mod download && go mod tidy
 
-COPY . /src
+COPY server/ /src
 
 ENV CGO_ENABLED=0
 
@@ -50,14 +55,14 @@ ENV TZ=Asia/Shanghai
 RUN --mount=type=cache,id=gomod,target=/go/pkg/mod \
     --mount=type=cache,id=gobuild,target=/root/.cache/go-build \
     mkdir -p bin && \
-    go build \
+    GOOS=linux GOARCH=amd64 go build \
       -ldflags "-X main.Version=${GIT_SHA}" \
       -o ./bin/server ./cmd/server
 
 # ======================
 # 3) Runtime 阶段
 # ======================
-FROM alpine:3.21
+FROM --platform=linux/amd64 alpine:3.21
 
 ARG GIT_SHA
 ARG GIT_SHA_SHORT

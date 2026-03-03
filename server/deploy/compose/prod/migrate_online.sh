@@ -100,14 +100,8 @@ urlencode() {
 
 MYSQL_CID=$(compose ps -q "$MYSQL_SERVICE" 2>/dev/null | head -n1 || true)
 if [ -z "${MYSQL_CID:-}" ]; then
-  MYSQL_CID=$(docker ps --filter "name=^/mysql8$" --format '{{.ID}}' | head -n1 || true)
-fi
-if [ -z "${MYSQL_CID:-}" ]; then
-  MYSQL_CID=$(docker ps --filter "ancestor=mysql:8" --format '{{.ID}}' | head -n1 || true)
-fi
-if [ -z "${MYSQL_CID:-}" ]; then
   echo "ERROR: 未找到 MySQL 服务容器（service=${MYSQL_SERVICE}）" >&2
-  echo "请确认 compose 已启动，或通过 MYSQL_SERVICE 指定正确服务名。" >&2
+  echo "请确认当前项目 compose 已启动，或通过 MYSQL_SERVICE 指定正确服务名。" >&2
   exit 1
 fi
 

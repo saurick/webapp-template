@@ -1,20 +1,20 @@
 services:
   mysql:
     image: mysql:8
-    container_name: mysql8
+    container_name: webapp-template-mysql
     restart: always
     ports:
-      - "${MYSQL_PORT:-3306}:3306"
+      - "${MYSQL_PORT:-3307}:3306"
     environment:
       MYSQL_ROOT_PASSWORD: "${MYSQL_ROOT_PASSWORD:-YP*H%k%a7xK1*q}"
       MYSQL_DATABASE: "${MYSQL_DATABASE:-test_database_atlas}"
       MYSQL_USER: "${MYSQL_USER:-test_user}"
       MYSQL_PASSWORD: "${MYSQL_PASSWORD:-2@&0kq%qFafA4d}"
-    mem_limit: 2g
-    mem_reservation: 1g
+    mem_limit: 512m
+    mem_reservation: 256m
     volumes:
-      - "${MYSQL_DATA_DIR:-/data/template/mysql/data}:/var/lib/mysql"
-      - "${MYSQL_CONF_FILE:-/data/template/mysql/conf/mysql8.cnf}:/etc/mysql/conf.d/mysql8.cnf:ro"
+      - "${MYSQL_DATA_DIR:-/data/webapp-template/mysql/data}:/var/lib/mysql"
+      - "${MYSQL_CONF_FILE:-/data/webapp-template/mysql/conf/mysql8.cnf}:/etc/mysql/conf.d/mysql8.cnf:ro"
     healthcheck:
       test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p\"$${MYSQL_ROOT_PASSWORD}\" --silent"]
       interval: 5s
@@ -25,19 +25,19 @@ services:
 
   jaeger:
     image: jaegertracing/all-in-one:latest
-    container_name: jaeger
+    container_name: webapp-template-jaeger
     restart: always
     ports:
-      - "${JAEGER_5775_PORT:-5775}:5775/udp"
-      - "${JAEGER_6831_PORT:-6831}:6831/udp"
-      - "${JAEGER_6832_PORT:-6832}:6832/udp"
-      - "${JAEGER_5778_PORT:-5778}:5778"
-      - "${JAEGER_UI_PORT:-16686}:16686"
-      - "${JAEGER_14268_PORT:-14268}:14268"
-      - "${JAEGER_14250_PORT:-14250}:14250"
-      - "${JAEGER_9411_PORT:-9411}:9411"
-      - "${JAEGER_OTLP_GRPC_PORT:-4317}:4317" # ⭐ gRPC OTLP
-      - "${JAEGER_OTLP_HTTP_PORT:-4318}:4318" # ⭐ HTTP OTLP
+      - "${JAEGER_5775_PORT:-15775}:5775/udp"
+      - "${JAEGER_6831_PORT:-16831}:6831/udp"
+      - "${JAEGER_6832_PORT:-16832}:6832/udp"
+      - "${JAEGER_5778_PORT:-15778}:5778"
+      - "${JAEGER_UI_PORT:-16687}:16686"
+      - "${JAEGER_14268_PORT:-24268}:14268"
+      - "${JAEGER_14250_PORT:-24250}:14250"
+      - "${JAEGER_9411_PORT:-19411}:9411"
+      - "${JAEGER_OTLP_GRPC_PORT:-14317}:4317" # ⭐ gRPC OTLP
+      - "${JAEGER_OTLP_HTTP_PORT:-14318}:4318" # ⭐ HTTP OTLP
     labels:
       - dev.orbstack.http-port=16686
       - dev.orbstack.domains=jaeger.orb.local
@@ -48,11 +48,13 @@ services:
       PROMETHEUS_SERVER_URL: "${PROMETHEUS_SERVER_URL:-http://host.docker.internal:3004}"
     extra_hosts:
       - "host.docker.internal:host-gateway"
+    mem_limit: 192m
+    mem_reservation: 96m
     networks: {}
 
   template-server:
-    image: "${TEMPLATE_SERVER_IMAGE:-template-server:20251210T212529-local}"
-    container_name: template-server
+    image: "${TEMPLATE_SERVER_IMAGE:-webapp-template-server:dev}"
+    container_name: webapp-template-server
     restart: always
     depends_on:
       mysql:
@@ -60,10 +62,10 @@ services:
       jaeger:
         condition: service_started
     ports:
-      - "${APP_HTTP_PORT:-8000}:8000"   # HTTP
-      - "${APP_GRPC_PORT:-9000}:9000"   # gRPC
+      - "${APP_HTTP_PORT:-8200}:8000"   # HTTP
+      - "${APP_GRPC_PORT:-9200}:9000"   # gRPC
     environment:
       TZ: "${TZ:-Asia/Shanghai}"
-    mem_limit: 1g
-    mem_reservation: 512m
+    mem_limit: 128m
+    mem_reservation: 64m
     networks: {}

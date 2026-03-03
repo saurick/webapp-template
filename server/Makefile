@@ -27,7 +27,7 @@ BUILD_TIME ?= $(shell date +"%Y%m%dT%H%M%S")
 IMAGE_TAG  := $(BUILD_TIME)-$(GIT_SHA_SHORT)
 # 镜像仓库地址先留空，export DOCKER_HOST=xxx，xxx为镜像仓库地址，后再执行 make build_server 即可
 DOCKER_HOST ?=
-IMAGE_NAME = $(if $(DOCKER_HOST),$(DOCKER_HOST)/simulator-server,$(NULL)simulator-server)
+IMAGE_NAME = $(if $(DOCKER_HOST),$(DOCKER_HOST)/webapp-template-server,$(NULL)webapp-template-server)
 
 ifeq ($(GOHOSTOS), windows)
 	Git_Bash=$(subst \,/,$(subst cmd\,bin\bash.exe,$(dir $(shell where git))))
@@ -255,7 +255,7 @@ image_gc:
 .PHONY: build_server push_server
 
 # 本地/开发环境额外打一个固定tag，可以是dev或者latest
-# 部署时就可以一直写 simulator-server:dev（或 :latest）
+# 部署时就可以一直写 webapp-template-server:dev（或 :latest）
 FIXED_TAG ?= dev
 
 # 构建服务器镜像（在 server/ 目录执行）
