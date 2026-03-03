@@ -94,7 +94,7 @@
         "parameters": [
           {
             "name": "url",
-            "description": "/rpc/{url} 里的 path 变量，用于区分不同业务域，比如 \"auth\"、\"collision\"、\"ml\" 等",
+            "description": "/rpc/{url} 里的 path 变量，用于区分不同业务域，比如 \"auth\"、\"erp\"、\"analytics\" 等",
             "in": "path",
             "required": true,
             "type": "string"
@@ -125,7 +125,7 @@
         },
         "method": {
           "type": "string",
-          "title": "比如: \"system.ping\" / \"collision.plan.list\" / \"collision.game.next\""
+          "title": "比如: \"system.ping\" / \"erp.order.list\" / \"erp.dashboard.summary\""
         },
         "params": {
           "type": "object",
@@ -205,7 +205,7 @@
         },
         "data": {
           "type": "object",
-          "title": "真正的业务数据 payload，所有 domain 统一塞到这里，\n比如：\n - system.ping         -\u003e {\"pong\": \"pong\"}\n - collision.plan.list -\u003e {\"plans\": [...]}\n - collision.game.next -\u003e {... round \u0026 session info ...}"
+          "title": "真正的业务数据 payload，所有 domain 统一塞到这里，\n比如：\n - system.ping         -\u003e {\"pong\": \"pong\"}\n - erp.order.list -\u003e {\"orders\": [...]}\n - erp.dashboard.summary -\u003e {\"kpis\": {...}}"
         }
       },
       "title": "--------------------\n通用结果封装\n--------------------"

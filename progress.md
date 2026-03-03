@@ -169,3 +169,9 @@
 - 验证：`cd /Users/simon/projects/webapp-template/server && go test ./cmd/server` 通过；`rg -n --hidden -g '!**/.git/**' -g '!progress.md' -e 'collision-simulator|trade-erp|simulator-server' /Users/simon/projects/webapp-template` 结果为空。
 - 下一步：如需历史文档完全无跨项目字样，可再单独清理 `progress.md` 历史记录。
 - 阻塞/风险：无。
+
+## 2026-03-03
+- 完成：清理 `server/api/jsonrpc/v1/jsonrpc.proto` 中易引起跨项目误解的示例注释，将 `collision.*` 示例替换为 `erp.*` 示例，并重新生成对应产物（`jsonrpc.pb.go`、`jsonrpc_grpc.pb.go`、`jsonrpc_http.pb.go`、`jsonrpc.swagger.json`），确保源文件与生成文件口径一致。
+- 验证：`rg -n --hidden -g '!**/.git/**' 'collision\\.|\\bcollision\\b|colli' /Users/simon/projects/webapp-template/server/api/jsonrpc/v1` 结果为空。
+- 下一步：如需彻底消除历史语义歧义，可进一步把 `erp.*` 改为中性 `domain.*` 示例（仅文案层变更）。
+- 阻塞/风险：无。

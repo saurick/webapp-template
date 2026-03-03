@@ -59,12 +59,12 @@ message GetJsonrpcReply {
 // POST 版本（推荐）
 // --------------------
 message PostJsonrpcRequest {
-  // /rpc/{url} 里的 path 变量，用于区分不同业务域，比如 "auth"、"collision"、"ml" 等
+  // /rpc/{url} 里的 path 变量，用于区分不同业务域，比如 "auth"、"erp"、"analytics" 等
   string url = 1;
 
   // JSON-RPC 标准字段
   string jsonrpc = 2;               // 一般是 "2.0"
-  string method = 3;                // 比如: "system.ping" / "collision.plan.list" / "collision.game.next"
+  string method = 3;                // 比如: "system.ping" / "erp.order.list" / "erp.dashboard.summary"
   google.protobuf.Struct params = 4;  // 原始 params
   string id = 5;                    // JSON-RPC id，不带 id 则可以视为通知
 }
@@ -86,7 +86,7 @@ message JsonrpcResult {
   // 真正的业务数据 payload，所有 domain 统一塞到这里，
   // 比如：
   //  - system.ping         -> {"pong": "pong"}
-  //  - collision.plan.list -> {"plans": [...]}
-  //  - collision.game.next -> {... round & session info ...}
+  //  - erp.order.list -> {"orders": [...]}
+  //  - erp.dashboard.summary -> {"kpis": {...}}
   google.protobuf.Struct data = 3;
 }
