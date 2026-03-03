@@ -30,8 +30,9 @@ import (
 
 // go build -ldflags "-X main.Version=x.y.z"
 var (
-	Name      string = "simulator-server"
-	TraceName string = "simulator-server.service"
+	// 使用项目专属服务标识，避免与其他项目的日志与链路追踪混淆。
+	Name      string = "webapp-template-server"
+	TraceName string = "webapp-template-server.service"
 	Version   string
 
 	flagconf string
