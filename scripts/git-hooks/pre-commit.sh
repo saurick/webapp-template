@@ -189,6 +189,9 @@ SECRETS_STRICT=1 SECRETS_STAGED_ONLY=1 bash "$ROOT_DIR/scripts/qa/secrets.sh"
 echo "[pre-commit] 运行 shellcheck"
 SHELLCHECK_STRICT=1 bash "$ROOT_DIR/scripts/qa/shellcheck.sh"
 
+echo "[pre-commit] 运行错误码魔法数字检查（仅 staged）"
+ERROR_CODE_GUARD_STAGED_ONLY=1 bash "$ROOT_DIR/scripts/qa/error-codes.sh"
+
 detect_go_targets
 if [[ "$HAS_GO_CHANGES" -eq 1 ]]; then
 	echo "[pre-commit] 检测到 Go 相关改动，运行 go vet（仅改动包）"

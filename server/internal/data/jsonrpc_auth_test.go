@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"server/internal/biz"
+	"server/internal/errcode"
 
 	"github.com/go-kratos/kratos/v2/log"
 	tracesdk "go.opentelemetry.io/otel/sdk/trace"
@@ -149,8 +150,8 @@ func TestJsonrpcData_AuthLogin_UserNotFound(t *testing.T) {
 	if res == nil || res.Code == 0 {
 		t.Fatalf("expected non-zero code for user not found, got %+v", res)
 	}
-	if res.Code != 10001 { // ErrUserNotFound
-		t.Fatalf("expected code=10001, got %d", res.Code)
+	if res.Code != errcode.AuthUserNotFound.Code {
+		t.Fatalf("expected code=%d, got %d", errcode.AuthUserNotFound.Code, res.Code)
 	}
 }
 
@@ -181,8 +182,8 @@ func TestJsonrpcData_AuthLogin_InvalidPassword(t *testing.T) {
 	if res == nil || res.Code == 0 {
 		t.Fatalf("expected non-zero code for invalid password, got %+v", res)
 	}
-	if res.Code != 10002 { // ErrInvalidPassword
-		t.Fatalf("expected code=10002, got %d", res.Code)
+	if res.Code != errcode.AuthInvalidPassword.Code {
+		t.Fatalf("expected code=%d, got %d", errcode.AuthInvalidPassword.Code, res.Code)
 	}
 }
 
@@ -234,8 +235,8 @@ func TestJsonrpcData_AuthUnknownMethod(t *testing.T) {
 	if res == nil || res.Code == 0 {
 		t.Fatalf("expected non-zero code for unknown method, got %+v", res)
 	}
-	if res.Code != 40012 {
-		t.Fatalf("expected code=40012, got %d", res.Code)
+	if res.Code != errcode.UnknownMethod.Code {
+		t.Fatalf("expected code=%d, got %d", errcode.UnknownMethod.Code, res.Code)
 	}
 }
 

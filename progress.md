@@ -1,3 +1,12 @@
+## 2026-03-08
+- 完成：把 `webapp-template` 的错误码治理收口成更适合作为模板复用的通用骨架：保留现有统一错误码目录与前端常量来源不变，并继续把“仅登录态失效才触发重新登录”的语义固定下来。
+- 完成：增强 `scripts/qa/error-codes.sh`，补上仓库内绝对路径入参兼容、`.mjs` 文件支持，以及“仅在错误码语境下匹配”的规则，避免后续模板派生项目把金额、配置值等普通数字误判为错误码。
+- 完成：新增模板级最小回归测试：服务端补 `server/internal/data/jsonrpc_error_mapping_test.go`，锁定 `auth.me` 未登录与 `ErrNoPermission` 的错误码映射；前端补 `web/src/common/consts/errorCodes.test.mjs` 并在 `web/package.json` 新增 `pnpm test`，锁定错误码唯一性、登录态失效分类与默认提示文案。
+- 完成：同步更新 `README.md` 与 `scripts/README.md`，把模板当前已自带前端最小测试与错误码守卫说明写回文档，减少后续派生仓库遗漏。
+- 验证：已通过 `bash /Users/simon/projects/webapp-template/scripts/qa/error-codes.sh /Users/simon/projects/webapp-template/server/internal/data/jsonrpc.go /Users/simon/projects/webapp-template/web/src/common/utils/jsonRpc.js /Users/simon/projects/webapp-template/web/src/common/utils/errorMessage.js /Users/simon/projects/webapp-template/web/src/common/consts/errorCodes.js /Users/simon/projects/webapp-template/web/src/common/consts/errorCodes.test.mjs`、`cd /Users/simon/projects/webapp-template/server && go test ./internal/errcode ./internal/data`、`cd /Users/simon/projects/webapp-template/web && pnpm exec eslint --no-warn-ignored src/common/consts/errorCodes.js src/common/consts/errorCodes.test.mjs src/common/utils/jsonRpc.js src/common/utils/errorMessage.js`、`cd /Users/simon/projects/webapp-template/web && pnpm test`、`bash /Users/simon/projects/webapp-template/scripts/qa/fast.sh`、`bash /Users/simon/projects/webapp-template/scripts/qa/full.sh`。
+- 下一步：后续若再派生新服务项目，建议直接复制 `server/internal/errcode/`、`web/src/common/consts/errorCodes.js`、`web/src/common/consts/errorCodes.test.mjs` 与 `scripts/qa/error-codes.sh`，再按项目语义分配具体码位。
+- 阻塞/风险：`bash /Users/simon/projects/webapp-template/scripts/qa/full.sh` 期间 `govulncheck` 仍提示本机 Go `1.26.0` 标准库漏洞（修复版本为 `1.26.1`）；当前模板门禁仍为提示模式未阻断，本次未改动相关调用链，后续若要把模板基线也收口为全绿，仍需单独升级本地/CI Go 工具链。
+
 ## 2026-03-07
 - 完成：将根目录 `.n-node-version` 从 `24.11.1` 升级到 `24.14.0`，统一项目本地 Node 版本锁定。
 - 完成：将 `server/Dockerfile` 与 `web/Dockerfile` 的前端构建基础镜像同步钉住到 `node:24.14.0`，避免容器与本地环境漂移。
@@ -213,3 +222,12 @@
 - 完成：复核仓库内正式文档与脚本入口，当前无额外 README/脚本依赖独立 `web/Dockerfile`；历史 `progress.md` 记录保留作为演进轨迹。
 - 下一步：若后续需要统一团队构建口径，可在发版说明或部署手册中明确“以 `server/Dockerfile` 作为唯一镜像构建入口”。
 - 阻塞/风险：独立前端镜像构建入口已移除；若外部仍有旧脚本直接调用 `/Users/simon/projects/webapp-template/web/Dockerfile`，需要同步切换到 `/Users/simon/projects/webapp-template/server/Dockerfile`。
+
+## 2026-03-07
+- 完成：为模板仓库新增统一错误码目录与唯一性校验，集中维护服务端对外错误码，并补充“仅登录态失效才触发重新登录”的分类函数，避免继续散落魔法数字或一码多义（`/Users/simon/projects/webapp-template/server/internal/errcode/catalog.go`、`/Users/simon/projects/webapp-template/server/internal/errcode/catalog_test.go`）。
+- 完成：将 `/Users/simon/projects/webapp-template/server/internal/data/jsonrpc.go` 改为引用统一错误码目录，修正历史语义冲突：`40302` 仅表示“未登录”，`40303` 仅表示“管理员已禁用”，`40304` 统一表示“权限不足”；同时把订阅类参数错误码从与用户管理冲突的 `40060~40064` 收口到独立段 `40080~40084`。
+- 完成：新增前端错误码常量并改造公共错误处理，只在 `AUTH_REQUIRED / AUTH_EXPIRED / AUTH_INVALID` 时清 token 与跳登录，避免把权限不足误处理成登出（`/Users/simon/projects/webapp-template/web/src/common/consts/errorCodes.js`、`/Users/simon/projects/webapp-template/web/src/common/utils/jsonRpc.js`、`/Users/simon/projects/webapp-template/web/src/common/utils/errorMessage.js`）。
+- 完成：新增错误码魔法数字守卫并接入 `fast/full/pre-commit`，同时把错误码治理约定补充到仓库说明，降低后续 AI/人工改动再次写散错误码的概率（`/Users/simon/projects/webapp-template/scripts/qa/error-codes.sh`、`/Users/simon/projects/webapp-template/scripts/qa/fast.sh`、`/Users/simon/projects/webapp-template/scripts/qa/full.sh`、`/Users/simon/projects/webapp-template/scripts/git-hooks/pre-commit.sh`、`/Users/simon/projects/webapp-template/AGENTS.md`、`/Users/simon/projects/webapp-template/README.md`、`/Users/simon/projects/webapp-template/scripts/README.md`）。
+- 验证：`bash /Users/simon/projects/webapp-template/scripts/qa/error-codes.sh`；`cd /Users/simon/projects/webapp-template/server && go test ./internal/errcode ./internal/data`；`cd /Users/simon/projects/webapp-template/web && pnpm exec eslint --no-warn-ignored src/common/consts/errorCodes.js src/common/utils/jsonRpc.js src/common/utils/errorMessage.js`；`bash /Users/simon/projects/webapp-template/scripts/qa/fast.sh`；`bash /Users/simon/projects/webapp-template/scripts/qa/full.sh`。
+- 下一步：建议后续新项目直接从本模板复制错误码目录、前端常量和 `error-codes` 守卫，把“错误码统一治理”作为默认脚手架能力保留下去。
+- 阻塞/风险：`scripts/qa/full.sh` 过程中 `govulncheck` 仍提示当前 Go `1.26.0` 标准库漏洞告警（修复版本为 `1.26.1`），但该脚本当前默认仅提示不阻断；若要把模板质量门禁也收口为全绿，后续仍需单独升级模板 Go 工具链与 Docker 构建基线。

@@ -64,11 +64,17 @@ bash /Users/simon/projects/webapp-template/scripts/qa/govulncheck.sh
 bash /Users/simon/projects/webapp-template/scripts/setup-git-hooks.sh
 ```
 
-说明：当前 `web/package.json` 未定义 `test` 脚本。
+说明：模板当前已内置最小前端回归测试，可执行 `cd /Users/simon/projects/webapp-template/web && pnpm test` 验证错误码常量与登录态错误分类。
+
+## 错误码治理
+
+- 服务端统一错误码目录：`/Users/simon/projects/webapp-template/server/internal/errcode/catalog.go`
+- 前端统一错误码常量：`/Users/simon/projects/webapp-template/web/src/common/consts/errorCodes.js`
+- 提交前可执行：`bash /Users/simon/projects/webapp-template/scripts/qa/error-codes.sh`，避免在业务代码里继续散落魔法数字。
 
 ## 本地质量门禁（无 CI）
 
-- `pre-commit`：增量 `Prettier + ESLint --fix + shfmt`，并执行 `gitleaks + shellcheck + go vet + golangci-lint + yamllint`（Go/YAML 按改动触发，golangci-lint 仅拦截新增问题）
+- `pre-commit`：增量 `Prettier + ESLint --fix + shfmt`，并执行 `gitleaks + shellcheck + error-codes + go vet + golangci-lint + yamllint`（Go/YAML 按改动触发，golangci-lint 仅拦截新增问题）
 - `pre-push`：先执行 `scripts/qa/shellcheck.sh`（严格）再执行 `SECRETS_STRICT=1 scripts/qa/full.sh`
 - `commit-msg`：校验提交信息（Conventional Commits）
 

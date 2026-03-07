@@ -54,7 +54,8 @@
     "start": "vite",
     "lint": "eslint --fix --ext .js --ext .jsx src/",
     "css": "stylelint \"src/**/*.{css,scss,sass}\"",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "node --test src/common/consts/errorCodes.test.mjs"
   },
   "sideEffects": [
     "**/*.css"

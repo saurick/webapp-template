@@ -1,12 +1,16 @@
-// server/web/src/common/utils/errorMessge.js
+// web/src/common/utils/errorMessage.js
 import { logout } from '@/common/auth/auth'
+import {
+  DEFAULT_RPC_ERROR_MESSAGES,
+  isAuthFailureCode,
+} from '@/common/consts/errorCodes'
 
 export function handleRpcError(err, { onNeedLogin } = {}) {
   const code = err?.code
-  const msg = ERROR_MESSAGES[code] || err?.message || '请求失败'
+  const msg = DEFAULT_RPC_ERROR_MESSAGES[code] || err?.message || '请求失败'
 
-  // token 过期：你也可以约定 10005
-  if (code === 40302 || code === 10005) {
+  // 仅登录态失效才触发登出，权限不足要保留当前会话。
+  if (isAuthFailureCode(code)) {
     logout()
     onNeedLogin?.()
   }
@@ -14,11 +18,4 @@ export function handleRpcError(err, { onNeedLogin } = {}) {
   return msg
 }
 
-export const ERROR_MESSAGES = {
-  40301: '只有管理员才能操作',
-  40302: '请先登录',
-  10001: '用户不存在',
-  10002: '密码错误',
-  10003: '用户已被禁用',
-  10004: '用户名已存在',
-}
+export const ERROR_MESSAGES = DEFAULT_RPC_ERROR_MESSAGES

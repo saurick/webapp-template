@@ -2,6 +2,7 @@
 import { RpcError } from '@/common/utils/rpcError'
 import { getToken, logout, getLoginPath } from '@/common/auth/auth'
 import { authBus } from '@/common/auth/authBus'
+import { isAuthFailureCode } from '@/common/consts/errorCodes'
 
 let globalRpcId = 0
 
@@ -93,8 +94,8 @@ export class JsonRpc {
 }
 
 function handleAuthError(code, message, authScope) {
-  // 10005=过期 40302=未登录 10006=无权限(可选)
-  if (code !== 10005 && code !== 40302 && code !== 10006) return
+  // 仅登录态失效才清 token，避免把权限不足误处理成登出。
+  if (!isAuthFailureCode(code)) return
 
   // 1) 清 token
   logout(authScope)

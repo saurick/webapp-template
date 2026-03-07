@@ -10,6 +10,7 @@ print_help() {
   执行开发期高频快速检查
 
 检查内容:
+  error-codes: 统一错误码魔法数字检查
   web: pnpm lint -> pnpm css
   server: go test ./internal/... ./pkg/...（存在即测）
 
@@ -44,6 +45,10 @@ fi
 
 if [ -x "$ROOT_DIR/scripts/qa/db-guard.sh" ]; then
 	bash "$ROOT_DIR/scripts/qa/db-guard.sh"
+fi
+
+if [ -x "$ROOT_DIR/scripts/qa/error-codes.sh" ]; then
+	bash "$ROOT_DIR/scripts/qa/error-codes.sh"
 fi
 
 echo "[qa:fast] 运行 web 快速检查"

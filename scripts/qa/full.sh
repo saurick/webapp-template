@@ -10,6 +10,7 @@ print_help() {
   执行推送前全量质量检查（pre-push 默认调用）
 
 检查内容:
+  error-codes: 统一错误码魔法数字检查
   web: pnpm lint -> pnpm css -> (若存在 test 脚本则 pnpm test) -> pnpm build
   server: go test ./... -> make build
 
@@ -56,6 +57,10 @@ fi
 
 if [ -x "$ROOT_DIR/scripts/qa/govulncheck.sh" ]; then
 	bash "$ROOT_DIR/scripts/qa/govulncheck.sh"
+fi
+
+if [ -x "$ROOT_DIR/scripts/qa/error-codes.sh" ]; then
+	bash "$ROOT_DIR/scripts/qa/error-codes.sh"
 fi
 
 echo "[qa:full] 运行 web 全量检查"

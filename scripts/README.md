@@ -16,6 +16,7 @@
 | `scripts/qa/yamllint.sh` | 检查 YAML 语法与风格（基线降噪） | 改动 YAML 后 |
 | `scripts/qa/shfmt.sh` | 统一 shell 脚本格式 | 调整脚本后 |
 | `scripts/qa/govulncheck.sh` | 扫描 Go 依赖与代码可达漏洞 | 推送前 / 发版前 |
+| `scripts/qa/error-codes.sh` | 检查业务代码是否裸写已注册错误码 | 改动接口/鉴权/前端错误处理后 |
 | `scripts/qa/fast.sh` | 快速检查（web lint+css、server 快速测试） | 日常开发高频执行 |
 | `scripts/qa/full.sh` | 全量检查（pre-push 默认调用） | 提交前 / 推送前 |
 | `scripts/qa/strict.sh` | 严格检查（warning 视为失败） | 发版前 / 主分支前 |
@@ -25,7 +26,7 @@
 
 - `pre-commit` -> `scripts/git-hooks/pre-commit.sh`
   - 增量 `prettier + eslint --fix + shfmt`
-  - `gitleaks + shellcheck`
+  - `gitleaks + shellcheck + error-codes`
   - Go 变更时执行 `go vet + golangci-lint`（仅改动包 + 仅新增问题）
   - YAML 变更时执行 `yamllint`（仅暂存 YAML + .yamllint 降噪规则）
 - `pre-push` -> `scripts/git-hooks/pre-push.sh` -> `scripts/qa/shellcheck.sh`（`SHELLCHECK_STRICT=1`）-> `scripts/qa/full.sh`（`SECRETS_STRICT=1`）
@@ -155,17 +156,30 @@ bash scripts/qa/govulncheck.sh
   - `SKIP_GOVULNCHECK=1`
   - `GOVULNCHECK_STRICT=1`（非 0 退出码时阻断）
 
-## 11) fast
+## 11) error-codes
+
+```bash
+bash scripts/qa/error-codes.sh
+```
+
+- 从 `server/internal/errcode/catalog.go` 提取已注册错误码，阻止在业务代码里直接裸写这些数字。
+- 默认检查 `server/` 与 `web/src/` 下业务代码；测试、文档、错误码目录、生成文件默认跳过。
+- 常用环境变量：
+  - `SKIP_ERROR_CODE_GUARD=1`
+  - `ERROR_CODE_GUARD_STAGED_ONLY=1`（pre-commit 默认使用）
+
+## 12) fast
 
 ```bash
 bash scripts/qa/fast.sh
 ```
 
+- `error-codes`：统一错误码魔法数字检查
 - web：`pnpm lint && pnpm css`
 - server：优先执行 `go test ./internal/... ./pkg/...`（目录存在才执行）
 - 适合在开发中频繁执行，快速发现明显问题。
 
-## 12) full
+## 13) full
 
 ```bash
 bash scripts/qa/full.sh
@@ -173,12 +187,12 @@ bash scripts/qa/full.sh
 
 - pre-push 默认以 `SECRETS_STRICT=1` 执行此脚本
 - 执行顺序：
-  - `db-guard` -> `secrets` -> `govulncheck`（默认提示模式）
-  - web：`lint -> css -> (可选 test) -> build`
+  - `db-guard` -> `secrets` -> `govulncheck`（默认提示模式） -> `error-codes`
+  - web：`lint -> css -> (若定义 test 则执行) -> build`
   - server：`go test ./... -> make build`
 - 适合在提交前/推送前做最终兜底检查。
 
-## 13) strict
+## 14) strict
 
 ```bash
 bash scripts/qa/strict.sh
@@ -190,7 +204,7 @@ bash scripts/qa/strict.sh
   - 默认运行 `shellcheck + shfmt(check) + govulncheck(strict)`
 - 适合发版前或主分支合并前执行。
 
-## 14) commit-msg
+## 15) commit-msg
 
 ```bash
 printf "chore(hooks): 校验提交信息\n" > /tmp/commit-msg.txt
