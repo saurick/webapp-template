@@ -1,9 +1,16 @@
 # server/Dockerfile
 
+# 默认保持 linux/amd64 运行时；若后续需要其他架构，统一覆盖平台与 Go 目标参数。
+ARG BUILDPLATFORM=linux/amd64
+ARG RUNTIMEPLATFORM=linux/amd64
+ARG GO_TARGETOS=linux
+ARG GO_TARGETARCH=amd64
+
 # ======================
 # 1) 构建前端静态文件
 # ======================
-FROM --platform=linux/amd64 node:24 AS web-builder
+# 与根目录 .n-node-version 对齐，避免容器与本地 Node 小版本漂移。
+FROM --platform=$BUILDPLATFORM node:24.14.0 AS web-builder
 
 WORKDIR /web
 
@@ -24,7 +31,10 @@ RUN pnpm run build   # 输出到 web/build
 # ======================
 # 2) Builder 阶段
 # ======================
-FROM --platform=linux/amd64 golang:1.24.1 AS builder
+FROM --platform=$BUILDPLATFORM golang:1.24.1 AS builder
+
+ARG GO_TARGETOS
+ARG GO_TARGETARCH
 
 WORKDIR /src
 
@@ -35,7 +45,7 @@ RUN go env -w GOPROXY=https://goproxy.cn,direct
 
 RUN --mount=type=cache,id=gomod,target=/go/pkg/mod \
     --mount=type=cache,id=gobuild,target=/root/.cache/go-build \
-    go mod download && go mod tidy
+    go mod download
 
 COPY server/ /src
 
@@ -52,17 +62,18 @@ ENV BUILD_TIME=${BUILD_TIME}
 ENV IMAGE_TAG=${IMAGE_TAG}
 ENV TZ=Asia/Shanghai
 
+# Go 二进制跟随目标参数，避免镜像架构与可执行文件不一致。
 RUN --mount=type=cache,id=gomod,target=/go/pkg/mod \
     --mount=type=cache,id=gobuild,target=/root/.cache/go-build \
     mkdir -p bin && \
-    GOOS=linux GOARCH=amd64 go build \
+    GOOS=${GO_TARGETOS} GOARCH=${GO_TARGETARCH} go build \
       -ldflags "-X main.Version=${GIT_SHA}" \
       -o ./bin/server ./cmd/server
 
 # ======================
 # 3) Runtime 阶段
 # ======================
-FROM --platform=linux/amd64 alpine:3.21
+FROM --platform=$RUNTIMEPLATFORM alpine:3.21
 
 ARG GIT_SHA
 ARG GIT_SHA_SHORT

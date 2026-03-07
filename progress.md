@@ -1,3 +1,16 @@
+## 2026-03-07
+- 完成：将根目录 `.n-node-version` 从 `24.11.1` 升级到 `24.14.0`，统一项目本地 Node 版本锁定。
+- 完成：将 `server/Dockerfile` 与 `web/Dockerfile` 的前端构建基础镜像同步钉住到 `node:24.14.0`，避免容器与本地环境漂移。
+- 验证：已复核仓库内 Node 版本声明位置；当前显式版本已与 `v24.14.0` 对齐。
+- 下一步：本地执行 `n auto` 或手动切换到 `v24.14.0` 后，再运行 `bash scripts/doctor.sh` / 前端构建检查环境一致性。
+- 阻塞/风险：若本机或 CI 仍使用旧版 Node 24.x，`doctor` 会继续提示版本不一致，需要同步升级运行环境。
+
+## 2026-03-07
+- 完成：在项目级 `/Users/simon/projects/webapp-template/AGENTS.md` 新增“服务端可观测性约束”，把 `trace/log`、统一包装、panic 兜底、结构化日志、观测性测试与最终交付说明要求固化到模板仓库规则中，便于后续新项目继承。
+- 验证：本次为协作约定补充，已人工复核条目与仓库当前 Go 服务端模板实践一致，未涉及运行时代码行为变更。
+- 下一步：后续基于模板派生的新项目默认沿用这套约束；如需更严格，可再补一条“新增自定义路由必须附观测性测试”的 review 清单。
+- 阻塞/风险：无。
+
 ## 2026-02-20
 - 完成：落地最小侵入基线策略：`pre-commit` 的 Go 检查改为“仅改动包 + `golangci-lint` 仅新增问题（`--new-from-rev HEAD`）”；YAML 检查改为“默认仅变更文件，`YAMLLINT_ALL=1` 才全量”。
 - 完成：新增并启用根目录 `.yamllint`（降噪规则 + 忽略锁文件/生成目录），并同步更新 `scripts/README.md` 与根 `README.md` 的门禁说明。
@@ -175,3 +188,28 @@
 - 验证：`rg -n --hidden -g '!**/.git/**' 'collision\\.|\\bcollision\\b|colli' /Users/simon/projects/webapp-template/server/api/jsonrpc/v1` 结果为空。
 - 下一步：如需彻底消除历史语义歧义，可进一步把 `erp.*` 改为中性 `domain.*` 示例（仅文案层变更）。
 - 阻塞/风险：无。
+
+## 2026-03-07
+- 完成：移除前端目录下已不再使用的 `/Users/simon/projects/webapp-template/web/nginx.conf`，避免仓库继续保留无实际消费方的 Nginx 配置。
+- 完成：新增 `/Users/simon/projects/webapp-template/web/.dockerignore`，排除宿主机 `node_modules` 与本地产物，修复 `web/Dockerfile` 在 `COPY . .` 时覆盖容器依赖目录的问题。
+- 完成：回归验证 `docker build -f /Users/simon/projects/webapp-template/web/Dockerfile -t webapp-template-web-no-nginx-verify /Users/simon/projects/webapp-template/web` 通过，确认移除 Nginx 配置后前端仍可稳定产出构建结果。
+- 下一步：若后续希望规范跨项目前端构建链路，可把同类 `.dockerignore` 模板下沉为统一脚手架约定。
+- 阻塞/风险：当前前端 Dockerfile 为纯构建镜像，不再承诺容器内直接提供静态站点服务；若未来需要单独运行前端容器，需补新的运行时镜像方案。
+
+## 2026-03-07
+- 完成：将 `/Users/simon/projects/webapp-template/server/Dockerfile` 的平台声明从硬编码 `linux/amd64` 收口为“构建阶段跟随 `BUILDPLATFORM`、运行阶段默认 `RUNTIMEPLATFORM=linux/amd64`、Go 目标架构独立显式控制”的写法，消除 Docker `--platform` 常量告警，同时保持现有 amd64 产物口径不变。
+- 完成：回归验证 `docker build -f /Users/simon/projects/webapp-template/server/Dockerfile -t webapp-template-server-platform-clean-final /Users/simon/projects/webapp-template` 通过，未再出现 `FromPlatformFlagConstDisallowed` / `RedundantTargetPlatform` 告警。
+- 下一步：若后续确需支持 arm64 产物，可在构建入口统一覆盖 `RUNTIMEPLATFORM`、`GO_TARGETOS`、`GO_TARGETARCH`，避免各项目手工分散修改。
+- 阻塞/风险：当前构建日志仍会出现 `go mod download && go mod tidy` 阶段的 `go: warning: "all" matched no packages` 提示，属既有构建顺序问题，不影响本次镜像产出。
+
+## 2026-03-07
+- 完成：将 `/Users/simon/projects/webapp-template/server/Dockerfile` 预热依赖阶段的 `go mod download && go mod tidy` 收口为仅执行 `go mod download`，去掉无源码上下文下的 `go: warning: "all" matched no packages` 构建提示。
+- 完成：回归验证 `docker build -f /Users/simon/projects/webapp-template/server/Dockerfile -t webapp-template-server-no-tidy-warning-verify /Users/simon/projects/webapp-template` 通过，日志中不再出现该提示。
+- 下一步：若后续要继续压缩构建日志噪音，可再评估是否把前端依赖安装阶段的 `npm notice` 与 `pnpm approve-builds` 提示一起处理。
+- 阻塞/风险：当前镜像构建不再在 Docker 内执行 `go mod tidy`；如后续确需自动整理依赖，应放回开发脚本或 CI 校验，而不是运行时镜像构建阶段。
+
+## 2026-03-07
+- 完成：将 `/Users/simon/projects/webapp-template/web/Dockerfile` 与 `/Users/simon/projects/webapp-template/web/.dockerignore` 移入系统回收站，收口为仅通过 `/Users/simon/projects/webapp-template/server/Dockerfile` 一次性完成前端构建与服务端镜像打包，避免继续维护重复的独立前端 Docker 入口。
+- 完成：复核仓库内正式文档与脚本入口，当前无额外 README/脚本依赖独立 `web/Dockerfile`；历史 `progress.md` 记录保留作为演进轨迹。
+- 下一步：若后续需要统一团队构建口径，可在发版说明或部署手册中明确“以 `server/Dockerfile` 作为唯一镜像构建入口”。
+- 阻塞/风险：独立前端镜像构建入口已移除；若外部仍有旧脚本直接调用 `/Users/simon/projects/webapp-template/web/Dockerfile`，需要同步切换到 `/Users/simon/projects/webapp-template/server/Dockerfile`。
