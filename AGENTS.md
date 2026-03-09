@@ -14,15 +14,17 @@
 - 新增关键链路或修复观测性缺口时，至少补一条对应的观测性回归测试，覆盖正常路径或关键兜底路径。
 - 最终回复需单列“观测性检查结果”或明确说明剩余盲区，不能只汇报功能改动。
 
-
 ## 错误码约定
 
 - 服务端错误码唯一来源：`server/internal/errcode/catalog.go`。
-- 前端错误码消费常量唯一来源：`web/src/common/consts/errorCodes.js`。
+- `web/src/common/consts/errorCodes.generated.js` 是生成产物，只承载原始 `RpcErrorCode`，由 `scripts/gen-error-codes.mjs` 维护，禁止手改；`scripts/qa/error-code-sync.sh`、`pre-commit`、`fast/full` 必须保持开启。
+- `web/src/common/consts/errorCodes.js` 是手写消费层 wrapper，模板内只保留通用消费逻辑（如鉴权分组、默认文案与 `isAuthFailureCode(...)`）；派生项目的业务特例应下沉到派生仓库，不要反写回模板通用层。
 - 除错误码目录、前端错误码常量文件、测试文件、文档外，禁止在业务代码中直接写 3 到 5 位错误码魔法数字。
 - 新增或修改错误码时，必须同时检查并按需更新：
   - 服务端错误码定义
-  - 前端错误码常量/消费逻辑
+  - 前端生成码表与消费层逻辑
   - 相关测试与文档
+  - `progress.md`
 - 必须保持“一码一义”，禁止复用已有错误码表达新语义。
-- 提交前若涉及错误码相关改动，应执行 `bash scripts/qa/error-codes.sh`；pre-commit 也应保持该检查开启。
+- 前端只有统一函数 `isAuthFailureCode(...)` 可以触发自动登出；权限不足不得触发登出。
+- 提交前若涉及错误码相关改动，应执行 `bash scripts/qa/error-code-sync.sh` 与 `bash scripts/qa/error-codes.sh`。

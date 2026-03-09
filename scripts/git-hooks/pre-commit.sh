@@ -183,14 +183,31 @@ if [[ "${#STAGED_FILES[@]}" -eq 0 ]]; then
 	exit 0
 fi
 
-echo "[pre-commit] 运行 gitleaks（仅暂存文件）"
-SECRETS_STRICT=1 SECRETS_STAGED_ONLY=1 bash "$ROOT_DIR/scripts/qa/secrets.sh"
-
 echo "[pre-commit] 运行 shellcheck"
 SHELLCHECK_STRICT=1 bash "$ROOT_DIR/scripts/qa/shellcheck.sh"
 
-echo "[pre-commit] 运行错误码魔法数字检查（仅 staged）"
+if [[ -f "$ROOT_DIR/scripts/gen-error-codes.mjs" ]]; then
+	if ! command -v node >/dev/null 2>&1; then
+		echo "[pre-commit] 未找到 node，无法同步前端错误码生成产物"
+		exit 1
+	fi
+
+	# 先同步生成产物，再做守卫检查，避免把目录真源与前端常量拆开提交。
+	echo "[pre-commit] 同步前端错误码生成产物"
+	node "$ROOT_DIR/scripts/gen-error-codes.mjs"
+	if [[ -f "$ROOT_DIR/web/src/common/consts/errorCodes.generated.js" ]]; then
+		git add -- "$ROOT_DIR/web/src/common/consts/errorCodes.generated.js"
+	fi
+fi
+
+echo "[pre-commit] 运行错误码生成同步检查"
+bash "$ROOT_DIR/scripts/qa/error-code-sync.sh"
+
+echo "[pre-commit] 运行错误码魔法数字检查（仅暂存文件）"
 ERROR_CODE_GUARD_STAGED_ONLY=1 bash "$ROOT_DIR/scripts/qa/error-codes.sh"
+
+echo "[pre-commit] 运行 gitleaks（仅暂存文件）"
+SECRETS_STRICT=1 SECRETS_STAGED_ONLY=1 bash "$ROOT_DIR/scripts/qa/secrets.sh"
 
 detect_go_targets
 if [[ "$HAS_GO_CHANGES" -eq 1 ]]; then

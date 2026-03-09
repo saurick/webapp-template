@@ -10,6 +10,7 @@ print_help() {
   执行推送前全量质量检查（pre-push 默认调用）
 
 检查内容:
+  error-code-sync: 前端生成错误码同步检查
   error-codes: 统一错误码魔法数字检查
   web: pnpm lint -> pnpm css -> (若存在 test 脚本则 pnpm test) -> pnpm build
   server: go test ./... -> make build
@@ -51,16 +52,22 @@ if [ -x "$ROOT_DIR/scripts/qa/db-guard.sh" ]; then
 	bash "$ROOT_DIR/scripts/qa/db-guard.sh"
 fi
 
+if [ -x "$ROOT_DIR/scripts/qa/error-code-sync.sh" ]; then
+	bash "$ROOT_DIR/scripts/qa/error-code-sync.sh"
+fi
+
+if [ -x "$ROOT_DIR/scripts/qa/error-codes.sh" ]; then
+	# 全量检查阶段先执行错误码守卫，避免问题扩散到发布前才暴露。
+	echo "[qa:full] 运行错误码魔法数字检查"
+	bash "$ROOT_DIR/scripts/qa/error-codes.sh"
+fi
+
 if [ -x "$ROOT_DIR/scripts/qa/secrets.sh" ]; then
 	bash "$ROOT_DIR/scripts/qa/secrets.sh"
 fi
 
 if [ -x "$ROOT_DIR/scripts/qa/govulncheck.sh" ]; then
 	bash "$ROOT_DIR/scripts/qa/govulncheck.sh"
-fi
-
-if [ -x "$ROOT_DIR/scripts/qa/error-codes.sh" ]; then
-	bash "$ROOT_DIR/scripts/qa/error-codes.sh"
 fi
 
 echo "[qa:full] 运行 web 全量检查"

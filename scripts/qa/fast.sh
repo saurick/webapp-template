@@ -10,6 +10,7 @@ print_help() {
   执行开发期高频快速检查
 
 检查内容:
+  error-code-sync: 前端生成错误码同步检查
   error-codes: 统一错误码魔法数字检查
   web: pnpm lint -> pnpm css
   server: go test ./internal/... ./pkg/...（存在即测）
@@ -47,7 +48,13 @@ if [ -x "$ROOT_DIR/scripts/qa/db-guard.sh" ]; then
 	bash "$ROOT_DIR/scripts/qa/db-guard.sh"
 fi
 
+if [ -x "$ROOT_DIR/scripts/qa/error-code-sync.sh" ]; then
+	bash "$ROOT_DIR/scripts/qa/error-code-sync.sh"
+fi
+
 if [ -x "$ROOT_DIR/scripts/qa/error-codes.sh" ]; then
+	# 先拦截错误码魔法数字，避免在明显违规代码上继续跑后续检查。
+	echo "[qa:fast] 运行错误码魔法数字检查"
 	bash "$ROOT_DIR/scripts/qa/error-codes.sh"
 fi
 

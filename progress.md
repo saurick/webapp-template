@@ -1,3 +1,18 @@
+## 2026-03-09
+- 完成：精简并重写 `/Users/simon/projects/webapp-template/AGENTS.md` 的错误码约定，把模板仓库默认采用的“服务端真源 -> 构建期生成 `errorCodes.generated.js` -> 手写 `errorCodes.js` 消费层 wrapper”模式固化下来，明确生成文件禁止手改、前端业务代码优先走 wrapper、错误码变更必须跑同步守卫。
+- 完成：同步把通用错误码治理模式沉淀到全局 `/Users/simon/.codex/AGENTS.md`，并把模板层约束收口为“只保留通用鉴权分组与默认文案，项目特例下沉到派生仓库”，避免把某个项目的特殊语义反写回模板。
+- 验证：已人工复核全局 AGENTS 与模板项目 AGENTS 的职责边界、路径命名和当前仓库实现一致；本次仅为协作规则更新，未改动运行时代码。
+- 下一步：后续基于模板派生新项目时，默认沿用这套分层模式，再仅在派生仓库补项目特例和码位语义。
+- 阻塞/风险：无。
+
+## 2026-03-09
+- 完成：将模板仓库的错误码治理升级为“服务端目录真源 + 构建期生成前端码表”的默认模式：继续以 `/Users/simon/projects/webapp-template/server/internal/errcode/catalog.go` 为唯一真源，新增 `/Users/simon/projects/webapp-template/scripts/gen-error-codes.mjs` 生成 `/Users/simon/projects/webapp-template/web/src/common/consts/errorCodes.generated.js`，并把 `/Users/simon/projects/webapp-template/web/src/common/consts/errorCodes.js` 收口为消费层薄封装，便于后续新项目直接继承。
+- 完成：新增 `/Users/simon/projects/webapp-template/scripts/qa/error-code-sync.sh`，并把错误码生成/同步校验接入 `/Users/simon/projects/webapp-template/web/package.json` 的 `prebuild`、`pretest`，以及 `/Users/simon/projects/webapp-template/scripts/git-hooks/pre-commit.sh`、`/Users/simon/projects/webapp-template/scripts/qa/fast.sh`、`/Users/simon/projects/webapp-template/scripts/qa/full.sh`，让模板默认具备“前后端错误码漏同步即阻断”的基线能力。
+- 完成：同步更新 `/Users/simon/projects/webapp-template/README.md` 与 `/Users/simon/projects/webapp-template/scripts/README.md` 的错误码治理文档，并补齐 `/Users/simon/projects/webapp-template/web/src/common/consts/errorCodes.test.mjs`，确保模板项目开箱即带错误码唯一性与登录态分类回归。
+- 验证：已通过 `bash /Users/simon/projects/webapp-template/scripts/qa/error-code-sync.sh`、`bash /Users/simon/projects/webapp-template/scripts/qa/error-codes.sh`、`cd /Users/simon/projects/webapp-template/server && go test ./internal/errcode ./internal/data`、`cd /Users/simon/projects/webapp-template/web && pnpm exec eslint --no-warn-ignored src/common/consts/errorCodes.js src/common/consts/errorCodes.generated.js src/common/consts/errorCodes.test.mjs`、`cd /Users/simon/projects/webapp-template/web && pnpm test`、`bash /Users/simon/projects/webapp-template/scripts/qa/fast.sh`、`bash /Users/simon/projects/webapp-template/scripts/qa/full.sh`、`bash /Users/simon/projects/webapp-template/scripts/qa/shfmt.sh scripts/git-hooks/pre-commit.sh scripts/qa/fast.sh scripts/qa/full.sh scripts/qa/error-code-sync.sh`、`bash /Users/simon/projects/webapp-template/scripts/qa/shellcheck.sh`。
+- 下一步：后续基于模板新建项目时，可直接沿用这套“catalog.go 真源 + generated 前端码表 + QA/CI 同步校验”的默认骨架，再按项目特例补消费层函数和文案。
+- 阻塞/风险：`bash /Users/simon/projects/webapp-template/scripts/qa/full.sh` 当前已通过，`govulncheck` 显示代码可达漏洞为 0，但仍提示依赖模块中有 5 个“当前未调用”的漏洞记录；模板层本次未改动相关依赖，后续仍建议单独安排 Go/依赖升级回归。
+
 ## 2026-03-08
 - 完成：把 `webapp-template` 的错误码治理收口成更适合作为模板复用的通用骨架：保留现有统一错误码目录与前端常量来源不变，并继续把“仅登录态失效才触发重新登录”的语义固定下来。
 - 完成：增强 `scripts/qa/error-codes.sh`，补上仓库内绝对路径入参兼容、`.mjs` 文件支持，以及“仅在错误码语境下匹配”的规则，避免后续模板派生项目把金额、配置值等普通数字误判为错误码。
