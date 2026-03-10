@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"reflect"
 	"server/internal/data/model/ent/adminuser"
-	"server/internal/data/model/ent/invitecode"
 	"server/internal/data/model/ent/user"
 	"sync"
 
@@ -75,9 +74,8 @@ var (
 func checkColumn(t, c string) error {
 	initCheck.Do(func() {
 		columnCheck = sql.NewColumnCheck(map[string]func(string) bool{
-			adminuser.Table:  adminuser.ValidColumn,
-			invitecode.Table: invitecode.ValidColumn,
-			user.Table:       user.ValidColumn,
+			adminuser.Table: adminuser.ValidColumn,
+			user.Table:      user.ValidColumn,
 		})
 	})
 	return columnCheck(t, c)

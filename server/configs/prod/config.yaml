@@ -24,7 +24,6 @@ trace:
 
 # 数据相关
 data:
-  user_expiry_warning_days: 5
   # 主数据库，保存核心数据
   mysql:
     # if true output sql

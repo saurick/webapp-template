@@ -64,16 +64,6 @@ func PasswordHash(v string) predicate.AdminUser {
 	return predicate.AdminUser(sql.FieldEQ(FieldPasswordHash, v))
 }
 
-// Level applies equality check predicate on the "level" field. It's identical to LevelEQ.
-func Level(v int8) predicate.AdminUser {
-	return predicate.AdminUser(sql.FieldEQ(FieldLevel, v))
-}
-
-// ParentID applies equality check predicate on the "parent_id" field. It's identical to ParentIDEQ.
-func ParentID(v int) predicate.AdminUser {
-	return predicate.AdminUser(sql.FieldEQ(FieldParentID, v))
-}
-
 // Disabled applies equality check predicate on the "disabled" field. It's identical to DisabledEQ.
 func Disabled(v bool) predicate.AdminUser {
 	return predicate.AdminUser(sql.FieldEQ(FieldDisabled, v))
@@ -222,96 +212,6 @@ func PasswordHashEqualFold(v string) predicate.AdminUser {
 // PasswordHashContainsFold applies the ContainsFold predicate on the "password_hash" field.
 func PasswordHashContainsFold(v string) predicate.AdminUser {
 	return predicate.AdminUser(sql.FieldContainsFold(FieldPasswordHash, v))
-}
-
-// LevelEQ applies the EQ predicate on the "level" field.
-func LevelEQ(v int8) predicate.AdminUser {
-	return predicate.AdminUser(sql.FieldEQ(FieldLevel, v))
-}
-
-// LevelNEQ applies the NEQ predicate on the "level" field.
-func LevelNEQ(v int8) predicate.AdminUser {
-	return predicate.AdminUser(sql.FieldNEQ(FieldLevel, v))
-}
-
-// LevelIn applies the In predicate on the "level" field.
-func LevelIn(vs ...int8) predicate.AdminUser {
-	return predicate.AdminUser(sql.FieldIn(FieldLevel, vs...))
-}
-
-// LevelNotIn applies the NotIn predicate on the "level" field.
-func LevelNotIn(vs ...int8) predicate.AdminUser {
-	return predicate.AdminUser(sql.FieldNotIn(FieldLevel, vs...))
-}
-
-// LevelGT applies the GT predicate on the "level" field.
-func LevelGT(v int8) predicate.AdminUser {
-	return predicate.AdminUser(sql.FieldGT(FieldLevel, v))
-}
-
-// LevelGTE applies the GTE predicate on the "level" field.
-func LevelGTE(v int8) predicate.AdminUser {
-	return predicate.AdminUser(sql.FieldGTE(FieldLevel, v))
-}
-
-// LevelLT applies the LT predicate on the "level" field.
-func LevelLT(v int8) predicate.AdminUser {
-	return predicate.AdminUser(sql.FieldLT(FieldLevel, v))
-}
-
-// LevelLTE applies the LTE predicate on the "level" field.
-func LevelLTE(v int8) predicate.AdminUser {
-	return predicate.AdminUser(sql.FieldLTE(FieldLevel, v))
-}
-
-// ParentIDEQ applies the EQ predicate on the "parent_id" field.
-func ParentIDEQ(v int) predicate.AdminUser {
-	return predicate.AdminUser(sql.FieldEQ(FieldParentID, v))
-}
-
-// ParentIDNEQ applies the NEQ predicate on the "parent_id" field.
-func ParentIDNEQ(v int) predicate.AdminUser {
-	return predicate.AdminUser(sql.FieldNEQ(FieldParentID, v))
-}
-
-// ParentIDIn applies the In predicate on the "parent_id" field.
-func ParentIDIn(vs ...int) predicate.AdminUser {
-	return predicate.AdminUser(sql.FieldIn(FieldParentID, vs...))
-}
-
-// ParentIDNotIn applies the NotIn predicate on the "parent_id" field.
-func ParentIDNotIn(vs ...int) predicate.AdminUser {
-	return predicate.AdminUser(sql.FieldNotIn(FieldParentID, vs...))
-}
-
-// ParentIDGT applies the GT predicate on the "parent_id" field.
-func ParentIDGT(v int) predicate.AdminUser {
-	return predicate.AdminUser(sql.FieldGT(FieldParentID, v))
-}
-
-// ParentIDGTE applies the GTE predicate on the "parent_id" field.
-func ParentIDGTE(v int) predicate.AdminUser {
-	return predicate.AdminUser(sql.FieldGTE(FieldParentID, v))
-}
-
-// ParentIDLT applies the LT predicate on the "parent_id" field.
-func ParentIDLT(v int) predicate.AdminUser {
-	return predicate.AdminUser(sql.FieldLT(FieldParentID, v))
-}
-
-// ParentIDLTE applies the LTE predicate on the "parent_id" field.
-func ParentIDLTE(v int) predicate.AdminUser {
-	return predicate.AdminUser(sql.FieldLTE(FieldParentID, v))
-}
-
-// ParentIDIsNil applies the IsNil predicate on the "parent_id" field.
-func ParentIDIsNil() predicate.AdminUser {
-	return predicate.AdminUser(sql.FieldIsNull(FieldParentID))
-}
-
-// ParentIDNotNil applies the NotNil predicate on the "parent_id" field.
-func ParentIDNotNil() predicate.AdminUser {
-	return predicate.AdminUser(sql.FieldNotNull(FieldParentID))
 }
 
 // DisabledEQ applies the EQ predicate on the "disabled" field.

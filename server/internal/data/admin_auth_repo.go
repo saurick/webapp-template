@@ -26,6 +26,42 @@ func NewAdminAuthRepo(data *Data, logger log.Logger) *adminAuthRepo {
 
 var _ biz.AdminAuthRepo = (*adminAuthRepo)(nil)
 
+func (r *adminAuthRepo) GetAdminByID(ctx context.Context, id int) (*biz.AdminUser, error) {
+	l := r.log.WithContext(ctx)
+	if id <= 0 {
+		l.Warn("GetAdminByID: invalid id")
+		return nil, errors.New("admin id is required")
+	}
+
+	var (
+		adminID      int
+		uname        string
+		passwordHash string
+		disabled     bool
+	)
+
+	err := r.data.sqldb.QueryRowContext(
+		ctx,
+		"SELECT id, username, password_hash, disabled FROM admin_users WHERE id = ? LIMIT 1",
+		id,
+	).Scan(&adminID, &uname, &passwordHash, &disabled)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			l.Infof("GetAdminByID not found id=%d", id)
+		} else {
+			l.Errorf("GetAdminByID failed id=%d err=%v", id, err)
+		}
+		return nil, err
+	}
+
+	return &biz.AdminUser{
+		ID:           adminID,
+		Username:     uname,
+		PasswordHash: passwordHash,
+		Disabled:     disabled,
+	}, nil
+}
+
 func (r *adminAuthRepo) GetAdminByUsername(ctx context.Context, username string) (*biz.AdminUser, error) {
 	l := r.log.WithContext(ctx)
 	if username == "" {

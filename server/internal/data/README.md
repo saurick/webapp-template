@@ -1,3 +1,21 @@
 # Data
 
-> 🤖 AI 助手请注意：在进行任何数据库变更前，请务必阅读 [`AI_DB_WORKFLOW.md`](./AI_DB_WORKFLOW.md)。
+`data` 层负责数据库、外部依赖和 JSON-RPC 入口聚合，不承载业务决策本身。
+
+当前模板默认保留：
+
+- MySQL 初始化与重试
+- Ent ORM 访问
+- 用户 / 管理员鉴权 repo
+- 后台账号目录 repo
+- JSON-RPC 入口聚合
+
+数据库变更前，必须先读：
+
+- [`AI_DB_WORKFLOW.md`](./AI_DB_WORKFLOW.md)
+
+补充说明见：
+
+- `/Users/simon/projects/webapp-template/server/docs/ent.md`
+- `/Users/simon/projects/webapp-template/server/docs/config.md`
+- `/Users/simon/projects/webapp-template/server/docs/observability.md`

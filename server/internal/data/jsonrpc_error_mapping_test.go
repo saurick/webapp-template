@@ -11,6 +11,15 @@ import (
 	"github.com/go-kratos/kratos/v2/log"
 )
 
+type stubAdminAccountReader struct {
+	admin *biz.AdminUser
+	err   error
+}
+
+func (s stubAdminAccountReader) GetAdminByID(_ context.Context, _ int) (*biz.AdminUser, error) {
+	return s.admin, s.err
+}
+
 func TestJsonrpcData_AuthMe_UnauthorizedUsesAuthRequired(t *testing.T) {
 	j := &JsonrpcData{
 		log: log.NewHelper(log.With(log.NewStdLogger(io.Discard), "module", "data.jsonrpc.test")),
@@ -40,12 +49,25 @@ func TestJsonrpcData_ErrorMappers_NoPermissionUsesPermissionDenied(t *testing.T)
 	if userRes.Code != errcode.PermissionDenied.Code {
 		t.Fatalf("expected user code=%d, got %d", errcode.PermissionDenied.Code, userRes.Code)
 	}
+}
 
-	adminRes := j.mapAdminManageError(context.Background(), biz.ErrNoPermission)
+func TestJsonrpcData_RequireAdmin_DisabledAdminUsesAdminDisabled(t *testing.T) {
+	j := &JsonrpcData{
+		log:         log.NewHelper(log.With(log.NewStdLogger(io.Discard), "module", "data.jsonrpc.test")),
+		adminReader: stubAdminAccountReader{admin: &biz.AdminUser{ID: 1, Username: "admin", Disabled: true}},
+	}
+
+	ctx := biz.NewContextWithClaims(context.Background(), &biz.AuthClaims{
+		UserID:   1,
+		Username: "admin",
+		Role:     biz.RoleAdmin,
+	})
+
+	_, adminRes := j.requireAdmin(ctx)
 	if adminRes == nil {
 		t.Fatalf("expected admin result not nil")
 	}
-	if adminRes.Code != errcode.PermissionDenied.Code {
-		t.Fatalf("expected admin code=%d, got %d", errcode.PermissionDenied.Code, adminRes.Code)
+	if adminRes.Code != errcode.AdminDisabled.Code {
+		t.Fatalf("expected admin code=%d, got %d", errcode.AdminDisabled.Code, adminRes.Code)
 	}
 }

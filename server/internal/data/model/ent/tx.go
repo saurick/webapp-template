@@ -14,8 +14,6 @@ type Tx struct {
 	config
 	// AdminUser is the client for interacting with the AdminUser builders.
 	AdminUser *AdminUserClient
-	// InviteCode is the client for interacting with the InviteCode builders.
-	InviteCode *InviteCodeClient
 	// User is the client for interacting with the User builders.
 	User *UserClient
 
@@ -150,7 +148,6 @@ func (tx *Tx) Client() *Client {
 
 func (tx *Tx) init() {
 	tx.AdminUser = NewAdminUserClient(tx.config)
-	tx.InviteCode = NewInviteCodeClient(tx.config)
 	tx.User = NewUserClient(tx.config)
 }
 

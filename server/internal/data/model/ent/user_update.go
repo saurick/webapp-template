@@ -56,74 +56,6 @@ func (_u *UserUpdate) SetNillablePasswordHash(v *string) *UserUpdate {
 	return _u
 }
 
-// SetInviteCode sets the "invite_code" field.
-func (_u *UserUpdate) SetInviteCode(v string) *UserUpdate {
-	_u.mutation.SetInviteCode(v)
-	return _u
-}
-
-// SetNillableInviteCode sets the "invite_code" field if the given value is not nil.
-func (_u *UserUpdate) SetNillableInviteCode(v *string) *UserUpdate {
-	if v != nil {
-		_u.SetInviteCode(*v)
-	}
-	return _u
-}
-
-// ClearInviteCode clears the value of the "invite_code" field.
-func (_u *UserUpdate) ClearInviteCode() *UserUpdate {
-	_u.mutation.ClearInviteCode()
-	return _u
-}
-
-// SetRole sets the "role" field.
-func (_u *UserUpdate) SetRole(v int8) *UserUpdate {
-	_u.mutation.ResetRole()
-	_u.mutation.SetRole(v)
-	return _u
-}
-
-// SetNillableRole sets the "role" field if the given value is not nil.
-func (_u *UserUpdate) SetNillableRole(v *int8) *UserUpdate {
-	if v != nil {
-		_u.SetRole(*v)
-	}
-	return _u
-}
-
-// AddRole adds value to the "role" field.
-func (_u *UserUpdate) AddRole(v int8) *UserUpdate {
-	_u.mutation.AddRole(v)
-	return _u
-}
-
-// SetAdminID sets the "admin_id" field.
-func (_u *UserUpdate) SetAdminID(v int) *UserUpdate {
-	_u.mutation.ResetAdminID()
-	_u.mutation.SetAdminID(v)
-	return _u
-}
-
-// SetNillableAdminID sets the "admin_id" field if the given value is not nil.
-func (_u *UserUpdate) SetNillableAdminID(v *int) *UserUpdate {
-	if v != nil {
-		_u.SetAdminID(*v)
-	}
-	return _u
-}
-
-// AddAdminID adds value to the "admin_id" field.
-func (_u *UserUpdate) AddAdminID(v int) *UserUpdate {
-	_u.mutation.AddAdminID(v)
-	return _u
-}
-
-// ClearAdminID clears the value of the "admin_id" field.
-func (_u *UserUpdate) ClearAdminID() *UserUpdate {
-	_u.mutation.ClearAdminID()
-	return _u
-}
-
 // SetDisabled sets the "disabled" field.
 func (_u *UserUpdate) SetDisabled(v bool) *UserUpdate {
 	_u.mutation.SetDisabled(v)
@@ -155,47 +87,6 @@ func (_u *UserUpdate) SetNillableLastLoginAt(v *time.Time) *UserUpdate {
 // ClearLastLoginAt clears the value of the "last_login_at" field.
 func (_u *UserUpdate) ClearLastLoginAt() *UserUpdate {
 	_u.mutation.ClearLastLoginAt()
-	return _u
-}
-
-// SetPoints sets the "points" field.
-func (_u *UserUpdate) SetPoints(v int64) *UserUpdate {
-	_u.mutation.ResetPoints()
-	_u.mutation.SetPoints(v)
-	return _u
-}
-
-// SetNillablePoints sets the "points" field if the given value is not nil.
-func (_u *UserUpdate) SetNillablePoints(v *int64) *UserUpdate {
-	if v != nil {
-		_u.SetPoints(*v)
-	}
-	return _u
-}
-
-// AddPoints adds value to the "points" field.
-func (_u *UserUpdate) AddPoints(v int64) *UserUpdate {
-	_u.mutation.AddPoints(v)
-	return _u
-}
-
-// SetExpiresAt sets the "expires_at" field.
-func (_u *UserUpdate) SetExpiresAt(v time.Time) *UserUpdate {
-	_u.mutation.SetExpiresAt(v)
-	return _u
-}
-
-// SetNillableExpiresAt sets the "expires_at" field if the given value is not nil.
-func (_u *UserUpdate) SetNillableExpiresAt(v *time.Time) *UserUpdate {
-	if v != nil {
-		_u.SetExpiresAt(*v)
-	}
-	return _u
-}
-
-// ClearExpiresAt clears the value of the "expires_at" field.
-func (_u *UserUpdate) ClearExpiresAt() *UserUpdate {
-	_u.mutation.ClearExpiresAt()
 	return _u
 }
 
@@ -258,11 +149,6 @@ func (_u *UserUpdate) check() error {
 			return &ValidationError{Name: "password_hash", err: fmt.Errorf(`ent: validator failed for field "User.password_hash": %w`, err)}
 		}
 	}
-	if v, ok := _u.mutation.InviteCode(); ok {
-		if err := user.InviteCodeValidator(v); err != nil {
-			return &ValidationError{Name: "invite_code", err: fmt.Errorf(`ent: validator failed for field "User.invite_code": %w`, err)}
-		}
-	}
 	return nil
 }
 
@@ -284,27 +170,6 @@ func (_u *UserUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	if value, ok := _u.mutation.PasswordHash(); ok {
 		_spec.SetField(user.FieldPasswordHash, field.TypeString, value)
 	}
-	if value, ok := _u.mutation.InviteCode(); ok {
-		_spec.SetField(user.FieldInviteCode, field.TypeString, value)
-	}
-	if _u.mutation.InviteCodeCleared() {
-		_spec.ClearField(user.FieldInviteCode, field.TypeString)
-	}
-	if value, ok := _u.mutation.Role(); ok {
-		_spec.SetField(user.FieldRole, field.TypeInt8, value)
-	}
-	if value, ok := _u.mutation.AddedRole(); ok {
-		_spec.AddField(user.FieldRole, field.TypeInt8, value)
-	}
-	if value, ok := _u.mutation.AdminID(); ok {
-		_spec.SetField(user.FieldAdminID, field.TypeInt, value)
-	}
-	if value, ok := _u.mutation.AddedAdminID(); ok {
-		_spec.AddField(user.FieldAdminID, field.TypeInt, value)
-	}
-	if _u.mutation.AdminIDCleared() {
-		_spec.ClearField(user.FieldAdminID, field.TypeInt)
-	}
 	if value, ok := _u.mutation.Disabled(); ok {
 		_spec.SetField(user.FieldDisabled, field.TypeBool, value)
 	}
@@ -313,18 +178,6 @@ func (_u *UserUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if _u.mutation.LastLoginAtCleared() {
 		_spec.ClearField(user.FieldLastLoginAt, field.TypeTime)
-	}
-	if value, ok := _u.mutation.Points(); ok {
-		_spec.SetField(user.FieldPoints, field.TypeInt64, value)
-	}
-	if value, ok := _u.mutation.AddedPoints(); ok {
-		_spec.AddField(user.FieldPoints, field.TypeInt64, value)
-	}
-	if value, ok := _u.mutation.ExpiresAt(); ok {
-		_spec.SetField(user.FieldExpiresAt, field.TypeTime, value)
-	}
-	if _u.mutation.ExpiresAtCleared() {
-		_spec.ClearField(user.FieldExpiresAt, field.TypeTime)
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(user.FieldUpdatedAt, field.TypeTime, value)
@@ -377,74 +230,6 @@ func (_u *UserUpdateOne) SetNillablePasswordHash(v *string) *UserUpdateOne {
 	return _u
 }
 
-// SetInviteCode sets the "invite_code" field.
-func (_u *UserUpdateOne) SetInviteCode(v string) *UserUpdateOne {
-	_u.mutation.SetInviteCode(v)
-	return _u
-}
-
-// SetNillableInviteCode sets the "invite_code" field if the given value is not nil.
-func (_u *UserUpdateOne) SetNillableInviteCode(v *string) *UserUpdateOne {
-	if v != nil {
-		_u.SetInviteCode(*v)
-	}
-	return _u
-}
-
-// ClearInviteCode clears the value of the "invite_code" field.
-func (_u *UserUpdateOne) ClearInviteCode() *UserUpdateOne {
-	_u.mutation.ClearInviteCode()
-	return _u
-}
-
-// SetRole sets the "role" field.
-func (_u *UserUpdateOne) SetRole(v int8) *UserUpdateOne {
-	_u.mutation.ResetRole()
-	_u.mutation.SetRole(v)
-	return _u
-}
-
-// SetNillableRole sets the "role" field if the given value is not nil.
-func (_u *UserUpdateOne) SetNillableRole(v *int8) *UserUpdateOne {
-	if v != nil {
-		_u.SetRole(*v)
-	}
-	return _u
-}
-
-// AddRole adds value to the "role" field.
-func (_u *UserUpdateOne) AddRole(v int8) *UserUpdateOne {
-	_u.mutation.AddRole(v)
-	return _u
-}
-
-// SetAdminID sets the "admin_id" field.
-func (_u *UserUpdateOne) SetAdminID(v int) *UserUpdateOne {
-	_u.mutation.ResetAdminID()
-	_u.mutation.SetAdminID(v)
-	return _u
-}
-
-// SetNillableAdminID sets the "admin_id" field if the given value is not nil.
-func (_u *UserUpdateOne) SetNillableAdminID(v *int) *UserUpdateOne {
-	if v != nil {
-		_u.SetAdminID(*v)
-	}
-	return _u
-}
-
-// AddAdminID adds value to the "admin_id" field.
-func (_u *UserUpdateOne) AddAdminID(v int) *UserUpdateOne {
-	_u.mutation.AddAdminID(v)
-	return _u
-}
-
-// ClearAdminID clears the value of the "admin_id" field.
-func (_u *UserUpdateOne) ClearAdminID() *UserUpdateOne {
-	_u.mutation.ClearAdminID()
-	return _u
-}
-
 // SetDisabled sets the "disabled" field.
 func (_u *UserUpdateOne) SetDisabled(v bool) *UserUpdateOne {
 	_u.mutation.SetDisabled(v)
@@ -476,47 +261,6 @@ func (_u *UserUpdateOne) SetNillableLastLoginAt(v *time.Time) *UserUpdateOne {
 // ClearLastLoginAt clears the value of the "last_login_at" field.
 func (_u *UserUpdateOne) ClearLastLoginAt() *UserUpdateOne {
 	_u.mutation.ClearLastLoginAt()
-	return _u
-}
-
-// SetPoints sets the "points" field.
-func (_u *UserUpdateOne) SetPoints(v int64) *UserUpdateOne {
-	_u.mutation.ResetPoints()
-	_u.mutation.SetPoints(v)
-	return _u
-}
-
-// SetNillablePoints sets the "points" field if the given value is not nil.
-func (_u *UserUpdateOne) SetNillablePoints(v *int64) *UserUpdateOne {
-	if v != nil {
-		_u.SetPoints(*v)
-	}
-	return _u
-}
-
-// AddPoints adds value to the "points" field.
-func (_u *UserUpdateOne) AddPoints(v int64) *UserUpdateOne {
-	_u.mutation.AddPoints(v)
-	return _u
-}
-
-// SetExpiresAt sets the "expires_at" field.
-func (_u *UserUpdateOne) SetExpiresAt(v time.Time) *UserUpdateOne {
-	_u.mutation.SetExpiresAt(v)
-	return _u
-}
-
-// SetNillableExpiresAt sets the "expires_at" field if the given value is not nil.
-func (_u *UserUpdateOne) SetNillableExpiresAt(v *time.Time) *UserUpdateOne {
-	if v != nil {
-		_u.SetExpiresAt(*v)
-	}
-	return _u
-}
-
-// ClearExpiresAt clears the value of the "expires_at" field.
-func (_u *UserUpdateOne) ClearExpiresAt() *UserUpdateOne {
-	_u.mutation.ClearExpiresAt()
 	return _u
 }
 
@@ -592,11 +336,6 @@ func (_u *UserUpdateOne) check() error {
 			return &ValidationError{Name: "password_hash", err: fmt.Errorf(`ent: validator failed for field "User.password_hash": %w`, err)}
 		}
 	}
-	if v, ok := _u.mutation.InviteCode(); ok {
-		if err := user.InviteCodeValidator(v); err != nil {
-			return &ValidationError{Name: "invite_code", err: fmt.Errorf(`ent: validator failed for field "User.invite_code": %w`, err)}
-		}
-	}
 	return nil
 }
 
@@ -635,27 +374,6 @@ func (_u *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) {
 	if value, ok := _u.mutation.PasswordHash(); ok {
 		_spec.SetField(user.FieldPasswordHash, field.TypeString, value)
 	}
-	if value, ok := _u.mutation.InviteCode(); ok {
-		_spec.SetField(user.FieldInviteCode, field.TypeString, value)
-	}
-	if _u.mutation.InviteCodeCleared() {
-		_spec.ClearField(user.FieldInviteCode, field.TypeString)
-	}
-	if value, ok := _u.mutation.Role(); ok {
-		_spec.SetField(user.FieldRole, field.TypeInt8, value)
-	}
-	if value, ok := _u.mutation.AddedRole(); ok {
-		_spec.AddField(user.FieldRole, field.TypeInt8, value)
-	}
-	if value, ok := _u.mutation.AdminID(); ok {
-		_spec.SetField(user.FieldAdminID, field.TypeInt, value)
-	}
-	if value, ok := _u.mutation.AddedAdminID(); ok {
-		_spec.AddField(user.FieldAdminID, field.TypeInt, value)
-	}
-	if _u.mutation.AdminIDCleared() {
-		_spec.ClearField(user.FieldAdminID, field.TypeInt)
-	}
 	if value, ok := _u.mutation.Disabled(); ok {
 		_spec.SetField(user.FieldDisabled, field.TypeBool, value)
 	}
@@ -664,18 +382,6 @@ func (_u *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) {
 	}
 	if _u.mutation.LastLoginAtCleared() {
 		_spec.ClearField(user.FieldLastLoginAt, field.TypeTime)
-	}
-	if value, ok := _u.mutation.Points(); ok {
-		_spec.SetField(user.FieldPoints, field.TypeInt64, value)
-	}
-	if value, ok := _u.mutation.AddedPoints(); ok {
-		_spec.AddField(user.FieldPoints, field.TypeInt64, value)
-	}
-	if value, ok := _u.mutation.ExpiresAt(); ok {
-		_spec.SetField(user.FieldExpiresAt, field.TypeTime, value)
-	}
-	if _u.mutation.ExpiresAtCleared() {
-		_spec.ClearField(user.FieldExpiresAt, field.TypeTime)
 	}
 	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(user.FieldUpdatedAt, field.TypeTime, value)

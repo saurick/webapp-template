@@ -32,48 +32,6 @@ func (_c *UserCreate) SetPasswordHash(v string) *UserCreate {
 	return _c
 }
 
-// SetInviteCode sets the "invite_code" field.
-func (_c *UserCreate) SetInviteCode(v string) *UserCreate {
-	_c.mutation.SetInviteCode(v)
-	return _c
-}
-
-// SetNillableInviteCode sets the "invite_code" field if the given value is not nil.
-func (_c *UserCreate) SetNillableInviteCode(v *string) *UserCreate {
-	if v != nil {
-		_c.SetInviteCode(*v)
-	}
-	return _c
-}
-
-// SetRole sets the "role" field.
-func (_c *UserCreate) SetRole(v int8) *UserCreate {
-	_c.mutation.SetRole(v)
-	return _c
-}
-
-// SetNillableRole sets the "role" field if the given value is not nil.
-func (_c *UserCreate) SetNillableRole(v *int8) *UserCreate {
-	if v != nil {
-		_c.SetRole(*v)
-	}
-	return _c
-}
-
-// SetAdminID sets the "admin_id" field.
-func (_c *UserCreate) SetAdminID(v int) *UserCreate {
-	_c.mutation.SetAdminID(v)
-	return _c
-}
-
-// SetNillableAdminID sets the "admin_id" field if the given value is not nil.
-func (_c *UserCreate) SetNillableAdminID(v *int) *UserCreate {
-	if v != nil {
-		_c.SetAdminID(*v)
-	}
-	return _c
-}
-
 // SetDisabled sets the "disabled" field.
 func (_c *UserCreate) SetDisabled(v bool) *UserCreate {
 	_c.mutation.SetDisabled(v)
@@ -98,34 +56,6 @@ func (_c *UserCreate) SetLastLoginAt(v time.Time) *UserCreate {
 func (_c *UserCreate) SetNillableLastLoginAt(v *time.Time) *UserCreate {
 	if v != nil {
 		_c.SetLastLoginAt(*v)
-	}
-	return _c
-}
-
-// SetPoints sets the "points" field.
-func (_c *UserCreate) SetPoints(v int64) *UserCreate {
-	_c.mutation.SetPoints(v)
-	return _c
-}
-
-// SetNillablePoints sets the "points" field if the given value is not nil.
-func (_c *UserCreate) SetNillablePoints(v *int64) *UserCreate {
-	if v != nil {
-		_c.SetPoints(*v)
-	}
-	return _c
-}
-
-// SetExpiresAt sets the "expires_at" field.
-func (_c *UserCreate) SetExpiresAt(v time.Time) *UserCreate {
-	_c.mutation.SetExpiresAt(v)
-	return _c
-}
-
-// SetNillableExpiresAt sets the "expires_at" field if the given value is not nil.
-func (_c *UserCreate) SetNillableExpiresAt(v *time.Time) *UserCreate {
-	if v != nil {
-		_c.SetExpiresAt(*v)
 	}
 	return _c
 }
@@ -193,17 +123,9 @@ func (_c *UserCreate) ExecX(ctx context.Context) {
 
 // defaults sets the default values of the builder before save.
 func (_c *UserCreate) defaults() {
-	if _, ok := _c.mutation.Role(); !ok {
-		v := user.DefaultRole
-		_c.mutation.SetRole(v)
-	}
 	if _, ok := _c.mutation.Disabled(); !ok {
 		v := user.DefaultDisabled
 		_c.mutation.SetDisabled(v)
-	}
-	if _, ok := _c.mutation.Points(); !ok {
-		v := user.DefaultPoints
-		_c.mutation.SetPoints(v)
 	}
 	if _, ok := _c.mutation.CreatedAt(); !ok {
 		v := user.DefaultCreatedAt()
@@ -233,19 +155,8 @@ func (_c *UserCreate) check() error {
 			return &ValidationError{Name: "password_hash", err: fmt.Errorf(`ent: validator failed for field "User.password_hash": %w`, err)}
 		}
 	}
-	if v, ok := _c.mutation.InviteCode(); ok {
-		if err := user.InviteCodeValidator(v); err != nil {
-			return &ValidationError{Name: "invite_code", err: fmt.Errorf(`ent: validator failed for field "User.invite_code": %w`, err)}
-		}
-	}
-	if _, ok := _c.mutation.Role(); !ok {
-		return &ValidationError{Name: "role", err: errors.New(`ent: missing required field "User.role"`)}
-	}
 	if _, ok := _c.mutation.Disabled(); !ok {
 		return &ValidationError{Name: "disabled", err: errors.New(`ent: missing required field "User.disabled"`)}
-	}
-	if _, ok := _c.mutation.Points(); !ok {
-		return &ValidationError{Name: "points", err: errors.New(`ent: missing required field "User.points"`)}
 	}
 	if _, ok := _c.mutation.CreatedAt(); !ok {
 		return &ValidationError{Name: "created_at", err: errors.New(`ent: missing required field "User.created_at"`)}
@@ -287,18 +198,6 @@ func (_c *UserCreate) createSpec() (*User, *sqlgraph.CreateSpec) {
 		_spec.SetField(user.FieldPasswordHash, field.TypeString, value)
 		_node.PasswordHash = value
 	}
-	if value, ok := _c.mutation.InviteCode(); ok {
-		_spec.SetField(user.FieldInviteCode, field.TypeString, value)
-		_node.InviteCode = &value
-	}
-	if value, ok := _c.mutation.Role(); ok {
-		_spec.SetField(user.FieldRole, field.TypeInt8, value)
-		_node.Role = value
-	}
-	if value, ok := _c.mutation.AdminID(); ok {
-		_spec.SetField(user.FieldAdminID, field.TypeInt, value)
-		_node.AdminID = &value
-	}
 	if value, ok := _c.mutation.Disabled(); ok {
 		_spec.SetField(user.FieldDisabled, field.TypeBool, value)
 		_node.Disabled = value
@@ -306,14 +205,6 @@ func (_c *UserCreate) createSpec() (*User, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.LastLoginAt(); ok {
 		_spec.SetField(user.FieldLastLoginAt, field.TypeTime, value)
 		_node.LastLoginAt = &value
-	}
-	if value, ok := _c.mutation.Points(); ok {
-		_spec.SetField(user.FieldPoints, field.TypeInt64, value)
-		_node.Points = value
-	}
-	if value, ok := _c.mutation.ExpiresAt(); ok {
-		_spec.SetField(user.FieldExpiresAt, field.TypeTime, value)
-		_node.ExpiresAt = &value
 	}
 	if value, ok := _c.mutation.CreatedAt(); ok {
 		_spec.SetField(user.FieldCreatedAt, field.TypeTime, value)

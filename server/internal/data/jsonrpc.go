@@ -3,7 +3,9 @@ package data
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -15,44 +17,37 @@ import (
 	"server/internal/errcode"
 
 	"github.com/go-kratos/kratos/v2/log"
-	"google.golang.org/protobuf/types/known/structpb"
-
 	tracesdk "go.opentelemetry.io/otel/sdk/trace"
+	"google.golang.org/protobuf/types/known/structpb"
 )
 
-// JsonrpcData：
-// 1) JSON-RPC 的唯一业务入口
-// 2) method 路由（system / auth / …）
-// 3) 直接调用 Usecase
+type adminAccountReader interface {
+	GetAdminByID(ctx context.Context, id int) (*biz.AdminUser, error)
+}
+
+// JsonrpcData 是 JSON-RPC 的唯一业务入口，模板默认只保留通用鉴权和账号目录能力。
 type JsonrpcData struct {
 	data *Data
 	log  *log.Helper
 	cfg  *conf.Data
 
-	authUC        *biz.AuthUsecase
-	adminAuthUC   *biz.AdminAuthUsecase
-	adminManageUC *biz.AdminManageUsecase
-	userAdminUC   *biz.UserAdminUsecase
+	authUC      *biz.AuthUsecase
+	adminAuthUC *biz.AdminAuthUsecase
+	userAdminUC *biz.UserAdminUsecase
 
-	adminManageRepo biz.AdminManageRepo
+	adminReader adminAccountReader
 }
 
-// NewJsonrpcData：由 wire 注入（但不注入 usecase）
-// 由 JsonrpcData 自己组装 AuthUsecase，保持“入口聚合”风格
+// NewJsonrpcData：由 wire 注入底层 repo，再在入口层组装 usecase，保持模板的“入口聚合”风格。
 func NewJsonrpcData(
 	data *Data,
 	c *conf.Data,
 	logger log.Logger,
-
-	// 只注入底层依赖
 	authRepo *authRepo,
 	adminAuthRepo *adminAuthRepo,
-	adminManageRepo biz.AdminManageRepo,
 	tokenGenerator biz.TokenGenerator,
 	adminTokenGenerator biz.AdminTokenGenerator,
 	userAdminRepo biz.UserAdminRepo,
-
-	// 链路追踪
 	tracerProvider *tracesdk.TracerProvider,
 ) *JsonrpcData {
 	helper := log.NewHelper(log.With(logger, "module", "data.jsonrpc"))
@@ -63,8 +58,8 @@ func NewJsonrpcData(
 	if adminAuthRepo == nil {
 		panic("NewJsonrpcData: adminAuthRepo is nil")
 	}
-	if adminManageRepo == nil {
-		panic("NewJsonrpcData: adminManageRepo is nil")
+	if userAdminRepo == nil {
+		panic("NewJsonrpcData: userAdminRepo is nil")
 	}
 	if tokenGenerator == nil {
 		panic("NewJsonrpcData: tokenGenerator is nil")
@@ -77,36 +72,29 @@ func NewJsonrpcData(
 	}
 
 	authUC := biz.NewAuthUsecase(authRepo, tokenGenerator, logger, tracerProvider)
-	helper.Info("JsonrpcData created (auth usecase constructed inside)")
 	adminAuthUC := biz.NewAdminAuthUsecase(adminAuthRepo, adminTokenGenerator, logger, tracerProvider)
-	helper.Info("JsonrpcData created (admin auth usecase constructed inside)")
-	adminManageUC := biz.NewAdminManageUsecase(adminManageRepo, logger, tracerProvider)
-	helper.Info("JsonrpcData created (admin manage usecase constructed inside)")
-
 	userAdminUC := biz.NewUserAdminUsecase(userAdminRepo, logger, tracerProvider)
-	helper.Info("JsonrpcData created (user admin usecase constructed inside)")
+
+	helper.Info("JsonrpcData created (auth/admin auth/user admin usecases constructed inside)")
 
 	return &JsonrpcData{
-		data:            data,
-		log:             helper,
-		cfg:             c,
-		authUC:          authUC,
-		adminAuthUC:     adminAuthUC,
-		adminManageUC:   adminManageUC,
-		userAdminUC:     userAdminUC,
-		adminManageRepo: adminManageRepo,
+		data:        data,
+		log:         helper,
+		cfg:         c,
+		authUC:      authUC,
+		adminAuthUC: adminAuthUC,
+		userAdminUC: userAdminUC,
+		adminReader: adminAuthRepo,
 	}
 }
 
 var _ biz.JsonrpcRepo = (*JsonrpcData)(nil)
 
-// Handle 是 JSON-RPC 的统一入口
 func (d *JsonrpcData) Handle(
 	ctx context.Context,
 	url, jsonrpc, method, id string,
 	params *structpb.Struct,
 ) (string, *v1.JsonrpcResult, error) {
-
 	d.log.WithContext(ctx).Infof(
 		"[jsonrpc] handle url=%s jsonrpc=%s method=%s id=%s",
 		url, jsonrpc, method, id,
@@ -115,12 +103,10 @@ func (d *JsonrpcData) Handle(
 	if params == nil {
 		d.log.WithContext(ctx).Info("[jsonrpc] params=<nil>")
 	} else {
-		m := params.AsMap()
-		b, _ := json.MarshalIndent(m, "", "  ")
+		b, _ := json.MarshalIndent(params.AsMap(), "", "  ")
 		d.log.WithContext(ctx).Infof("[jsonrpc] params=%s", string(b))
 	}
 
-	// ✅ 公开接口白名单：不需要登录
 	if !d.isPublic(url, method) {
 		if _, res := d.requireLogin(ctx); res != nil {
 			return id, res, nil
@@ -134,10 +120,6 @@ func (d *JsonrpcData) Handle(
 		return d.handleAuth(ctx, method, id, params)
 	case "user":
 		return d.handleUser(ctx, method, id, params)
-	case "admin":
-		return d.handleAdmin(ctx, method, id, params)
-	case "subscription":
-		return d.handleSubscription(ctx, method, id, params)
 	default:
 		return id, &v1.JsonrpcResult{
 			Code:    errcode.JSONRPCUnknownURL.Code,
@@ -146,16 +128,11 @@ func (d *JsonrpcData) Handle(
 	}
 }
 
-// =========================
-// system domain
-// =========================
-
 func (r *JsonrpcData) handleSystem(
 	ctx context.Context,
 	id, method string,
 	_ *structpb.Struct,
 ) (string, *v1.JsonrpcResult, error) {
-
 	logger := r.log.WithContext(ctx)
 	logger.Info("Jsonrpc.system: start", "method", method, "id", id)
 
@@ -164,12 +141,10 @@ func (r *JsonrpcData) handleSystem(
 		data := newDataStruct(map[string]any{"pong": "pong"})
 		logger.Info("Jsonrpc.system.ping: success", "id", id)
 		return id, &v1.JsonrpcResult{Code: errcode.OK.Code, Message: errcode.OK.Message, Data: data}, nil
-
 	case "version":
 		data := newDataStruct(map[string]any{"version": "1.0.0"})
 		logger.Info("Jsonrpc.system.version: success", "id", id)
 		return id, &v1.JsonrpcResult{Code: errcode.OK.Code, Message: errcode.OK.Message, Data: data}, nil
-
 	default:
 		logger.Warn("Jsonrpc.system: unknown method", "method", method, "id", id)
 		return id, &v1.JsonrpcResult{
@@ -179,16 +154,11 @@ func (r *JsonrpcData) handleSystem(
 	}
 }
 
-// =========================
-// auth domain (login/register/logout)
-// =========================
-
 func (d *JsonrpcData) handleAuth(
 	ctx context.Context,
 	method, id string,
 	params *structpb.Struct,
 ) (string, *v1.JsonrpcResult, error) {
-
 	d.log.WithContext(ctx).Infof("[auth] method=%s id=%s", method, id)
 
 	pm := map[string]any{}
@@ -197,8 +167,6 @@ func (d *JsonrpcData) handleAuth(
 	}
 
 	switch method {
-
-	// ---------- login ----------
 	case "login":
 		username := getString(pm, "username")
 		password := getString(pm, "password")
@@ -225,7 +193,6 @@ func (d *JsonrpcData) handleAuth(
 			}),
 		}, nil
 
-	// ---------- admin_login ----------
 	case "admin_login":
 		username := getString(pm, "username")
 		password := getString(pm, "password")
@@ -252,7 +219,6 @@ func (d *JsonrpcData) handleAuth(
 			}),
 		}, nil
 
-	// ---------- register ----------
 	case "register":
 		username := getString(pm, "username")
 		password := getString(pm, "password")
@@ -279,7 +245,6 @@ func (d *JsonrpcData) handleAuth(
 			}),
 		}, nil
 
-		// ---------- logout ----------
 	case "logout":
 		claims, _ := biz.GetClaimsFromContext(ctx)
 		if claims != nil {
@@ -291,9 +256,7 @@ func (d *JsonrpcData) handleAuth(
 				id,
 			)
 		} else {
-			d.log.WithContext(ctx).Warnf(
-				"[auth] user logout failed: no claims found id=%s",
-				"id", id)
+			d.log.WithContext(ctx).Warnf("[auth] user logout without claims id=%s", id)
 		}
 
 		return id, &v1.JsonrpcResult{
@@ -301,11 +264,29 @@ func (d *JsonrpcData) handleAuth(
 			Message: errcode.OK.Message,
 		}, nil
 
-	// ---------- me ----------
 	case "me":
 		claims, ok := biz.GetClaimsFromContext(ctx)
 		if !ok || claims == nil {
 			return id, &v1.JsonrpcResult{Code: errcode.AuthRequired.Code, Message: errcode.AuthRequired.Message}, nil
+		}
+
+		if claims.Role == biz.RoleAdmin {
+			admin, err := d.getCurrentAdmin(ctx, claims)
+			if err != nil {
+				d.log.WithContext(ctx).Warnf("auth.me GetCurrentAdmin failed uid=%d err=%v", claims.UserID, err)
+				return id, &v1.JsonrpcResult{Code: errcode.AuthCurrentUserFailed.Code, Message: errcode.AuthCurrentUserFailed.Message}, nil
+			}
+
+			return id, &v1.JsonrpcResult{
+				Code:    errcode.OK.Code,
+				Message: errcode.OK.Message,
+				Data: newDataStruct(map[string]any{
+					"id":       admin.ID,
+					"username": admin.Username,
+					"role":     int(biz.RoleAdmin),
+					"disabled": admin.Disabled,
+				}),
+			}, nil
 		}
 
 		u, err := d.authUC.GetCurrentUser(ctx, claims.UserID)
@@ -314,27 +295,15 @@ func (d *JsonrpcData) handleAuth(
 			return id, &v1.JsonrpcResult{Code: errcode.AuthCurrentUserFailed.Code, Message: errcode.AuthCurrentUserFailed.Message}, nil
 		}
 
-		warningDays := d.userExpiryWarningDays()
 		data := map[string]any{
-			"id":           u.ID,
-			"username":     u.Username,
-			"role":         u.Role,
-			"points":       u.Points,
-			"expires_at":   nil,
-			"warning_days": warningDays,
+			"id":         u.ID,
+			"username":   u.Username,
+			"role":       u.Role,
+			"disabled":   u.Disabled,
+			"created_at": u.CreatedAt.Unix(),
 		}
-		if u.ExpiresAt != nil {
-			data["expires_at"] = u.ExpiresAt.Unix()
-		}
-
-		if biz.Role(u.Role) == biz.RoleAdmin {
-			if admin, err := d.getCurrentAdmin(ctx); err == nil && admin != nil {
-				data["admin_level"] = admin.Level
-				if admin.ParentID != nil {
-					data["admin_parent_id"] = *admin.ParentID
-				}
-				data["admin_id"] = admin.ID
-			}
+		if u.LastLoginAt != nil {
+			data["last_login_at"] = u.LastLoginAt.Unix()
 		}
 
 		return id, &v1.JsonrpcResult{
@@ -355,37 +324,30 @@ func (d *JsonrpcData) mapAuthError(ctx context.Context, err error) *v1.JsonrpcRe
 	logger := d.log.WithContext(ctx)
 
 	switch err {
-
-	// ===== 用户相关 =====
 	case biz.ErrUserNotFound:
 		logger.Warn("[auth] user not found")
 		return &v1.JsonrpcResult{
 			Code:    errcode.AuthUserNotFound.Code,
 			Message: errcode.AuthUserNotFound.Message,
 		}
-
 	case biz.ErrInvalidPassword:
 		logger.Warn("[auth] invalid password")
 		return &v1.JsonrpcResult{
 			Code:    errcode.AuthInvalidPassword.Code,
 			Message: errcode.AuthInvalidPassword.Message,
 		}
-
 	case biz.ErrUserDisabled:
 		logger.Warn("[auth] user disabled")
 		return &v1.JsonrpcResult{
 			Code:    errcode.AuthUserDisabled.Code,
 			Message: errcode.AuthUserDisabled.Message,
 		}
-
 	case biz.ErrUserExists:
 		logger.Warn("[auth] user already exists")
 		return &v1.JsonrpcResult{
 			Code:    errcode.AuthUserExists.Code,
 			Message: errcode.AuthUserExists.Message,
 		}
-
-	// ===== 未知错误 =====
 	default:
 		logger.Errorf("[auth] internal error: %v", err)
 		return &v1.JsonrpcResult{
@@ -394,10 +356,6 @@ func (d *JsonrpcData) mapAuthError(ctx context.Context, err error) *v1.JsonrpcRe
 		}
 	}
 }
-
-// =========================
-// helpers
-// =========================
 
 func getString(m map[string]any, key string) string {
 	v, ok := m[key]
@@ -443,7 +401,6 @@ func getInt64(m map[string]any, key string, def int64) int64 {
 	case float64:
 		return int64(x)
 	case string:
-		// 兜底：前端有时会传字符串数字
 		if n, err := strconv.ParseInt(x, 10, 64); err == nil {
 			return n
 		}
@@ -476,17 +433,14 @@ func newDataStruct(m map[string]any) *structpb.Struct {
 }
 
 func (d *JsonrpcData) requireLogin(ctx context.Context) (*biz.AuthClaims, *v1.JsonrpcResult) {
-	// 1) 有 claims → 已登录
 	if c, ok := biz.GetClaimsFromContext(ctx); ok && c != nil {
 		return c, nil
 	}
 
-	// 2) 没 claims → 看 AuthState
 	switch biz.AuthStateFrom(ctx) {
 	case biz.AuthExpired:
 		return nil, &v1.JsonrpcResult{Code: errcode.AuthExpired.Code, Message: errcode.AuthExpired.Message}
 	case biz.AuthInvalid:
-		// 这里保留 expired/invalid 区分，方便定位真实登录态问题。
 		return nil, &v1.JsonrpcResult{Code: errcode.AuthInvalid.Code, Message: errcode.AuthInvalid.Message}
 	default:
 		return nil, &v1.JsonrpcResult{Code: errcode.AuthRequired.Code, Message: errcode.AuthRequired.Message}
@@ -502,56 +456,53 @@ func (d *JsonrpcData) requireAdmin(ctx context.Context) (*biz.AuthClaims, *v1.Js
 		return nil, &v1.JsonrpcResult{Code: errcode.AdminRequired.Code, Message: errcode.AdminRequired.Message}
 	}
 
-	// 不仅校验 token 角色，还要校验管理员账号仍存在且未禁用。
-	if d.adminManageUC != nil {
-		if _, err := d.adminManageUC.GetCurrent(ctx); err != nil {
-			switch err {
-			case biz.ErrAdminDisabled:
-				return nil, &v1.JsonrpcResult{Code: errcode.AdminDisabled.Code, Message: errcode.AdminDisabled.Message}
-			case biz.ErrAdminNotFound, biz.ErrForbidden:
-				return nil, &v1.JsonrpcResult{Code: errcode.AdminRequired.Code, Message: errcode.AdminRequired.Message}
-			case biz.ErrNoPermission:
-				return nil, &v1.JsonrpcResult{Code: errcode.PermissionDenied.Code, Message: errcode.PermissionDenied.Message}
-			default:
-				d.log.WithContext(ctx).Errorf("[auth] requireAdmin verify current admin failed err=%v", err)
-				return nil, &v1.JsonrpcResult{Code: errcode.Internal.Code, Message: errcode.Internal.Message}
-			}
+	admin, err := d.getCurrentAdmin(ctx, c)
+	if err != nil {
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
+			return nil, &v1.JsonrpcResult{Code: errcode.AdminRequired.Code, Message: errcode.AdminRequired.Message}
+		case errors.Is(err, errAdminUsernameMismatch):
+			return nil, &v1.JsonrpcResult{Code: errcode.AdminRequired.Code, Message: errcode.AdminRequired.Message}
+		default:
+			d.log.WithContext(ctx).Errorf("[auth] requireAdmin verify current admin failed err=%v", err)
+			return nil, &v1.JsonrpcResult{Code: errcode.Internal.Code, Message: errcode.Internal.Message}
 		}
 	}
+	if admin.Disabled {
+		return nil, &v1.JsonrpcResult{Code: errcode.AdminDisabled.Code, Message: errcode.AdminDisabled.Message}
+	}
+
 	return c, nil
 }
 
-func (d *JsonrpcData) getCurrentAdmin(ctx context.Context) (*biz.AdminAccount, error) {
-	if d.adminManageUC == nil {
-		return nil, nil
-	}
-	return d.adminManageUC.GetCurrent(ctx)
-}
+var errAdminUsernameMismatch = errors.New("admin username mismatch")
 
-func (d *JsonrpcData) listAdmins(ctx context.Context) ([]*biz.AdminAccount, error) {
-	if d.adminManageRepo == nil {
-		return nil, nil
+func (d *JsonrpcData) getCurrentAdmin(ctx context.Context, claims *biz.AuthClaims) (*biz.AdminUser, error) {
+	if claims == nil {
+		return nil, errors.New("missing auth claims")
 	}
-	return d.adminManageRepo.ListAdmins(ctx)
-}
+	if d.adminReader == nil {
+		return nil, errors.New("admin reader is nil")
+	}
 
-func (d *JsonrpcData) userExpiryWarningDays() int {
-	if d == nil || d.data == nil || d.data.conf == nil {
-		return 3
+	admin, err := d.adminReader.GetAdminByID(ctx, claims.UserID)
+	if err != nil {
+		return nil, err
 	}
-	warningDays := int(d.data.conf.UserExpiryWarningDays)
-	if warningDays <= 0 {
-		return 3
+	if admin == nil {
+		return nil, sql.ErrNoRows
 	}
-	return warningDays
+	// 安全兜底：管理员 token 的 uid/uname 必须同时匹配，避免旧 token 在账号重建后误复用。
+	if admin.Username != claims.Username {
+		return nil, errAdminUsernameMismatch
+	}
+	return admin, nil
 }
 
 func (d *JsonrpcData) isPublic(url, method string) bool {
-	// system 公共
 	if url == "system" && (method == "ping" || method == "version") {
 		return true
 	}
-	// auth 公共（登录/注册/登出一般也允许不登录调用）
 	if url == "auth" && (method == "login" || method == "admin_login" || method == "register" || method == "logout") {
 		return true
 	}
@@ -563,16 +514,13 @@ func (d *JsonrpcData) handleUser(
 	method, id string,
 	params *structpb.Struct,
 ) (string, *v1.JsonrpcResult, error) {
-
 	l := d.log.WithContext(ctx)
 
-	// 解析 params
 	pm := map[string]any{}
 	if params != nil {
 		pm = params.AsMap()
 	}
 
-	// 操作者（用于日志）
 	var opUID int
 	var opUname string
 	var opRole biz.Role
@@ -584,7 +532,6 @@ func (d *JsonrpcData) handleUser(
 		method, id, opUID, opUname, opRole,
 	)
 
-	// ✅ 统一管理员鉴权：用户管理全部要求 admin
 	if _, res := d.requireAdmin(ctx); res != nil {
 		l.Warnf("[user] requireAdmin denied method=%s id=%s operator_uid=%d code=%d msg=%s",
 			method, id, opUID, res.Code, res.Message,
@@ -593,41 +540,35 @@ func (d *JsonrpcData) handleUser(
 	}
 
 	switch method {
-
-	// ---------- user.list ----------
-	// params: { limit, offset, search }  // search = username 模糊
 	case "list":
 		limit := getInt(pm, "limit", 30)
 		offset := getInt(pm, "offset", 0)
 		search := strings.TrimSpace(getString(pm, "search"))
-		filter := strings.TrimSpace(getString(pm, "filter"))
 
-		l.Infof("[user] list start id=%s operator_uid=%d limit=%d offset=%d search=%q filter=%q",
-			id, opUID, limit, offset, search, filter,
+		l.Infof("[user] list start id=%s operator_uid=%d limit=%d offset=%d search=%q",
+			id, opUID, limit, offset, search,
 		)
 
-		list, total, err := d.userAdminUC.List(ctx, limit, offset, search, filter)
+		list, total, err := d.userAdminUC.List(ctx, limit, offset, search)
 		if err != nil {
-			l.Errorf("[user] list failed id=%s operator_uid=%d limit=%d offset=%d search=%q filter=%q err=%v",
-				id, opUID, limit, offset, search, filter, err,
+			l.Errorf("[user] list failed id=%s operator_uid=%d limit=%d offset=%d search=%q err=%v",
+				id, opUID, limit, offset, search, err,
 			)
 			return id, &v1.JsonrpcResult{Code: errcode.UserListFailed.Code, Message: errcode.UserListFailed.Message}, nil
 		}
 
 		arr := make([]any, 0, len(list))
 		for _, u := range list {
-			exp := int64(0)
-			if u.ExpiresAt != nil {
-				exp = u.ExpiresAt.Unix()
+			lastLogin := int64(0)
+			if u.LastLoginAt != nil {
+				lastLogin = u.LastLoginAt.Unix()
 			}
 			arr = append(arr, map[string]any{
-				"id":         u.ID,
-				"username":   u.Username,
-				"role":       u.Role,
-				"admin_id":   u.AdminID,
-				"disabled":   u.Disabled,
-				"points":     u.Points,
-				"expires_at": exp,
+				"id":            u.ID,
+				"username":      u.Username,
+				"disabled":      u.Disabled,
+				"last_login_at": lastLogin,
+				"created_at":    u.CreatedAt.Unix(),
 			})
 		}
 
@@ -637,186 +578,17 @@ func (d *JsonrpcData) handleUser(
 
 		return id, &v1.JsonrpcResult{
 			Code:    errcode.OK.Code,
-			Message: "获取用户列表成功",
+			Message: "获取账号列表成功",
 			Data: newDataStruct(map[string]any{
 				"users":  arr,
 				"total":  total,
 				"limit":  limit,
 				"offset": offset,
 				"search": search,
-				"filter": filter,
 			}),
 		}, nil
 
-	// ---------- user.points.set ----------
-	case "points.set":
-		userID := getInt(pm, "user_id", 0)
-		points := getInt64(pm, "points", 0)
-
-		if userID <= 0 || points < 0 {
-			l.Warnf("[user] points.set bad param id=%s operator_uid=%d user_id=%d points=%d",
-				id, opUID, userID, points,
-			)
-			return id, &v1.JsonrpcResult{Code: errcode.UserPointsSetInvalid.Code, Message: errcode.UserPointsSetInvalid.Message}, nil
-		}
-
-		l.Infof("[user] points.set start id=%s operator_uid=%d target_uid=%d points=%d",
-			id, opUID, userID, points,
-		)
-
-		after, err := d.userAdminUC.SetPoints(ctx, userID, points)
-		if err != nil {
-			l.Errorf("[user] points.set failed id=%s operator_uid=%d target_uid=%d points=%d err=%v",
-				id, opUID, userID, points, err,
-			)
-			return id, d.mapUserAdminError(ctx, err), nil
-		}
-
-		l.Infof("[user] points.set success id=%s operator_uid=%d target_uid=%d after_points=%d",
-			id, opUID, userID, after,
-		)
-
-		return id, &v1.JsonrpcResult{
-			Code:    errcode.OK.Code,
-			Message: "设置积分成功",
-			Data:    newDataStruct(map[string]any{"points": after}),
-		}, nil
-
-	// ---------- user.points.add ----------
-	case "points.add":
-		userID := getInt(pm, "user_id", 0)
-		delta := getInt64(pm, "delta", 0)
-
-		if userID <= 0 {
-			l.Warnf("[user] points.add bad param id=%s operator_uid=%d user_id=%d delta=%d",
-				id, opUID, userID, delta,
-			)
-			return id, &v1.JsonrpcResult{Code: errcode.UserPointsAddInvalid.Code, Message: errcode.UserPointsAddInvalid.Message}, nil
-		}
-
-		l.Infof("[user] points.add start id=%s operator_uid=%d target_uid=%d delta=%d",
-			id, opUID, userID, delta,
-		)
-
-		after, err := d.userAdminUC.AddPoints(ctx, userID, delta)
-		if err != nil {
-			l.Errorf("[user] points.add failed id=%s operator_uid=%d target_uid=%d delta=%d err=%v",
-				id, opUID, userID, delta, err,
-			)
-			return id, d.mapUserAdminError(ctx, err), nil
-		}
-
-		l.Infof("[user] points.add success id=%s operator_uid=%d target_uid=%d after_points=%d",
-			id, opUID, userID, after,
-		)
-
-		return id, &v1.JsonrpcResult{
-			Code:    errcode.OK.Code,
-			Message: "增加积分成功",
-			Data:    newDataStruct(map[string]any{"points": after}),
-		}, nil
-
-	// ---------- user.expires.set ----------
-	// expires_at: unix 秒；0 表示清空（永久/未开通）
-	case "expires.set":
-		userID := getInt(pm, "user_id", 0)
-		expTs := getInt64(pm, "expires_at", 0)
-
-		if userID <= 0 || expTs < 0 {
-			l.Warnf("[user] expires.set bad param id=%s operator_uid=%d user_id=%d expires_at=%d",
-				id, opUID, userID, expTs,
-			)
-			return id, &v1.JsonrpcResult{Code: errcode.UserExpiresSetInvalid.Code, Message: errcode.UserExpiresSetInvalid.Message}, nil
-		}
-
-		var t *time.Time
-		if expTs > 0 {
-			tm := time.Unix(expTs, 0)
-			t = &tm
-		}
-
-		l.Infof("[user] expires.set start id=%s operator_uid=%d target_uid=%d expires_at=%d",
-			id, opUID, userID, expTs,
-		)
-
-		after, err := d.userAdminUC.SetExpiresAt(ctx, userID, t)
-		if err != nil {
-			l.Errorf("[user] expires.set failed id=%s operator_uid=%d target_uid=%d expires_at=%d err=%v",
-				id, opUID, userID, expTs, err,
-			)
-			return id, d.mapUserAdminError(ctx, err), nil
-		}
-
-		out := int64(0)
-		if after != nil {
-			out = after.Unix()
-		}
-
-		l.Infof("[user] expires.set success id=%s operator_uid=%d target_uid=%d after_expires_at=%d",
-			id, opUID, userID, out,
-		)
-
-		return id, &v1.JsonrpcResult{
-			Code:    errcode.OK.Code,
-			Message: "设置有效期成功",
-			Data:    newDataStruct(map[string]any{"expires_at": out}),
-		}, nil
-
-	// ---------- user.expires.extend ----------
-	// add_days / add_seconds 二选一；常用 add_days(30/90/180/自定义)
-	case "expires.extend":
-		userID := getInt(pm, "user_id", 0)
-		addDays := getInt64(pm, "add_days", 0)
-		addSeconds := getInt64(pm, "add_seconds", 0)
-
-		if userID <= 0 {
-			l.Warnf("[user] expires.extend bad param id=%s operator_uid=%d user_id=%d add_days=%d add_seconds=%d",
-				id, opUID, userID, addDays, addSeconds,
-			)
-			return id, &v1.JsonrpcResult{Code: errcode.UserExpiresExtendInvalidUser.Code, Message: errcode.UserExpiresExtendInvalidUser.Message}, nil
-		}
-
-		// 二选一：优先 seconds，否则 days
-		if addSeconds <= 0 && addDays > 0 {
-			addSeconds = addDays * 86400
-		}
-		if addSeconds <= 0 {
-			l.Warnf("[user] expires.extend bad param (no delta) id=%s operator_uid=%d target_uid=%d add_days=%d add_seconds=%d",
-				id, opUID, userID, addDays, addSeconds,
-			)
-			return id, &v1.JsonrpcResult{Code: errcode.UserExpiresExtendInvalidDelta.Code, Message: errcode.UserExpiresExtendInvalidDelta.Message}, nil
-		}
-
-		l.Infof("[user] expires.extend start id=%s operator_uid=%d target_uid=%d add_days=%d add_seconds=%d",
-			id, opUID, userID, addDays, addSeconds,
-		)
-
-		after, err := d.userAdminUC.ExtendExpires(ctx, userID, addSeconds)
-		if err != nil {
-			l.Errorf("[user] expires.extend failed id=%s operator_uid=%d target_uid=%d add_days=%d add_seconds=%d err=%v",
-				id, opUID, userID, addDays, addSeconds, err,
-			)
-			return id, d.mapUserAdminError(ctx, err), nil
-		}
-
-		out := int64(0)
-		if after != nil {
-			out = after.Unix()
-		}
-
-		l.Infof("[user] expires.extend success id=%s operator_uid=%d target_uid=%d after_expires_at=%d",
-			id, opUID, userID, out,
-		)
-
-		return id, &v1.JsonrpcResult{
-			Code:    errcode.OK.Code,
-			Message: "延长有效期成功",
-			Data:    newDataStruct(map[string]any{"expires_at": out}),
-		}, nil
-
-	// ---------- user.set_disabled ----------
 	case "set_disabled":
-		// 你这段已经非常完整，我保留并稍微补齐一下入口日志的一致性
 		userID := getInt(pm, "user_id", 0)
 		if userID <= 0 {
 			l.Warnf("[user] set_disabled bad param id=%s operator_uid=%d user_id=%d", id, opUID, userID)
@@ -849,31 +621,12 @@ func (d *JsonrpcData) handleUser(
 		)
 
 		return id, &v1.JsonrpcResult{
-			Code:    0,
+			Code:    errcode.OK.Code,
 			Message: msg,
 			Data: newDataStruct(map[string]any{
 				"success":  true,
 				"user_id":  userID,
 				"disabled": disabled,
-			}),
-		}, nil
-
-	// ---------- user.stats ----------
-	case "stats":
-		expired, expiringSoon, normal, warningDays, err := d.userAdminUC.GetExpiryStats(ctx)
-		if err != nil {
-			l.Errorf("[user] stats failed id=%s operator_uid=%d err=%v", id, opUID, err)
-			return id, d.mapUserAdminError(ctx, err), nil
-		}
-
-		return id, &v1.JsonrpcResult{
-			Code:    0,
-			Message: "OK",
-			Data: newDataStruct(map[string]any{
-				"expired":       expired,
-				"expiring_soon": expiringSoon,
-				"normal":        normal,
-				"warning_days":  warningDays,
 			}),
 		}, nil
 
@@ -901,341 +654,5 @@ func (d *JsonrpcData) mapUserAdminError(ctx context.Context, err error) *v1.Json
 	default:
 		l.Errorf("[user] internal err=%v", err)
 		return &v1.JsonrpcResult{Code: errcode.Internal.Code, Message: errcode.Internal.Message}
-	}
-}
-
-func (d *JsonrpcData) handleAdmin(
-	ctx context.Context,
-	method, id string,
-	params *structpb.Struct,
-) (string, *v1.JsonrpcResult, error) {
-	l := d.log.WithContext(ctx)
-	pm := map[string]any{}
-	if params != nil {
-		pm = params.AsMap()
-	}
-
-	switch method {
-	case "me":
-		admin, err := d.adminManageUC.GetCurrent(ctx)
-		if err != nil {
-			return id, d.mapAdminManageError(ctx, err), nil
-		}
-
-		parentID := 0
-		if admin.ParentID != nil {
-			parentID = *admin.ParentID
-		}
-
-		return id, &v1.JsonrpcResult{
-			Code:    0,
-			Message: "OK",
-			Data: newDataStruct(map[string]any{
-				"id":         admin.ID,
-				"username":   admin.Username,
-				"level":      int(admin.Level),
-				"parent_id":  parentID,
-				"disabled":   admin.Disabled,
-				"created_at": admin.CreatedAt.Unix(),
-				"updated_at": admin.UpdatedAt.Unix(),
-			}),
-		}, nil
-
-	case "list":
-		list, err := d.adminManageUC.List(ctx)
-		if err != nil {
-			return id, d.mapAdminManageError(ctx, err), nil
-		}
-
-		arr := make([]any, 0, len(list))
-		for _, a := range list {
-			parentID := 0
-			if a.ParentID != nil {
-				parentID = *a.ParentID
-			}
-			lastLogin := int64(0)
-			if a.LastLoginAt != nil {
-				lastLogin = a.LastLoginAt.Unix()
-			}
-			arr = append(arr, map[string]any{
-				"id":                    a.ID,
-				"username":              a.Username,
-				"level":                 int(a.Level),
-				"parent_id":             parentID,
-				"disabled":              a.Disabled,
-				"user_count":            a.UserCount,
-				"manageable_user_count": a.ManageableUserCount,
-				"child_admin_count":     a.ChildAdminCount,
-				"last_login_at":         lastLogin,
-				"created_at":            a.CreatedAt.Unix(),
-				"updated_at":            a.UpdatedAt.Unix(),
-			})
-		}
-
-		return id, &v1.JsonrpcResult{
-			Code:    0,
-			Message: "OK",
-			Data:    newDataStruct(map[string]any{"admins": arr}),
-		}, nil
-
-	case "create":
-		username := getString(pm, "username")
-		password := getString(pm, "password")
-		level := biz.AdminLevel(getInt(pm, "level", 0))
-		parentID := getInt(pm, "parent_id", 0)
-
-		var parentPtr *int
-		if parentID > 0 {
-			parentPtr = &parentID
-		}
-
-		admin, err := d.adminManageUC.Create(ctx, username, password, level, parentPtr)
-		if err != nil {
-			return id, d.mapAdminManageError(ctx, err), nil
-		}
-
-		return id, &v1.JsonrpcResult{
-			Code:    0,
-			Message: "OK",
-			Data: newDataStruct(map[string]any{
-				"admin": map[string]any{
-					"id":       admin.ID,
-					"username": admin.Username,
-					"level":    int(admin.Level),
-				},
-			}),
-		}, nil
-
-	case "update":
-		adminID := getInt(pm, "id", 0)
-		level := biz.AdminLevel(getInt(pm, "level", 0))
-		parentID := getInt(pm, "parent_id", 0)
-
-		var parentPtr *int
-		if parentID > 0 {
-			parentPtr = &parentID
-		}
-
-		admin, err := d.adminManageUC.UpdateHierarchy(ctx, adminID, level, parentPtr)
-		if err != nil {
-			return id, d.mapAdminManageError(ctx, err), nil
-		}
-
-		parentOut := 0
-		if admin.ParentID != nil {
-			parentOut = *admin.ParentID
-		}
-
-		return id, &v1.JsonrpcResult{
-			Code:    0,
-			Message: "OK",
-			Data: newDataStruct(map[string]any{
-				"admin": map[string]any{
-					"id":        admin.ID,
-					"username":  admin.Username,
-					"level":     int(admin.Level),
-					"parent_id": parentOut,
-					"disabled":  admin.Disabled,
-				},
-			}),
-		}, nil
-
-	case "revoke":
-		adminID := getInt(pm, "id", 0)
-		transferID := getInt(pm, "transfer_to_admin_id", 0)
-		var transferPtr *int
-		if transferID > 0 {
-			transferPtr = &transferID
-		}
-
-		res, err := d.adminManageUC.Revoke(ctx, adminID, transferPtr)
-		if err != nil {
-			return id, d.mapAdminManageError(ctx, err), nil
-		}
-
-		return id, &v1.JsonrpcResult{
-			Code:    errcode.OK.Code,
-			Message: errcode.OK.Message,
-			Data: newDataStruct(map[string]any{
-				"success":                  true,
-				"transferred_users":        res.TransferredUsers,
-				"transferred_child_admins": res.TransferredChildAdmins,
-				"transfer_to_admin_id":     res.TransferToAdminID,
-			}),
-		}, nil
-
-	default:
-		l.Warnf("[admin] unknown method=%s id=%s", method, id)
-		return id, &v1.JsonrpcResult{
-			Code:    errcode.UnknownMethod.Code,
-			Message: fmt.Sprintf("未知管理接口 method=%s", method),
-		}, nil
-	}
-}
-
-func (d *JsonrpcData) mapAdminManageError(ctx context.Context, err error) *v1.JsonrpcResult {
-	l := d.log.WithContext(ctx)
-
-	switch err {
-	case biz.ErrBadParam:
-		return &v1.JsonrpcResult{Code: errcode.InvalidParam.Code, Message: errcode.InvalidParam.Message}
-	case biz.ErrForbidden:
-		return &v1.JsonrpcResult{Code: errcode.AdminRequired.Code, Message: errcode.AdminRequired.Message}
-	case biz.ErrNoPermission:
-		return &v1.JsonrpcResult{Code: errcode.PermissionDenied.Code, Message: errcode.PermissionDenied.Message}
-	case biz.ErrAdminNotFound:
-		return &v1.JsonrpcResult{Code: errcode.AdminNotFound.Code, Message: errcode.AdminNotFound.Message}
-	case biz.ErrAdminExists:
-		return &v1.JsonrpcResult{Code: errcode.AdminExists.Code, Message: errcode.AdminExists.Message}
-	case biz.ErrAdminDisabled:
-		return &v1.JsonrpcResult{Code: errcode.AdminDisabled.Code, Message: errcode.AdminDisabled.Message}
-	case biz.ErrAdminInvalidLevel:
-		return &v1.JsonrpcResult{Code: errcode.AdminInvalidLevel.Code, Message: errcode.AdminInvalidLevel.Message}
-	case biz.ErrAdminInvalidParent:
-		return &v1.JsonrpcResult{Code: errcode.AdminInvalidParent.Code, Message: errcode.AdminInvalidParent.Message}
-	default:
-		l.Errorf("[admin] internal err=%v", err)
-		return &v1.JsonrpcResult{Code: errcode.Internal.Code, Message: errcode.Internal.Message}
-	}
-}
-
-// =========================
-// subscription domain (admin only)
-// =========================
-
-func (d *JsonrpcData) handleSubscription(
-	ctx context.Context,
-	method, id string,
-	params *structpb.Struct,
-) (string, *v1.JsonrpcResult, error) {
-
-	l := d.log.WithContext(ctx)
-
-	// params
-	pm := map[string]any{}
-	if params != nil {
-		pm = params.AsMap()
-	}
-
-	// operator（用于日志）
-	var opUID int
-	var opUname string
-	var opRole biz.Role
-	if c, ok := biz.GetClaimsFromContext(ctx); ok && c != nil {
-		opUID, opUname, opRole = c.UserID, c.Username, c.Role
-	}
-
-	l.Infof("[subscription] handle start method=%s id=%s operator_uid=%d operator_uname=%s operator_role=%d",
-		method, id, opUID, opUname, opRole,
-	)
-
-	// ✅ admin only
-	if _, res := d.requireAdmin(ctx); res != nil {
-		l.Warnf("[subscription] requireAdmin denied method=%s id=%s operator_uid=%d code=%d msg=%s",
-			method, id, opUID, res.Code, res.Message,
-		)
-		return id, res, nil
-	}
-
-	switch method {
-
-	case "options":
-		options := []any{
-			map[string]any{"code": "D30", "days": 30, "title": "30 天订阅"},
-			map[string]any{"code": "D90", "days": 90, "title": "90 天订阅"},
-			map[string]any{"code": "D180", "days": 180, "title": "180 天订阅"},
-			map[string]any{"code": "CUSTOM", "days": 0, "title": "自定义天数"},
-		}
-
-		l.Infof("[subscription] options success id=%s operator_uid=%d count=%d", id, opUID, len(options))
-
-		return id, &v1.JsonrpcResult{
-			Code:    errcode.OK.Code,
-			Message: "获取订阅选项成功",
-			Data:    newDataStruct(map[string]any{"options": options}),
-		}, nil
-
-	case "apply":
-		userID := getInt(pm, "user_id", 0)
-		if userID <= 0 {
-			l.Warnf("[subscription] apply bad param id=%s operator_uid=%d user_id=%d", id, opUID, userID)
-			return id, &v1.JsonrpcResult{Code: errcode.SubscriptionInvalidUser.Code, Message: errcode.SubscriptionInvalidUser.Message}, nil
-		}
-
-		// days 三种来源：days / add_days / code映射
-		days := getInt64(pm, "days", 0)
-		if days <= 0 {
-			days = getInt64(pm, "add_days", 0)
-		}
-
-		code := strings.ToUpper(strings.TrimSpace(getString(pm, "code")))
-		if days <= 0 && code != "" {
-			switch code {
-			case "D30":
-				days = 30
-			case "D90":
-				days = 90
-			case "D180":
-				days = 180
-			case "CUSTOM":
-				// CUSTOM 要求 days/add_days
-			default:
-				l.Warnf("[subscription] apply invalid code id=%s operator_uid=%d target_uid=%d code=%s",
-					id, opUID, userID, code,
-				)
-				return id, &v1.JsonrpcResult{Code: errcode.SubscriptionInvalidCode.Code, Message: errcode.SubscriptionInvalidCode.Message}, nil
-			}
-		}
-
-		if days <= 0 {
-			l.Warnf("[subscription] apply bad days id=%s operator_uid=%d target_uid=%d days=%d code=%s",
-				id, opUID, userID, days, code,
-			)
-			return id, &v1.JsonrpcResult{Code: errcode.SubscriptionInvalidDays.Code, Message: errcode.SubscriptionInvalidDays.Message}, nil
-		}
-		if days > 3650 {
-			l.Warnf("[subscription] apply days too large id=%s operator_uid=%d target_uid=%d days=%d",
-				id, opUID, userID, days,
-			)
-			return id, &v1.JsonrpcResult{Code: errcode.SubscriptionDaysTooLarge.Code, Message: errcode.SubscriptionDaysTooLarge.Message}, nil
-		}
-
-		l.Infof("[subscription] apply start id=%s operator_uid=%d target_uid=%d days=%d code=%s",
-			id, opUID, userID, days, code,
-		)
-
-		addSeconds := int64(days) * 86400
-		after, err := d.userAdminUC.ExtendExpires(ctx, userID, addSeconds)
-		if err != nil {
-			l.Errorf("[subscription] apply failed id=%s operator_uid=%d target_uid=%d days=%d code=%s err=%v",
-				id, opUID, userID, days, code, err,
-			)
-			return id, d.mapUserAdminError(ctx, err), nil
-		}
-
-		expUnix := int64(0)
-		if after != nil {
-			expUnix = after.Unix()
-		}
-
-		l.Infof("[subscription] apply success id=%s operator_uid=%d target_uid=%d days=%d expires_at=%d code=%s",
-			id, opUID, userID, days, expUnix, code,
-		)
-
-		return id, &v1.JsonrpcResult{
-			Code:    errcode.OK.Code,
-			Message: "订阅开通/延长成功",
-			Data: newDataStruct(map[string]any{
-				"success":      true,
-				"user_id":      userID,
-				"days":         days,
-				"expires_at":   expUnix,
-				"applied_code": code,
-			}),
-		}, nil
-
-	default:
-		l.Warnf("[subscription] unknown method=%s id=%s operator_uid=%d", method, id, opUID)
-		return id, &v1.JsonrpcResult{Code: errcode.SubscriptionUnknownMethod.Code, Message: errcode.SubscriptionUnknownMethod.Message}, nil
 	}
 }

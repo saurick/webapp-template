@@ -4,9 +4,9 @@ set -eu
 # 设计意图：只更新目标服务容器，避免误停 mysql/jaeger 等依赖服务。
 SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 COMPOSE_FILE="${COMPOSE_FILE:-$SCRIPT_DIR/compose.yml}"
-SERVICE_NAME="${SERVICE_NAME:-template-server}"
-SERVICE_CONTAINER_NAME="${SERVICE_CONTAINER_NAME:-webapp-template-server}"
-IMAGE_TAR="${1:-template-server.tar}"
+SERVICE_NAME="${SERVICE_NAME:-app-server}"
+SERVICE_CONTAINER_NAME="${SERVICE_CONTAINER_NAME:-your-project-server}"
+IMAGE_TAR="${1:-app-server.tar}"
 
 usage() {
   cat <<'USAGE_EOF'
@@ -15,12 +15,12 @@ usage() {
 
 示例:
   sh deploy_server.sh
-  sh deploy_server.sh /data/release/template-server.tar
+  sh deploy_server.sh /data/release/app-server.tar
 
 可选环境变量:
   COMPOSE_FILE            compose 文件路径（默认同目录 compose.yml）
-  SERVICE_NAME            需要更新的服务名（默认 template-server）
-  SERVICE_CONTAINER_NAME  业务容器名（默认 webapp-template-server）
+  SERVICE_NAME            需要更新的服务名（默认 app-server）
+  SERVICE_CONTAINER_NAME  业务容器名（默认 your-project-server）
 USAGE_EOF
 }
 
@@ -58,10 +58,8 @@ echo "==> [1/3] 导入镜像: $IMAGE_TAR"
 docker load -i "$IMAGE_TAR"
 
 echo "==> [2/3] 停止并移除旧容器: $SERVICE_NAME"
-# 兼容性兜底：首次部署或容器不存在时不应中断流程。
 compose stop "$SERVICE_NAME" >/dev/null 2>&1 || true
 compose rm -f "$SERVICE_NAME" >/dev/null 2>&1 || true
-# 兼容性兜底：跨 compose 项目迁移时，按容器名强制清理遗留实例，避免同名冲突。
 docker stop "$SERVICE_CONTAINER_NAME" >/dev/null 2>&1 || true
 docker rm -f "$SERVICE_CONTAINER_NAME" >/dev/null 2>&1 || true
 

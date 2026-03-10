@@ -21,10 +21,6 @@ type AdminUser struct {
 	Username string `json:"username,omitempty"`
 	// PasswordHash holds the value of the "password_hash" field.
 	PasswordHash string `json:"-"`
-	// 0=super,1=level1,2=level2
-	Level int8 `json:"level,omitempty"`
-	// 上级管理员ID
-	ParentID *int `json:"parent_id,omitempty"`
 	// Disabled holds the value of the "disabled" field.
 	Disabled bool `json:"disabled,omitempty"`
 	// LastLoginAt holds the value of the "last_login_at" field.
@@ -43,7 +39,7 @@ func (*AdminUser) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case adminuser.FieldDisabled:
 			values[i] = new(sql.NullBool)
-		case adminuser.FieldID, adminuser.FieldLevel, adminuser.FieldParentID:
+		case adminuser.FieldID:
 			values[i] = new(sql.NullInt64)
 		case adminuser.FieldUsername, adminuser.FieldPasswordHash:
 			values[i] = new(sql.NullString)
@@ -81,19 +77,6 @@ func (_m *AdminUser) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field password_hash", values[i])
 			} else if value.Valid {
 				_m.PasswordHash = value.String
-			}
-		case adminuser.FieldLevel:
-			if value, ok := values[i].(*sql.NullInt64); !ok {
-				return fmt.Errorf("unexpected type %T for field level", values[i])
-			} else if value.Valid {
-				_m.Level = int8(value.Int64)
-			}
-		case adminuser.FieldParentID:
-			if value, ok := values[i].(*sql.NullInt64); !ok {
-				return fmt.Errorf("unexpected type %T for field parent_id", values[i])
-			} else if value.Valid {
-				_m.ParentID = new(int)
-				*_m.ParentID = int(value.Int64)
 			}
 		case adminuser.FieldDisabled:
 			if value, ok := values[i].(*sql.NullBool); !ok {
@@ -160,14 +143,6 @@ func (_m *AdminUser) String() string {
 	builder.WriteString(_m.Username)
 	builder.WriteString(", ")
 	builder.WriteString("password_hash=<sensitive>")
-	builder.WriteString(", ")
-	builder.WriteString("level=")
-	builder.WriteString(fmt.Sprintf("%v", _m.Level))
-	builder.WriteString(", ")
-	if v := _m.ParentID; v != nil {
-		builder.WriteString("parent_id=")
-		builder.WriteString(fmt.Sprintf("%v", *v))
-	}
 	builder.WriteString(", ")
 	builder.WriteString("disabled=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Disabled))

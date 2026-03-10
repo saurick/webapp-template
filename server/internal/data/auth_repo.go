@@ -3,7 +3,6 @@ package data
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"time"
 
@@ -49,10 +48,10 @@ func (r *authRepo) GetUserByUsername(ctx context.Context, username string) (*biz
 		return nil, err
 	}
 
-	var expiresAt *time.Time
-	if u.ExpiresAt != nil {
-		t := *u.ExpiresAt
-		expiresAt = &t
+	var lastLoginAt *time.Time
+	if u.LastLoginAt != nil {
+		t := *u.LastLoginAt
+		lastLoginAt = &t
 	}
 
 	return &biz.User{
@@ -60,10 +59,8 @@ func (r *authRepo) GetUserByUsername(ctx context.Context, username string) (*biz
 		Username:     u.Username,
 		PasswordHash: u.PasswordHash,
 		Disabled:     u.Disabled,
-		Role:         int8(u.Role),
-		AdminID:      u.AdminID,
-		Points:       u.Points,
-		ExpiresAt:    expiresAt,
+		Role:         int8(biz.RoleUser),
+		LastLoginAt:  lastLoginAt,
 		CreatedAt:    u.CreatedAt,
 		UpdatedAt:    u.UpdatedAt,
 	}, nil
@@ -85,10 +82,10 @@ func (r *authRepo) GetUserByID(ctx context.Context, id int) (*biz.User, error) {
 		return nil, err
 	}
 
-	var expiresAt *time.Time
-	if u.ExpiresAt != nil {
-		t := *u.ExpiresAt
-		expiresAt = &t
+	var lastLoginAt *time.Time
+	if u.LastLoginAt != nil {
+		t := *u.LastLoginAt
+		lastLoginAt = &t
 	}
 
 	return &biz.User{
@@ -96,10 +93,8 @@ func (r *authRepo) GetUserByID(ctx context.Context, id int) (*biz.User, error) {
 		Username:     u.Username,
 		PasswordHash: u.PasswordHash,
 		Disabled:     u.Disabled,
-		Role:         int8(u.Role),
-		AdminID:      u.AdminID,
-		Points:       u.Points,
-		ExpiresAt:    expiresAt,
+		Role:         int8(biz.RoleUser),
+		LastLoginAt:  lastLoginAt,
 		CreatedAt:    u.CreatedAt,
 		UpdatedAt:    u.UpdatedAt,
 	}, nil
@@ -122,16 +117,7 @@ func (r *authRepo) CreateUser(ctx context.Context, in *biz.User) (*biz.User, err
 	m := r.data.mysql.User.
 		Create().
 		SetUsername(in.Username).
-		SetPasswordHash(in.PasswordHash).
-		SetRole(0)
-
-	if in.AdminID != nil {
-		m = m.SetAdminID(*in.AdminID)
-	} else if adminID, err := r.defaultAdminID(ctx); err != nil {
-		l.Warnf("CreateUser default admin lookup failed err=%v", err)
-	} else if adminID > 0 {
-		m = m.SetAdminID(adminID)
-	}
+		SetPasswordHash(in.PasswordHash)
 
 	u, err := m.Save(ctx)
 	if err != nil {
@@ -148,10 +134,8 @@ func (r *authRepo) CreateUser(ctx context.Context, in *biz.User) (*biz.User, err
 		Username:     u.Username,
 		PasswordHash: u.PasswordHash,
 		Disabled:     u.Disabled,
-		Role:         int8(u.Role),
-		AdminID:      u.AdminID,
-		Points:       u.Points,
-		ExpiresAt:    u.ExpiresAt,
+		Role:         int8(biz.RoleUser),
+		LastLoginAt:  u.LastLoginAt,
 		CreatedAt:    u.CreatedAt,
 		UpdatedAt:    u.UpdatedAt,
 	}, nil
@@ -171,21 +155,6 @@ func (r *authRepo) UpdateUserLastLogin(ctx context.Context, id int, t time.Time)
 	}
 
 	return err
-}
-
-func (r *authRepo) defaultAdminID(ctx context.Context) (int, error) {
-	var id int
-	err := r.data.sqldb.QueryRowContext(
-		ctx,
-		"SELECT id FROM admin_users WHERE level = 0 ORDER BY id ASC LIMIT 1",
-	).Scan(&id)
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return 0, nil
-		}
-		return 0, err
-	}
-	return id, nil
 }
 
 func (r *authRepo) isUsernameUsedByAdmin(ctx context.Context, username string) (bool, error) {

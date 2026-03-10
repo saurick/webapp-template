@@ -6,20 +6,20 @@ SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 REPO_ROOT=$(CDPATH= cd -- "$SCRIPT_DIR/../../../.." && pwd)
 SERVER_DIR="$REPO_ROOT/server"
 
-IMAGE_NAME="${IMAGE_NAME:-webapp-template-server:dev}"
-IMAGE_TAR="${IMAGE_TAR:-$REPO_ROOT/output/template-server.tar}"
-REMOTE_HOST="${REMOTE_HOST:-47.84.12.211}"
-REMOTE_USER="${REMOTE_USER:-root}"
-REMOTE_DIR="${REMOTE_DIR:-~/deploy/webapp-template}"
-REMOTE_SCRIPT_NAME="${REMOTE_SCRIPT_NAME:-deploy_webapp_template_server.sh}"
-REMOTE_COMPOSE_FILE_NAME="${REMOTE_COMPOSE_FILE_NAME:-compose.webapp-template.yml}"
+IMAGE_NAME="${IMAGE_NAME:-your-project-server:dev}"
+IMAGE_TAR="${IMAGE_TAR:-$REPO_ROOT/output/app-server.tar}"
+REMOTE_HOST="${REMOTE_HOST:-deploy.example.com}"
+REMOTE_USER="${REMOTE_USER:-deploy}"
+REMOTE_DIR="${REMOTE_DIR:-~/deploy/your-project}"
+REMOTE_SCRIPT_NAME="${REMOTE_SCRIPT_NAME:-deploy_app_server.sh}"
+REMOTE_COMPOSE_FILE_NAME="${REMOTE_COMPOSE_FILE_NAME:-compose.app-server.yml}"
 AUTO_SMOKE="${AUTO_SMOKE:-auto}"
 SIM_HTTP_PORT="${SIM_HTTP_PORT:-8200}"
 SIM_ADMIN_HTTP_PORT="${SIM_ADMIN_HTTP_PORT:-}"
 HEALTH_PATH="${HEALTH_PATH:-/healthz}"
 READY_PATH="${READY_PATH:-/readyz}"
 SMOKE_TIMEOUT="${SMOKE_TIMEOUT:-8}"
-SMOKE_CONTAINER_NAME="${SMOKE_CONTAINER_NAME:-webapp-template-server}"
+SMOKE_CONTAINER_NAME="${SMOKE_CONTAINER_NAME:-your-project-server}"
 SMOKE_CHECK_ORIGIN="${SMOKE_CHECK_ORIGIN:-remote}"
 
 usage() {
@@ -29,26 +29,26 @@ usage() {
 
 默认流程:
   1) (cd server && make build_server)
-  2) docker save -o output/template-server.tar webapp-template-server:dev
-  3) rsync -avz -e "ssh" output/template-server.tar root@47.84.12.211:~/deploy/webapp-template
+  2) docker save -o output/app-server.tar your-project-server:dev
+  3) rsync -avz -e "ssh" output/app-server.tar deploy@deploy.example.com:~/deploy/your-project
   4) 上传 deploy_server.sh + compose.yml 到远端独立目录
   5) ssh 到远端执行项目专属部署脚本
 
 可选环境变量:
-  IMAGE_NAME    本地导出的镜像名（默认 webapp-template-server:dev）
-  IMAGE_TAR     本地镜像包路径（默认仓库根目录 output/template-server.tar）
-  REMOTE_HOST   远端主机（默认 47.84.12.211）
-  REMOTE_USER   远端用户（默认 root）
-  REMOTE_DIR    远端上传目录（默认 ~/deploy/webapp-template）
-  REMOTE_SCRIPT_NAME 远端部署脚本文件名（默认 deploy_webapp_template_server.sh）
-  REMOTE_COMPOSE_FILE_NAME 远端 compose 文件名（默认 compose.webapp-template.yml）
+  IMAGE_NAME    本地导出的镜像名（默认 your-project-server:dev）
+  IMAGE_TAR     本地镜像包路径（默认仓库根目录 output/app-server.tar）
+  REMOTE_HOST   远端主机（默认 deploy.example.com）
+  REMOTE_USER   远端用户（默认 deploy）
+  REMOTE_DIR    远端上传目录（默认 ~/deploy/your-project）
+  REMOTE_SCRIPT_NAME 远端部署脚本文件名（默认 deploy_app_server.sh）
+  REMOTE_COMPOSE_FILE_NAME 远端 compose 文件名（默认 compose.app-server.yml）
   AUTO_SMOKE    部署后检查策略（off/basic/auto/strict，默认 auto）
   SIM_HTTP_PORT 业务 HTTP 端口（默认 8200）
   SIM_ADMIN_HTTP_PORT 管理 HTTP 端口（默认空，空值表示跳过管理口检查）
   HEALTH_PATH   健康检查路径（默认 /healthz）
   READY_PATH    就绪检查路径（默认 /readyz）
   SMOKE_TIMEOUT HTTP 检查超时秒数（默认 8）
-  SMOKE_CONTAINER_NAME 严格检查读取日志的容器名（默认 webapp-template-server）
+  SMOKE_CONTAINER_NAME 严格检查读取日志的容器名（默认 your-project-server）
   SMOKE_CHECK_ORIGIN smoke 检查来源（remote/local/both，默认 remote）
 EOF
 }
@@ -114,7 +114,6 @@ resolve_smoke_mode() {
     ;;
   esac
 
-  # 关键服务逻辑、配置、迁移改动默认走严格检查，其他改动走基础检查。
   if printf '%s\n' "$changed_files" | grep -Eq '^(server/internal/|server/cmd/|server/configs/|server/api/|server/internal/data/model/migrate/|server/go\.mod$|server/go\.sum$|server/Dockerfile$|server/deploy/compose/prod/compose\.yml$)'; then
     echo "strict"
     return
@@ -192,7 +191,6 @@ run_smoke_check() {
 
   container_started_at=$(ssh "$REMOTE_TARGET" "docker inspect -f '{{.State.StartedAt}}' ${SMOKE_CONTAINER_NAME} 2>/dev/null" || true)
   if [ -n "$container_started_at" ]; then
-    # 边界兜底：仅检查本次容器启动后的日志，避免历史重启噪音误报。
     remote_logs=$(ssh "$REMOTE_TARGET" "docker logs --since '${container_started_at}' ${SMOKE_CONTAINER_NAME} 2>&1" || true)
   else
     remote_logs=$(ssh "$REMOTE_TARGET" "docker logs --tail 200 ${SMOKE_CONTAINER_NAME} 2>&1" || true)
@@ -209,7 +207,6 @@ echo "==> [1/5] 构建服务镜像"
 (cd "$SERVER_DIR" && make build_server)
 
 echo "==> [2/5] 导出镜像包: $IMAGE_NAME -> $IMAGE_TAR"
-# 边界兜底：自定义 IMAGE_TAR 指向新目录时，提前创建目录避免 docker save 失败。
 mkdir -p "$(dirname "$IMAGE_TAR")"
 docker save -o "$IMAGE_TAR" "$IMAGE_NAME"
 

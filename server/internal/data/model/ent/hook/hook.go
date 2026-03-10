@@ -20,18 +20,6 @@ func (f AdminUserFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, e
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.AdminUserMutation", m)
 }
 
-// The InviteCodeFunc type is an adapter to allow the use of ordinary
-// function as InviteCode mutator.
-type InviteCodeFunc func(context.Context, *ent.InviteCodeMutation) (ent.Value, error)
-
-// Mutate calls f(ctx, m).
-func (f InviteCodeFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
-	if mv, ok := m.(*ent.InviteCodeMutation); ok {
-		return f(ctx, mv)
-	}
-	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.InviteCodeMutation", m)
-}
-
 // The UserFunc type is an adapter to allow the use of ordinary
 // function as User mutator.
 type UserFunc func(context.Context, *ent.UserMutation) (ent.Value, error)

@@ -17,10 +17,6 @@ const (
 	FieldUsername = "username"
 	// FieldPasswordHash holds the string denoting the password_hash field in the database.
 	FieldPasswordHash = "password_hash"
-	// FieldLevel holds the string denoting the level field in the database.
-	FieldLevel = "level"
-	// FieldParentID holds the string denoting the parent_id field in the database.
-	FieldParentID = "parent_id"
 	// FieldDisabled holds the string denoting the disabled field in the database.
 	FieldDisabled = "disabled"
 	// FieldLastLoginAt holds the string denoting the last_login_at field in the database.
@@ -38,8 +34,6 @@ var Columns = []string{
 	FieldID,
 	FieldUsername,
 	FieldPasswordHash,
-	FieldLevel,
-	FieldParentID,
 	FieldDisabled,
 	FieldLastLoginAt,
 	FieldCreatedAt,
@@ -61,8 +55,6 @@ var (
 	UsernameValidator func(string) error
 	// PasswordHashValidator is a validator for the "password_hash" field. It is called by the builders before save.
 	PasswordHashValidator func(string) error
-	// DefaultLevel holds the default value on creation for the "level" field.
-	DefaultLevel int8
 	// DefaultDisabled holds the default value on creation for the "disabled" field.
 	DefaultDisabled bool
 	// DefaultCreatedAt holds the default value on creation for the "created_at" field.
@@ -89,16 +81,6 @@ func ByUsername(opts ...sql.OrderTermOption) OrderOption {
 // ByPasswordHash orders the results by the password_hash field.
 func ByPasswordHash(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldPasswordHash, opts...).ToFunc()
-}
-
-// ByLevel orders the results by the level field.
-func ByLevel(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldLevel, opts...).ToFunc()
-}
-
-// ByParentID orders the results by the parent_id field.
-func ByParentID(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldParentID, opts...).ToFunc()
 }
 
 // ByDisabled orders the results by the disabled field.

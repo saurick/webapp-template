@@ -56,54 +56,6 @@ func (_u *AdminUserUpdate) SetNillablePasswordHash(v *string) *AdminUserUpdate {
 	return _u
 }
 
-// SetLevel sets the "level" field.
-func (_u *AdminUserUpdate) SetLevel(v int8) *AdminUserUpdate {
-	_u.mutation.ResetLevel()
-	_u.mutation.SetLevel(v)
-	return _u
-}
-
-// SetNillableLevel sets the "level" field if the given value is not nil.
-func (_u *AdminUserUpdate) SetNillableLevel(v *int8) *AdminUserUpdate {
-	if v != nil {
-		_u.SetLevel(*v)
-	}
-	return _u
-}
-
-// AddLevel adds value to the "level" field.
-func (_u *AdminUserUpdate) AddLevel(v int8) *AdminUserUpdate {
-	_u.mutation.AddLevel(v)
-	return _u
-}
-
-// SetParentID sets the "parent_id" field.
-func (_u *AdminUserUpdate) SetParentID(v int) *AdminUserUpdate {
-	_u.mutation.ResetParentID()
-	_u.mutation.SetParentID(v)
-	return _u
-}
-
-// SetNillableParentID sets the "parent_id" field if the given value is not nil.
-func (_u *AdminUserUpdate) SetNillableParentID(v *int) *AdminUserUpdate {
-	if v != nil {
-		_u.SetParentID(*v)
-	}
-	return _u
-}
-
-// AddParentID adds value to the "parent_id" field.
-func (_u *AdminUserUpdate) AddParentID(v int) *AdminUserUpdate {
-	_u.mutation.AddParentID(v)
-	return _u
-}
-
-// ClearParentID clears the value of the "parent_id" field.
-func (_u *AdminUserUpdate) ClearParentID() *AdminUserUpdate {
-	_u.mutation.ClearParentID()
-	return _u
-}
-
 // SetDisabled sets the "disabled" field.
 func (_u *AdminUserUpdate) SetDisabled(v bool) *AdminUserUpdate {
 	_u.mutation.SetDisabled(v)
@@ -218,21 +170,6 @@ func (_u *AdminUserUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	if value, ok := _u.mutation.PasswordHash(); ok {
 		_spec.SetField(adminuser.FieldPasswordHash, field.TypeString, value)
 	}
-	if value, ok := _u.mutation.Level(); ok {
-		_spec.SetField(adminuser.FieldLevel, field.TypeInt8, value)
-	}
-	if value, ok := _u.mutation.AddedLevel(); ok {
-		_spec.AddField(adminuser.FieldLevel, field.TypeInt8, value)
-	}
-	if value, ok := _u.mutation.ParentID(); ok {
-		_spec.SetField(adminuser.FieldParentID, field.TypeInt, value)
-	}
-	if value, ok := _u.mutation.AddedParentID(); ok {
-		_spec.AddField(adminuser.FieldParentID, field.TypeInt, value)
-	}
-	if _u.mutation.ParentIDCleared() {
-		_spec.ClearField(adminuser.FieldParentID, field.TypeInt)
-	}
 	if value, ok := _u.mutation.Disabled(); ok {
 		_spec.SetField(adminuser.FieldDisabled, field.TypeBool, value)
 	}
@@ -290,54 +227,6 @@ func (_u *AdminUserUpdateOne) SetNillablePasswordHash(v *string) *AdminUserUpdat
 	if v != nil {
 		_u.SetPasswordHash(*v)
 	}
-	return _u
-}
-
-// SetLevel sets the "level" field.
-func (_u *AdminUserUpdateOne) SetLevel(v int8) *AdminUserUpdateOne {
-	_u.mutation.ResetLevel()
-	_u.mutation.SetLevel(v)
-	return _u
-}
-
-// SetNillableLevel sets the "level" field if the given value is not nil.
-func (_u *AdminUserUpdateOne) SetNillableLevel(v *int8) *AdminUserUpdateOne {
-	if v != nil {
-		_u.SetLevel(*v)
-	}
-	return _u
-}
-
-// AddLevel adds value to the "level" field.
-func (_u *AdminUserUpdateOne) AddLevel(v int8) *AdminUserUpdateOne {
-	_u.mutation.AddLevel(v)
-	return _u
-}
-
-// SetParentID sets the "parent_id" field.
-func (_u *AdminUserUpdateOne) SetParentID(v int) *AdminUserUpdateOne {
-	_u.mutation.ResetParentID()
-	_u.mutation.SetParentID(v)
-	return _u
-}
-
-// SetNillableParentID sets the "parent_id" field if the given value is not nil.
-func (_u *AdminUserUpdateOne) SetNillableParentID(v *int) *AdminUserUpdateOne {
-	if v != nil {
-		_u.SetParentID(*v)
-	}
-	return _u
-}
-
-// AddParentID adds value to the "parent_id" field.
-func (_u *AdminUserUpdateOne) AddParentID(v int) *AdminUserUpdateOne {
-	_u.mutation.AddParentID(v)
-	return _u
-}
-
-// ClearParentID clears the value of the "parent_id" field.
-func (_u *AdminUserUpdateOne) ClearParentID() *AdminUserUpdateOne {
-	_u.mutation.ClearParentID()
 	return _u
 }
 
@@ -484,21 +373,6 @@ func (_u *AdminUserUpdateOne) sqlSave(ctx context.Context) (_node *AdminUser, er
 	}
 	if value, ok := _u.mutation.PasswordHash(); ok {
 		_spec.SetField(adminuser.FieldPasswordHash, field.TypeString, value)
-	}
-	if value, ok := _u.mutation.Level(); ok {
-		_spec.SetField(adminuser.FieldLevel, field.TypeInt8, value)
-	}
-	if value, ok := _u.mutation.AddedLevel(); ok {
-		_spec.AddField(adminuser.FieldLevel, field.TypeInt8, value)
-	}
-	if value, ok := _u.mutation.ParentID(); ok {
-		_spec.SetField(adminuser.FieldParentID, field.TypeInt, value)
-	}
-	if value, ok := _u.mutation.AddedParentID(); ok {
-		_spec.AddField(adminuser.FieldParentID, field.TypeInt, value)
-	}
-	if _u.mutation.ParentIDCleared() {
-		_spec.ClearField(adminuser.FieldParentID, field.TypeInt)
 	}
 	if value, ok := _u.mutation.Disabled(); ok {
 		_spec.SetField(adminuser.FieldDisabled, field.TypeBool, value)

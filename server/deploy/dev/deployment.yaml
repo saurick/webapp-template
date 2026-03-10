@@ -1,77 +1,81 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  annotations:
-    app: webapp-template  
-    deployment.kubernetes.io/revision: "31"
+  name: your-project-server
+  namespace: your-project-dev
   labels:
-    app: webapp-template
-  name: webapp-template
-  namespace: webapp-template
+    app.kubernetes.io/name: your-project-server
+    app.kubernetes.io/part-of: your-project
+    app.kubernetes.io/component: api
 spec:
-  progressDeadlineSeconds: 600
-  # 实例数量
   replicas: 1
   revisionHistoryLimit: 10
+  progressDeadlineSeconds: 600
   selector:
     matchLabels:
-      app: webapp-template
-  # 更新策略
+      app.kubernetes.io/name: your-project-server
   strategy:
+    type: RollingUpdate
     rollingUpdate:
       maxSurge: 25%
       maxUnavailable: 25%
-    type: RollingUpdate
   template:
     metadata:
-      annotations:
-        app: webapp-template
       labels:
-        app: webapp-template
+        app.kubernetes.io/name: your-project-server
+        app.kubernetes.io/part-of: your-project
+        app.kubernetes.io/component: api
     spec:
+      dnsPolicy: ClusterFirst
+      imagePullSecrets:
+        - name: registry-credentials
       containers:
-        - image: registry.xxxx/webapp-template:latest
+        - name: server
+          image: registry.example.com/your-project/server:latest
           imagePullPolicy: IfNotPresent
-          livenessProbe:
-            failureThreshold: 2
-            initialDelaySeconds: 90
-            periodSeconds: 60
-            successThreshold: 1
-            tcpSocket:
-              port: 8000
-            timeoutSeconds: 2
-          name: webapp-template
+          command: ["/app/server", "-conf", "/config/config.yaml"]
           ports:
-            - containerPort: 8000
-              name: http
+            - name: http
+              containerPort: 8000
               protocol: TCP
+            - name: grpc
+              containerPort: 9000
+              protocol: TCP
+          startupProbe:
+            httpGet:
+              path: /readyz
+              port: http
+            failureThreshold: 30
+            periodSeconds: 5
+            timeoutSeconds: 2
           readinessProbe:
-            failureThreshold: 2
-            initialDelaySeconds: 30
+            httpGet:
+              path: /readyz
+              port: http
+            failureThreshold: 3
+            periodSeconds: 10
+            timeoutSeconds: 2
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            failureThreshold: 3
             periodSeconds: 30
-            successThreshold: 1
-            tcpSocket:
-              port: 8000
             timeoutSeconds: 2
           resources:
-            limits:
-              cpu: "2"
-              memory: 4Gi
             requests:
               cpu: 100m
               memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
           volumeMounts:
             - name: config
-              mountPath: "/config/"
+              mountPath: /config
               readOnly: true
-          command: ["/app/server", "-conf", "/config/config.yaml"]
-      dnsPolicy: ClusterFirstWithHostNet
-      imagePullSecrets:
-        - name: webapp-template
       restartPolicy: Always
-      securityContext: {}
       terminationGracePeriodSeconds: 30
       volumes:
         - name: config
           configMap:
-            name: webapp-template
+            name: your-project-server-config

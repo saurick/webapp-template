@@ -1,9 +1,9 @@
 import React, { useMemo, useState } from 'react'
-import { Link, useNavigate, useLocation } from 'react-router-dom'
-import CasinoScreen from '@/common/components/layout/CasinoScreen'
-import GoldFramePanel from '@/common/components/layout/GoldFramePanel'
-import { JsonRpc } from '@/common/utils/jsonRpc'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
+import AppShell from '@/common/components/layout/AppShell'
+import SurfacePanel from '@/common/components/layout/SurfacePanel'
 import { AUTH_SCOPE, persistAuth } from '@/common/auth/auth'
+import { JsonRpc } from '@/common/utils/jsonRpc'
 
 export default function LoginPage() {
   const navigate = useNavigate()
@@ -21,9 +21,10 @@ export default function LoginPage() {
   const [submitting, setSubmitting] = useState(false)
   const [errMsg, setErrMsg] = useState('')
 
-  const canSubmit = useMemo(() => {
-    return username.trim().length > 0 && password.length > 0 && !submitting
-  }, [username, password, submitting])
+  const canSubmit = useMemo(
+    () => username.trim().length > 0 && password.length > 0 && !submitting,
+    [username, password, submitting]
+  )
 
   const onSubmit = async (e) => {
     e.preventDefault()
@@ -38,9 +39,8 @@ export default function LoginPage() {
         password,
       })
 
-      // 你的约定：result.data 才是 payload
       persistAuth(result?.data, AUTH_SCOPE.USER)
-      navigate(from, { replace: true }) //
+      navigate(from, { replace: true })
     } catch (err) {
       setErrMsg(err?.message || String(err))
     } finally {
@@ -49,35 +49,38 @@ export default function LoginPage() {
   }
 
   return (
-    <CasinoScreen className="flex items-center justify-center px-4 py-10">
-      <div className="w-full max-w-[520px]">
-        <div className="mb-6 text-center">
-          <div className="text-2xl font-extrabold tracking-wide text-amber-200">
-            欢迎回来
+    <AppShell className="flex items-center justify-center px-4 py-10">
+      <div className="w-full max-w-[560px]">
+        <div className="mb-6 text-center sm:mb-8">
+          <div className="inline-flex rounded-full border border-cyan-300/30 bg-cyan-300/10 px-3 py-1 text-xs font-medium uppercase tracking-[0.24em] text-cyan-100">
+            User Access
           </div>
-          <div className="mt-1 text-sm text-amber-100/70">
-            登录后继续你的练习 / 计划
+          <div className="mt-4 text-3xl font-semibold tracking-tight text-slate-50">
+            欢迎登录
+          </div>
+          <div className="mt-2 text-sm leading-6 text-slate-300">
+            使用你的账号继续访问当前项目。
           </div>
         </div>
 
-        <GoldFramePanel className="p-4 sm:p-6">
+        <SurfacePanel className="p-4 sm:p-6">
           <form onSubmit={onSubmit} className="p-4 sm:p-6">
             <div className="space-y-4">
               <div>
-                <label className="mb-1 block text-sm text-amber-100/80">
+                <label className="mb-1 block text-sm text-slate-200/90">
                   用户名
                 </label>
                 <input
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   autoComplete="username"
-                  className="w-full rounded-xl border border-amber-200/30 bg-black/25 px-4 py-3 text-amber-100 outline-none focus:border-amber-200/60 focus:ring-2 focus:ring-amber-200/20"
+                  className="w-full rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 text-slate-100 outline-none transition focus:border-cyan-300/60 focus:ring-2 focus:ring-cyan-300/20"
                   placeholder="输入用户名"
                 />
               </div>
 
               <div>
-                <label className="mb-1 block text-sm text-amber-100/80">
+                <label className="mb-1 block text-sm text-slate-200/90">
                   密码
                 </label>
                 <input
@@ -85,13 +88,13 @@ export default function LoginPage() {
                   onChange={(e) => setPassword(e.target.value)}
                   type="password"
                   autoComplete="current-password"
-                  className="w-full rounded-xl border border-amber-200/30 bg-black/25 px-4 py-3 text-amber-100 outline-none focus:border-amber-200/60 focus:ring-2 focus:ring-amber-200/20"
+                  className="w-full rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 text-slate-100 outline-none transition focus:border-cyan-300/60 focus:ring-2 focus:ring-cyan-300/20"
                   placeholder="输入密码"
                 />
               </div>
 
               {errMsg ? (
-                <div className="rounded-xl border border-red-400/40 bg-red-500/10 px-4 py-3 text-sm text-red-100">
+                <div className="rounded-2xl border border-rose-400/40 bg-rose-500/10 px-4 py-3 text-sm text-rose-100">
                   {errMsg}
                 </div>
               ) : null}
@@ -99,20 +102,20 @@ export default function LoginPage() {
               <button
                 type="submit"
                 disabled={!canSubmit}
-                className={`w-full rounded-2xl px-4 py-3 font-bold tracking-wide ${
+                className={`w-full rounded-2xl px-4 py-3 text-sm font-semibold tracking-wide transition sm:text-base ${
                   canSubmit
-                    ? 'bg-amber-400 text-[#1b1b1b] hover:bg-amber-300 active:bg-amber-500'
-                    : 'cursor-not-allowed bg-amber-400/30 text-amber-100/60'
+                    ? 'bg-cyan-300 text-slate-950 hover:bg-cyan-200 active:bg-cyan-400'
+                    : 'cursor-not-allowed bg-cyan-300/20 text-slate-400'
                 }`}
               >
                 {submitting ? '登录中…' : '登录'}
               </button>
 
-              <div className="flex items-center justify-between pt-1 text-sm text-amber-100/70">
+              <div className="flex items-center justify-between pt-1 text-sm text-slate-300">
                 <div>
                   还没有账号？{' '}
                   <Link
-                    className="text-amber-200 underline hover:text-amber-100"
+                    className="font-medium text-cyan-200 underline underline-offset-4 transition hover:text-cyan-100"
                     to="/register"
                   >
                     去注册
@@ -121,12 +124,8 @@ export default function LoginPage() {
               </div>
             </div>
           </form>
-        </GoldFramePanel>
-
-        {/* <div className="text-center text-xs text-amber-100/50 mt-6">
-          token 会保存在 localStorage（开发阶段方便调试）
-        </div> */}
+        </SurfacePanel>
       </div>
-    </CasinoScreen>
+    </AppShell>
   )
 }

@@ -1,17 +1,66 @@
-# ent 数据库 orm
+# Ent + Atlas 数据模型说明
 
-本仓库 internal/data/model/ent/schema 基于原数据库生成，后期维护不需要直接改数据库，通过编写 internal/data/model/ent/schema 目录里面的代码即可
+当前模板使用：
 
-```shell
-# 在 internal/data 目录运行
-# 初始化的脚本，基于数据库中的表生成schema目录中的内容
-# saurick 用户修改版，把 MySQL 的 BIGINT 映射到 Golang 的 int64
-go run github.com/saurick/entimport/cmd/entimport -dsn "mysql://test_user:2%40%260kq%25qFafA4d@tcp(192.168.0.106:3306)/test_databse?charset=utf8mb4&parseTime=True&loc=Local&interpolateParams=true" -exclude-tables sys_authority_btns,sys_authority_menus,sys_chat_gpt_options,sys_data_authority_id,sys_user_authority
+- Ent：维护 schema 和生成 Go ORM 代码
+- Atlas：生成和执行版本化迁移
 
-# 这个是原版的 entimport 工具，会将 MySQL BIGINT 类型映射到 Golang 的 int
-go run ariga.io/entimport/cmd/entimport -dsn "mysql://root:password@tcp(localhost:3306)/dbname?charset=utf8mb4&parseTime=True&loc=Local" -exclude-tables sys_authority_btns,sys_authority_menus,sys_chat_gpt_options,sys_data_authority_id,sys_user_authority
+核心目录：
+
+- schema：`/Users/simon/projects/webapp-template/server/internal/data/model/schema`
+- ent 生成代码：`/Users/simon/projects/webapp-template/server/internal/data/model/ent`
+- migration：`/Users/simon/projects/webapp-template/server/internal/data/model/migrate`
+
+## 正确工作流
+
+1. 修改 schema
+2. 生成迁移和 ent 代码
+3. 应用迁移
+
+常用命令：
+
+```bash
+cd /Users/simon/projects/webapp-template/server
+
+# 生成 migration + ent 代码
+make data
+
+# 应用 migration（需要先设置 DB_URL）
+make migrate_apply
 ```
 
-* ent官方文档
+## 相关命令
 
-<https://entgo.io/zh/docs/tutorial-setup>
+```bash
+# 只生成 migration diff
+make ent_migrate
+
+# 只重新生成 ent 代码
+make ent_generate
+
+# 重算 atlas.sum
+make migrate_hash
+
+# 手动标记某个 migration 已执行
+make migrate_set
+```
+
+## 约束
+
+- 不要手写结构性 SQL 迁移文件
+- 不要绕过 schema 直接改数据库结构
+- `make data` 是当前模板唯一推荐的数据结构变更入口
+
+如果需要完整操作手册，优先阅读：
+
+- `/Users/simon/projects/webapp-template/server/internal/data/AI_DB_WORKFLOW.md`
+
+## 什么时候才需要重新导入旧库
+
+模板当前默认不再依赖 `entimport` 反向生成 schema。
+
+只有在“接手一个已经存在、且没有 Ent schema 的老数据库”这种特殊场景下，才需要考虑先做一次导入；那属于派生项目迁移工作，不是模板默认工作流。
+
+## 参考
+
+- Ent 官方文档：[https://entgo.io/zh/docs/tutorial-setup](https://entgo.io/zh/docs/tutorial-setup)

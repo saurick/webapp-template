@@ -1,42 +1,39 @@
-// web/src/common/components/modal/CasinoAlertProvider.jsx
 import React, {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useState,
-  useEffect,
 } from 'react'
-import CasinoAlertModal from '@/common/components/modal/CasinoAlertModal'
+import AlertDialog from '@/common/components/modal/AlertDialog'
 import { registerAlert } from '@/common/components/modal/alertBridge'
 
 const AlertContext = createContext(null)
 
-export function CasinoAlertProvider({ children }) {
+export function AppAlertProvider({ children }) {
   const [state, setState] = useState({
     open: false,
     title: '提示',
     message: '',
-    confirmText: '確定',
+    confirmText: '确定',
     onConfirm: null,
   })
 
   const close = useCallback(() => {
-    setState((s) => ({ ...s, open: false }))
+    setState((current) => ({ ...current, open: false }))
   }, [])
 
   const alert = useCallback((opts = {}) => {
-    // opts: { title, message, confirmText, onConfirm }
     setState({
       open: true,
       title: opts.title ?? '提示',
       message: opts.message ?? '',
-      confirmText: opts.confirmText ?? '確定',
+      confirmText: opts.confirmText ?? '确定',
       onConfirm: opts.onConfirm ?? null,
     })
   }, [])
 
-  // 让非 React 文件也能调用 alert()
   useEffect(() => {
     registerAlert(alert)
   }, [alert])
@@ -46,7 +43,7 @@ export function CasinoAlertProvider({ children }) {
   return (
     <AlertContext.Provider value={value}>
       {children}
-      <CasinoAlertModal
+      <AlertDialog
         open={state.open}
         onClose={close}
         title={state.title}
@@ -58,12 +55,10 @@ export function CasinoAlertProvider({ children }) {
   )
 }
 
-export function useCasinoAlert() {
+export function useAppAlert() {
   const ctx = useContext(AlertContext)
   if (!ctx) {
-    throw new Error(
-      'useCasinoAlert must be used within <CasinoAlertProvider />'
-    )
+    throw new Error('useAppAlert must be used within <AppAlertProvider />')
   }
   return ctx
 }

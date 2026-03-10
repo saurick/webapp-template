@@ -4,5 +4,6 @@ metadata:
   name: dashboard-admin-secret
   namespace: kubernetes-dashboard
   annotations:
+    # 默认读取 kubernetes-dashboard 命名空间下的 dashboard-admin ServiceAccount。
     kubernetes.io/service-account.name: dashboard-admin
 type: kubernetes.io/service-account-token

@@ -5,7 +5,7 @@
 - Kratos
 - Ent + Atlas
 - MySQL
-- Redis
+- OpenTelemetry（可选）
 
 ## 架构分层
 
@@ -58,9 +58,21 @@ server/
 
 ## 文档索引
 
+- 文档索引：`/Users/simon/projects/webapp-template/server/docs/README.md`
+- 部署模板：`/Users/simon/projects/webapp-template/server/deploy/README.md`
+- 运行说明：`/Users/simon/projects/webapp-template/server/docs/runtime.md`
+- 配置说明：`/Users/simon/projects/webapp-template/server/docs/config.md`
+- API 说明：`/Users/simon/projects/webapp-template/server/docs/api.md`
+- 可观测性：`/Users/simon/projects/webapp-template/server/docs/observability.md`
 - Ent / Atlas：`/Users/simon/projects/webapp-template/server/docs/ent.md`
 - K8s：`/Users/simon/projects/webapp-template/server/docs/k8s.md`
 - DB 工作流：`/Users/simon/projects/webapp-template/server/internal/data/AI_DB_WORKFLOW.md`
 - 业务层说明：`/Users/simon/projects/webapp-template/server/internal/biz/README.md`
 - 数据层说明：`/Users/simon/projects/webapp-template/server/internal/data/README.md`
 - 服务层说明：`/Users/simon/projects/webapp-template/server/internal/service/README.md`
+
+## 部署模板
+
+- Docker Compose 模板：`/Users/simon/projects/webapp-template/server/deploy/compose/prod`
+- Kubernetes 模板：`/Users/simon/projects/webapp-template/server/deploy/dev`、`/Users/simon/projects/webapp-template/server/deploy/prod`
+- 如需了解占位符替换和目录用途，优先看 `/Users/simon/projects/webapp-template/server/deploy/README.md`

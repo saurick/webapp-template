@@ -1,77 +1,81 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  annotations:
-    app: new-task
-    deployment.kubernetes.io/revision: "31"
+  name: your-project-server
+  namespace: your-project-prod
   labels:
-    app: new-task
-  name: new-task
-  namespace: tt
+    app.kubernetes.io/name: your-project-server
+    app.kubernetes.io/part-of: your-project
+    app.kubernetes.io/component: api
 spec:
-  progressDeadlineSeconds: 600
-  # 实例数量
-  replicas: 1
+  replicas: 2
   revisionHistoryLimit: 10
+  progressDeadlineSeconds: 600
   selector:
     matchLabels:
-      app: new-task
-  # 更新策略
+      app.kubernetes.io/name: your-project-server
   strategy:
+    type: RollingUpdate
     rollingUpdate:
       maxSurge: 25%
       maxUnavailable: 25%
-    type: RollingUpdate
   template:
     metadata:
-      annotations:
-        app: new-task
       labels:
-        app: new-task
+        app.kubernetes.io/name: your-project-server
+        app.kubernetes.io/part-of: your-project
+        app.kubernetes.io/component: api
     spec:
+      dnsPolicy: ClusterFirst
+      imagePullSecrets:
+        - name: registry-credentials
       containers:
-        - image: registry.haokaixin.win/haikx/tk_new:20240518.1d10fa97-local
+        - name: server
+          image: registry.example.com/your-project/server:stable
           imagePullPolicy: IfNotPresent
-          livenessProbe:
-            failureThreshold: 2
-            initialDelaySeconds: 90
-            periodSeconds: 60
-            successThreshold: 1
-            tcpSocket:
-              port: 8000
-            timeoutSeconds: 2
-          name: tt-task
+          command: ["/app/server", "-conf", "/config/config.yaml"]
           ports:
-            - containerPort: 8000
-              name: http
+            - name: http
+              containerPort: 8000
               protocol: TCP
+            - name: grpc
+              containerPort: 9000
+              protocol: TCP
+          startupProbe:
+            httpGet:
+              path: /readyz
+              port: http
+            failureThreshold: 30
+            periodSeconds: 5
+            timeoutSeconds: 2
           readinessProbe:
-            failureThreshold: 2
-            initialDelaySeconds: 30
+            httpGet:
+              path: /readyz
+              port: http
+            failureThreshold: 3
+            periodSeconds: 10
+            timeoutSeconds: 2
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            failureThreshold: 3
             periodSeconds: 30
-            successThreshold: 1
-            tcpSocket:
-              port: 8000
             timeoutSeconds: 2
           resources:
-            limits:
-              cpu: "2"
-              memory: 4Gi
             requests:
-              cpu: 100m
-              memory: 128Mi
+              cpu: 200m
+              memory: 256Mi
+            limits:
+              cpu: "1"
+              memory: 1Gi
           volumeMounts:
             - name: config
-              mountPath: "/config/"
+              mountPath: /config
               readOnly: true
-          command: ["/app/task", "-conf", "/config/config.yaml"]
-      dnsPolicy: ClusterFirstWithHostNet
-      imagePullSecrets:
-        - name: tk-new
       restartPolicy: Always
-      securityContext: {}
       terminationGracePeriodSeconds: 30
       volumes:
         - name: config
           configMap:
-            name: tk-new
+            name: your-project-server-config

@@ -1,10 +1,10 @@
 import React, { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import CasinoScreen from '@/common/components/layout/CasinoScreen'
-import GoldFramePanel from '@/common/components/layout/GoldFramePanel'
-import { JsonRpc } from '@/common/utils/jsonRpc'
-import { ADMIN_BASE_PATH } from '@/common/utils/adminRpc'
+import AppShell from '@/common/components/layout/AppShell'
+import SurfacePanel from '@/common/components/layout/SurfacePanel'
 import { AUTH_SCOPE, logout } from '@/common/auth/auth'
+import { ADMIN_BASE_PATH } from '@/common/utils/adminRpc'
+import { JsonRpc } from '@/common/utils/jsonRpc'
 
 export default function AdminMenuPage() {
   const navigate = useNavigate()
@@ -32,57 +32,62 @@ export default function AdminMenuPage() {
   }
 
   return (
-    <CasinoScreen className="flex items-center justify-center px-4 py-10">
+    <AppShell className="flex items-center justify-center px-4 py-10">
       <div className="w-full max-w-[520px]">
         <div className="mb-6 text-center">
-          <div className="text-2xl font-extrabold tracking-wide text-amber-200">
-            管理菜单
+          <div className="inline-flex rounded-full border border-amber-300/30 bg-amber-300/10 px-3 py-1 text-xs font-medium uppercase tracking-[0.24em] text-amber-100">
+            Admin Console
           </div>
-          <div className="mt-1 text-sm text-amber-100/70">模板公共后台入口</div>
+          <div className="mt-4 text-2xl font-semibold tracking-tight text-slate-50">
+            管理控制台
+          </div>
+          <div className="mt-2 text-sm leading-6 text-slate-300">
+            模板默认后台入口，只保留账号目录和项目收口说明，避免继续内置具体业务模型。
+          </div>
         </div>
 
-        <GoldFramePanel className="p-4 sm:p-6">
+        <SurfacePanel className="p-4 sm:p-6">
           <div className="space-y-3 p-4 sm:p-6">
             <button
               type="button"
-              onClick={() => navigate('/admin-users')}
-              className="w-full rounded-2xl bg-amber-400 px-4 py-3 font-bold text-[#1b1b1b] hover:bg-amber-300 active:bg-amber-500"
+              onClick={() => navigate('/admin-accounts')}
+              className="w-full rounded-2xl bg-amber-300 px-4 py-3 font-semibold text-slate-950 transition hover:bg-amber-200 active:bg-amber-400"
             >
-              用户管理
+              账号目录
             </button>
 
             <button
               type="button"
-              onClick={() => navigate('/admin-hierarchy')}
-              className="w-full rounded-2xl bg-amber-400 px-4 py-3 font-bold text-[#1b1b1b] hover:bg-amber-300 active:bg-amber-500"
+              onClick={() => navigate('/admin-guide')}
+              className="w-full rounded-2xl bg-amber-300 px-4 py-3 font-semibold text-slate-950 transition hover:bg-amber-200 active:bg-amber-400"
             >
-              分级管理
+              项目收口指南
             </button>
 
             <button
               type="button"
               onClick={() => setShowLogoutConfirm(true)}
-              className="w-full rounded-2xl bg-amber-400 px-4 py-3 font-bold text-[#1b1b1b] hover:bg-amber-300 active:bg-amber-500"
+              className="w-full rounded-2xl bg-amber-300 px-4 py-3 font-semibold text-slate-950 transition hover:bg-amber-200 active:bg-amber-400"
             >
               退出登录
             </button>
             {showLogoutConfirm ? (
-              <div className="rounded-2xl border border-amber-300/30 bg-black/30 p-3">
-                <div className="mb-3 text-center text-sm text-amber-100">
+              <div className="rounded-2xl border border-white/10 bg-black/20 p-3">
+                <div className="mb-3 text-center text-sm text-slate-200">
                   确认退出管理员登录吗？
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <button
                     type="button"
                     onClick={handleLogout}
-                    className="rounded-xl bg-amber-400 px-3 py-2 text-sm font-bold text-[#1b1b1b] hover:bg-amber-300 active:bg-amber-500"
+                    className="rounded-xl bg-amber-300 px-3 py-2 text-sm font-semibold text-slate-950 transition hover:bg-amber-200 active:bg-amber-400"
                   >
                     确认退出
                   </button>
                   <button
                     type="button"
                     onClick={() => setShowLogoutConfirm(false)}
-                    className="rounded-xl border border-amber-300/40 bg-transparent px-3 py-2 text-sm font-bold text-amber-100 hover:bg-amber-300/10"
+                    className="border-white/14 hover:bg-white/8 rounded-xl border bg-transparent px-3 py-2 text-sm font-semibold text-slate-100 transition"
                   >
                     取消
                   </button>
@@ -90,8 +95,8 @@ export default function AdminMenuPage() {
               </div>
             ) : null}
           </div>
-        </GoldFramePanel>
+        </SurfacePanel>
       </div>
-    </CasinoScreen>
+    </AppShell>
   )
 }

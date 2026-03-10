@@ -15,7 +15,7 @@ trace:
   jaeger:
     traceName: ""
     # http endpoint
-    endpoint: 192.168.0.106:4318
+    endpoint: 127.0.0.1:4318
     # endpoint: http://192.168.0.106:4318/v1/traces
     # gRPC endpoint
     # endpoint: http://192.168.0.106:4317
@@ -24,17 +24,16 @@ trace:
 
 # 数据相关
 data:
-  user_expiry_warning_days: 5
   # 主数据库，保存核心数据
   mysql:
     # if true output sql
     debug: true
-    dsn: "root:YP*H%k%a7xK1*q@tcp(192.168.0.106:3306)/test_database_atlas?charset=utf8mb4&parseTime=True&loc=Local&interpolateParams=true"
+    dsn: "root:YP*H%k%a7xK1*q@tcp(127.0.0.1:3306)/test_database_atlas?charset=utf8mb4&parseTime=True&loc=Local&interpolateParams=true"
 
   # 缓存服务
   # redis:
   #   network: tcp
-  #   address: 192.168.0.106:6379
+  #   address: 127.0.0.1:6379
   #   password: ""
   #   database: 0
   #   readTimeout: 0.2s

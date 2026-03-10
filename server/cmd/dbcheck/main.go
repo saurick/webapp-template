@@ -13,10 +13,10 @@ import (
 )
 
 // 默认参数：本机开发 / docker-compose
-// - 本机直接连 192.168.0.106:3306
+// - 本机直接连 127.0.0.1:3306
 // - 在 compose 容器里跑的话，把 host 改成 mysql
 const (
-	defaultHost = "192.168.0.106"
+	defaultHost = "127.0.0.1"
 	defaultPort = "3306"
 	defaultDB   = "test_database_atlas"
 )

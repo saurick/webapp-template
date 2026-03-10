@@ -1,3 +1,78 @@
+## 2026-03-10
+- 完成：修正 `/Users/simon/projects/webapp-template/scripts/init-project.sh` 中触发 `shellcheck` 的中文引号，将模板提示文案改为 ASCII 单引号，保证 `pre-commit` 在提交模板收口改动时不会因 `SC1111` 被阻断。
+- 验证：已按 `pre-commit` 暴露的报错位置完成修复，待重新执行提交流程验证整套钩子。
+- 下一步：重新执行 `git commit` 与 push，确保本次模板收口改动可以完整入库。
+- 阻塞/风险：无。
+
+## 2026-03-10
+- 完成：新增薄的 HTTP `request_id` 过滤器 `/Users/simon/projects/webapp-template/server/internal/server/request_id_filter.go`，统一透传或生成 `X-Request-Id`，回写响应头并注入 context；`/Users/simon/projects/webapp-template/server/internal/server/http.go` 现已在 HTTP server 上默认启用该过滤器。
+- 完成：扩展日志上下文字段 `/Users/simon/projects/webapp-template/server/pkg/logger/default.go`，默认 logger 会自动输出 `request_id`；这样 `service`、`biz`、`data` 层只要使用 `WithContext(ctx)` 记录日志，就能自动带上 HTTP request id。
+- 完成：新增 `/Users/simon/projects/webapp-template/server/internal/server/request_id_filter_test.go`，覆盖上游透传与服务端自动生成两种场景，验证响应头、context 与日志字段三者一致；并同步更新 `/Users/simon/projects/webapp-template/server/docs/runtime.md`、`/Users/simon/projects/webapp-template/server/docs/observability.md`、`/Users/simon/projects/webapp-template/README.md`。
+- 验证：已通过 `gofmt -w /Users/simon/projects/webapp-template/server/pkg/logger/default.go /Users/simon/projects/webapp-template/server/internal/server/http.go /Users/simon/projects/webapp-template/server/internal/server/request_id_filter.go /Users/simon/projects/webapp-template/server/internal/server/request_id_filter_test.go`、`cd /Users/simon/projects/webapp-template/server && go test ./internal/server ./internal/data ./cmd/...`。
+- 下一步：如果后续继续强化观测，可把 request id 方案扩展到 gRPC / 异步任务，并逐步把 JSON-RPC 文本日志改成字段化结构日志。
+- 阻塞/风险：当前 request id 自动生成只覆盖 HTTP 请求；gRPC、后台任务、离线脚本还没有统一 request id 注入方案，因此跨协议串联日志时仍要主要依赖 `trace_id`。
+
+## 2026-03-10
+- 完成：一次性补齐 HTTP 健康检查链路的观测缺口：`/Users/simon/projects/webapp-template/server/internal/server/http.go` 已启用 HTTP tracing middleware，新增 `/Users/simon/projects/webapp-template/server/internal/server/http_custom_handlers.go` 为自定义健康检查和静态资源路由提供统一观测包装，补上 trace、panic recover 和结构化收尾日志，避免这些自定义 handler 继续裸挂。
+- 完成：`/readyz` 失败分支现在会输出结构化告警日志，带 `operation`、`component`、`status`、`request_id`、`trace_id` 和错误原因；同时保留 `/healthz`、`/readyz` 的最小文本响应，兼容现有 smoke / probe 行为。
+- 完成：新增 `/Users/simon/projects/webapp-template/server/internal/server/http_health_test.go`，覆盖 `/healthz` 200、`/readyz` 200、`/readyz` 503 + 结构化失败日志，作为这次观测性修复的回归测试；并同步更新 `/Users/simon/projects/webapp-template/server/docs/observability.md`、`/Users/simon/projects/webapp-template/server/docs/runtime.md`、`/Users/simon/projects/webapp-template/README.md`，让文档与当前真实行为一致。
+- 验证：已通过 `gofmt -w /Users/simon/projects/webapp-template/server/internal/server/http.go /Users/simon/projects/webapp-template/server/internal/server/http_custom_handlers.go /Users/simon/projects/webapp-template/server/internal/server/http_health_test.go`、`cd /Users/simon/projects/webapp-template/server && go test ./internal/server ./internal/data ./cmd/...`、`bash /Users/simon/projects/webapp-template/scripts/qa/fast.sh`。
+- 下一步：如果后续继续收口，可考虑为 `/readyz` 增加组件级 JSON 响应，并给 JSON-RPC 入口日志补更强的字段化结构，而不是继续只靠 `Infof/Warnf` 文本。
+- 阻塞/风险：当前 HTTP 关键链路的 trace 与健康检查日志已补齐，但全局仍没有统一 request id 生成中间件，`request_id` 目前主要依赖上游请求头透传；如果后续项目需要稳定串联日志，建议再加统一 request id 方案。
+
+## 2026-03-10
+- 完成：补齐 `/Users/simon/projects/webapp-template/server/docs` 的服务端文档集合，新增 `/Users/simon/projects/webapp-template/server/docs/README.md`、`runtime.md`、`config.md`、`api.md`、`observability.md`，把运行方式、配置结构、JSON-RPC 默认入口、健康检查与观测基线统一收口成可直接供模板初始化使用的后端文档入口。
+- 完成：重写 `/Users/simon/projects/webapp-template/server/docs/ent.md`，去掉旧的 `entimport` 历史说明，改为当前真实使用的 Ent + Atlas 工作流；同时更新 `/Users/simon/projects/webapp-template/server/README.md`、`/Users/simon/projects/webapp-template/server/internal/biz/README.md`、`/Users/simon/projects/webapp-template/server/internal/data/README.md`、`/Users/simon/projects/webapp-template/server/internal/service/README.md`，让根入口与分层说明对齐当前模板主干。
+- 完成：同步补齐根级文档索引 `/Users/simon/projects/webapp-template/README.md` 与 `/Users/simon/projects/webapp-template/docs/README.md`，让 `server/docs` 新文档可以从仓库顶层直接找到。
+- 验证：已通过 `bash /Users/simon/projects/webapp-template/scripts/init-project.sh`；本次仅修改文档，未改运行时代码，未额外执行代码级测试。
+- 下一步：若后续继续收口服务端模板，可优先补健康检查路由测试和 `readyz` 结构化失败日志，再把 `observability.md` 中列出的盲区逐项消掉。
+- 阻塞/风险：当前文档已覆盖模板默认基线，但仍是按“最小可复用骨架”写法保留，未预埋具体行业 API、Ingress、ExternalSecret、复杂运维方案；这些能力仍应由派生项目按真实环境补充。
+
+## 2026-03-10
+- 完成：把 `/Users/simon/projects/webapp-template/server/deploy` 收口成完整部署模板目录，新增 `/Users/simon/projects/webapp-template/server/deploy/README.md` 作为总览，并补齐 `/Users/simon/projects/webapp-template/server/deploy/dashboard/README.md`、`/Users/simon/projects/webapp-template/server/docs/k8s.md`，明确 Compose、Kubernetes、Dashboard 三类模板各自的适用场景、占位符和裁剪边界。
+- 完成：补齐 Kubernetes 模板缺失的基础骨架，在 `/Users/simon/projects/webapp-template/server/deploy/dev` 与 `/Users/simon/projects/webapp-template/server/deploy/prod` 新增 `namespace.yaml` 和 `kustomization.yaml`，让清单可以直接通过 `kubectl apply -k` 使用，不再只有零散的 `deployment/service/configmap/secret` 文件。
+- 完成：更新 `/Users/simon/projects/webapp-template/scripts/init-project.sh`、`/Users/simon/projects/webapp-template/docs/project-init.md`、`/Users/simon/projects/webapp-template/README.md`、`/Users/simon/projects/webapp-template/server/README.md`、`/Users/simon/projects/webapp-template/docs/README.md`、`/Users/simon/projects/webapp-template/scripts/README.md` 与 Compose 部署说明，确保初始化扫描会检查 `your-project`、`registry.example.com`、`deploy.example.com`、`dashboard.example.local`、`replace-me` 等新的部署占位符，并把部署模板入口文档串起来。
+- 验证：已通过 `bash /Users/simon/projects/webapp-template/scripts/init-project.sh`、`bash /Users/simon/projects/webapp-template/scripts/qa/shfmt.sh`、`bash /Users/simon/projects/webapp-template/scripts/qa/yamllint.sh`、`kubectl kustomize /Users/simon/projects/webapp-template/server/deploy/dev`、`kubectl kustomize /Users/simon/projects/webapp-template/server/deploy/prod`、`bash /Users/simon/projects/webapp-template/scripts/qa/fast.sh`。
+- 下一步：若后续确定模板默认不保留某类部署方式，可继续把 Compose 和 K8s 的共用占位符提炼到更统一的命名规范，并按项目需要补可选的 Ingress / ExternalSecret 模板。
+- 阻塞/风险：当前 K8s 模板已完整可渲染，但 Ingress、ExternalSecret、HPA 仍刻意未预埋，避免把特定客户环境假设写死在模板主干里；派生项目若需要这些能力，应在初始化后按真实环境新增。
+
+## 2026-03-10
+- 完成：把模板默认主干里的非通用后台业务模块从代码层真正移除：删除 `/Users/simon/projects/webapp-template/server/internal/biz/admin_manage.go`、`/Users/simon/projects/webapp-template/server/internal/data/admin_manage_repo.go`、`/Users/simon/projects/webapp-template/server/internal/data/admin_init.go` 与邀请码 schema，`/Users/simon/projects/webapp-template/server/internal/data/jsonrpc.go`、`/Users/simon/projects/webapp-template/server/internal/biz/user_admin.go`、`/Users/simon/projects/webapp-template/server/internal/data/user_admin_repo.go` 现只保留通用鉴权、管理员登录、账号目录和启用/禁用能力。
+- 完成：同步精简数据模型与配置基线：`/Users/simon/projects/webapp-template/server/internal/data/model/schema/user.go`、`/Users/simon/projects/webapp-template/server/internal/data/model/schema/admin_user.go` 去掉积分 / 订阅 / 层级 / 邀请码相关字段，新增迁移 `/Users/simon/projects/webapp-template/server/internal/data/model/migrate/20260310064522_migrate.sql`；`/Users/simon/projects/webapp-template/server/internal/conf/conf.proto` 与 `server/configs/*/config.yaml` 已移除 `user_expiry_warning_days`。
+- 完成：前端默认后台进一步收口到真正的最小账号目录：`/Users/simon/projects/webapp-template/web/src/pages/AdminUsers/index.jsx` 去掉“类型”列和任何业务字段展示；`/Users/simon/projects/webapp-template/scripts/init-project.sh`、`/Users/simon/projects/webapp-template/docs/project-init.md`、`/Users/simon/projects/webapp-template/README.md` 已改为“这些业务模块默认不在模板主干中，如有需要在派生项目新增”的口径。
+- 验证：已通过 `cd /Users/simon/projects/webapp-template/server && make config`、`go generate ./cmd/server`、`go run entgo.io/ent/cmd/ent generate --target ./internal/data/model/ent ./internal/data/model/schema`、`make ent_migrate`、`go test ./...`、`bash /Users/simon/projects/webapp-template/scripts/init-project.sh`、`bash /Users/simon/projects/webapp-template/scripts/qa/fast.sh`、`pnpm --dir /Users/simon/projects/webapp-template/web lint`、`pnpm --dir /Users/simon/projects/webapp-template/web build`、`pnpm --dir /Users/simon/projects/webapp-template/web test`。
+- 下一步：如果后续某类项目经常需要“成员权限 / 组织结构 / 会员策略”这类业务能力，更适合拆成派生项目可选模块或单独模板，而不是再回灌到当前主干。
+- 阻塞/风险：模板主干已去掉积分 / 订阅 / 邀请码 / 层级能力，但历史迁移文件仍会先创建旧字段再由 `20260310064522_migrate.sql` 删除；这对新项目从迁移历史初始化是安全的，只是迁移历史会保留演进痕迹。
+
+## 2026-03-10
+- 完成：将模板默认后台进一步收口为通用骨架：`/Users/simon/projects/webapp-template/web/src/pages/AdminMenu/index.jsx` 只保留“账号目录 + 项目收口指南 + 退出登录”入口，`/Users/simon/projects/webapp-template/web/src/pages/AdminUsers/index.jsx` 改为最小账号目录页，仅保留搜索、查看、启用/禁用账号，不再默认内置积分、订阅、邀请码或层级管理操作。
+- 完成：新增 `/Users/simon/projects/webapp-template/web/src/pages/AdminGuide/index.jsx`，把后台初始化边界直接落成静态说明页；同时保留 `/Users/simon/projects/webapp-template/web/src/pages/AdminHierarchy/index.jsx` 作为旧导入兼容壳，旧路由 `/admin-users`、`/admin-hierarchy` 在 `/Users/simon/projects/webapp-template/web/src/App.jsx` 中已改为跳转到新的 `/admin-accounts`、`/admin-guide`。
+- 完成：补齐账号目录的通用时间字段：`/Users/simon/projects/webapp-template/server/internal/biz/auth.go`、`/Users/simon/projects/webapp-template/server/internal/data/auth_repo.go`、`/Users/simon/projects/webapp-template/server/internal/data/user_admin_repo.go` 与 `/Users/simon/projects/webapp-template/server/internal/data/jsonrpc.go` 现在会向后台账号目录返回 `created_at` / `last_login_at`，不额外引入新的业务语义。
+- 完成：同步更新 `/Users/simon/projects/webapp-template/docs/project-init.md`、`/Users/simon/projects/webapp-template/README.md`、`/Users/simon/projects/webapp-template/scripts/init-project.sh`，明确模板后台默认只保留账号目录和项目收口说明页；积分 / 订阅 / 管理员层级 / 邀请码等能力已降为“服务端可选模块”，由派生项目按需继续裁剪。
+- 验证：已通过 `cd /Users/simon/projects/webapp-template/server && go test ./internal/biz ./internal/data ./cmd/...`、`bash /Users/simon/projects/webapp-template/scripts/init-project.sh`、`pnpm --dir /Users/simon/projects/webapp-template/web lint`、`pnpm --dir /Users/simon/projects/webapp-template/web build`、`pnpm --dir /Users/simon/projects/webapp-template/web test`、`bash /Users/simon/projects/webapp-template/scripts/qa/fast.sh`。
+- 下一步：若要把模板主干继续做薄，可再把服务端里保留的积分 / 订阅 / 邀请码 / 管理员层级接口、错误码和 schema 进一步拆成可选模块包，减少派生项目二次裁剪面。
+- 阻塞/风险：当前前端默认后台已去业务化，但服务端仍保留可选业务模块（`subscription`、`points.*`、管理员层级、邀请码等）；`scripts/init-project.sh` 已会明确提示这些残留，后续若要做到“初始化后几乎零业务清理”，还需要继续下沉或拆包。
+
+## 2026-03-10
+- 完成：新增 `/Users/simon/projects/webapp-template/scripts/init-project.sh`，把“由模板初始化后的新项目”所需处理的项目名、服务名、默认密钥、部署主机、模板文档语义、K8s/Jaeger/后台业务骨架裁剪点收口成可执行扫描脚本，并支持 `--project --strict` 作为派生项目初始化完成后的二次校验。
+- 完成：新增 `/Users/simon/projects/webapp-template/docs/project-init.md`，并同步更新 `/Users/simon/projects/webapp-template/README.md`、`/Users/simon/projects/webapp-template/scripts/README.md`、`/Users/simon/projects/webapp-template/AGENTS.md`、`/Users/simon/projects/webapp-template/docs/README.md`、`/Users/simon/projects/webapp-template/scripts/bootstrap.sh`、`/Users/simon/projects/webapp-template/scripts/doctor.sh`，把“先扫描模板残留 -> 再 bootstrap/doctor/QA”的初始化流程固化到仓库入口文档与脚本里。
+- 完成：收口几个明显会误导派生项目的默认元数据与开发配置：前端支持通过 `VITE_APP_TITLE` 注入标题，`web/index.html` / `web/public/index.html` 标题与描述改为中性占位，`web/.env.production` 的默认 `VITE_BASE_URL` 改回 `/`，`server/configs/dev/config.yaml` 与 `server/cmd/dbcheck/main.go` 的默认开发地址改为 `127.0.0.1`，减少初始化后首日运行环境漂移。
+- 验证：已通过 `bash /Users/simon/projects/webapp-template/scripts/init-project.sh`、`bash /Users/simon/projects/webapp-template/scripts/doctor.sh`、`bash /Users/simon/projects/webapp-template/scripts/qa/shfmt.sh`、`pnpm --dir /Users/simon/projects/webapp-template/web build`、`pnpm --dir /Users/simon/projects/webapp-template/web test`、`cd /Users/simon/projects/webapp-template/server && go test ./cmd/...`、`bash /Users/simon/projects/webapp-template/scripts/qa/fast.sh`。
+- 下一步：若要进一步降低“接甲方项目后二次清理”的心智负担，可继续把后台业务页中的积分 / 订阅 / 邀请码 / 管理员层级能力拆成更中性的模块或可选模板包。
+- 阻塞/风险：`scripts/init-project.sh` 在当前模板源仓库中会按预期输出大量“派生项目必改”命中；这不是脚本问题，而是模板源仓库本身仍承载模板语义与示例配置。真正的目标仓库应在初始化收口后再执行 `--project --strict`。
+
+## 2026-03-10
+- 完成：将前端登录/注册/管理员登录体验收口为更适合模板初始化的通用基线，新增中性的应用壳层、内容容器、弹窗与首页落点，移除 `web/src` 内原有 `Casino*` / `blankPage` 命名残留，并把后台入口文案改成更通用的“管理控制台/账号管理/权限层级”表达。
+- 验证：已通过 `pnpm --dir /Users/simon/projects/webapp-template/web lint`、`pnpm --dir /Users/simon/projects/webapp-template/web build`、`pnpm --dir /Users/simon/projects/webapp-template/web test`；`web/src` 内已无 `Casino*` / `blankPage` 命名残留。
+- 下一步：若后续要继续提升模板初始化体验，可再把管理员功能页中的“积分/订阅/分级管理”等业务语义进一步收口成更中性的后台能力骨架。
+- 阻塞/风险：当前后端管理员能力与部分后台页面仍保留较强的模板业务语义（如订阅、积分、管理员层级）；本次只对登录注册入口、默认首页与通用承载组件做了中性化收口，未扩大到整套后台业务模型。
+
+## 2026-03-09
+- 完成：将模板健康检查边界收口到项目级 `/Users/simon/projects/webapp-template/AGENTS.md` 与根 `/Users/simon/projects/webapp-template/README.md`，明确模板默认仅保留 `/healthz`、`/readyz`、MySQL 就绪基线与最小测试/日志建议，业务容器 `compose healthcheck` 和项目特有依赖检查下沉到派生项目按需决定。
+- 验证：已人工复核文档口径与当前仓库实现一致；当前 `server/deploy/compose/prod/compose.yml` 中仅 MySQL 配置 `healthcheck`，服务端仍保留 `/healthz` 与 `/readyz` 入口，符合新的模板边界描述。
+- 下一步：后续若派生项目长期使用 `docker compose` 且依赖容器 `healthy/unhealthy` 状态，再在派生项目中补业务容器 `healthcheck` 与额外依赖检查。
+- 阻塞/风险：本次仅更新文档约束，未补健康检查测试与 `readyz` 失败日志；这些仍属于模板层可继续增强的基线项。
+
 ## 2026-03-09
 - 完成：精简并重写 `/Users/simon/projects/webapp-template/AGENTS.md` 的错误码约定，把模板仓库默认采用的“服务端真源 -> 构建期生成 `errorCodes.generated.js` -> 手写 `errorCodes.js` 消费层 wrapper”模式固化下来，明确生成文件禁止手改、前端业务代码优先走 wrapper、错误码变更必须跑同步守卫。
 - 完成：同步把通用错误码治理模式沉淀到全局 `/Users/simon/.codex/AGENTS.md`，并把模板层约束收口为“只保留通用鉴权分组与默认文案，项目特例下沉到派生仓库”，避免把某个项目的特殊语义反写回模板。

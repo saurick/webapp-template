@@ -36,11 +36,6 @@ func InitAdminUsersIfNeeded(ctx context.Context, d *Data, cfg *conf.Data, l *log
 		username,
 	).Scan(&id)
 	if err == nil {
-		_, _ = d.sqldb.ExecContext(
-			ctx,
-			"UPDATE admin_users SET level = 0, parent_id = NULL WHERE id = ?",
-			id,
-		)
 		return nil
 	}
 	if !errors.Is(err, sql.ErrNoRows) {
@@ -55,7 +50,7 @@ func InitAdminUsersIfNeeded(ctx context.Context, d *Data, cfg *conf.Data, l *log
 	now := time.Now()
 	_, err = d.sqldb.ExecContext(
 		ctx,
-		"INSERT INTO admin_users (username, password_hash, level, parent_id, disabled, created_at, updated_at) VALUES (?, ?, 0, NULL, 0, ?, ?)",
+		"INSERT INTO admin_users (username, password_hash, disabled, created_at, updated_at) VALUES (?, ?, 0, ?, ?)",
 		username,
 		string(hash),
 		now,

@@ -21,13 +21,6 @@ func (AdminUser) Fields() []ent.Field {
 		field.String("password_hash").
 			NotEmpty().
 			Sensitive(),
-		field.Int8("level").
-			Default(2).
-			Comment("0=super,1=level1,2=level2"),
-		field.Int("parent_id").
-			Optional().
-			Nillable().
-			Comment("上级管理员ID"),
 		field.Bool("disabled").
 			Default(false),
 		field.Time("last_login_at").
@@ -45,7 +38,5 @@ func (AdminUser) Fields() []ent.Field {
 func (AdminUser) Indexes() []ent.Index {
 	return []ent.Index{
 		index.Fields("username").Unique(),
-		index.Fields("level"),
-		index.Fields("parent_id"),
 	}
 }

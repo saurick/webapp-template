@@ -35,8 +35,6 @@ var ProviderSet = wire.NewSet(
 	// admin auth / manage
 	NewAdminAuthRepo,
 	wire.Bind(new(biz.AdminAuthRepo), new(*adminAuthRepo)),
-	NewAdminManageRepo,
-	wire.Bind(new(biz.AdminManageRepo), new(*adminManageRepo)),
 	NewAdminTokenGenerator,
 
 	// user admin
@@ -166,9 +164,6 @@ func NewData(c *conf.Data, logger log.Logger) (*Data, func(), error) {
 		conf:  c,
 	}
 
-	if err := InitAdminIfNeeded(context.Background(), data, c); err != nil {
-		return nil, nil, err
-	}
 	if err := InitAdminUsersIfNeeded(context.Background(), data, c, l); err != nil {
 		return nil, nil, err
 	}

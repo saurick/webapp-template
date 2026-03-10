@@ -1,47 +1,38 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: webapp-template
-  namespace: webapp-template
+  name: your-project-server-config
+  namespace: your-project-dev
 data:
-  # 类文件键
-  # 和configs/dev下的配置一样
+  # 初始化项目后请替换 traceName、DSN、JWT 密钥和默认管理员密码。
   config.yaml: |
     server:
       http:
         addr: 0.0.0.0:8000
-        timeout: 1s
+        timeout: 10s
       grpc:
         addr: 0.0.0.0:9000
-        timeout: 1s
+        timeout: 10s
 
     log:
       debug: true
 
-    # 链路追踪服务器
     trace:
       jaeger:
-        traceName: ""
-        # http endpoint
-        endpoint: jaeger.orb.local:4318
-        # endpoint: http://jaeger.jaeger.orb.local:4318/v1/traces
-        # gRPC endpoint
-        # endpoint: http://jaeger.jaeger.orb.local:4317
-        # 采集率,ratio>=1表示采集所有
+        traceName: your-project-server.service
+        endpoint: otel-collector.observability.svc.cluster.local:4318
         ratio: 1
 
-    # 数据相关
     data:
-      # 主数据库，保存核心数据
       mysql:
-        # if true output sql
-        debug: false
-        dsn: root:opop2M_@tcp(mysql.server.orb.local:3306)/sale?charset=utf8mb4&parseTime=True&loc=Local&interpolateParams=true
+        debug: true
+        dsn: root:replace-me@tcp(mysql.your-project-dev.svc.cluster.local:3306)/app?charset=utf8mb4&parseTime=True&loc=Local&interpolateParams=true
       etcd:
         hosts:
-          - etcd.server.orb.local:2379
-
-    notify:
-      telegram:
-        apiToken: "6835874767:AAHqdz2jT8B_fInZ8ff5EmUT8ndsWVzO--M"
-        chatId: -4184591934
+          - etcd.your-project-dev.svc.cluster.local:2379
+      auth:
+        jwtSecret: replace-me
+        jwtExpireSeconds: 604800
+        admin:
+          username: admin
+          password: replace-me

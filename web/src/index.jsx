@@ -5,7 +5,7 @@ import { BrowserRouter as Router } from 'react-router-dom'
 import { HelmetProvider } from 'react-helmet-async'
 import './tailwind.css'
 import App from './App'
-import { CasinoAlertProvider } from '@/common/components/modal/CasinoAlertProvider'
+import { AppAlertProvider } from '@/common/components/modal/AppAlertProvider'
 
 // 只在开发环境 & 打开开关时启用 mock
 if (import.meta.env.DEV && import.meta.env.VITE_ENABLE_RPC_MOCK === 'true') {
@@ -26,9 +26,9 @@ root.render(
   <StrictMode>
     <HelmetProvider>
       <Router basename={import.meta.env.BASE_URL}>
-        <CasinoAlertProvider>
+        <AppAlertProvider>
           <App />
-        </CasinoAlertProvider>
+        </AppAlertProvider>
       </Router>
     </HelmetProvider>
   </StrictMode>

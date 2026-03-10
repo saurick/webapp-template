@@ -9,8 +9,5 @@ import (
 // AdminUser is the predicate function for adminuser builders.
 type AdminUser func(*sql.Selector)
 
-// InviteCode is the predicate function for invitecode builders.
-type InviteCode func(*sql.Selector)
-
 // User is the predicate function for user builders.
 type User func(*sql.Selector)

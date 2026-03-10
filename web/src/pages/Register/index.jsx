@@ -1,9 +1,9 @@
 import React, { useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import CasinoScreen from '@/common/components/layout/CasinoScreen'
-import GoldFramePanel from '@/common/components/layout/GoldFramePanel'
-import { JsonRpc } from '@/common/utils/jsonRpc'
+import AppShell from '@/common/components/layout/AppShell'
+import SurfacePanel from '@/common/components/layout/SurfacePanel'
 import { AUTH_SCOPE, persistAuth } from '@/common/auth/auth'
+import { JsonRpc } from '@/common/utils/jsonRpc'
 
 export default function RegisterPage() {
   const navigate = useNavigate()
@@ -53,32 +53,38 @@ export default function RegisterPage() {
   }
 
   return (
-    <CasinoScreen className="flex items-center justify-center px-4 py-10">
+    <AppShell className="flex items-center justify-center px-4 py-10">
       <div className="w-full max-w-[560px]">
-        <div className="mb-6 text-center">
-          <div className="text-2xl font-extrabold tracking-wide text-amber-200">
+        <div className="mb-6 text-center sm:mb-8">
+          <div className="inline-flex rounded-full border border-emerald-300/30 bg-emerald-300/10 px-3 py-1 text-xs font-medium uppercase tracking-[0.24em] text-emerald-100">
+            Account Setup
+          </div>
+          <div className="mt-4 text-3xl font-semibold tracking-tight text-slate-50">
             创建账号
+          </div>
+          <div className="mt-2 text-sm leading-6 text-slate-300">
+            为当前项目创建一个基础账号，后续可在派生项目中按业务扩展资料字段。
           </div>
         </div>
 
-        <GoldFramePanel className="p-4 sm:p-6">
+        <SurfacePanel className="p-4 sm:p-6">
           <form onSubmit={onSubmit} className="p-4 sm:p-6">
             <div className="space-y-4">
               <div>
-                <label className="mb-1 block text-sm text-amber-100/80">
+                <label className="mb-1 block text-sm text-slate-200/90">
                   用户名
                 </label>
                 <input
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   autoComplete="username"
-                  className="w-full rounded-xl border border-amber-200/30 bg-black/25 px-4 py-3 text-amber-100 outline-none focus:border-amber-200/60 focus:ring-2 focus:ring-amber-200/20"
+                  className="w-full rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 text-slate-100 outline-none transition focus:border-emerald-300/60 focus:ring-2 focus:ring-emerald-300/20"
                   placeholder="输入用户名"
                 />
               </div>
 
               <div>
-                <label className="mb-1 block text-sm text-amber-100/80">
+                <label className="mb-1 block text-sm text-slate-200/90">
                   密码
                 </label>
                 <input
@@ -86,13 +92,13 @@ export default function RegisterPage() {
                   onChange={(e) => setPassword(e.target.value)}
                   type="password"
                   autoComplete="new-password"
-                  className="w-full rounded-xl border border-amber-200/30 bg-black/25 px-4 py-3 text-amber-100 outline-none focus:border-amber-200/60 focus:ring-2 focus:ring-amber-200/20"
+                  className="w-full rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 text-slate-100 outline-none transition focus:border-emerald-300/60 focus:ring-2 focus:ring-emerald-300/20"
                   placeholder="至少 6 位"
                 />
               </div>
 
               <div>
-                <label className="mb-1 block text-sm text-amber-100/80">
+                <label className="mb-1 block text-sm text-slate-200/90">
                   确认密码
                 </label>
                 <input
@@ -100,18 +106,18 @@ export default function RegisterPage() {
                   onChange={(e) => setPassword2(e.target.value)}
                   type="password"
                   autoComplete="new-password"
-                  className="w-full rounded-xl border border-amber-200/30 bg-black/25 px-4 py-3 text-amber-100 outline-none focus:border-amber-200/60 focus:ring-2 focus:ring-amber-200/20"
+                  className="w-full rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 text-slate-100 outline-none transition focus:border-emerald-300/60 focus:ring-2 focus:ring-emerald-300/20"
                   placeholder="再输入一次"
                 />
                 {pwdHint ? (
-                  <div className="mt-1 text-xs text-amber-200/90">
+                  <div className="mt-1 text-xs text-emerald-100/90">
                     {pwdHint}
                   </div>
                 ) : null}
               </div>
 
               {errMsg ? (
-                <div className="rounded-xl border border-red-400/40 bg-red-500/10 px-4 py-3 text-sm text-red-100">
+                <div className="rounded-2xl border border-rose-400/40 bg-rose-500/10 px-4 py-3 text-sm text-rose-100">
                   {errMsg}
                 </div>
               ) : null}
@@ -119,19 +125,19 @@ export default function RegisterPage() {
               <button
                 type="submit"
                 disabled={!canSubmit}
-                className={`w-full rounded-2xl px-4 py-3 font-bold tracking-wide ${
+                className={`w-full rounded-2xl px-4 py-3 text-sm font-semibold tracking-wide transition sm:text-base ${
                   canSubmit
-                    ? 'bg-amber-400 text-[#1b1b1b] hover:bg-amber-300 active:bg-amber-500'
-                    : 'cursor-not-allowed bg-amber-400/30 text-amber-100/60'
+                    ? 'bg-emerald-300 text-slate-950 hover:bg-emerald-200 active:bg-emerald-400'
+                    : 'cursor-not-allowed bg-emerald-300/20 text-slate-400'
                 }`}
               >
                 {submitting ? '注册中…' : '注册并登录'}
               </button>
 
-              <div className="pt-1 text-sm text-amber-100/70">
+              <div className="pt-1 text-sm text-slate-300">
                 已有账号？{' '}
                 <Link
-                  className="text-amber-200 underline hover:text-amber-100"
+                  className="font-medium text-emerald-200 underline underline-offset-4 transition hover:text-emerald-100"
                   to="/login"
                 >
                   去登录
@@ -139,8 +145,8 @@ export default function RegisterPage() {
               </div>
             </div>
           </form>
-        </GoldFramePanel>
+        </SurfacePanel>
       </div>
-    </CasinoScreen>
+    </AppShell>
   )
 }

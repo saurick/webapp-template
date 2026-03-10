@@ -9,6 +9,7 @@ import (
 )
 
 type TaskIDKey struct{}
+type RequestIDKey struct{}
 
 func NewDefaultLogger(id, name, version string, debug bool) log.Logger {
 	return log.With(NewStdColorLogger(os.Stdout, true, debug),
@@ -17,6 +18,7 @@ func NewDefaultLogger(id, name, version string, debug bool) log.Logger {
 		"service.id", id,
 		"service.name", name,
 		"service.version", version,
+		"request_id", RequestID(),
 		"trace.id", tracing.TraceID(),
 		"span.id", tracing.SpanID(),
 		"task.id", TaskID(),
@@ -41,4 +43,26 @@ func TaskID() log.Valuer {
 
 func WithTaskID(ctx context.Context, taskId int64) context.Context {
 	return context.WithValue(ctx, TaskIDKey{}, taskId)
+}
+
+func RequestID() log.Valuer {
+	return func(ctx context.Context) interface{} {
+		v, ok := ctx.Value(RequestIDKey{}).(string)
+		if !ok {
+			return ""
+		}
+		return v
+	}
+}
+
+func RequestIDFromContext(ctx context.Context) string {
+	v, ok := ctx.Value(RequestIDKey{}).(string)
+	if !ok {
+		return ""
+	}
+	return v
+}
+
+func WithRequestID(ctx context.Context, requestID string) context.Context {
+	return context.WithValue(ctx, RequestIDKey{}, requestID)
 }

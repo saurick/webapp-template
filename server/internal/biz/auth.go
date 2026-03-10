@@ -34,10 +34,9 @@ type User struct {
 	Username     string
 	PasswordHash string
 	Disabled     bool
-	Role         int8 // 0=user, 1=admin
-	AdminID      *int
-	Points       int64
-	ExpiresAt    *time.Time
+	// Role 只用于登录态返回与 token 生成；模板默认不再把业务角色字段持久化到 users 表。
+	Role        int8
+	LastLoginAt  *time.Time
 	CreatedAt    time.Time
 	UpdatedAt    time.Time
 }

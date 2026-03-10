@@ -49,7 +49,6 @@ message Data {
   Etcd etcd = 2;
   Auth auth = 3;
   reserved 4;
-  int32 user_expiry_warning_days = 5; // 默认几天算过期
 }
 
 message Trace {

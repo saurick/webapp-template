@@ -42,6 +42,9 @@ make migrate_apply
 ## 常用质量命令
 
 ```bash
+# 模板初始化扫描（新项目从模板生成后先执行）
+bash /Users/simon/projects/webapp-template/scripts/init-project.sh
+
 # 环境体检（依赖/版本/hooks）
 bash /Users/simon/projects/webapp-template/scripts/doctor.sh
 
@@ -65,6 +68,35 @@ bash /Users/simon/projects/webapp-template/scripts/setup-git-hooks.sh
 ```
 
 说明：模板当前已内置最小前端回归测试，可执行 `cd /Users/simon/projects/webapp-template/web && pnpm test` 验证错误码常量与登录态错误分类。
+
+## 新项目初始化
+
+当你把模板复制成一个新仓库后，建议按下面顺序执行：
+
+```bash
+bash /Users/simon/projects/webapp-template/scripts/init-project.sh
+bash /Users/simon/projects/webapp-template/scripts/bootstrap.sh
+bash /Users/simon/projects/webapp-template/scripts/doctor.sh
+bash /Users/simon/projects/webapp-template/scripts/init-project.sh --project --strict
+bash /Users/simon/projects/webapp-template/scripts/qa/fast.sh
+bash /Users/simon/projects/webapp-template/scripts/qa/full.sh
+```
+
+说明：
+
+- `init-project.sh` 会扫描模板残留、默认密钥、部署主机、页面标题、模块裁剪点等初始化必改项。
+- 初始化专项说明见：`/Users/simon/projects/webapp-template/docs/project-init.md`
+- 部署模板总览见：`/Users/simon/projects/webapp-template/server/deploy/README.md`
+- 当前模板后台默认只保留账号目录和项目收口说明页；积分 / 订阅 / 邀请码 / 层级等业务模块已从模板主干移除，具体项目若需要，应在派生仓库按需新增。
+- 若当前项目明确只用 `compose`，可按需移除 K8s 清单与相关文档；删除文件默认移动到系统回收站。
+
+## 模板健康检查基线
+
+- 模板默认保留 `/healthz`、`/readyz`、数据库启动就绪等待，以及 `compose` 中 MySQL 的 `healthcheck + depends_on: service_healthy`。
+- 模板层的 `/readyz` 只覆盖通用硬依赖；当前基线是 MySQL，不预埋 Redis、MQ、OSS、第三方 API 等项目特有依赖。
+- 模板当前已内置健康检查最小测试、`readyz` 失败结构化日志，以及 HTTP 健康检查 / 静态路由的统一观测包装。
+- 模板当前已内置 HTTP `request_id` 过滤器：优先透传 `X-Request-Id`，缺失时自动生成并回写响应头。
+- 业务容器自身的 `compose healthcheck`、额外依赖的就绪检查、复杂健康详情页、K8s probe 与告警策略，默认由派生项目按实际部署方式决定。
 
 ## 错误码治理
 
@@ -92,11 +124,14 @@ bash /Users/simon/projects/webapp-template/scripts/setup-git-hooks.sh
 
 - 脚本说明：`/Users/simon/projects/webapp-template/scripts/README.md`
 - 后端说明：`/Users/simon/projects/webapp-template/server/README.md`
+- 部署模板：`/Users/simon/projects/webapp-template/server/deploy/README.md`
 - 前端说明：`/Users/simon/projects/webapp-template/web/README.md`
 - 根级 docs 说明：`/Users/simon/projects/webapp-template/docs/README.md`
+- 新项目初始化：`/Users/simon/projects/webapp-template/docs/project-init.md`
 
 ### 专题文档
 
+- `/Users/simon/projects/webapp-template/server/docs/README.md`
 - `/Users/simon/projects/webapp-template/server/docs/ent.md`
 - `/Users/simon/projects/webapp-template/server/docs/k8s.md`
 - `/Users/simon/projects/webapp-template/server/internal/data/AI_DB_WORKFLOW.md`

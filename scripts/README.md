@@ -7,6 +7,7 @@
 | 脚本 | 主要作用 | 建议时机 |
 | --- | --- | --- |
 | `scripts/bootstrap.sh` | 初始化依赖、启用 hooks、跑快速自检 | 首次拉仓库后 / 新机器环境 |
+| `scripts/init-project.sh` | 扫描模板残留、默认配置和模块裁剪点 | 新项目由模板初始化后 |
 | `scripts/doctor.sh` | 检查本机依赖、hooks 与关键脚本状态 | 新机器初始化 / 异常排查 |
 | `scripts/qa/db-guard.sh` | 检查 Ent schema/ent 变更是否附带 migration | 改动数据模型后 |
 | `scripts/qa/secrets.sh` | 扫描变更文件中的疑似密钥泄露 | 提交前 / 推送前 |
@@ -40,11 +41,30 @@ bash scripts/bootstrap.sh
 ```
 
 - 默认行为：安装 web/server 依赖 -> 启用 hooks -> 运行 `scripts/qa/fast.sh`
+- 脚本结束后会提示：若当前仓库是由模板初始化的新项目，继续执行 `scripts/init-project.sh`
 - 常用环境变量：
   - `BOOTSTRAP_SKIP_INSTALL=1`：跳过依赖安装
   - `BOOTSTRAP_SKIP_FAST_QA=1`：跳过快速自检
 
-## 2) doctor
+## 2) init-project
+
+```bash
+bash scripts/init-project.sh
+```
+
+- 用于扫描“由模板初始化后的新项目”仍需处理的内容：
+  - 项目名 / 服务名 / 页面标题
+  - 默认密码 / JWT 密钥 / 数据库名
+  - 远端主机 / 镜像仓库 / 部署目录 / base path
+  - K8s / Jaeger / 远端发布脚本 / 后台业务骨架等按需裁剪点
+- 常用参数：
+  - `--project`：按派生项目模式执行
+  - `--template-source`：按模板源仓库模式执行
+  - `--strict`：派生项目模式下，命中必须处理项时返回非 0
+- 推荐二次校验：
+  - `bash scripts/init-project.sh --project --strict`
+
+## 3) doctor
 
 ```bash
 bash scripts/doctor.sh
@@ -55,7 +75,7 @@ bash scripts/doctor.sh
 - 检查 `core.hooksPath` 与关键脚本存在性
 - 若存在版本文件（`.n-node-version`、`.node-version`、`.nvmrc`），会提示当前 Node 版本是否一致
 
-## 3) db-guard
+## 4) db-guard
 
 ```bash
 bash scripts/qa/db-guard.sh
@@ -70,7 +90,7 @@ bash scripts/qa/db-guard.sh
   - `SKIP_DB_GUARD=1`：跳过检查
   - `QA_BASE_RANGE=origin/main...HEAD`：显式指定 diff 范围
 
-## 4) secrets
+## 5) secrets
 
 ```bash
 bash scripts/qa/secrets.sh
@@ -87,7 +107,7 @@ bash scripts/qa/secrets.sh
   - `SECRETS_STAGED_ONLY=1`（仅扫描 staged 内容）
   - `QA_BASE_RANGE=origin/main...HEAD`
 
-## 5) shellcheck
+## 6) shellcheck
 
 ```bash
 bash scripts/qa/shellcheck.sh
@@ -98,7 +118,7 @@ bash scripts/qa/shellcheck.sh
   - `SKIP_SHELLCHECK=1`
   - `SHELLCHECK_STRICT=1`（未安装 shellcheck 时阻断；pre-push 默认开启）
 
-## 6) go-vet
+## 7) go-vet
 
 ```bash
 bash scripts/qa/go-vet.sh
@@ -108,7 +128,7 @@ bash scripts/qa/go-vet.sh
 - 常用环境变量：
   - `SKIP_GO_VET=1`
 
-## 7) golangci-lint
+## 8) golangci-lint
 
 ```bash
 bash scripts/qa/golangci-lint.sh
@@ -121,7 +141,7 @@ bash scripts/qa/golangci-lint.sh
   - `GOLANGCI_STRICT=1`（未安装 golangci-lint 时阻断）
   - `GOLANGCI_ONLY_NEW=1`（默认）
 
-## 8) yamllint
+## 9) yamllint
 
 ```bash
 bash scripts/qa/yamllint.sh
@@ -134,7 +154,7 @@ bash scripts/qa/yamllint.sh
   - `YAMLLINT_STRICT=1`（未安装 yamllint 时阻断）
   - `YAMLLINT_ALL=1`（全量扫描仓库 YAML）
 
-## 9) shfmt
+## 10) shfmt
 
 ```bash
 bash scripts/qa/shfmt.sh
@@ -146,7 +166,7 @@ bash scripts/qa/shfmt.sh
   - `SHFMT_STRICT=1`（未安装 shfmt 时阻断）
   - `SHFMT_CHECK=1`（仅检查格式，不改写文件）
 
-## 10) govulncheck
+## 11) govulncheck
 
 ```bash
 bash scripts/qa/govulncheck.sh
@@ -157,7 +177,7 @@ bash scripts/qa/govulncheck.sh
   - `SKIP_GOVULNCHECK=1`
   - `GOVULNCHECK_STRICT=1`（非 0 退出码时阻断）
 
-## 11) error-code-sync
+## 12) error-code-sync
 
 ```bash
 bash scripts/qa/error-code-sync.sh
@@ -167,7 +187,7 @@ bash scripts/qa/error-code-sync.sh
 - 常用环境变量：
   - `SKIP_ERROR_CODE_SYNC=1`
 
-## 12) error-codes
+## 13) error-codes
 
 ```bash
 bash scripts/qa/error-codes.sh
@@ -179,7 +199,7 @@ bash scripts/qa/error-codes.sh
   - `SKIP_ERROR_CODE_GUARD=1`
   - `ERROR_CODE_GUARD_STAGED_ONLY=1`（pre-commit 默认使用）
 
-## 13) fast
+## 14) fast
 
 ```bash
 bash scripts/qa/fast.sh
@@ -191,7 +211,7 @@ bash scripts/qa/fast.sh
 - server：优先执行 `go test ./internal/... ./pkg/...`（目录存在才执行）
 - 适合在开发中频繁执行，快速发现明显问题。
 
-## 14) full
+## 15) full
 
 ```bash
 bash scripts/qa/full.sh
@@ -204,7 +224,7 @@ bash scripts/qa/full.sh
   - server：`go test ./... -> make build`
 - 适合在提交前/推送前做最终兜底检查。
 
-## 15) strict
+## 16) strict
 
 ```bash
 bash scripts/qa/strict.sh
@@ -216,7 +236,7 @@ bash scripts/qa/strict.sh
   - 默认运行 `shellcheck + shfmt(check) + govulncheck(strict)`
 - 适合发版前或主分支合并前执行。
 
-## 16) commit-msg
+## 17) commit-msg
 
 ```bash
 printf "chore(hooks): 校验提交信息\n" > /tmp/commit-msg.txt

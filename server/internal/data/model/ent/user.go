@@ -21,20 +21,10 @@ type User struct {
 	Username string `json:"username,omitempty"`
 	// PasswordHash holds the value of the "password_hash" field.
 	PasswordHash string `json:"-"`
-	// InviteCode holds the value of the "invite_code" field.
-	InviteCode *string `json:"invite_code,omitempty"`
-	// 0=user, 1=admin
-	Role int8 `json:"role,omitempty"`
-	// 所属管理员ID
-	AdminID *int `json:"admin_id,omitempty"`
 	// Disabled holds the value of the "disabled" field.
 	Disabled bool `json:"disabled,omitempty"`
 	// LastLoginAt holds the value of the "last_login_at" field.
 	LastLoginAt *time.Time `json:"last_login_at,omitempty"`
-	// 积分
-	Points int64 `json:"points,omitempty"`
-	// 会员到期时间
-	ExpiresAt *time.Time `json:"expires_at,omitempty"`
 	// CreatedAt holds the value of the "created_at" field.
 	CreatedAt time.Time `json:"created_at,omitempty"`
 	// UpdatedAt holds the value of the "updated_at" field.
@@ -49,11 +39,11 @@ func (*User) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case user.FieldDisabled:
 			values[i] = new(sql.NullBool)
-		case user.FieldID, user.FieldRole, user.FieldAdminID, user.FieldPoints:
+		case user.FieldID:
 			values[i] = new(sql.NullInt64)
-		case user.FieldUsername, user.FieldPasswordHash, user.FieldInviteCode:
+		case user.FieldUsername, user.FieldPasswordHash:
 			values[i] = new(sql.NullString)
-		case user.FieldLastLoginAt, user.FieldExpiresAt, user.FieldCreatedAt, user.FieldUpdatedAt:
+		case user.FieldLastLoginAt, user.FieldCreatedAt, user.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
 		default:
 			values[i] = new(sql.UnknownType)
@@ -88,26 +78,6 @@ func (_m *User) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.PasswordHash = value.String
 			}
-		case user.FieldInviteCode:
-			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field invite_code", values[i])
-			} else if value.Valid {
-				_m.InviteCode = new(string)
-				*_m.InviteCode = value.String
-			}
-		case user.FieldRole:
-			if value, ok := values[i].(*sql.NullInt64); !ok {
-				return fmt.Errorf("unexpected type %T for field role", values[i])
-			} else if value.Valid {
-				_m.Role = int8(value.Int64)
-			}
-		case user.FieldAdminID:
-			if value, ok := values[i].(*sql.NullInt64); !ok {
-				return fmt.Errorf("unexpected type %T for field admin_id", values[i])
-			} else if value.Valid {
-				_m.AdminID = new(int)
-				*_m.AdminID = int(value.Int64)
-			}
 		case user.FieldDisabled:
 			if value, ok := values[i].(*sql.NullBool); !ok {
 				return fmt.Errorf("unexpected type %T for field disabled", values[i])
@@ -120,19 +90,6 @@ func (_m *User) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.LastLoginAt = new(time.Time)
 				*_m.LastLoginAt = value.Time
-			}
-		case user.FieldPoints:
-			if value, ok := values[i].(*sql.NullInt64); !ok {
-				return fmt.Errorf("unexpected type %T for field points", values[i])
-			} else if value.Valid {
-				_m.Points = value.Int64
-			}
-		case user.FieldExpiresAt:
-			if value, ok := values[i].(*sql.NullTime); !ok {
-				return fmt.Errorf("unexpected type %T for field expires_at", values[i])
-			} else if value.Valid {
-				_m.ExpiresAt = new(time.Time)
-				*_m.ExpiresAt = value.Time
 			}
 		case user.FieldCreatedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
@@ -187,32 +144,11 @@ func (_m *User) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("password_hash=<sensitive>")
 	builder.WriteString(", ")
-	if v := _m.InviteCode; v != nil {
-		builder.WriteString("invite_code=")
-		builder.WriteString(*v)
-	}
-	builder.WriteString(", ")
-	builder.WriteString("role=")
-	builder.WriteString(fmt.Sprintf("%v", _m.Role))
-	builder.WriteString(", ")
-	if v := _m.AdminID; v != nil {
-		builder.WriteString("admin_id=")
-		builder.WriteString(fmt.Sprintf("%v", *v))
-	}
-	builder.WriteString(", ")
 	builder.WriteString("disabled=")
 	builder.WriteString(fmt.Sprintf("%v", _m.Disabled))
 	builder.WriteString(", ")
 	if v := _m.LastLoginAt; v != nil {
 		builder.WriteString("last_login_at=")
-		builder.WriteString(v.Format(time.ANSIC))
-	}
-	builder.WriteString(", ")
-	builder.WriteString("points=")
-	builder.WriteString(fmt.Sprintf("%v", _m.Points))
-	builder.WriteString(", ")
-	if v := _m.ExpiresAt; v != nil {
-		builder.WriteString("expires_at=")
 		builder.WriteString(v.Format(time.ANSIC))
 	}
 	builder.WriteString(", ")

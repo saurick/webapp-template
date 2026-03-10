@@ -32,34 +32,6 @@ func (_c *AdminUserCreate) SetPasswordHash(v string) *AdminUserCreate {
 	return _c
 }
 
-// SetLevel sets the "level" field.
-func (_c *AdminUserCreate) SetLevel(v int8) *AdminUserCreate {
-	_c.mutation.SetLevel(v)
-	return _c
-}
-
-// SetNillableLevel sets the "level" field if the given value is not nil.
-func (_c *AdminUserCreate) SetNillableLevel(v *int8) *AdminUserCreate {
-	if v != nil {
-		_c.SetLevel(*v)
-	}
-	return _c
-}
-
-// SetParentID sets the "parent_id" field.
-func (_c *AdminUserCreate) SetParentID(v int) *AdminUserCreate {
-	_c.mutation.SetParentID(v)
-	return _c
-}
-
-// SetNillableParentID sets the "parent_id" field if the given value is not nil.
-func (_c *AdminUserCreate) SetNillableParentID(v *int) *AdminUserCreate {
-	if v != nil {
-		_c.SetParentID(*v)
-	}
-	return _c
-}
-
 // SetDisabled sets the "disabled" field.
 func (_c *AdminUserCreate) SetDisabled(v bool) *AdminUserCreate {
 	_c.mutation.SetDisabled(v)
@@ -151,10 +123,6 @@ func (_c *AdminUserCreate) ExecX(ctx context.Context) {
 
 // defaults sets the default values of the builder before save.
 func (_c *AdminUserCreate) defaults() {
-	if _, ok := _c.mutation.Level(); !ok {
-		v := adminuser.DefaultLevel
-		_c.mutation.SetLevel(v)
-	}
 	if _, ok := _c.mutation.Disabled(); !ok {
 		v := adminuser.DefaultDisabled
 		_c.mutation.SetDisabled(v)
@@ -186,9 +154,6 @@ func (_c *AdminUserCreate) check() error {
 		if err := adminuser.PasswordHashValidator(v); err != nil {
 			return &ValidationError{Name: "password_hash", err: fmt.Errorf(`ent: validator failed for field "AdminUser.password_hash": %w`, err)}
 		}
-	}
-	if _, ok := _c.mutation.Level(); !ok {
-		return &ValidationError{Name: "level", err: errors.New(`ent: missing required field "AdminUser.level"`)}
 	}
 	if _, ok := _c.mutation.Disabled(); !ok {
 		return &ValidationError{Name: "disabled", err: errors.New(`ent: missing required field "AdminUser.disabled"`)}
@@ -232,14 +197,6 @@ func (_c *AdminUserCreate) createSpec() (*AdminUser, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.PasswordHash(); ok {
 		_spec.SetField(adminuser.FieldPasswordHash, field.TypeString, value)
 		_node.PasswordHash = value
-	}
-	if value, ok := _c.mutation.Level(); ok {
-		_spec.SetField(adminuser.FieldLevel, field.TypeInt8, value)
-		_node.Level = value
-	}
-	if value, ok := _c.mutation.ParentID(); ok {
-		_spec.SetField(adminuser.FieldParentID, field.TypeInt, value)
-		_node.ParentID = &value
 	}
 	if value, ok := _c.mutation.Disabled(); ok {
 		_spec.SetField(adminuser.FieldDisabled, field.TypeBool, value)

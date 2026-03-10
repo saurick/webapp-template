@@ -1,23 +1,22 @@
 apiVersion: v1
 kind: Service
 metadata:
-  annotations:
-    kubeasy.com/autoCreate: "true"
+  name: your-project-server
+  namespace: your-project-dev
   labels:
-    app: webapp-template
-  name: webapp-template
-  namespace: webapp-template
+    app.kubernetes.io/name: your-project-server
+    app.kubernetes.io/part-of: your-project
+    app.kubernetes.io/component: api
 spec:
-  internalTrafficPolicy: Cluster
-  ipFamilies:
-    - IPv4
-  ipFamilyPolicy: SingleStack
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: your-project-server
   ports:
     - name: http
       port: 80
+      targetPort: http
       protocol: TCP
-      targetPort: 8000
-  selector:
-    app: webapp-template
-  sessionAffinity: None
-  type: ClusterIP
+    - name: grpc
+      port: 9000
+      targetPort: grpc
+      protocol: TCP

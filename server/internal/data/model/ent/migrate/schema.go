@@ -13,8 +13,6 @@ var (
 		{Name: "id", Type: field.TypeInt, Increment: true},
 		{Name: "username", Type: field.TypeString, Size: 64},
 		{Name: "password_hash", Type: field.TypeString},
-		{Name: "level", Type: field.TypeInt8, Default: 2},
-		{Name: "parent_id", Type: field.TypeInt, Nullable: true},
 		{Name: "disabled", Type: field.TypeBool, Default: false},
 		{Name: "last_login_at", Type: field.TypeTime, Nullable: true},
 		{Name: "created_at", Type: field.TypeTime},
@@ -31,40 +29,6 @@ var (
 				Unique:  true,
 				Columns: []*schema.Column{AdminUsersColumns[1]},
 			},
-			{
-				Name:    "adminuser_level",
-				Unique:  false,
-				Columns: []*schema.Column{AdminUsersColumns[3]},
-			},
-			{
-				Name:    "adminuser_parent_id",
-				Unique:  false,
-				Columns: []*schema.Column{AdminUsersColumns[4]},
-			},
-		},
-	}
-	// InviteCodesColumns holds the columns for the "invite_codes" table.
-	InviteCodesColumns = []*schema.Column{
-		{Name: "id", Type: field.TypeInt, Increment: true},
-		{Name: "code", Type: field.TypeString, Size: 32},
-		{Name: "max_uses", Type: field.TypeInt, Default: 1},
-		{Name: "used_count", Type: field.TypeInt, Default: 0},
-		{Name: "expires_at", Type: field.TypeTime, Nullable: true},
-		{Name: "disabled", Type: field.TypeBool, Default: false},
-		{Name: "created_at", Type: field.TypeTime},
-		{Name: "updated_at", Type: field.TypeTime},
-	}
-	// InviteCodesTable holds the schema information for the "invite_codes" table.
-	InviteCodesTable = &schema.Table{
-		Name:       "invite_codes",
-		Columns:    InviteCodesColumns,
-		PrimaryKey: []*schema.Column{InviteCodesColumns[0]},
-		Indexes: []*schema.Index{
-			{
-				Name:    "invitecode_code",
-				Unique:  true,
-				Columns: []*schema.Column{InviteCodesColumns[1]},
-			},
 		},
 	}
 	// UsersColumns holds the columns for the "users" table.
@@ -72,13 +36,8 @@ var (
 		{Name: "id", Type: field.TypeInt, Increment: true},
 		{Name: "username", Type: field.TypeString, Size: 32},
 		{Name: "password_hash", Type: field.TypeString},
-		{Name: "invite_code", Type: field.TypeString, Nullable: true, Size: 32},
-		{Name: "role", Type: field.TypeInt8, Default: 0},
-		{Name: "admin_id", Type: field.TypeInt, Nullable: true},
 		{Name: "disabled", Type: field.TypeBool, Default: false},
 		{Name: "last_login_at", Type: field.TypeTime, Nullable: true},
-		{Name: "points", Type: field.TypeInt64, Default: 0},
-		{Name: "expires_at", Type: field.TypeTime, Nullable: true},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},
 	}
@@ -93,22 +52,11 @@ var (
 				Unique:  true,
 				Columns: []*schema.Column{UsersColumns[1]},
 			},
-			{
-				Name:    "user_invite_code",
-				Unique:  false,
-				Columns: []*schema.Column{UsersColumns[3]},
-			},
-			{
-				Name:    "user_admin_id",
-				Unique:  false,
-				Columns: []*schema.Column{UsersColumns[5]},
-			},
 		},
 	}
 	// Tables holds all the tables in the schema.
 	Tables = []*schema.Table{
 		AdminUsersTable,
-		InviteCodesTable,
 		UsersTable,
 	}
 )
