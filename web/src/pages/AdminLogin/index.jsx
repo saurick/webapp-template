@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react'
-import { useLocation, useNavigate } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import AppShell from '@/common/components/layout/AppShell'
 import SurfacePanel from '@/common/components/layout/SurfacePanel'
 import { AUTH_SCOPE, persistAuth } from '@/common/auth/auth'
@@ -60,15 +60,24 @@ export default function AdminLoginPage() {
   return (
     <AppShell className="flex items-center justify-center px-4 py-6 sm:py-8 md:py-10">
       <div className="w-full max-w-[520px]">
+        <div className="mb-4">
+          <Link
+            to="/"
+            className="inline-flex items-center text-sm text-slate-300 transition hover:text-slate-100"
+          >
+            返回首页
+          </Link>
+        </div>
+
         <div className="mb-4 text-center sm:mb-6">
           <div className="inline-flex rounded-full border border-amber-300/30 bg-amber-300/10 px-3 py-1 text-xs font-medium uppercase tracking-[0.24em] text-amber-100">
-            Admin Access
+            管理登录
           </div>
           <div className="mt-4 text-xl font-semibold tracking-tight text-slate-50 sm:text-2xl">
             管理控制台登录
           </div>
           <div className="mt-2 text-sm leading-6 text-slate-300">
-            用于访问后台账号目录和项目收口说明页。
+            用于访问后台账号目录和项目说明页。默认管理员可由服务端在启动时自动创建。
           </div>
         </div>
 

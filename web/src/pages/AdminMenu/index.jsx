@@ -36,13 +36,13 @@ export default function AdminMenuPage() {
       <div className="w-full max-w-[520px]">
         <div className="mb-6 text-center">
           <div className="inline-flex rounded-full border border-amber-300/30 bg-amber-300/10 px-3 py-1 text-xs font-medium uppercase tracking-[0.24em] text-amber-100">
-            Admin Console
+            管理控制台
           </div>
           <div className="mt-4 text-2xl font-semibold tracking-tight text-slate-50">
             管理控制台
           </div>
           <div className="mt-2 text-sm leading-6 text-slate-300">
-            模板默认后台入口，只保留账号目录和项目收口说明，避免继续内置具体业务模型。
+            后台默认保留账号目录和页面说明两项入口，便于在新项目中继续扩展。
           </div>
         </div>
 
@@ -61,7 +61,7 @@ export default function AdminMenuPage() {
               onClick={() => navigate('/admin-guide')}
               className="w-full rounded-2xl bg-amber-300 px-4 py-3 font-semibold text-slate-950 transition hover:bg-amber-200 active:bg-amber-400"
             >
-              项目收口指南
+              页面说明
             </button>
 
             <button

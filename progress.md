@@ -1,4 +1,28 @@
 ## 2026-03-10
+- 完成：再次收紧模板 UI 的人话表达，统一 `/Users/simon/projects/webapp-template/web/src/pages/Home/index.jsx`、`Login/index.jsx`、`Register/index.jsx`、`AdminLogin/index.jsx`、`AdminMenu/index.jsx`、`AdminGuide/index.jsx`、`AdminUsers/index.jsx` 的文案口径，去掉中英混搭和过重的“模板内部说明”，并把后台说明页从命令清单收成面向人的页面说明。
+- 验证：待执行前端 `lint/build`，确认这轮文案与布局收口未引入页面回归。
+- 下一步：如后续继续打磨模板展示层，可再评估首页是否要支持通过环境变量注入项目副标题，进一步减少初始化后的手工改字成本。
+- 阻塞/风险：本次主要调整文案和信息层级，没有改变页面路由和鉴权流程；后台说明页中的开发命令已移回文档语境，不再直接展示在 UI 中。
+
+## 2026-03-10
+- 完成：为 `/Users/simon/projects/webapp-template/web/src/pages/Login/index.jsx` 与 `/Users/simon/projects/webapp-template/web/src/pages/Register/index.jsx` 补上和管理员登录页一致的“返回首页”入口，统一三张鉴权页的最小导航闭环。
+- 验证：待执行前端 `lint/build`，确认返回入口补充未引入页面回归。
+- 下一步：如后续继续收口模板 UI，可再评估首页是否需要把“普通用户首次先注册”做成更明显的首屏提示。
+- 阻塞/风险：本次只补静态返回链接，不改变登录、注册和跳转成功后的鉴权流程。
+
+## 2026-03-10
+- 完成：为 `/Users/simon/projects/webapp-template/web/src/pages/AdminLogin/index.jsx` 增加轻量的“返回首页”入口，补齐管理员登录页的最小导航闭环，避免用户误入后缺少明显返回路径。
+- 验证：待执行前端 `lint/build`，确认导航补充未引入页面回归。
+- 下一步：如后续继续收口模板 UI，可再评估是否需要为普通登录/注册页也补一个一致的返回首页入口。
+- 阻塞/风险：本次只增加静态返回链接，不改变管理员登录流程和跳转逻辑。
+
+## 2026-03-10
+- 完成：收紧首页与鉴权页的模板 UI 文案，更新 `/Users/simon/projects/webapp-template/web/src/pages/Home/index.jsx`、`Login/index.jsx`、`Register/index.jsx`、`AdminLogin/index.jsx`，把“模板术语”压缩为更直接的人类操作指引，明确普通用户默认无预置账号、首次应先注册，管理员入口会按服务端配置自动创建默认账号。
+- 验证：待执行前端 `lint/build`，确认文案与结构调整未引入页面回归。
+- 下一步：如后续继续收口模板展示层，可把后台入口页也进一步压成“账号目录 + 项目说明”的最小首屏。
+- 阻塞/风险：本次只改文案与信息层级，未改变鉴权流程本身；管理员默认账号仍取决于服务端配置，页面只做引导不直接展示密码。
+
+## 2026-03-10
 - 完成：修正 `/Users/simon/projects/webapp-template/scripts/init-project.sh` 中触发 `shellcheck` 的中文引号，将模板提示文案改为 ASCII 单引号，保证 `pre-commit` 在提交模板收口改动时不会因 `SC1111` 被阻断。
 - 验证：已按 `pre-commit` 暴露的报错位置完成修复，待重新执行提交流程验证整套钩子。
 - 下一步：重新执行 `git commit` 与 push，确保本次模板收口改动可以完整入库。

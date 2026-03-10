@@ -51,15 +51,24 @@ export default function LoginPage() {
   return (
     <AppShell className="flex items-center justify-center px-4 py-10">
       <div className="w-full max-w-[560px]">
+        <div className="mb-4">
+          <Link
+            to="/"
+            className="inline-flex items-center text-sm text-slate-300 transition hover:text-slate-100"
+          >
+            返回首页
+          </Link>
+        </div>
+
         <div className="mb-6 text-center sm:mb-8">
           <div className="inline-flex rounded-full border border-cyan-300/30 bg-cyan-300/10 px-3 py-1 text-xs font-medium uppercase tracking-[0.24em] text-cyan-100">
-            User Access
+            用户登录
           </div>
           <div className="mt-4 text-3xl font-semibold tracking-tight text-slate-50">
             欢迎登录
           </div>
           <div className="mt-2 text-sm leading-6 text-slate-300">
-            使用你的账号继续访问当前项目。
+            使用已有账号继续访问当前项目；如果是首次使用，请先注册普通用户账号。
           </div>
         </div>
 
@@ -113,12 +122,12 @@ export default function LoginPage() {
 
               <div className="flex items-center justify-between pt-1 text-sm text-slate-300">
                 <div>
-                  还没有账号？{' '}
+                  模板默认不预置普通用户。{' '}
                   <Link
                     className="font-medium text-cyan-200 underline underline-offset-4 transition hover:text-cyan-100"
                     to="/register"
                   >
-                    去注册
+                    先去注册
                   </Link>
                 </div>
               </div>

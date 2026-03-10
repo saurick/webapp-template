@@ -54,33 +54,41 @@ export default function HomePage() {
             <div className="space-y-8">
               <div className="space-y-4">
                 <div className="inline-flex rounded-full border border-cyan-300/30 bg-cyan-300/10 px-3 py-1 text-xs font-medium uppercase tracking-[0.24em] text-cyan-100">
-                  Starter Workspace
+                  项目起始页
                 </div>
                 <div className="max-w-2xl space-y-3">
                   <h1 className="text-3xl font-semibold tracking-tight text-slate-50 sm:text-4xl lg:text-5xl">
-                    为新项目提供一个中性的鉴权起点
+                    清晰的账号入口，从这里开始
                   </h1>
                   <p className="text-sm leading-7 text-slate-300 sm:text-base">
-                    模板默认保留用户登录、注册和管理员入口。初始化项目后，可以把这里替换成业务首页、工作台或首屏引导。
+                    默认提供用户登录、注册和管理入口，方便先把账号流程跑通，再按项目需要替换成业务首页、工作台或首屏引导。
                   </p>
                 </div>
               </div>
 
-              <div className="grid gap-4 sm:grid-cols-2">
+              <div className="grid gap-4 sm:grid-cols-3">
                 <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-5">
                   <div className="text-sm font-medium text-slate-100">
-                    默认保留
+                    用户使用
                   </div>
                   <div className="mt-2 text-sm leading-6 text-slate-300">
-                    登录、注册、会话保持、管理员登录、后台账号目录，以及最小健康检查和质量门禁骨架。
+                    默认不预置账号。首次使用先注册，注册成功后会自动登录。
                   </div>
                 </div>
                 <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-5">
                   <div className="text-sm font-medium text-slate-100">
-                    初始化后建议替换
+                    管理后台
                   </div>
                   <div className="mt-2 text-sm leading-6 text-slate-300">
-                    项目名、业务首页、后台菜单、部署配置和任何模板示例文案。
+                    管理员使用独立登录入口，便于区分前台与后台流程。
+                  </div>
+                </div>
+                <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-5">
+                  <div className="text-sm font-medium text-slate-100">
+                    项目调整
+                  </div>
+                  <div className="mt-2 text-sm leading-6 text-slate-300">
+                    项目名、首页内容、后台菜单和示例文案可在初始化后按业务替换。
                   </div>
                 </div>
               </div>
@@ -89,12 +97,12 @@ export default function HomePage() {
 
           <div className="grid gap-6">
             <SessionCard
-              badge="User Access"
-              title={user ? `已登录：${user.username}` : '用户访问入口'}
+              badge="用户入口"
+              title={user ? `已登录：${user.username}` : '用户登录 / 注册'}
               description={
                 user
-                  ? '用户会话已经建立。派生项目可以直接把这里替换为业务首页或个人工作台。'
-                  : '默认保留账号登录和注册流程，适合作为大多数项目的通用起点。'
+                  ? '当前用户已登录，可以继续进入业务首页、个人中心或工作台。'
+                  : '普通用户默认没有预置账号，首次使用请先注册；注册成功后会自动登录。'
               }
               accentClass="border-cyan-300/30 bg-cyan-300/10 text-cyan-100"
               actions={
@@ -135,12 +143,12 @@ export default function HomePage() {
             </SessionCard>
 
             <SessionCard
-              badge="Admin Access"
-              title={admin ? `管理员：${admin.username}` : '管理控制台入口'}
+              badge="管理入口"
+              title={admin ? `管理员：${admin.username}` : '管理控制台'}
               description={
                 admin
-                  ? '管理员会话已建立，可以继续进入后台控制台或在派生项目中替换为真实管理首页。'
-                  : '如果项目包含后台管理能力，可继续沿用管理员登录、账号目录和项目收口入口。'
+                  ? '管理员已登录，可以继续进入后台控制台。'
+                  : '管理员通过独立入口登录，用于访问后台控制台和账号管理。'
               }
               accentClass="border-amber-300/30 bg-amber-300/10 text-amber-100"
               actions={
@@ -174,7 +182,13 @@ export default function HomePage() {
                     </Link>,
                     ]
               }
-            />
+            >
+              {!admin ? (
+                <div className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-slate-300">
+                  默认管理员账号通常在项目初始化时创建，后续可替换为正式后台账号。
+                </div>
+              ) : null}
+            </SessionCard>
           </div>
         </div>
       </div>

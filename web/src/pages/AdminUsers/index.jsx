@@ -126,13 +126,13 @@ export default function AdminUsersPage() {
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="space-y-2">
             <div className="inline-flex rounded-full border border-amber-300/30 bg-amber-300/10 px-3 py-1 text-xs font-medium uppercase tracking-[0.24em] text-amber-100">
-              Account Directory
+              账号管理
             </div>
             <h1 className="text-2xl font-semibold tracking-tight text-slate-50 sm:text-3xl">
               账号目录
             </h1>
             <p className="max-w-3xl text-sm leading-6 text-slate-300 sm:text-base">
-              模板默认只保留搜索、查看和启用/禁用账号这类通用能力。积分、订阅、邀请码、层级等业务字段不再作为默认后台页面的一部分。
+              这里默认只保留账号搜索、查看和启用/禁用，适合作为后台账号页的起点。
             </p>
           </div>
 
@@ -164,7 +164,7 @@ export default function AdminUsersPage() {
         <SurfacePanel className="p-5 sm:p-6">
           <div className="space-y-5">
             <div className="bg-cyan-300/8 rounded-2xl border border-cyan-300/20 px-4 py-3 text-sm leading-6 text-cyan-100/90">
-              当前页面适合直接作为新项目的后台账号骨架使用。如果具体项目需要会员策略、权限树、组织层级或邀请码体系，请在派生项目里按真实需求追加。
+              当前页面已可直接用于查看和管理基础账号状态；如果后续需要更多业务字段，可在项目里继续补充。
             </div>
 
             <form

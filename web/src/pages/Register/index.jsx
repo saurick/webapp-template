@@ -55,15 +55,24 @@ export default function RegisterPage() {
   return (
     <AppShell className="flex items-center justify-center px-4 py-10">
       <div className="w-full max-w-[560px]">
+        <div className="mb-4">
+          <Link
+            to="/"
+            className="inline-flex items-center text-sm text-slate-300 transition hover:text-slate-100"
+          >
+            返回首页
+          </Link>
+        </div>
+
         <div className="mb-6 text-center sm:mb-8">
           <div className="inline-flex rounded-full border border-emerald-300/30 bg-emerald-300/10 px-3 py-1 text-xs font-medium uppercase tracking-[0.24em] text-emerald-100">
-            Account Setup
+            账号注册
           </div>
           <div className="mt-4 text-3xl font-semibold tracking-tight text-slate-50">
             创建账号
           </div>
           <div className="mt-2 text-sm leading-6 text-slate-300">
-            为当前项目创建一个基础账号，后续可在派生项目中按业务扩展资料字段。
+            这里只保留最小注册流程：用户名和密码。注册成功后会自动登录。
           </div>
         </div>
 
@@ -140,7 +149,7 @@ export default function RegisterPage() {
                   className="font-medium text-emerald-200 underline underline-offset-4 transition hover:text-emerald-100"
                   to="/login"
                 >
-                  去登录
+                  直接登录
                 </Link>
               </div>
             </div>

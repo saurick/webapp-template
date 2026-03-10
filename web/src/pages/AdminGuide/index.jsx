@@ -5,8 +5,8 @@ import SurfacePanel from '@/common/components/layout/SurfacePanel'
 
 const DEFAULT_ITEMS = [
   '管理员登录入口与受保护路由',
-  '最小账号目录页（搜索、查看、启用/禁用）',
-  '项目初始化扫描、健康检查和质量门禁',
+  '账号搜索、查看、启用和禁用',
+  '基础健康检查、部署骨架和质量门禁',
 ]
 
 const CUSTOMIZE_ITEMS = [
@@ -15,12 +15,10 @@ const CUSTOMIZE_ITEMS = [
   '外部系统集成、消息通知、审计策略和告警规则',
 ]
 
-const INIT_COMMANDS = [
-  'bash scripts/init-project.sh',
-  'bash scripts/bootstrap.sh',
-  'bash scripts/doctor.sh',
-  'bash scripts/init-project.sh --project --strict',
-  'bash scripts/qa/fast.sh',
+const NEXT_ITEMS = [
+  '替换项目名、品牌文案和首页内容',
+  '补齐真实管理员体系和权限规则',
+  '按业务增加数据看板、流程页和详情页',
 ]
 
 function GuideList({ title, description, items, accentClass }) {
@@ -57,14 +55,13 @@ export default function AdminGuidePage() {
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="space-y-2">
             <div className="inline-flex rounded-full border border-cyan-300/30 bg-cyan-300/10 px-3 py-1 text-xs font-medium uppercase tracking-[0.24em] text-cyan-100">
-              Project Guide
+              页面说明
             </div>
             <h1 className="text-2xl font-semibold tracking-tight text-slate-50 sm:text-3xl">
-              后台默认只保留通用骨架
+              后台默认只保留最小骨架
             </h1>
             <p className="max-w-3xl text-sm leading-6 text-slate-300 sm:text-base">
-              关键入口：这里故意保持为静态说明页，避免模板继续固化某一种后台业务模型。
-              新项目需要的权限体系、会员策略和业务字段，应在初始化后按真实需求补齐。
+              当前后台先保留账号管理和说明页，方便快速验证登录与后台流程。正式项目可在此基础上继续补充业务页面和权限能力。
             </p>
           </div>
 
@@ -79,14 +76,14 @@ export default function AdminGuidePage() {
 
         <div className="grid gap-6 lg:grid-cols-2">
           <GuideList
-            title="Keep"
-            description="下面这些能力适合作为模板默认后台基线，后续项目通常可以直接继承。"
+            title="默认保留"
+            description="下面这些能力适合作为后台默认基线，后续项目通常可以直接继承。"
             items={DEFAULT_ITEMS}
             accentClass="border-emerald-300/30 bg-emerald-300/10 text-emerald-100"
           />
           <GuideList
-            title="Customize"
-            description="下面这些能力带有明显业务语义，不再作为模板默认后台的一部分。"
+            title="按需扩展"
+            description="下面这些能力带有明显业务语义，建议在具体项目里按真实需求补齐。"
             items={CUSTOMIZE_ITEMS}
             accentClass="border-amber-300/30 bg-amber-300/10 text-amber-100"
           />
@@ -95,18 +92,18 @@ export default function AdminGuidePage() {
         <SurfacePanel className="p-5 sm:p-6">
           <div className="space-y-4">
             <div className="inline-flex rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-xs font-medium uppercase tracking-[0.2em] text-slate-100">
-              Init Flow
+              下一步
             </div>
             <div className="text-sm leading-6 text-slate-300">
-              如果项目是由当前模板初始化出来的，建议先完成一次模板收口，再继续业务开发。
+              如果当前页面将继续用于真实项目，通常会优先完成下面这些替换和补充。
             </div>
-            <div className="grid gap-3 md:grid-cols-2">
-              {INIT_COMMANDS.map((command) => (
+            <div className="grid gap-3 md:grid-cols-3">
+              {NEXT_ITEMS.map((item) => (
                 <div
-                  key={command}
-                  className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3 font-mono text-xs text-cyan-100 sm:text-sm"
+                  key={item}
+                  className="rounded-2xl border border-white/10 bg-black/20 px-4 py-3 text-sm text-cyan-100"
                 >
-                  {command}
+                  {item}
                 </div>
               ))}
             </div>
