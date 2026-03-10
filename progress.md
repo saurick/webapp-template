@@ -1,3 +1,10 @@
+## 2026-03-11
+- 完成：增强 `/Users/simon/projects/webapp-template/docs/project-init.md`，把原来的简版提示词扩展成“给 AI 的标准输入模板”，补齐推荐准备信息、完整输入模板、最小版输入模板和 AI 输出期望，方便后续接甲方项目时直接复制给 AI 初始化。
+- 完成：同步更新 `/Users/simon/projects/webapp-template/docs/README.md` 与 `/Users/simon/projects/webapp-template/README.md` 的入口说明，明确初始化指南里已经包含 AI 初始化输入模板。
+- 验证：本次仅修改文档，未改运行时代码，未额外执行代码级测试。
+- 下一步：后续若要继续降低初始化成本，可再补一版“行业项目初始化示例输入”，例如管理后台型、工具平台型、内容站型三种常见模板。
+- 阻塞/风险：当前输入模板已经覆盖大部分初始化场景，但具体项目若涉及复杂权限、支付、审计或多租户，仍需要人工补充更细的业务约束，AI 不能仅靠模板自行推断。
+
 ## 2026-03-10
 - 完成：再次收紧模板 UI 的人话表达，统一 `/Users/simon/projects/webapp-template/web/src/pages/Home/index.jsx`、`Login/index.jsx`、`Register/index.jsx`、`AdminLogin/index.jsx`、`AdminMenu/index.jsx`、`AdminGuide/index.jsx`、`AdminUsers/index.jsx` 的文案口径，去掉中英混搭和过重的“模板内部说明”，并把后台说明页从命令清单收成面向人的页面说明。
 - 验证：待执行前端 `lint/build`，确认这轮文案与布局收口未引入页面回归。

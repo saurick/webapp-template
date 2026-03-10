@@ -85,7 +85,7 @@ bash /Users/simon/projects/webapp-template/scripts/qa/full.sh
 说明：
 
 - `init-project.sh` 会扫描模板残留、默认密钥、部署主机、页面标题、模块裁剪点等初始化必改项。
-- 初始化专项说明见：`/Users/simon/projects/webapp-template/docs/project-init.md`
+- 初始化专项说明与“给 AI 的标准输入模板”见：`/Users/simon/projects/webapp-template/docs/project-init.md`
 - 部署模板总览见：`/Users/simon/projects/webapp-template/server/deploy/README.md`
 - 当前模板后台默认只保留账号目录和项目收口说明页；积分 / 订阅 / 邀请码 / 层级等业务模块已从模板主干移除，具体项目若需要，应在派生仓库按需新增。
 - 若当前项目明确只用 `compose`，可按需移除 K8s 清单与相关文档；删除文件默认移动到系统回收站。
