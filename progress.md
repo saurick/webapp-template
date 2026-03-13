@@ -1,4 +1,24 @@
 ## 2026-03-13
+- 完成：将 `/Users/simon/projects/webapp-template/server/deploy/compose/prod/publish_server.sh` 与 `README.md` 中的目标服务器地址彻底收口为占位域名/显式变量，发布脚本改为必须显式设置 `REMOTE_HOST`。
+- 验证：已人工复核当前模板仓库的部署脚本与文档，不再包含固定线上服务器 IP。
+- 下一步：后续派生项目沿用该模板时，统一通过环境变量显式指定目标宿主机，避免模板把旧地址带进新项目。
+- 阻塞/风险：移除默认目标主机后，若本地脚本或外部自动化没有补 `REMOTE_HOST`，发布会直接失败并提示修正。
+
+## 2026-03-13
+- 完成：将 `/Users/simon/projects/webapp-template/server/deploy/compose/prod/compose.yml`、`.env.example`、`deploy_server.sh`、`publish_server.sh` 与 `README.md` 收口为当前项目实际可用的独立部署配置，固定 `PROJECT_SLUG=webapp-template`、独立 MySQL/Jaeger 默认值、4G 单机预算和远端资源预检。
+- 完成：修复 `/Users/simon/projects/webapp-template/server/Dockerfile`，补齐前端错误码生成依赖；同时修正 compose 默认 `MYSQL_DSN` 与 MySQL 初始化默认值，避免上线时继续使用模板占位值 `root:replace-me@tcp(mysql:3306)/app`。
+- 完成：在线上当前宿主机新建并导入 `webapp-template-mysql` 独立数据目录，迁入 `test_database_atlas`；首次发版因占位 DSN 回归触发 `1045 Access denied`，修正配置后已重新发布成功。
+- 验证：已通过 `cd /Users/simon/projects/webapp-template/server && go test ./cmd/server`；线上复核 `http://127.0.0.1:8200/healthz`、`http://127.0.0.1:8200/readyz` 均返回 `ok/ready`，且 `webapp-template-server` 仅挂在 `webapp-template_default`。
+- 下一步：继续观察模板项目在真实流量或派生项目初始化时是否还会误用占位配置，并按需要把宿主机路径、Prometheus 地址等示例项进一步模板化。
+- 阻塞/风险：当前 `webapp-template-mysql` 实际占用约 `405MiB / 512MiB`；虽然运行稳定，但若后续派生项目把模板直接扩成更重的后台，仍需要同步抬高资源限制并补监控。
+
+## 2026-03-13
+- 完成：为 `/Users/simon/projects/webapp-template/server/cmd/server/main.go` 增加 `MYSQL_DSN`、`TRACE_ENDPOINT` 启动覆盖；同步更新 `/Users/simon/projects/webapp-template/server/deploy/compose/prod/compose.yml`、`.env.example` 与 `README.md`，让模板派生项目在小内存机器上可以通过 `host.docker.internal` 显式复用共享 MySQL/Jaeger，同时保持业务容器网络独立。
+- 验证：已通过 `cd /Users/simon/projects/webapp-template/server && go test ./cmd/server`；本次仅完成本地默认配置调整，远端宿主机当时因 SSH banner 交换超时，尚未完成最新版发布与实机验证。
+- 下一步：待远端宿主机恢复后，重新发布 `webapp-template-server`，并确认容器仅保留 `webapp-template_default` 网络、通过 `MYSQL_DSN` / `TRACE_ENDPOINT` 访问共享基础设施。
+- 阻塞/风险：线上旧 `webapp-template-server` 仍可能保留历史串网状态；在未重建前，仍有继续依赖 `collision-simulator_default` 的风险。
+
+## 2026-03-13
 - 完成：扩展 `/Users/simon/projects/webapp-template/web/src/common/utils/errorMessage.js`，新增 `getActionErrorMessage(...)`，把标准“动作失败，请稍后重试”场景从页面里重复手写整句中文，收口成动作型 helper。
 - 完成：将 `/Users/simon/projects/webapp-template/web/src/pages/Login/index.jsx`、`AdminLogin/index.jsx`、`Register/index.jsx`、`AdminUsers/index.jsx` 改为优先使用 `getActionErrorMessage(...)`，并同步更新项目级 `/Users/simon/projects/webapp-template/AGENTS.md`，明确模板和派生项目后续优先沿用动作型 helper。
 - 验证：已通过 `cd /Users/simon/projects/webapp-template/web && pnpm test`，以及 `pnpm exec eslint --ext .js --ext .jsx src/common/utils/errorMessage.js src/pages/Login/index.jsx src/pages/AdminLogin/index.jsx src/pages/Register/index.jsx src/pages/AdminUsers/index.jsx`。
@@ -289,7 +309,7 @@
 - 阻塞/风险：无。
 
 ## 2026-03-02
-- 完成：新增本地一键发布脚本 `/Users/simon/projects/webapp-template/server/deploy/compose/prod/publish_server.sh`，串联 `make build_server`、`docker save`、`rsync` 与远端 `deploy_server.sh`，默认对接 `root@47.84.12.211`。
+- 完成：新增本地一键发布脚本 `/Users/simon/projects/webapp-template/server/deploy/compose/prod/publish_server.sh`，串联 `make build_server`、`docker save`、`rsync` 与远端 `deploy_server.sh`；脚本已改为通过环境变量显式指定目标主机。
 - 完成：发布脚本新增 `AUTO_SMOKE` 部署后自动检查（`off/basic/auto/strict`），默认 `auto` 按最近改动路径自动判定；命中后端关键目录（`server/internal`、`server/cmd`、`server/configs`、迁移目录等）自动走 `strict`。
 - 完成：检查项包含 `healthz/readyz`、远端容器状态；`strict` 模式额外检查首页可达性并扫描容器日志 `panic/fatal`。
 - 完成：同步更新部署文档 `/Users/simon/projects/webapp-template/server/deploy/compose/prod/README.md`，补齐一键发布命令、环境变量与自动检查策略说明。

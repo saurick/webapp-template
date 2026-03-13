@@ -6,6 +6,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"strings"
 
 	"server/internal/conf"
 	"server/pkg/logger"
@@ -167,6 +168,10 @@ func main() {
 		}
 		traceEndpoint = bc.Trace.Jaeger.Endpoint
 	}
+	if v := strings.TrimSpace(os.Getenv("TRACE_ENDPOINT")); v != "" {
+		// 关键兜底：模板默认走本项目 jaeger，只有接外部 tracing 或排查特殊问题时才覆盖。
+		traceEndpoint = v
+	}
 
 	// ===== 4. 初始化协程管理器 =====
 	cleanupThreading := threading.Init()
@@ -199,6 +204,13 @@ func main() {
 	dataCfg := bc.Data
 	if dataCfg == nil {
 		panic(fmt.Errorf("bootstrap data config is nil, please check %s", confPath))
+	}
+	if dataCfg.Mysql == nil {
+		dataCfg.Mysql = &conf.Data_Mysql{}
+	}
+	if v := strings.TrimSpace(os.Getenv("MYSQL_DSN")); v != "" {
+		// 关键兜底：只标记覆盖来源，不输出 DSN 明文，避免数据库密码进入日志。
+		dataCfg.Mysql.Dsn = v
 	}
 
 	// ===== 7. 组装应用（wireApp） =====

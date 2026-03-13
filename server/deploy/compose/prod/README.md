@@ -4,7 +4,7 @@
 
 部署目录总览见 `/Users/simon/projects/webapp-template/server/deploy/README.md`。
 
-- `compose.yml`：MySQL + Jaeger + 业务服务的最小部署骨架
+- `compose.yml`：MySQL + Jaeger + 业务服务的最小部署骨架（默认使用本项目自己的 `mysql/jaeger` 服务名，也保留环境变量覆盖兜底）
 - `.env.example`：路径、端口、镜像和数据库参数占位
 - `deploy_server.sh`：远端宿主机增量发布脚本
 - `publish_server.sh`：本地 build + save + rsync + 远端部署串联脚本
@@ -50,6 +50,7 @@ sh publish_server.sh
 
 默认执行步骤：
 
+- 先执行远端资源预检（默认要求可用内存、磁盘与目标 MySQL 健康状态达标）
 - 在 `server` 目录执行 `make build_server`
 - `docker save -o output/app-server.tar your-project-server:dev`
 - `rsync -avz -e "ssh" output/app-server.tar deploy@deploy.example.com:~/deploy/your-project`
@@ -60,13 +61,16 @@ sh publish_server.sh
 ## 推荐覆盖的环境变量
 
 ```bash
+# 项目标识（用于预检和 smoke 默认容器名）
+export PROJECT_SLUG=webapp-template
+
 # 本地导出的镜像名
-export IMAGE_NAME=your-project-server:dev
+export IMAGE_NAME=webapp-template-server:dev
 
 # 本地镜像包路径
 export IMAGE_TAR=/path/to/output/app-server.tar
 
-# 远端主机/用户
+# 远端主机/用户（REMOTE_HOST 必填）
 export REMOTE_HOST=deploy.example.com
 export REMOTE_USER=deploy
 
@@ -74,6 +78,8 @@ export REMOTE_USER=deploy
 export REMOTE_DIR=~/deploy/your-project
 export REMOTE_SCRIPT_NAME=deploy_app_server.sh
 export REMOTE_COMPOSE_FILE_NAME=compose.app-server.yml
+export MYSQL_DSN='root:***@tcp(mysql:3306)/test_database_atlas?charset=utf8mb4&parseTime=True&loc=Local&interpolateParams=true'
+export TRACE_ENDPOINT=jaeger:4318
 
 # 部署后检查策略（off/basic/auto/strict）
 export AUTO_SMOKE=auto
@@ -84,7 +90,23 @@ export READY_PATH=/readyz
 export SMOKE_TIMEOUT=8
 export SMOKE_CONTAINER_NAME=your-project-server
 export SMOKE_CHECK_ORIGIN=remote
+
+# 远端资源预检（默认开启）
+export PRE_DEPLOY_PREFLIGHT=on
+export PREFLIGHT_MIN_MEM_AVAILABLE_MB=640
+export PREFLIGHT_MAX_ROOT_USAGE_PCT=90
+export PREFLIGHT_FAIL_ON_MYSQL_UNHEALTHY=1
+export PREFLIGHT_MYSQL_CONTAINER_NAME=your-project-mysql
 ```
+
+## 远端资源预检
+
+- `publish_server.sh` 默认会在构建前先 SSH 到远端检查资源。
+- 当前检查项：
+  - `MemAvailable` 不低于 `PREFLIGHT_MIN_MEM_AVAILABLE_MB`
+  - 根分区使用率不高于 `PREFLIGHT_MAX_ROOT_USAGE_PCT`
+  - `PREFLIGHT_MYSQL_CONTAINER_NAME` 对应容器为 `healthy`（当 `PREFLIGHT_FAIL_ON_MYSQL_UNHEALTHY=1`）
+- 模板默认值按 4G 单机部署收口，派生项目如果自定义了 `PROJECT_SLUG` 或 MySQL 容器名，记得同步覆盖 `PREFLIGHT_MYSQL_CONTAINER_NAME`。
 
 ## 迁移脚本
 
@@ -107,7 +129,7 @@ sh migrate_online.sh --apply
 export COMPOSE_FILE=/path/to/compose.yml
 export MIG_DIR=/path/to/server/internal/data/model/migrate
 export MYSQL_SERVICE=mysql
-export DB_URL='mysql://root:***@mysql:3306/app?charset=utf8mb4&parseTime=true&loc=Local&interpolateParams=true'
+export DB_URL='mysql://root:***@mysql:3306/test_database_atlas?charset=utf8mb4&parseTime=true&loc=Local&interpolateParams=true'
 export ATLAS_IMAGE=arigaio/atlas:latest
 ```
 
@@ -115,6 +137,8 @@ export ATLAS_IMAGE=arigaio/atlas:latest
 
 - `compose.yml` 已参数化路径、端口、镜像和容器名，优先通过 `.env` 调整，避免直接改 YAML。
 - `app-server` 默认等待 `mysql` healthcheck 通过后再启动，适合模板场景下的最小就绪基线。
+- 模板默认预算按 4G 单机收口：`MySQL 512m + Jaeger 128m + App 192m`；如果派生项目更重，再通过 `.env` 抬高对应内存变量。
+- `MYSQL_DSN`、`TRACE_ENDPOINT` 默认应保持 `mysql:3306`、`jaeger:4318`；只有接外部中间件或迁移排障时才建议改为外部地址。
 - `Jaeger` 仅作为可选模板依赖保留；若项目不需要自带 tracing 存储，可直接删掉该服务和对应端口。
 - `migrate_online.sh` 通过临时 Atlas 容器执行迁移，不依赖业务容器内安装 `atlas`。
 - 这套模板更偏“单项目单机 / 单台服务器”场景；如果派生项目走 K8s，请优先使用 `server/deploy/dev`、`server/deploy/prod` 下的清单模板。

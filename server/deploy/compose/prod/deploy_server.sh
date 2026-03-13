@@ -4,8 +4,9 @@ set -eu
 # 设计意图：只更新目标服务容器，避免误停 mysql/jaeger 等依赖服务。
 SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 COMPOSE_FILE="${COMPOSE_FILE:-$SCRIPT_DIR/compose.yml}"
+PROJECT_SLUG="${PROJECT_SLUG:-webapp-template}"
 SERVICE_NAME="${SERVICE_NAME:-app-server}"
-SERVICE_CONTAINER_NAME="${SERVICE_CONTAINER_NAME:-your-project-server}"
+SERVICE_CONTAINER_NAME="${SERVICE_CONTAINER_NAME:-${PROJECT_SLUG}-server}"
 IMAGE_TAR="${1:-app-server.tar}"
 
 usage() {
@@ -19,8 +20,9 @@ usage() {
 
 可选环境变量:
   COMPOSE_FILE            compose 文件路径（默认同目录 compose.yml）
+  PROJECT_SLUG            项目标识（默认 webapp-template，用于推导容器名）
   SERVICE_NAME            需要更新的服务名（默认 app-server）
-  SERVICE_CONTAINER_NAME  业务容器名（默认 your-project-server）
+  SERVICE_CONTAINER_NAME  业务容器名（默认 ${PROJECT_SLUG}-server）
 USAGE_EOF
 }
 

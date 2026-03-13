@@ -1,17 +1,17 @@
 services:
   mysql:
     image: mysql:8
-    container_name: "${PROJECT_SLUG:-your-project}-mysql"
+    container_name: "${PROJECT_SLUG:-webapp-template}-mysql"
     restart: always
     ports:
       - "${MYSQL_PORT:-3307}:3306"
     environment:
-      MYSQL_ROOT_PASSWORD: "${MYSQL_ROOT_PASSWORD:-replace-me}"
-      MYSQL_DATABASE: "${MYSQL_DATABASE:-app}"
-      MYSQL_USER: "${MYSQL_USER:-app_user}"
-      MYSQL_PASSWORD: "${MYSQL_PASSWORD:-replace-me}"
-    mem_limit: 512m
-    mem_reservation: 256m
+      MYSQL_ROOT_PASSWORD: "${MYSQL_ROOT_PASSWORD:-YP*H%k%a7xK1*q}"
+      MYSQL_DATABASE: "${MYSQL_DATABASE:-test_database_atlas}"
+      MYSQL_USER: "${MYSQL_USER:-test_user}"
+      MYSQL_PASSWORD: "${MYSQL_PASSWORD:-2@&0kq%qFafA4d}"
+    mem_limit: "${MYSQL_MEM_LIMIT:-512m}"
+    mem_reservation: "${MYSQL_MEM_RESERVATION:-256m}"
     volumes:
       - "${MYSQL_DATA_DIR:-/data/your-project/mysql/data}:/var/lib/mysql"
       - "${MYSQL_CONF_FILE:-/data/your-project/mysql/conf/mysql8.cnf}:/etc/mysql/conf.d/mysql8.cnf:ro"
@@ -25,7 +25,7 @@ services:
 
   jaeger:
     image: jaegertracing/all-in-one:latest
-    container_name: "${PROJECT_SLUG:-your-project}-jaeger"
+    container_name: "${PROJECT_SLUG:-webapp-template}-jaeger"
     restart: always
     ports:
       - "${JAEGER_5775_PORT:-15775}:5775/udp"
@@ -42,13 +42,13 @@ services:
       PROMETHEUS_QUERY_SUPPORT_SPANMETRICS_CONNECTOR: true
       METRICS_STORAGE_TYPE: prometheus
       PROMETHEUS_SERVER_URL: "${PROMETHEUS_SERVER_URL:-http://prometheus:9090}"
-    mem_limit: 192m
-    mem_reservation: 96m
+    mem_limit: "${JAEGER_MEM_LIMIT:-128m}"
+    mem_reservation: "${JAEGER_MEM_RESERVATION:-64m}"
     networks: {}
 
   app-server:
-    image: "${APP_IMAGE:-your-project-server:dev}"
-    container_name: "${PROJECT_SLUG:-your-project}-server"
+    image: "${APP_IMAGE:-webapp-template-server:dev}"
+    container_name: "${PROJECT_SLUG:-webapp-template}-server"
     restart: always
     depends_on:
       mysql:
@@ -60,6 +60,9 @@ services:
       - "${APP_GRPC_PORT:-9200}:9000"
     environment:
       TZ: "${TZ:-Asia/Shanghai}"
-    mem_limit: 128m
-    mem_reservation: 64m
+      # 设计意图：默认 DSN 必须与本项目 prod 配置保持一致，避免 .env 未显式覆盖时误连占位库名或占位密码。
+      MYSQL_DSN: "${MYSQL_DSN:-root:YP*H%k%a7xK1*q@tcp(mysql:3306)/test_database_atlas?charset=utf8mb4&parseTime=True&loc=Local&interpolateParams=true}"
+      TRACE_ENDPOINT: "${TRACE_ENDPOINT:-jaeger:4318}"
+    mem_limit: "${APP_MEM_LIMIT:-192m}"
+    mem_reservation: "${APP_MEM_RESERVATION:-96m}"
     networks: {}

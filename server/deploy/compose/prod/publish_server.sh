@@ -6,9 +6,10 @@ SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 REPO_ROOT=$(CDPATH= cd -- "$SCRIPT_DIR/../../../.." && pwd)
 SERVER_DIR="$REPO_ROOT/server"
 
-IMAGE_NAME="${IMAGE_NAME:-your-project-server:dev}"
+PROJECT_SLUG="${PROJECT_SLUG:-webapp-template}"
+IMAGE_NAME="${IMAGE_NAME:-webapp-template-server:dev}"
 IMAGE_TAR="${IMAGE_TAR:-$REPO_ROOT/output/app-server.tar}"
-REMOTE_HOST="${REMOTE_HOST:-deploy.example.com}"
+REMOTE_HOST="${REMOTE_HOST:-}"
 REMOTE_USER="${REMOTE_USER:-deploy}"
 REMOTE_DIR="${REMOTE_DIR:-~/deploy/your-project}"
 REMOTE_SCRIPT_NAME="${REMOTE_SCRIPT_NAME:-deploy_app_server.sh}"
@@ -19,8 +20,13 @@ SIM_ADMIN_HTTP_PORT="${SIM_ADMIN_HTTP_PORT:-}"
 HEALTH_PATH="${HEALTH_PATH:-/healthz}"
 READY_PATH="${READY_PATH:-/readyz}"
 SMOKE_TIMEOUT="${SMOKE_TIMEOUT:-8}"
-SMOKE_CONTAINER_NAME="${SMOKE_CONTAINER_NAME:-your-project-server}"
+SMOKE_CONTAINER_NAME="${SMOKE_CONTAINER_NAME:-${PROJECT_SLUG}-server}"
 SMOKE_CHECK_ORIGIN="${SMOKE_CHECK_ORIGIN:-remote}"
+PRE_DEPLOY_PREFLIGHT="${PRE_DEPLOY_PREFLIGHT:-on}"
+PREFLIGHT_MIN_MEM_AVAILABLE_MB="${PREFLIGHT_MIN_MEM_AVAILABLE_MB:-640}"
+PREFLIGHT_MAX_ROOT_USAGE_PCT="${PREFLIGHT_MAX_ROOT_USAGE_PCT:-90}"
+PREFLIGHT_FAIL_ON_MYSQL_UNHEALTHY="${PREFLIGHT_FAIL_ON_MYSQL_UNHEALTHY:-1}"
+PREFLIGHT_MYSQL_CONTAINER_NAME="${PREFLIGHT_MYSQL_CONTAINER_NAME:-${PROJECT_SLUG}-mysql}"
 
 usage() {
   cat <<'EOF'
@@ -35,9 +41,10 @@ usage() {
   5) ssh 到远端执行项目专属部署脚本
 
 可选环境变量:
-  IMAGE_NAME    本地导出的镜像名（默认 your-project-server:dev）
+  PROJECT_SLUG  项目标识（默认 webapp-template，用于推导预检和 smoke 容器名）
+  IMAGE_NAME    本地导出的镜像名（默认 webapp-template-server:dev）
   IMAGE_TAR     本地镜像包路径（默认仓库根目录 output/app-server.tar）
-  REMOTE_HOST   远端主机（默认 deploy.example.com）
+  REMOTE_HOST   远端主机（必填，例如 deploy.example.com）
   REMOTE_USER   远端用户（默认 deploy）
   REMOTE_DIR    远端上传目录（默认 ~/deploy/your-project）
   REMOTE_SCRIPT_NAME 远端部署脚本文件名（默认 deploy_app_server.sh）
@@ -50,6 +57,11 @@ usage() {
   SMOKE_TIMEOUT HTTP 检查超时秒数（默认 8）
   SMOKE_CONTAINER_NAME 严格检查读取日志的容器名（默认 your-project-server）
   SMOKE_CHECK_ORIGIN smoke 检查来源（remote/local/both，默认 remote）
+  PRE_DEPLOY_PREFLIGHT 是否执行远端资源预检（on/off，默认 on）
+  PREFLIGHT_MIN_MEM_AVAILABLE_MB 远端最小可用内存 MB（默认 640）
+  PREFLIGHT_MAX_ROOT_USAGE_PCT 远端根分区最大占用百分比（默认 90）
+  PREFLIGHT_FAIL_ON_MYSQL_UNHEALTHY mysql 非 healthy 时是否中断（1=中断，默认 1）
+  PREFLIGHT_MYSQL_CONTAINER_NAME 预检使用的 mysql 容器名（默认 ${PROJECT_SLUG}-mysql）
 EOF
 }
 
@@ -78,8 +90,73 @@ if [ ! -f "$SERVER_DIR/Makefile" ]; then
   exit 1
 fi
 
+# 兼容性兜底：目标主机改为显式传入，避免模板派生项目沿用过期宿主机地址。
+if [ -z "$REMOTE_HOST" ]; then
+  echo "ERROR: 请显式设置 REMOTE_HOST，例如 export REMOTE_HOST=deploy.example.com" >&2
+  exit 1
+fi
+
 REMOTE_TARGET="${REMOTE_USER}@${REMOTE_HOST}"
 REMOTE_IMAGE_TAR_NAME=$(basename "$IMAGE_TAR")
+
+run_remote_preflight() {
+  if [ "$PRE_DEPLOY_PREFLIGHT" = "off" ]; then
+    echo "==> [0/6] 跳过远端资源预检（PRE_DEPLOY_PREFLIGHT=off）"
+    return 0
+  fi
+
+  case "$PRE_DEPLOY_PREFLIGHT" in
+  on)
+    ;;
+  *)
+    echo "ERROR: PRE_DEPLOY_PREFLIGHT 仅支持 on/off，当前为 $PRE_DEPLOY_PREFLIGHT" >&2
+    exit 1
+    ;;
+  esac
+
+  echo "==> [0/6] 远端资源预检"
+  ssh "$REMOTE_TARGET" \
+    "MIN_MEM_MB='${PREFLIGHT_MIN_MEM_AVAILABLE_MB}' MAX_ROOT_PCT='${PREFLIGHT_MAX_ROOT_USAGE_PCT}' FAIL_ON_MYSQL='${PREFLIGHT_FAIL_ON_MYSQL_UNHEALTHY}' MYSQL_CONTAINER='${PREFLIGHT_MYSQL_CONTAINER_NAME}' sh -s" <<'EOF'
+set -eu
+
+mem_available_kb=$(awk '/MemAvailable:/ {print $2}' /proc/meminfo)
+if [ -z "$mem_available_kb" ]; then
+  echo "ERROR: 无法读取 /proc/meminfo 的 MemAvailable" >&2
+  exit 11
+fi
+mem_available_mb=$((mem_available_kb / 1024))
+
+root_usage_pct=$(df -P / | awk 'NR==2 {gsub(/%/, "", $5); print $5}')
+if [ -z "$root_usage_pct" ]; then
+  echo "ERROR: 无法读取根分区使用率" >&2
+  exit 12
+fi
+
+mysql_status="missing"
+if [ -n "$MYSQL_CONTAINER" ] && docker inspect "$MYSQL_CONTAINER" >/dev/null 2>&1; then
+  mysql_status=$(docker inspect -f '{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}' "$MYSQL_CONTAINER" 2>/dev/null || echo unknown)
+fi
+
+echo "  [INFO] MemAvailable=${mem_available_mb}MB"
+echo "  [INFO] RootUsage=${root_usage_pct}%"
+echo "  [INFO] ${MYSQL_CONTAINER:-mysql}=${mysql_status}"
+
+if [ "$mem_available_mb" -lt "$MIN_MEM_MB" ]; then
+  echo "ERROR: 远端可用内存不足（${mem_available_mb}MB < ${MIN_MEM_MB}MB），中止部署。" >&2
+  exit 21
+fi
+
+if [ "$root_usage_pct" -gt "$MAX_ROOT_PCT" ]; then
+  echo "ERROR: 根分区占用过高（${root_usage_pct}% > ${MAX_ROOT_PCT}%），中止部署。" >&2
+  exit 22
+fi
+
+if [ "$FAIL_ON_MYSQL" = "1" ] && [ "$mysql_status" != "healthy" ] && [ "$mysql_status" != "missing" ]; then
+  echo "ERROR: ${MYSQL_CONTAINER} 当前不是 healthy（${mysql_status}），中止部署。" >&2
+  exit 23
+fi
+EOF
+}
 
 collect_changed_files() {
   if ! command -v git >/dev/null 2>&1; then
@@ -203,22 +280,24 @@ run_smoke_check() {
   echo "  [OK] 严格日志检查通过（tail 200 未发现 panic/fatal）"
 }
 
-echo "==> [1/5] 构建服务镜像"
+run_remote_preflight
+
+echo "==> [1/6] 构建服务镜像"
 (cd "$SERVER_DIR" && make build_server)
 
-echo "==> [2/5] 导出镜像包: $IMAGE_NAME -> $IMAGE_TAR"
+echo "==> [2/6] 导出镜像包: $IMAGE_NAME -> $IMAGE_TAR"
 mkdir -p "$(dirname "$IMAGE_TAR")"
 docker save -o "$IMAGE_TAR" "$IMAGE_NAME"
 
-echo "==> [3/5] 上传镜像包到远端: ${REMOTE_TARGET}:${REMOTE_DIR}"
+echo "==> [3/6] 上传镜像包到远端: ${REMOTE_TARGET}:${REMOTE_DIR}"
 ssh "$REMOTE_TARGET" "mkdir -p ${REMOTE_DIR}"
 rsync -avz -e "ssh" "$IMAGE_TAR" "${REMOTE_TARGET}:${REMOTE_DIR}"
 
-echo "==> [4/5] 上传远端部署脚本与 compose: ${REMOTE_TARGET}:${REMOTE_DIR}"
+echo "==> [4/6] 上传远端部署脚本与 compose: ${REMOTE_TARGET}:${REMOTE_DIR}"
 rsync -avz -e "ssh" "$SCRIPT_DIR/deploy_server.sh" "${REMOTE_TARGET}:${REMOTE_DIR}/${REMOTE_SCRIPT_NAME}"
 rsync -avz -e "ssh" "$SCRIPT_DIR/compose.yml" "${REMOTE_TARGET}:${REMOTE_DIR}/${REMOTE_COMPOSE_FILE_NAME}"
 
-echo "==> [5/5] 远端执行部署脚本: ${REMOTE_SCRIPT_NAME}"
+echo "==> [5/6] 远端执行部署脚本: ${REMOTE_SCRIPT_NAME}"
 ssh "$REMOTE_TARGET" "cd ${REMOTE_DIR} && COMPOSE_FILE=./${REMOTE_COMPOSE_FILE_NAME} sh ./${REMOTE_SCRIPT_NAME} ${REMOTE_IMAGE_TAR_NAME}"
 
 CHANGED_FILES=$(collect_changed_files || true)
