@@ -57,7 +57,7 @@ function loadErrorMessageModule() {
     .replace(/export function /g, 'function ')
     .replace(/export const /g, 'const ')
     .concat(
-      '\nmodule.exports = { getUserFacingErrorMessage, handleRpcError, ERROR_MESSAGES };\n'
+      '\nmodule.exports = { getUserFacingErrorMessage, getActionErrorMessage, handleRpcError, ERROR_MESSAGES };\n'
     )
 
   const sandbox = {
@@ -72,7 +72,8 @@ function loadErrorMessageModule() {
 
 const errorCodesModule = loadErrorCodesModule()
 const { RpcErrorCode, DEFAULT_RPC_ERROR_MESSAGES } = errorCodesModule
-const { getUserFacingErrorMessage } = loadErrorMessageModule()
+const { getUserFacingErrorMessage, getActionErrorMessage } =
+  loadErrorMessageModule()
 
 test('errorMessage: 网络错误统一翻译为中文', () => {
   assert.equal(
@@ -108,5 +109,21 @@ test('errorMessage: 未知英文原文收口到页面 fallback', () => {
       '加载失败，请稍后重试'
     ),
     '加载失败，请稍后重试'
+  )
+})
+
+test('errorMessage: 动作型 helper 自动补齐标准中文兜底', () => {
+  assert.equal(
+    getActionErrorMessage({ message: 'temporary upstream failure' }, '登录'),
+    '登录失败，请稍后重试'
+  )
+})
+
+test('errorMessage: 动作型 helper 支持自定义后缀', () => {
+  assert.equal(
+    getActionErrorMessage({ message: 'temporary upstream failure' }, '登录', {
+      suffix: '请检查账号密码',
+    }),
+    '登录失败，请检查账号密码'
   )
 })

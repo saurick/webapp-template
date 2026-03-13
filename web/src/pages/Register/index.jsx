@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import AppShell from '@/common/components/layout/AppShell'
 import SurfacePanel from '@/common/components/layout/SurfacePanel'
 import { AUTH_SCOPE, persistAuth } from '@/common/auth/auth'
-import { getUserFacingErrorMessage } from '@/common/utils/errorMessage'
+import { getActionErrorMessage } from '@/common/utils/errorMessage'
 import { JsonRpc } from '@/common/utils/jsonRpc'
 
 export default function RegisterPage() {
@@ -47,7 +47,7 @@ export default function RegisterPage() {
       persistAuth(result?.data, AUTH_SCOPE.USER)
       navigate('/', { replace: true })
     } catch (err) {
-      setErrMsg(getUserFacingErrorMessage(err, '注册失败，请稍后重试'))
+      setErrMsg(getActionErrorMessage(err, '注册'))
     } finally {
       setSubmitting(false)
     }

@@ -58,6 +58,29 @@ function translateKnownErrorMessage(message) {
   return ''
 }
 
+function resolveActionErrorFallback(
+  action,
+  { fallback, suffix = '请稍后重试', defaultAction = '请求' } = {}
+) {
+  if (fallback) return fallback
+
+  const normalizedAction = String(action || '').trim()
+  const normalizedSuffix = String(suffix || '').trim() || '请稍后重试'
+  if (!normalizedAction) {
+    return `${defaultAction}失败，${normalizedSuffix}`
+  }
+
+  // 允许调用点只传“登录/保存/加载”这类动作词，统一在这里补完整兜底。
+  if (
+    /[，,]/u.test(normalizedAction) ||
+    /(失败|异常)$/u.test(normalizedAction)
+  ) {
+    return normalizedAction
+  }
+
+  return `${normalizedAction}失败，${normalizedSuffix}`
+}
+
 // 用户可见错误统一走这里，避免把 transport 层英文兜底原文直接显示到页面。
 export function getUserFacingErrorMessage(
   err,
@@ -77,6 +100,13 @@ export function getUserFacingErrorMessage(
   if (translated) return translated
 
   return fallback
+}
+
+export function getActionErrorMessage(err, action, options = {}) {
+  return getUserFacingErrorMessage(
+    err,
+    resolveActionErrorFallback(action, options)
+  )
 }
 
 export function handleRpcError(err, { onNeedLogin } = {}) {

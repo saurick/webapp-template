@@ -48,5 +48,5 @@
 
 - 前端用户可见错误提示禁止直接显示 `err.message`、`e.message` 或其他原始英文异常。
 - 已知错误码、鉴权错误、网络错误、`HTTP error xxx`、`JSON-RPC error` 等 transport 文案，统一通过 `web/src/common/utils/errorMessage.js` 的 `getUserFacingErrorMessage(...)` 收口翻译。
-- 页面或交互调用点必须传场景化 fallback，例如 `getUserFacingErrorMessage(err, '登录失败，请稍后重试')`、`getUserFacingErrorMessage(err, '保存失败，请稍后重试')`。
+- 标准“动作 + 失败，请稍后重试”场景优先使用 `getActionErrorMessage(err, '登录')`、`getActionErrorMessage(err, '保存')` 这类动作型 helper；只有需要特殊文案时再直接传 `fallback` 给 `getUserFacingErrorMessage(...)`。
 - `errorMessage.js` 负责“已知错误翻译”，页面调用点负责“当前场景最终兜底文案”；不要把场景文案堆回通用错误码表，也不要继续散落 `err?.message || ...` 这类写法。

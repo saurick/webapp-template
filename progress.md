@@ -1,4 +1,11 @@
 ## 2026-03-13
+- 完成：扩展 `/Users/simon/projects/webapp-template/web/src/common/utils/errorMessage.js`，新增 `getActionErrorMessage(...)`，把标准“动作失败，请稍后重试”场景从页面里重复手写整句中文，收口成动作型 helper。
+- 完成：将 `/Users/simon/projects/webapp-template/web/src/pages/Login/index.jsx`、`AdminLogin/index.jsx`、`Register/index.jsx`、`AdminUsers/index.jsx` 改为优先使用 `getActionErrorMessage(...)`，并同步更新项目级 `/Users/simon/projects/webapp-template/AGENTS.md`，明确模板和派生项目后续优先沿用动作型 helper。
+- 验证：已通过 `cd /Users/simon/projects/webapp-template/web && pnpm test`，以及 `pnpm exec eslint --ext .js --ext .jsx src/common/utils/errorMessage.js src/pages/Login/index.jsx src/pages/AdminLogin/index.jsx src/pages/Register/index.jsx src/pages/AdminUsers/index.jsx`。
+- 下一步：后续模板新增鉴权页或后台页时，标准失败提示默认直接写动作词，例如 `getActionErrorMessage(err, '登录')`，只有特殊文案再回退到 `getUserFacingErrorMessage(...)`。
+- 阻塞/风险：无。
+
+## 2026-03-13
 - 完成：更新 `/Users/simon/projects/webapp-template/AGENTS.md`，新增“前端错误提示约定”，明确模板和后续派生项目都应通过 `web/src/common/utils/errorMessage.js` 的 `getUserFacingErrorMessage(...)` 统一翻译已知错误，并在调用点补场景化中文 fallback。
 - 验证：已人工复核项目级 AGENTS 与当前模板前端错误提示实现一致；本次仅更新协作约定，未改运行时代码，未额外执行测试。
 - 下一步：后续模板新增页面或派生项目初始化时，默认沿用该约定，不再直接生成 `err?.message || ...` 这类用户提示写法。

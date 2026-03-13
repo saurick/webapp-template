@@ -4,7 +4,7 @@ import AppShell from '@/common/components/layout/AppShell'
 import SurfacePanel from '@/common/components/layout/SurfacePanel'
 import { AUTH_SCOPE, persistAuth } from '@/common/auth/auth'
 import { ADMIN_BASE_PATH } from '@/common/utils/adminRpc'
-import { getUserFacingErrorMessage } from '@/common/utils/errorMessage'
+import { getActionErrorMessage } from '@/common/utils/errorMessage'
 import { JsonRpc } from '@/common/utils/jsonRpc'
 
 export default function AdminLoginPage() {
@@ -52,7 +52,7 @@ export default function AdminLoginPage() {
       persistAuth(result?.data, AUTH_SCOPE.ADMIN)
       navigate(from, { replace: true })
     } catch (err) {
-      setErrMsg(getUserFacingErrorMessage(err, '登录失败，请稍后重试'))
+      setErrMsg(getActionErrorMessage(err, '登录'))
     } finally {
       setSubmitting(false)
     }
