@@ -1,3 +1,17 @@
+## 2026-03-13
+- 完成：更新 `/Users/simon/projects/webapp-template/AGENTS.md`，新增“前端错误提示约定”，明确模板和后续派生项目都应通过 `web/src/common/utils/errorMessage.js` 的 `getUserFacingErrorMessage(...)` 统一翻译已知错误，并在调用点补场景化中文 fallback。
+- 验证：已人工复核项目级 AGENTS 与当前模板前端错误提示实现一致；本次仅更新协作约定，未改运行时代码，未额外执行测试。
+- 下一步：后续模板新增页面或派生项目初始化时，默认沿用该约定，不再直接生成 `err?.message || ...` 这类用户提示写法。
+- 阻塞/风险：无。
+
+## 2026-03-13
+- 完成：扩展 `/Users/simon/projects/webapp-template/web/src/common/utils/errorMessage.js`，新增统一 `getUserFacingErrorMessage(...)` 收口前端用户可见错误文案，优先复用错误码默认文案，并把 `Network error`、`HTTP error xxx`、`JSON-RPC error` 等英文 transport 兜底翻译成中文，避免模板继续把英文原文透传到 UI。
+- 完成：将 `/Users/simon/projects/webapp-template/web/src/pages/Login/index.jsx`、`AdminLogin/index.jsx`、`Register/index.jsx`、`AdminUsers/index.jsx` 中直接展示 `err.message` / `e.message` 的入口统一改为走 helper；同时把 `/Users/simon/projects/webapp-template/web/src/common/utils/request.js` 的英文网络错误兜底改成中文。
+- 完成：新增 `/Users/simon/projects/webapp-template/web/src/common/utils/errorMessage.test.mjs`，并更新 `/Users/simon/projects/webapp-template/web/package.json` 测试入口，确保模板层后续不会回归到“英文原文直接上屏”。
+- 验证：已通过 `cd /Users/simon/projects/webapp-template/web && pnpm test` 与 `cd /Users/simon/projects/webapp-template/web && pnpm exec eslint --ext .js --ext .jsx src/common/utils/errorMessage.js src/common/utils/request.js src/pages/Login/index.jsx src/pages/AdminLogin/index.jsx src/pages/Register/index.jsx src/pages/AdminUsers/index.jsx`。
+- 下一步：后续若有派生项目继续沿用模板鉴权页或后台页，默认直接复用这套 helper，不要再在页面里拼 `err?.message || ...`。
+- 阻塞/风险：本次只收口模板现有入口；若派生项目新增页面绕开 helper 直接显示原始 `message`，仍会重新出现英文文案透传，需要按同一模式继续收口。
+
 ## 2026-03-11
 - 完成：增强 `/Users/simon/projects/webapp-template/docs/project-init.md`，把原来的简版提示词扩展成“给 AI 的标准输入模板”，补齐推荐准备信息、完整输入模板、最小版输入模板和 AI 输出期望，方便后续接甲方项目时直接复制给 AI 初始化。
 - 完成：同步更新 `/Users/simon/projects/webapp-template/docs/README.md` 与 `/Users/simon/projects/webapp-template/README.md` 的入口说明，明确初始化指南里已经包含 AI 初始化输入模板。

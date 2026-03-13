@@ -55,7 +55,7 @@
     "lint": "eslint --fix --ext .js --ext .jsx src/",
     "css": "stylelint \"src/**/*.{css,scss,sass}\"",
     "preview": "vite preview",
-    "test": "node --test src/common/consts/errorCodes.test.mjs",
+    "test": "node --test src/common/consts/errorCodes.test.mjs src/common/utils/errorMessage.test.mjs",
     "gen:error-codes": "node ../scripts/gen-error-codes.mjs",
     "prebuild": "pnpm gen:error-codes",
     "pretest": "pnpm gen:error-codes"

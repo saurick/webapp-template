@@ -191,7 +191,7 @@ export class Request {
   onError = () => {}
 
   // onRequestFailed 请求失误处理回调
-  onRequestFailed = async () => message.error('request failed, network error')
+  onRequestFailed = async () => message.error('网络错误，请稍后重试')
 
   // request 基础请求
   async request({
@@ -262,7 +262,7 @@ export class Request {
       jsonData = {
         data: undefined,
         success: false,
-        error: 'request failed',
+        error: '请求失败，请稍后重试',
       }
     }
 

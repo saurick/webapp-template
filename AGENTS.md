@@ -43,3 +43,10 @@
 - 必须保持“一码一义”，禁止复用已有错误码表达新语义。
 - 前端只有统一函数 `isAuthFailureCode(...)` 可以触发自动登出；权限不足不得触发登出。
 - 提交前若涉及错误码相关改动，应执行 `bash scripts/qa/error-code-sync.sh` 与 `bash scripts/qa/error-codes.sh`。
+
+## 前端错误提示约定
+
+- 前端用户可见错误提示禁止直接显示 `err.message`、`e.message` 或其他原始英文异常。
+- 已知错误码、鉴权错误、网络错误、`HTTP error xxx`、`JSON-RPC error` 等 transport 文案，统一通过 `web/src/common/utils/errorMessage.js` 的 `getUserFacingErrorMessage(...)` 收口翻译。
+- 页面或交互调用点必须传场景化 fallback，例如 `getUserFacingErrorMessage(err, '登录失败，请稍后重试')`、`getUserFacingErrorMessage(err, '保存失败，请稍后重试')`。
+- `errorMessage.js` 负责“已知错误翻译”，页面调用点负责“当前场景最终兜底文案”；不要把场景文案堆回通用错误码表，也不要继续散落 `err?.message || ...` 这类写法。

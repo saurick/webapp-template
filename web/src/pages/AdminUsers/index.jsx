@@ -5,6 +5,7 @@ import SurfacePanel from '@/common/components/layout/SurfacePanel'
 import { JsonRpc } from '@/common/utils/jsonRpc'
 import { ADMIN_BASE_PATH } from '@/common/utils/adminRpc'
 import { AUTH_SCOPE } from '@/common/auth/auth'
+import { getUserFacingErrorMessage } from '@/common/utils/errorMessage'
 
 const PAGE_SIZE = 30
 
@@ -76,7 +77,7 @@ export default function AdminUsersPage() {
         setPage(nextTotalPages)
       }
     } catch (e) {
-      setErrMsg(e?.message || String(e))
+      setErrMsg(getUserFacingErrorMessage(e, '获取用户列表失败，请稍后重试'))
       setItems([])
       setTotal(0)
     } finally {
@@ -116,7 +117,7 @@ export default function AdminUsersPage() {
       })
       await fetchList(page, searchName)
     } catch (e) {
-      setErrMsg(e?.message || String(e))
+      setErrMsg(getUserFacingErrorMessage(e, '更新用户状态失败，请稍后重试'))
     }
   }
 

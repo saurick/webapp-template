@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom'
 import AppShell from '@/common/components/layout/AppShell'
 import SurfacePanel from '@/common/components/layout/SurfacePanel'
 import { AUTH_SCOPE, persistAuth } from '@/common/auth/auth'
+import { getUserFacingErrorMessage } from '@/common/utils/errorMessage'
 import { JsonRpc } from '@/common/utils/jsonRpc'
 
 export default function LoginPage() {
@@ -42,7 +43,7 @@ export default function LoginPage() {
       persistAuth(result?.data, AUTH_SCOPE.USER)
       navigate(from, { replace: true })
     } catch (err) {
-      setErrMsg(err?.message || String(err))
+      setErrMsg(getUserFacingErrorMessage(err, '登录失败，请稍后重试'))
     } finally {
       setSubmitting(false)
     }
