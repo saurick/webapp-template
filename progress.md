@@ -1,3 +1,21 @@
+## 2026-03-14
+- 完成：补充 `/Users/simon/projects/webapp-template/server/pkg/taskgroup/taskgroup.go` 的日志 helper 收尾修正，显式忽略底层 `Logger.Log(...)` 返回值，消除 `errcheck` 门禁阻断且不改变现有日志行为。
+- 完成：补充 `/Users/simon/projects/webapp-template/server/pkg/taskgroup/README.md` 的“三种常见方案对照”章节，使用同一个 PDF 预览/下载目标分别演示 `errgroup`、`oklog/run.Group`、`taskgroup` 的适用层级，便于后续派生项目在请求级、组件级、对象级三类生命周期之间做快速选型。
+- 完成：将 `/Users/simon/projects/webapp-template/server/pkg/threading` 重命名为 `/Users/simon/projects/webapp-template/server/pkg/taskgroup`，同步更新 `cmd/server` 引用、README、测试文件与默认实例命名，让包名更贴近 Go 里“后台任务组生命周期管理”的常见语义。
+- 完成：在 `/Users/simon/projects/webapp-template/server/pkg/taskgroup/taskgroup.go` 增加最小结构化日志与轻量 trace event，覆盖任务接收、拒绝、退出、panic、`Stop(...)` 开始、超时与取消派发等关键收口节点；同时新增 `WithOperation(...)`、`WithTaskName(...)` helper，便于调用侧把业务语义带进日志字段。
+- 完成：更新 `/Users/simon/projects/webapp-template/server/pkg/taskgroup/README.md`，将包定位、正确用法、最小观测建议和 helper 示例一起收口到新路径，避免目录名和文档语义继续错位。
+- 验证：已通过 `cd /Users/simon/projects/webapp-template/server && go test ./pkg/taskgroup`、`go test -race ./pkg/taskgroup`、`go test -count=20 ./pkg/taskgroup`、`go test ./cmd/server`。
+- 下一步：如果后续有真正的后台任务调用点接入 `taskgroup`，可以按需在调用侧补 `WithOperation(...)` / `WithTaskName(...)`，让超时、panic 和退出日志直接带上业务动作名。
+- 阻塞/风险：当前 `taskgroup` 的最小日志默认只带基础字段，只有调用侧显式注入 `operation` / `task_name` 时才会呈现更完整的业务语义；同时 `Stop(...)` 本身不接收 `ctx`，因此停止流程日志暂时无法天然挂到某条上游 trace 上。
+
+## 2026-03-13
+- 完成：修复 `/Users/simon/projects/webapp-template/server/pkg/threading/threading.go` 的两个并发问题：将任务准入与 `WaitGroup` 计数收口到同一临界区，避免 `Go` 与 `Stop(true, ...)` 交错时漏等；同时把运行态清理提升为 `defer`，保证 goroutine panic 后也会删除 `running` 并归还 `WaitGroup` 计数。
+- 完成：调整 `/Users/simon/projects/webapp-template/server/pkg/threading/threading_default.go`，在 `Init()` 返回的 cleanup 中重置默认实例，避免测试或进程内重复初始化时卡在 `errRepeatedInit`。
+- 完成：重写 `/Users/simon/projects/webapp-template/server/pkg/threading/threading_test.go` 与 `threading_more_test.go`，改为 channel 驱动的稳定断言，覆盖默认实例初始化、父 context 脱钩、`Stop(false)` 取消、`Stop(true)` 等待/超时、panic 收尾与重复 Stop 等关键语义。
+- 验证：已通过 `cd /Users/simon/projects/webapp-template/server && go test ./pkg/threading`、`go test -race ./pkg/threading`、`go test -count=30 ./pkg/threading`。
+- 下一步：若后续这个线程管理器要承接更复杂的后台任务，可以再评估是否需要补“自定义 panic 回调阻塞”或“任务内派生子 goroutine”这类更强约束的说明或测试。
+- 阻塞/风险：当前 `Threading` 仍依赖任务实现方主动监听 `ctx.Done()` 才能在 `Stop(false)` 或超时取消后及时退出；这是现有设计边界，本次未改变。
+
 ## 2026-03-13
 - 完成：将 `/Users/simon/projects/webapp-template/server/deploy/compose/prod/publish_server.sh` 与 `README.md` 中的目标服务器地址彻底收口为占位域名/显式变量，发布脚本改为必须显式设置 `REMOTE_HOST`。
 - 验证：已人工复核当前模板仓库的部署脚本与文档，不再包含固定线上服务器 IP。

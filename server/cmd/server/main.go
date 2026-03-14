@@ -10,7 +10,7 @@ import (
 
 	"server/internal/conf"
 	"server/pkg/logger"
-	"server/pkg/threading"
+	"server/pkg/taskgroup"
 
 	"github.com/go-kratos/kratos/v2"
 	"github.com/go-kratos/kratos/v2/config"
@@ -173,9 +173,9 @@ func main() {
 		traceEndpoint = v
 	}
 
-	// ===== 4. 初始化协程管理器 =====
-	cleanupThreading := threading.Init()
-	defer cleanupThreading()
+	// ===== 4. 初始化后台任务组 =====
+	cleanupTaskGroup := taskgroup.Init()
+	defer cleanupTaskGroup()
 
 	// ===== 5. 初始化 OpenTelemetry（带兜底，不会因为没连上 Jaeger 就阻塞） =====
 	tp := initTracerProvider(traceName, traceEndpoint, logger)
