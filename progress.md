@@ -5,6 +5,12 @@
 - 阻塞/风险：示例文件仍保留占位值，派生项目初始化后必须自行填写真实密码和私钥。
 
 ## 2026-03-16
+- 完成：做了模板仓库最后一轮去 MySQL 清理，删除已废弃的 `/Users/simon/projects/webapp-template/server/deploy/confs/mysql8.cnf`；复查主干后，除 Ent 上游生成的通用 `server/internal/data/model/ent/client.go` 外，模板现行代码、配置和文档已经没有运行态/文档态 MySQL 残留。
+- 验证：已执行仓库级复查，`rg -n 'MYSQL_DSN|mysql|MySQL' . --glob '!progress.md' --glob '!server/internal/conf/*.pb.go' --glob '!server/internal/data/model/ent/client.go'` 在 `/Users/simon/projects/webapp-template` 下无结果，确认当前模板主干已全面切到 PostgreSQL 口径。
+- 下一步：若模板后续继续派生新项目，可以把“默认只支持 PostgreSQL”写入初始化脚本提示，避免派生仓库又手工拷回旧 MySQL 文件。
+- 阻塞/风险：同样地，`server/internal/data/model/ent/client.go` 的 `dialect.MySQL` 分支来自 Ent 上游通用生成，不影响当前模板实际运行，但若要做到字面级完全清零，需要接管生成器模板。
+
+## 2026-03-16
 - 完成：为 `/Users/simon/projects/webapp-template/server/Makefile` 增加 `dev_stop` 与 `dev_restart`，按模板项目当前本地后端端口 `8200 9200` 自动清理旧 dev 进程，并兼容 `lsof` / `fuser`，减少切项目时端口残留导致的启动失败。
 - 验证：已执行 `cd /Users/simon/projects/webapp-template/server && make dev_stop && make help | rg 'dev_stop|dev_restart'`，目标可以正常执行并出现在帮助列表中。
 - 下一步：若模板后续还会派生更多项目，可把 `DEV_PORTS` 作为初始化脚本需要同步替换的变量，避免派生后忘记改端口。
