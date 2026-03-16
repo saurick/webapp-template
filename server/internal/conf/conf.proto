@@ -28,7 +28,7 @@ message Server {
 }
 
 message Data {
-  message Mysql {
+  message Postgres {
     string dsn = 1;
     bool debug = 2;
   }
@@ -45,7 +45,7 @@ message Data {
     Admin admin = 3;
   }
 
-  Mysql mysql = 1;
+  Postgres postgres = 1;
   Etcd etcd = 2;
   Auth auth = 3;
   reserved 4;

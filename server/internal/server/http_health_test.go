@@ -98,7 +98,7 @@ func TestRegisterHealthRoutesReadyzOK(t *testing.T) {
 func TestRegisterHealthRoutesReadyzFailureLogsStructuredWarning(t *testing.T) {
 	logger := &captureLogger{}
 	srv := httpx.NewServer()
-	registerHealthRoutes(srv, logger, sdktrace.NewTracerProvider(), stubReadinessPinger{err: errors.New("dial tcp mysql: i/o timeout")})
+	registerHealthRoutes(srv, logger, sdktrace.NewTracerProvider(), stubReadinessPinger{err: errors.New("dial tcp postgres: i/o timeout")})
 
 	req := httptest.NewRequest(http.MethodGet, "/readyz", nil)
 	req.Header.Set("X-Request-Id", "req-readyz")
@@ -108,18 +108,18 @@ func TestRegisterHealthRoutesReadyzFailureLogsStructuredWarning(t *testing.T) {
 	if recorder.Code != http.StatusServiceUnavailable {
 		t.Fatalf("readyz status = %d, want %d", recorder.Code, http.StatusServiceUnavailable)
 	}
-	if body := strings.TrimSpace(recorder.Body.String()); body != "mysql not ready" {
-		t.Fatalf("readyz body = %q, want %q", body, "mysql not ready")
+	if body := strings.TrimSpace(recorder.Body.String()); body != "postgres not ready" {
+		t.Fatalf("readyz body = %q, want %q", body, "postgres not ready")
 	}
 
 	if !logger.hasEntry(func(entry captureLogEntry) bool {
 		return entry.level == "WARN" &&
 			fmt.Sprint(entry.fields["msg"]) == "dependency not ready" &&
 			fmt.Sprint(entry.fields["operation"]) == "server.http.readyz" &&
-			fmt.Sprint(entry.fields["component"]) == "mysql" &&
+			fmt.Sprint(entry.fields["component"]) == "postgres" &&
 			fmt.Sprint(entry.fields["status"]) == "503" &&
 			fmt.Sprint(entry.fields["request_id"]) == "req-readyz" &&
-			fmt.Sprint(entry.fields["error"]) == "dial tcp mysql: i/o timeout" &&
+			fmt.Sprint(entry.fields["error"]) == "dial tcp postgres: i/o timeout" &&
 			fmt.Sprint(entry.fields["trace_id"]) != ""
 	}) {
 		t.Fatalf("expected structured readiness warning log, got %+v", logger.entries)

@@ -28,12 +28,12 @@
 其中：
 
 - `/healthz` 只做浅检查
-- `/readyz` 当前只检查 MySQL 连通性
+- `/readyz` 当前只检查 PostgreSQL 连通性
 - 健康检查路由已有最小回归测试
 
 ### 启动韧性
 
-- `data.NewData(...)` 在初始化 MySQL 时会做短暂重试
+- `data.NewData(...)` 在初始化 PostgreSQL 时会做短暂重试
 - 目标是避免宿主机或数据库刚恢复时，服务因瞬时连接拒绝直接退出
 
 ## 当前已知盲区
@@ -48,7 +48,7 @@
 
 ### Compose
 
-- Compose 模板当前保留 MySQL `healthcheck`
+- Compose 模板当前保留 PostgreSQL `healthcheck`
 - 业务容器默认依赖 `/healthz`、`/readyz` 作为发布后 smoke 检查入口
 
 ### Kubernetes

@@ -37,7 +37,7 @@ func (p *seqPinger) CallCount() int {
 	return p.calls
 }
 
-func TestWaitForMySQLReady_SucceedsAfterRetries(t *testing.T) {
+func TestWaitForPostgresReady_SucceedsAfterRetries(t *testing.T) {
 	p := &seqPinger{
 		sequence: []error{
 			errors.New("connection refused"),
@@ -51,7 +51,7 @@ func TestWaitForMySQLReady_SucceedsAfterRetries(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 500*time.Millisecond)
 	defer cancel()
 
-	err := waitForMySQLReady(ctx, p, 10*time.Millisecond, logger)
+	err := waitForPostgresReady(ctx, p, 10*time.Millisecond, logger)
 	if err != nil {
 		t.Fatalf("expected nil error, got %v", err)
 	}
@@ -60,7 +60,7 @@ func TestWaitForMySQLReady_SucceedsAfterRetries(t *testing.T) {
 	}
 }
 
-func TestWaitForMySQLReady_Timeout(t *testing.T) {
+func TestWaitForPostgresReady_Timeout(t *testing.T) {
 	p := &seqPinger{
 		defaultErr: errors.New("connection refused"),
 	}
@@ -69,11 +69,11 @@ func TestWaitForMySQLReady_Timeout(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 35*time.Millisecond)
 	defer cancel()
 
-	err := waitForMySQLReady(ctx, p, 10*time.Millisecond, logger)
+	err := waitForPostgresReady(ctx, p, 10*time.Millisecond, logger)
 	if err == nil {
 		t.Fatalf("expected timeout error, got nil")
 	}
-	if !strings.Contains(err.Error(), "mysql not ready before timeout") {
+	if !strings.Contains(err.Error(), "postgres not ready before timeout") {
 		t.Fatalf("expected timeout prefix, got %v", err)
 	}
 	if got := p.CallCount(); got < 2 {

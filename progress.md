@@ -1,3 +1,41 @@
+## 2026-03-16
+- 完成：将 `/Users/simon/projects/webapp-template/web/vite.config.js` 的开发缓存目录改为仓库内独立 `.vite-cache`，避免与其他项目共用 `/tmp/.vite-cache` 时出现 `Outdated Optimize Dep` 和懒加载页面动态导入失败。
+- 验证：已执行 `cd /Users/simon/projects/webapp-template/web && pnpm build`，构建通过。
+- 下一步：模板派生项目可直接沿用这套仓库隔离缓存配置，减少多项目并行开发时的 Vite 依赖缓存抖动。
+- 阻塞/风险：若机器上已有旧 dev server 进程未重启，旧进程仍会继续使用它启动时的共享缓存路径。
+
+## 2026-03-16
+- 完成：将远端 MySQL `test_database_atlas` 的可兼容数据迁入 PostgreSQL `webapp_template`；当前 `users` 表 `62` 行已全部导入并校验一致，同时清理了远端旧测试库 `test_database_atlas`。
+- 验证：已对 MySQL `users` 与 PostgreSQL `users` 执行行数比对，结果均为 `62`；当前 `webapp_template` 的 `atlas migrate status` 仍为 `Already at latest version`。
+- 下一步：若你希望模板仓库也做到“完全无损迁移”，需要先决定是否把已从 PostgreSQL schema 中移除的 `invite_codes` 表，以及 `users.invite_code / role / points / expires_at` 这些历史字段补回当前模板 schema；确认后可继续补第二轮迁移。
+- 阻塞/风险：当前模板仓库并未 100% 无损迁移——MySQL 里仍有 `invite_codes` `14` 行，以及 `users` 的 4 个历史字段在现有 PostgreSQL schema 中无对应落点；这些数据还保留在源 MySQL 中，但尚未进入 `webapp_template`。
+
+## 2026-03-16
+- 完成：将远端模板开发库从 `test_database_atlas` 收口为项目名 `webapp_template`；已在 `192.168.0.106:5432` 上创建新库、执行 baseline 迁移，并同步更新 `/Users/simon/projects/webapp-template/server/configs/dev/config.yaml` 与 `/Users/simon/projects/webapp-template/server/.env`，让运行时配置和命令行/Atlas 使用同一套远端项目库。
+- 验证：已执行 `atlas migrate apply --dir 'file://internal/data/model/migrate' --url 'postgres://test_user:***@192.168.0.106:5432/webapp_template?sslmode=disable'`，以及 `cd /Users/simon/projects/webapp-template/server && set -a && source .env && set +a && atlas migrate status --dir 'file://internal/data/model/migrate' --url "$DB_URL" && psql "$DB_URL" -Atc "SELECT current_database(), count(*) FROM information_schema.tables WHERE table_schema='public';"`，当前迁移状态 `Already at latest version`，`public` 下 2 张表。
+- 下一步：如果模板后续初始化为真实项目，建议在 `scripts/init-project.sh` 收口阶段顺带重命名远端库和账号，避免派生项目长期沿用模板库名。
+- 阻塞/风险：旧库 `test_database_atlas` 仍保留在远端，短期可回退，但也保留了命名混淆；当前模板 dev 配置直连共享远端库，派生项目联调前最好再拆独立库。
+
+## 2026-03-16
+- 完成：使用远端 PG18 超级用户 `test_user` 在 `192.168.0.106:5432` 上创建 `test_database_atlas` 数据库并执行模板 baseline 迁移，随后将 `/Users/simon/projects/webapp-template/server/configs/dev/config.yaml` 改为直连远端 `test_database_atlas`。
+- 验证：已执行 `atlas migrate apply --dir 'file://internal/data/model/migrate' --url 'postgres://test_user:***@192.168.0.106:5432/test_database_atlas?sslmode=disable'`，并通过 `psql 'postgres://test_user:***@192.168.0.106:5432/test_database_atlas?sslmode=disable' -Atc "SELECT current_database(), count(*) FROM information_schema.tables WHERE table_schema='public';"` 确认模板库 schema 已落库（当前 `public` 下有 2 张表）。
+- 下一步：如需把模板仓库也接到真实页面 smoke，可再补一个适配 `test_user` 的 `cmd/dbcheck` 默认账号，避免后续每次手动覆盖环境变量。
+- 阻塞/风险：模板 dev 配置现已直接连远端共享 PG18，派生项目若沿用这份配置，写操作会落到同一个 `test_database_atlas`；正式派生前建议换成项目独立库。
+
+## 2026-03-16
+- 完成：将 `/Users/simon/projects/webapp-template/server/deploy/compose/prod/compose.yml`、`/Users/simon/projects/webapp-template/server/deploy/README.md` 与 `/Users/simon/projects/webapp-template/server/Makefile` 的 PostgreSQL 本地基线统一提升到 18，确保模板默认生成/部署口径与远端 PostgreSQL 18 一致。
+- 验证：已执行 `cd /Users/simon/projects/webapp-template && docker compose -f server/deploy/compose/prod/compose.yml --env-file server/deploy/compose/prod/.env.example config`，当前模板 compose 可正常解析到 `postgres:18`。
+- 下一步：若模板派生项目也需要直接连 `192.168.0.106`，后续可按真实库名和账号把 `/Users/simon/projects/webapp-template/server/configs/dev/config.yaml` 单独切到远端 PG18。
+- 阻塞/风险：模板仓库暂无远端 PG18 的专属库名/账号，本次只先统一版本，不直接改远端 dev DSN，避免把模板默认值绑死到不确定的外部实例。
+
+## 2026-03-16
+- 完成：将 `/Users/simon/projects/webapp-template/server/internal/conf/conf.proto`、`/Users/simon/projects/webapp-template/server/configs/dev/config.yaml`、`/Users/simon/projects/webapp-template/server/configs/prod/config.yaml`、`/Users/simon/projects/webapp-template/server/cmd/server/main.go` 与 `/Users/simon/projects/webapp-template/server/internal/data/data.go` 的数据库主配置从 `mysql` 统一迁移为 `postgres`，运行时改用 `github.com/jackc/pgx/v5/stdlib` + `database/sql`，并把启动重试、日志文案、`POSTGRES_DSN` 覆盖和 `/readyz` 文案同步切到 PostgreSQL。
+- 完成：修正 `/Users/simon/projects/webapp-template/server/internal/data/admin_user_init.go`、`/Users/simon/projects/webapp-template/server/internal/data/admin_auth_repo.go` 等原生 SQL 的 PostgreSQL 占位符与布尔写法，替换 `/Users/simon/projects/webapp-template/server/internal/data/model/migrate` 里的旧 MySQL 迁移历史为当前 Ent schema 生成的 PostgreSQL baseline，并重新生成 `/Users/simon/projects/webapp-template/server/internal/conf/conf.pb.go`、Ent 代码与 Wire 产物。
+- 完成：同步更新 `/Users/simon/projects/webapp-template/server/cmd/dbcheck/main.go`、`/Users/simon/projects/webapp-template/server/Makefile`、`/Users/simon/projects/webapp-template/server/.env*`、`/Users/simon/projects/webapp-template/server/deploy/compose/prod/*` 与 `/Users/simon/projects/webapp-template/server/deploy/*/configmap.yaml`，让本地 compose、Atlas/Ent 工作流、数据库检查脚本与部署模板默认都改为 `postgres` 服务名、`5432` 容器端口和 `postgres://...?...sslmode=disable` 连接串；同时把本地宿主机默认映射口径对齐到 `5433` 并显式固定 compose project name，避免与 `collision-simulator` / `trade-erp` 并行调试时出现 PostgreSQL 端口或默认网络冲突。
+- 验证：已通过 `cd /Users/simon/projects/webapp-template/server && make config`、`go run -mod=mod entgo.io/ent/cmd/ent generate --target ./internal/data/model/ent ./internal/data/model/schema`、`go generate ./cmd/server`、`make ent_migrate`、`go test ./internal/data ./internal/server ./cmd/...`、`go test ./...`，以及 `cd /Users/simon/projects/webapp-template && docker compose -f server/deploy/compose/prod/compose.yml --env-file server/deploy/compose/prod/.env.example config`。
+- 下一步：如果后续要把模板真正落到线上环境，还需要在目标环境准备 PostgreSQL 数据目录/备份策略，并按真实部署方式执行一次从旧 MySQL 数据到新 PostgreSQL 的数据迁移演练；本次模板仓库未包含历史业务数据搬迁脚本。
+- 阻塞/风险：`server/internal/data/model/ent/client.go` 仍会保留 Ent 生成的 `dialect.MySQL` 分支，这是上游生成代码的通用兼容逻辑，不影响当前模板实际已切到 PostgreSQL；另外 `/Users/simon/projects/webapp-template/server/.env` 仍指向现有宿主机地址，只是协议和端口已改为 PostgreSQL，真实可连通性取决于外部数据库是否已就绪。
+
 ## 2026-03-14
 - 完成：补充 `/Users/simon/projects/webapp-template/server/pkg/taskgroup/taskgroup.go` 的日志 helper 收尾修正，显式忽略底层 `Logger.Log(...)` 返回值，消除 `errcheck` 门禁阻断且不改变现有日志行为。
 - 完成：补充 `/Users/simon/projects/webapp-template/server/pkg/taskgroup/README.md` 的“三种常见方案对照”章节，使用同一个 PDF 预览/下载目标分别演示 `errgroup`、`oklog/run.Group`、`taskgroup` 的适用层级，便于后续派生项目在请求级、组件级、对象级三类生命周期之间做快速选型。

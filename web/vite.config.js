@@ -81,8 +81,11 @@ export default defineConfig(({ command, mode }) => {
       ],
     },
 
-    // 缓存目录：dev 放到 /tmp，prod 放到构建目录下
-    cacheDir: mode === 'development' ? '/tmp/.vite-cache' : 'build/.vite-cache',
+    // 开发缓存按仓库隔离，避免多个 Vite 项目共用 /tmp 缓存触发 Outdated Optimize Dep
+    cacheDir: resolve(
+      __dirname,
+      mode === 'development' ? '.vite-cache' : 'build/.vite-cache'
+    ),
 
     server: {
       host: '0.0.0.0', // 监听所有地址，方便局域网测试

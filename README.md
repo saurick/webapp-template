@@ -92,8 +92,8 @@ bash /Users/simon/projects/webapp-template/scripts/qa/full.sh
 
 ## 模板健康检查基线
 
-- 模板默认保留 `/healthz`、`/readyz`、数据库启动就绪等待，以及 `compose` 中 MySQL 的 `healthcheck + depends_on: service_healthy`。
-- 模板层的 `/readyz` 只覆盖通用硬依赖；当前基线是 MySQL，不预埋 Redis、MQ、OSS、第三方 API 等项目特有依赖。
+- 模板默认保留 `/healthz`、`/readyz`、数据库启动就绪等待，以及 `compose` 中 PostgreSQL 的 `healthcheck + depends_on: service_healthy`。
+- 模板层的 `/readyz` 只覆盖通用硬依赖；当前基线是 PostgreSQL，不预埋 Redis、MQ、OSS、第三方 API 等项目特有依赖。
 - 模板当前已内置健康检查最小测试、`readyz` 失败结构化日志，以及 HTTP 健康检查 / 静态路由的统一观测包装。
 - 模板当前已内置 HTTP `request_id` 过滤器：优先透传 `X-Request-Id`，缺失时自动生成并回写响应头。
 - 业务容器自身的 `compose healthcheck`、额外依赖的就绪检查、复杂健康详情页、K8s probe 与告警策略，默认由派生项目按实际部署方式决定。

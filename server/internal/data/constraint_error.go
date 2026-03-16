@@ -19,7 +19,7 @@ func isDuplicateUniqueConstraint(err error, keys ...string) bool {
 		return false
 	}
 
-	// 仅识别“唯一键冲突”语义，避免把外键等其他约束错误误判为“名称重复”。
+	// 仅识别“唯一键冲突”语义，兼容 Postgres/Ent 的 duplicate/unique 文案，避免把外键等其他约束错误误判为“名称重复”。
 	msg := strings.ToLower(err.Error())
 	if !strings.Contains(msg, "duplicate") && !strings.Contains(msg, "unique") {
 		return false

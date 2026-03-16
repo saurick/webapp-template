@@ -25,11 +25,11 @@ SMOKE_CHECK_ORIGIN="${SMOKE_CHECK_ORIGIN:-remote}"
 PRE_DEPLOY_PREFLIGHT="${PRE_DEPLOY_PREFLIGHT:-on}"
 PREFLIGHT_MIN_MEM_AVAILABLE_MB="${PREFLIGHT_MIN_MEM_AVAILABLE_MB:-640}"
 PREFLIGHT_MAX_ROOT_USAGE_PCT="${PREFLIGHT_MAX_ROOT_USAGE_PCT:-90}"
-PREFLIGHT_FAIL_ON_MYSQL_UNHEALTHY="${PREFLIGHT_FAIL_ON_MYSQL_UNHEALTHY:-1}"
-PREFLIGHT_MYSQL_CONTAINER_NAME="${PREFLIGHT_MYSQL_CONTAINER_NAME:-${PROJECT_SLUG}-mysql}"
+PREFLIGHT_FAIL_ON_POSTGRES_UNHEALTHY="${PREFLIGHT_FAIL_ON_POSTGRES_UNHEALTHY:-1}"
+PREFLIGHT_POSTGRES_CONTAINER_NAME="${PREFLIGHT_POSTGRES_CONTAINER_NAME:-${PROJECT_SLUG}-postgres}"
 
 usage() {
-  cat <<'EOF'
+	cat <<'EOF'
 用法:
   sh publish_server.sh
 
@@ -60,21 +60,21 @@ usage() {
   PRE_DEPLOY_PREFLIGHT 是否执行远端资源预检（on/off，默认 on）
   PREFLIGHT_MIN_MEM_AVAILABLE_MB 远端最小可用内存 MB（默认 640）
   PREFLIGHT_MAX_ROOT_USAGE_PCT 远端根分区最大占用百分比（默认 90）
-  PREFLIGHT_FAIL_ON_MYSQL_UNHEALTHY mysql 非 healthy 时是否中断（1=中断，默认 1）
-  PREFLIGHT_MYSQL_CONTAINER_NAME 预检使用的 mysql 容器名（默认 ${PROJECT_SLUG}-mysql）
+  PREFLIGHT_FAIL_ON_POSTGRES_UNHEALTHY postgres 非 healthy 时是否中断（1=中断，默认 1）
+  PREFLIGHT_POSTGRES_CONTAINER_NAME 预检使用的 postgres 容器名（默认 ${PROJECT_SLUG}-postgres）
 EOF
 }
 
 if [ "${1:-}" = "--help" ] || [ "${1:-}" = "-h" ]; then
-  usage
-  exit 0
+	usage
+	exit 0
 fi
 
 check_cmd() {
-  if ! command -v "$1" >/dev/null 2>&1; then
-    echo "ERROR: 未找到命令: $1" >&2
-    exit 1
-  fi
+	if ! command -v "$1" >/dev/null 2>&1; then
+		echo "ERROR: 未找到命令: $1" >&2
+		exit 1
+	fi
 }
 
 check_cmd make
@@ -82,41 +82,40 @@ check_cmd docker
 check_cmd rsync
 check_cmd ssh
 if [ "$AUTO_SMOKE" != "off" ]; then
-  check_cmd curl
+	check_cmd curl
 fi
 
 if [ ! -f "$SERVER_DIR/Makefile" ]; then
-  echo "ERROR: 未找到 server/Makefile: $SERVER_DIR/Makefile" >&2
-  exit 1
+	echo "ERROR: 未找到 server/Makefile: $SERVER_DIR/Makefile" >&2
+	exit 1
 fi
 
 # 兼容性兜底：目标主机改为显式传入，避免模板派生项目沿用过期宿主机地址。
 if [ -z "$REMOTE_HOST" ]; then
-  echo "ERROR: 请显式设置 REMOTE_HOST，例如 export REMOTE_HOST=deploy.example.com" >&2
-  exit 1
+	echo "ERROR: 请显式设置 REMOTE_HOST，例如 export REMOTE_HOST=deploy.example.com" >&2
+	exit 1
 fi
 
 REMOTE_TARGET="${REMOTE_USER}@${REMOTE_HOST}"
 REMOTE_IMAGE_TAR_NAME=$(basename "$IMAGE_TAR")
 
 run_remote_preflight() {
-  if [ "$PRE_DEPLOY_PREFLIGHT" = "off" ]; then
-    echo "==> [0/6] 跳过远端资源预检（PRE_DEPLOY_PREFLIGHT=off）"
-    return 0
-  fi
+	if [ "$PRE_DEPLOY_PREFLIGHT" = "off" ]; then
+		echo "==> [0/6] 跳过远端资源预检（PRE_DEPLOY_PREFLIGHT=off）"
+		return 0
+	fi
 
-  case "$PRE_DEPLOY_PREFLIGHT" in
-  on)
-    ;;
-  *)
-    echo "ERROR: PRE_DEPLOY_PREFLIGHT 仅支持 on/off，当前为 $PRE_DEPLOY_PREFLIGHT" >&2
-    exit 1
-    ;;
-  esac
+	case "$PRE_DEPLOY_PREFLIGHT" in
+	on) ;;
+	*)
+		echo "ERROR: PRE_DEPLOY_PREFLIGHT 仅支持 on/off，当前为 $PRE_DEPLOY_PREFLIGHT" >&2
+		exit 1
+		;;
+	esac
 
-  echo "==> [0/6] 远端资源预检"
-  ssh "$REMOTE_TARGET" \
-    "MIN_MEM_MB='${PREFLIGHT_MIN_MEM_AVAILABLE_MB}' MAX_ROOT_PCT='${PREFLIGHT_MAX_ROOT_USAGE_PCT}' FAIL_ON_MYSQL='${PREFLIGHT_FAIL_ON_MYSQL_UNHEALTHY}' MYSQL_CONTAINER='${PREFLIGHT_MYSQL_CONTAINER_NAME}' sh -s" <<'EOF'
+	echo "==> [0/6] 远端资源预检"
+	ssh "$REMOTE_TARGET" \
+		"MIN_MEM_MB='${PREFLIGHT_MIN_MEM_AVAILABLE_MB}' MAX_ROOT_PCT='${PREFLIGHT_MAX_ROOT_USAGE_PCT}' FAIL_ON_POSTGRES='${PREFLIGHT_FAIL_ON_POSTGRES_UNHEALTHY}' POSTGRES_CONTAINER='${PREFLIGHT_POSTGRES_CONTAINER_NAME}' sh -s" <<'EOF'
 set -eu
 
 mem_available_kb=$(awk '/MemAvailable:/ {print $2}' /proc/meminfo)
@@ -132,14 +131,14 @@ if [ -z "$root_usage_pct" ]; then
   exit 12
 fi
 
-mysql_status="missing"
-if [ -n "$MYSQL_CONTAINER" ] && docker inspect "$MYSQL_CONTAINER" >/dev/null 2>&1; then
-  mysql_status=$(docker inspect -f '{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}' "$MYSQL_CONTAINER" 2>/dev/null || echo unknown)
+postgres_status="missing"
+if [ -n "$POSTGRES_CONTAINER" ] && docker inspect "$POSTGRES_CONTAINER" >/dev/null 2>&1; then
+  postgres_status=$(docker inspect -f '{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}' "$POSTGRES_CONTAINER" 2>/dev/null || echo unknown)
 fi
 
 echo "  [INFO] MemAvailable=${mem_available_mb}MB"
 echo "  [INFO] RootUsage=${root_usage_pct}%"
-echo "  [INFO] ${MYSQL_CONTAINER:-mysql}=${mysql_status}"
+echo "  [INFO] ${POSTGRES_CONTAINER:-postgres}=${postgres_status}"
 
 if [ "$mem_available_mb" -lt "$MIN_MEM_MB" ]; then
   echo "ERROR: 远端可用内存不足（${mem_available_mb}MB < ${MIN_MEM_MB}MB），中止部署。" >&2
@@ -151,133 +150,132 @@ if [ "$root_usage_pct" -gt "$MAX_ROOT_PCT" ]; then
   exit 22
 fi
 
-if [ "$FAIL_ON_MYSQL" = "1" ] && [ "$mysql_status" != "healthy" ] && [ "$mysql_status" != "missing" ]; then
-  echo "ERROR: ${MYSQL_CONTAINER} 当前不是 healthy（${mysql_status}），中止部署。" >&2
+if [ "$FAIL_ON_POSTGRES" = "1" ] && [ "$postgres_status" != "healthy" ] && [ "$postgres_status" != "missing" ]; then
+  echo "ERROR: ${POSTGRES_CONTAINER} 当前不是 healthy（${postgres_status}），中止部署。" >&2
   exit 23
 fi
 EOF
 }
 
 collect_changed_files() {
-  if ! command -v git >/dev/null 2>&1; then
-    return 0
-  fi
+	if ! command -v git >/dev/null 2>&1; then
+		return 0
+	fi
 
-  if ! git -C "$REPO_ROOT" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
-    return 0
-  fi
+	if ! git -C "$REPO_ROOT" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+		return 0
+	fi
 
-  {
-    if git -C "$REPO_ROOT" rev-parse --verify HEAD >/dev/null 2>&1 &&
-      git -C "$REPO_ROOT" rev-parse --verify HEAD~1 >/dev/null 2>&1; then
-      git -C "$REPO_ROOT" diff --name-only HEAD~1..HEAD || true
-    fi
-    git -C "$REPO_ROOT" status --porcelain 2>/dev/null | sed -E 's/^.. //'
-  } | awk 'NF' | sort -u
+	{
+		if git -C "$REPO_ROOT" rev-parse --verify HEAD >/dev/null 2>&1 &&
+			git -C "$REPO_ROOT" rev-parse --verify HEAD~1 >/dev/null 2>&1; then
+			git -C "$REPO_ROOT" diff --name-only HEAD~1..HEAD || true
+		fi
+		git -C "$REPO_ROOT" status --porcelain 2>/dev/null | sed -E 's/^.. //'
+	} | awk 'NF' | sort -u
 }
 
 resolve_smoke_mode() {
-  changed_files="$1"
-  case "$AUTO_SMOKE" in
-  off | basic | strict)
-    echo "$AUTO_SMOKE"
-    return
-    ;;
-  auto)
-    ;;
-  *)
-    echo "ERROR: AUTO_SMOKE 仅支持 off/basic/auto/strict，当前为 $AUTO_SMOKE" >&2
-    exit 1
-    ;;
-  esac
+	changed_files="$1"
+	case "$AUTO_SMOKE" in
+	off | basic | strict)
+		echo "$AUTO_SMOKE"
+		return
+		;;
+	auto) ;;
+	*)
+		echo "ERROR: AUTO_SMOKE 仅支持 off/basic/auto/strict，当前为 $AUTO_SMOKE" >&2
+		exit 1
+		;;
+	esac
 
-  if printf '%s\n' "$changed_files" | grep -Eq '^(server/internal/|server/cmd/|server/configs/|server/api/|server/internal/data/model/migrate/|server/go\.mod$|server/go\.sum$|server/Dockerfile$|server/deploy/compose/prod/compose\.yml$)'; then
-    echo "strict"
-    return
-  fi
+	if printf '%s\n' "$changed_files" | grep -Eq '^(server/internal/|server/cmd/|server/configs/|server/api/|server/internal/data/model/migrate/|server/go\.mod$|server/go\.sum$|server/Dockerfile$|server/deploy/compose/prod/compose\.yml$)'; then
+		echo "strict"
+		return
+	fi
 
-  echo "basic"
+	echo "basic"
 }
 
 run_http_check() {
-  check_name="$1"
-  check_url="$2"
-  remote_url=$(printf '%s' "$check_url" | sed "s#^http://${REMOTE_HOST}#http://127.0.0.1#")
+	check_name="$1"
+	check_url="$2"
+	remote_url=$(printf '%s' "$check_url" | sed "s#^http://${REMOTE_HOST}#http://127.0.0.1#")
 
-  case "$SMOKE_CHECK_ORIGIN" in
-  remote)
-    if ssh "$REMOTE_TARGET" "curl -fsS -m ${SMOKE_TIMEOUT} '${remote_url}' >/dev/null"; then
-      echo "  [OK] ${check_name}: ${remote_url} (remote)"
-      return 0
-    fi
-    ;;
-  local)
-    if curl -fsS -m "$SMOKE_TIMEOUT" "$check_url" >/dev/null; then
-      echo "  [OK] ${check_name}: ${check_url} (local)"
-      return 0
-    fi
-    ;;
-  both)
-    if ssh "$REMOTE_TARGET" "curl -fsS -m ${SMOKE_TIMEOUT} '${remote_url}' >/dev/null"; then
-      echo "  [OK] ${check_name}: ${remote_url} (remote)"
-      return 0
-    fi
-    if curl -fsS -m "$SMOKE_TIMEOUT" "$check_url" >/dev/null; then
-      echo "  [OK] ${check_name}: ${check_url} (local)"
-      return 0
-    fi
-    ;;
-  *)
-    echo "ERROR: SMOKE_CHECK_ORIGIN 仅支持 remote/local/both，当前为 $SMOKE_CHECK_ORIGIN" >&2
-    return 1
-    ;;
-  esac
+	case "$SMOKE_CHECK_ORIGIN" in
+	remote)
+		if ssh "$REMOTE_TARGET" "curl -fsS -m ${SMOKE_TIMEOUT} '${remote_url}' >/dev/null"; then
+			echo "  [OK] ${check_name}: ${remote_url} (remote)"
+			return 0
+		fi
+		;;
+	local)
+		if curl -fsS -m "$SMOKE_TIMEOUT" "$check_url" >/dev/null; then
+			echo "  [OK] ${check_name}: ${check_url} (local)"
+			return 0
+		fi
+		;;
+	both)
+		if ssh "$REMOTE_TARGET" "curl -fsS -m ${SMOKE_TIMEOUT} '${remote_url}' >/dev/null"; then
+			echo "  [OK] ${check_name}: ${remote_url} (remote)"
+			return 0
+		fi
+		if curl -fsS -m "$SMOKE_TIMEOUT" "$check_url" >/dev/null; then
+			echo "  [OK] ${check_name}: ${check_url} (local)"
+			return 0
+		fi
+		;;
+	*)
+		echo "ERROR: SMOKE_CHECK_ORIGIN 仅支持 remote/local/both，当前为 $SMOKE_CHECK_ORIGIN" >&2
+		return 1
+		;;
+	esac
 
-  echo "ERROR: 检查失败 -> ${check_name}: remote=${remote_url}, local=${check_url}" >&2
-  return 1
+	echo "ERROR: 检查失败 -> ${check_name}: remote=${remote_url}, local=${check_url}" >&2
+	return 1
 }
 
 run_smoke_check() {
-  smoke_mode="$1"
-  base_url="http://${REMOTE_HOST}"
+	smoke_mode="$1"
+	base_url="http://${REMOTE_HOST}"
 
-  if [ "$smoke_mode" = "off" ]; then
-    echo "==> [6/6] 跳过部署后检查（AUTO_SMOKE=off）"
-    return 0
-  fi
+	if [ "$smoke_mode" = "off" ]; then
+		echo "==> [6/6] 跳过部署后检查（AUTO_SMOKE=off）"
+		return 0
+	fi
 
-  echo "==> [6/6] 部署后检查（mode=${smoke_mode}）"
-  run_http_check "业务 healthz" "${base_url}:${SIM_HTTP_PORT}${HEALTH_PATH}"
-  run_http_check "业务 readyz" "${base_url}:${SIM_HTTP_PORT}${READY_PATH}"
-  if [ -n "$SIM_ADMIN_HTTP_PORT" ]; then
-    run_http_check "管理 healthz" "${base_url}:${SIM_ADMIN_HTTP_PORT}${HEALTH_PATH}"
-    run_http_check "管理 readyz" "${base_url}:${SIM_ADMIN_HTTP_PORT}${READY_PATH}"
-  fi
+	echo "==> [6/6] 部署后检查（mode=${smoke_mode}）"
+	run_http_check "业务 healthz" "${base_url}:${SIM_HTTP_PORT}${HEALTH_PATH}"
+	run_http_check "业务 readyz" "${base_url}:${SIM_HTTP_PORT}${READY_PATH}"
+	if [ -n "$SIM_ADMIN_HTTP_PORT" ]; then
+		run_http_check "管理 healthz" "${base_url}:${SIM_ADMIN_HTTP_PORT}${HEALTH_PATH}"
+		run_http_check "管理 readyz" "${base_url}:${SIM_ADMIN_HTTP_PORT}${READY_PATH}"
+	fi
 
-  echo "  [INFO] 远端容器状态:"
-  ssh "$REMOTE_TARGET" "docker ps --filter name=^/${SMOKE_CONTAINER_NAME}$ --format '{{.Names}} {{.Image}} {{.Status}}'"
+	echo "  [INFO] 远端容器状态:"
+	ssh "$REMOTE_TARGET" "docker ps --filter name=^/${SMOKE_CONTAINER_NAME}$ --format '{{.Names}} {{.Image}} {{.Status}}'"
 
-  if [ "$smoke_mode" != "strict" ]; then
-    return 0
-  fi
+	if [ "$smoke_mode" != "strict" ]; then
+		return 0
+	fi
 
-  run_http_check "业务首页" "${base_url}:${SIM_HTTP_PORT}/"
-  if [ -n "$SIM_ADMIN_HTTP_PORT" ]; then
-    run_http_check "管理首页" "${base_url}:${SIM_ADMIN_HTTP_PORT}/"
-  fi
+	run_http_check "业务首页" "${base_url}:${SIM_HTTP_PORT}/"
+	if [ -n "$SIM_ADMIN_HTTP_PORT" ]; then
+		run_http_check "管理首页" "${base_url}:${SIM_ADMIN_HTTP_PORT}/"
+	fi
 
-  container_started_at=$(ssh "$REMOTE_TARGET" "docker inspect -f '{{.State.StartedAt}}' ${SMOKE_CONTAINER_NAME} 2>/dev/null" || true)
-  if [ -n "$container_started_at" ]; then
-    remote_logs=$(ssh "$REMOTE_TARGET" "docker logs --since '${container_started_at}' ${SMOKE_CONTAINER_NAME} 2>&1" || true)
-  else
-    remote_logs=$(ssh "$REMOTE_TARGET" "docker logs --tail 200 ${SMOKE_CONTAINER_NAME} 2>&1" || true)
-  fi
-  if printf '%s\n' "$remote_logs" | grep -Eiq 'panic|fatal'; then
-    echo "ERROR: 严格检查发现日志中包含 panic/fatal，请人工确认。" >&2
-    printf '%s\n' "$remote_logs" | tail -n 40 >&2
-    return 1
-  fi
-  echo "  [OK] 严格日志检查通过（tail 200 未发现 panic/fatal）"
+	container_started_at=$(ssh "$REMOTE_TARGET" "docker inspect -f '{{.State.StartedAt}}' ${SMOKE_CONTAINER_NAME} 2>/dev/null" || true)
+	if [ -n "$container_started_at" ]; then
+		remote_logs=$(ssh "$REMOTE_TARGET" "docker logs --since '${container_started_at}' ${SMOKE_CONTAINER_NAME} 2>&1" || true)
+	else
+		remote_logs=$(ssh "$REMOTE_TARGET" "docker logs --tail 200 ${SMOKE_CONTAINER_NAME} 2>&1" || true)
+	fi
+	if printf '%s\n' "$remote_logs" | grep -Eiq 'panic|fatal'; then
+		echo "ERROR: 严格检查发现日志中包含 panic/fatal，请人工确认。" >&2
+		printf '%s\n' "$remote_logs" | tail -n 40 >&2
+		return 1
+	fi
+	echo "  [OK] 严格日志检查通过（tail 200 未发现 panic/fatal）"
 }
 
 run_remote_preflight
@@ -304,15 +302,15 @@ CHANGED_FILES=$(collect_changed_files || true)
 CHANGED_COUNT=$(printf '%s\n' "$CHANGED_FILES" | awk 'NF{n++} END{print n+0}')
 SMOKE_MODE=$(resolve_smoke_mode "$CHANGED_FILES")
 if [ "$AUTO_SMOKE" = "auto" ]; then
-  echo "==> 自动判定部署后检查模式: ${SMOKE_MODE}（变更文件 ${CHANGED_COUNT} 个）"
-  if [ "$CHANGED_COUNT" -gt 0 ]; then
-    printf '%s\n' "$CHANGED_FILES" | sed -n '1,20p' | sed 's/^/  - /'
-    if [ "$CHANGED_COUNT" -gt 20 ]; then
-      echo "  ...（其余省略）"
-    fi
-  fi
+	echo "==> 自动判定部署后检查模式: ${SMOKE_MODE}（变更文件 ${CHANGED_COUNT} 个）"
+	if [ "$CHANGED_COUNT" -gt 0 ]; then
+		printf '%s\n' "$CHANGED_FILES" | sed -n '1,20p' | sed 's/^/  - /'
+		if [ "$CHANGED_COUNT" -gt 20 ]; then
+			echo "  ...（其余省略）"
+		fi
+	fi
 else
-  echo "==> 使用指定部署后检查模式: ${SMOKE_MODE}"
+	echo "==> 使用指定部署后检查模式: ${SMOKE_MODE}"
 fi
 run_smoke_check "$SMOKE_MODE"
 

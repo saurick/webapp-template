@@ -1,22 +1,22 @@
+name: webapp-template-prod
+
 services:
-  mysql:
-    image: mysql:8
-    container_name: "${PROJECT_SLUG:-webapp-template}-mysql"
+  postgres:
+    image: postgres:18
+    container_name: "${PROJECT_SLUG:-webapp-template}-postgres"
     restart: always
     ports:
-      - "${MYSQL_PORT:-3307}:3306"
+      - "${POSTGRES_PORT:-5433}:5432"
     environment:
-      MYSQL_ROOT_PASSWORD: "${MYSQL_ROOT_PASSWORD:-YP*H%k%a7xK1*q}"
-      MYSQL_DATABASE: "${MYSQL_DATABASE:-test_database_atlas}"
-      MYSQL_USER: "${MYSQL_USER:-test_user}"
-      MYSQL_PASSWORD: "${MYSQL_PASSWORD:-2@&0kq%qFafA4d}"
-    mem_limit: "${MYSQL_MEM_LIMIT:-512m}"
-    mem_reservation: "${MYSQL_MEM_RESERVATION:-256m}"
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:-YP*H%k%a7xK1*q}"
+      POSTGRES_DB: "${POSTGRES_DB:-test_database_atlas}"
+      POSTGRES_USER: "${POSTGRES_USER:-postgres}"
+    mem_limit: "${POSTGRES_MEM_LIMIT:-512m}"
+    mem_reservation: "${POSTGRES_MEM_RESERVATION:-256m}"
     volumes:
-      - "${MYSQL_DATA_DIR:-/data/your-project/mysql/data}:/var/lib/mysql"
-      - "${MYSQL_CONF_FILE:-/data/your-project/mysql/conf/mysql8.cnf}:/etc/mysql/conf.d/mysql8.cnf:ro"
+      - "${POSTGRES_DATA_DIR:-/data/your-project/postgres/data}:/var/lib/postgresql/data"
     healthcheck:
-      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p\"$${MYSQL_ROOT_PASSWORD}\" --silent"]
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -p 5432 -U \"$${POSTGRES_USER}\" -d \"$${POSTGRES_DB}\""]
       interval: 5s
       timeout: 3s
       retries: 20
@@ -51,7 +51,7 @@ services:
     container_name: "${PROJECT_SLUG:-webapp-template}-server"
     restart: always
     depends_on:
-      mysql:
+      postgres:
         condition: service_healthy
       jaeger:
         condition: service_started
@@ -61,7 +61,7 @@ services:
     environment:
       TZ: "${TZ:-Asia/Shanghai}"
       # 设计意图：默认 DSN 必须与本项目 prod 配置保持一致，避免 .env 未显式覆盖时误连占位库名或占位密码。
-      MYSQL_DSN: "${MYSQL_DSN:-root:YP*H%k%a7xK1*q@tcp(mysql:3306)/test_database_atlas?charset=utf8mb4&parseTime=True&loc=Local&interpolateParams=true}"
+      POSTGRES_DSN: "${POSTGRES_DSN:-postgres://postgres:YP%2AH%25k%25a7xK1%2Aq@postgres:5432/test_database_atlas?sslmode=disable}"
       TRACE_ENDPOINT: "${TRACE_ENDPOINT:-jaeger:4318}"
     mem_limit: "${APP_MEM_LIMIT:-192m}"
     mem_reservation: "${APP_MEM_RESERVATION:-96m}"

@@ -49,10 +49,10 @@
 - `endpoint` 为空时，服务仍能启动，只是使用本地无 exporter 的 tracer provider。
 - 模板当前通过 OTLP HTTP exporter 发 trace，不要求一定叫 Jaeger；如果派生项目改用其他 OTLP 兼容后端，只需替换 endpoint 和服务名即可。
 
-## `data.mysql`
+## `data.postgres`
 
-- `data.mysql.dsn`
-- `data.mysql.debug`
+- `data.postgres.dsn`
+- `data.postgres.debug`
 
 说明：
 
@@ -84,7 +84,7 @@
 
 以下内容不应直接进入交付项目：
 
-- `data.mysql.dsn`
+- `data.postgres.dsn`
 - `data.auth.jwtSecret`
 - `data.auth.admin.username`
 - `data.auth.admin.password`
@@ -95,11 +95,11 @@
 
 - 本地开发：
   - `log.debug=true`
-  - `data.mysql.debug=true`
+  - `data.postgres.debug=true`
   - `trace.jaeger.ratio=1`
 - 生产环境：
   - `log.debug=false`
-  - `data.mysql.debug=false`
+  - `data.postgres.debug=false`
   - `trace.jaeger.ratio` 按观测成本控制
 
 ## 额外建议

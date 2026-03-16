@@ -39,7 +39,7 @@ func (r *authRepo) GetUserByUsername(ctx context.Context, username string) (*biz
 		return nil, errors.New("username is required")
 	}
 
-	u, err := r.data.mysql.User.
+	u, err := r.data.postgres.User.
 		Query().
 		Where(entuser.Username(username)).
 		Only(ctx)
@@ -73,7 +73,7 @@ func (r *authRepo) GetUserByID(ctx context.Context, id int) (*biz.User, error) {
 		return nil, errors.New("user id is required")
 	}
 
-	u, err := r.data.mysql.User.
+	u, err := r.data.postgres.User.
 		Query().
 		Where(entuser.ID(id)).
 		Only(ctx)
@@ -114,7 +114,7 @@ func (r *authRepo) CreateUser(ctx context.Context, in *biz.User) (*biz.User, err
 		return nil, biz.ErrUserExists
 	}
 
-	m := r.data.mysql.User.
+	m := r.data.postgres.User.
 		Create().
 		SetUsername(in.Username).
 		SetPasswordHash(in.PasswordHash)
@@ -144,7 +144,7 @@ func (r *authRepo) CreateUser(ctx context.Context, in *biz.User) (*biz.User, err
 func (r *authRepo) UpdateUserLastLogin(ctx context.Context, id int, t time.Time) error {
 	l := r.log.WithContext(ctx)
 
-	_, err := r.data.mysql.User.
+	_, err := r.data.postgres.User.
 		UpdateOneID(id).
 		SetLastLoginAt(t).
 		SetUpdatedAt(time.Now()).
@@ -161,7 +161,7 @@ func (r *authRepo) isUsernameUsedByAdmin(ctx context.Context, username string) (
 	if username == "" {
 		return false, nil
 	}
-	return r.data.mysql.AdminUser.
+	return r.data.postgres.AdminUser.
 		Query().
 		Where(entadminuser.Username(username)).
 		Exist(ctx)

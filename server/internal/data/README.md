@@ -4,7 +4,7 @@
 
 当前模板默认保留：
 
-- MySQL 初始化与重试
+- PostgreSQL 初始化与重试
 - Ent ORM 访问
 - 用户 / 管理员鉴权 repo
 - 后台账号目录 repo

@@ -144,7 +144,7 @@ func (x *Server) GetGrpc() *Server_GRPC {
 
 type Data struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Mysql         *Data_Mysql            `protobuf:"bytes,1,opt,name=mysql,proto3" json:"mysql,omitempty"`
+	Postgres      *Data_Postgres         `protobuf:"bytes,1,opt,name=postgres,proto3" json:"postgres,omitempty"`
 	Etcd          *Data_Etcd             `protobuf:"bytes,2,opt,name=etcd,proto3" json:"etcd,omitempty"`
 	Auth          *Data_Auth             `protobuf:"bytes,3,opt,name=auth,proto3" json:"auth,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -181,9 +181,9 @@ func (*Data) Descriptor() ([]byte, []int) {
 	return file_conf_conf_proto_rawDescGZIP(), []int{2}
 }
 
-func (x *Data) GetMysql() *Data_Mysql {
+func (x *Data) GetPostgres() *Data_Postgres {
 	if x != nil {
-		return x.Mysql
+		return x.Postgres
 	}
 	return nil
 }
@@ -454,7 +454,7 @@ func (x *Server_GRPC) GetTimeout() *durationpb.Duration {
 	return nil
 }
 
-type Data_Mysql struct {
+type Data_Postgres struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Dsn           string                 `protobuf:"bytes,1,opt,name=dsn,proto3" json:"dsn,omitempty"`
 	Debug         bool                   `protobuf:"varint,2,opt,name=debug,proto3" json:"debug,omitempty"`
@@ -462,20 +462,20 @@ type Data_Mysql struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *Data_Mysql) Reset() {
-	*x = Data_Mysql{}
+func (x *Data_Postgres) Reset() {
+	*x = Data_Postgres{}
 	mi := &file_conf_conf_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *Data_Mysql) String() string {
+func (x *Data_Postgres) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*Data_Mysql) ProtoMessage() {}
+func (*Data_Postgres) ProtoMessage() {}
 
-func (x *Data_Mysql) ProtoReflect() protoreflect.Message {
+func (x *Data_Postgres) ProtoReflect() protoreflect.Message {
 	mi := &file_conf_conf_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -487,19 +487,19 @@ func (x *Data_Mysql) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use Data_Mysql.ProtoReflect.Descriptor instead.
-func (*Data_Mysql) Descriptor() ([]byte, []int) {
+// Deprecated: Use Data_Postgres.ProtoReflect.Descriptor instead.
+func (*Data_Postgres) Descriptor() ([]byte, []int) {
 	return file_conf_conf_proto_rawDescGZIP(), []int{2, 0}
 }
 
-func (x *Data_Mysql) GetDsn() string {
+func (x *Data_Postgres) GetDsn() string {
 	if x != nil {
 		return x.Dsn
 	}
 	return ""
 }
 
-func (x *Data_Mysql) GetDebug() bool {
+func (x *Data_Postgres) GetDebug() bool {
 	if x != nil {
 		return x.Debug
 	}
@@ -795,12 +795,12 @@ const file_conf_conf_proto_rawDesc = "" +
 	"\x04GRPC\x12\x18\n" +
 	"\anetwork\x18\x01 \x01(\tR\anetwork\x12\x12\n" +
 	"\x04addr\x18\x02 \x01(\tR\x04addr\x123\n" +
-	"\atimeout\x18\x03 \x01(\v2\x19.google.protobuf.DurationR\atimeout\"\xa6\x03\n" +
-	"\x04Data\x12,\n" +
-	"\x05mysql\x18\x01 \x01(\v2\x16.kratos.api.Data.MysqlR\x05mysql\x12)\n" +
+	"\atimeout\x18\x03 \x01(\v2\x19.google.protobuf.DurationR\atimeout\"\xb2\x03\n" +
+	"\x04Data\x125\n" +
+	"\bpostgres\x18\x01 \x01(\v2\x19.kratos.api.Data.PostgresR\bpostgres\x12)\n" +
 	"\x04etcd\x18\x02 \x01(\v2\x15.kratos.api.Data.EtcdR\x04etcd\x12)\n" +
-	"\x04auth\x18\x03 \x01(\v2\x15.kratos.api.Data.AuthR\x04auth\x1a/\n" +
-	"\x05Mysql\x12\x10\n" +
+	"\x04auth\x18\x03 \x01(\v2\x15.kratos.api.Data.AuthR\x04auth\x1a2\n" +
+	"\bPostgres\x12\x10\n" +
 	"\x03dsn\x18\x01 \x01(\tR\x03dsn\x12\x14\n" +
 	"\x05debug\x18\x02 \x01(\bR\x05debug\x1a\x1c\n" +
 	"\x04Etcd\x12\x14\n" +
@@ -848,7 +848,7 @@ var file_conf_conf_proto_goTypes = []any{
 	(*Notify)(nil),              // 5: kratos.api.Notify
 	(*Server_HTTP)(nil),         // 6: kratos.api.Server.HTTP
 	(*Server_GRPC)(nil),         // 7: kratos.api.Server.GRPC
-	(*Data_Mysql)(nil),          // 8: kratos.api.Data.Mysql
+	(*Data_Postgres)(nil),       // 8: kratos.api.Data.Postgres
 	(*Data_Etcd)(nil),           // 9: kratos.api.Data.Etcd
 	(*Data_Auth)(nil),           // 10: kratos.api.Data.Auth
 	(*Data_Auth_Admin)(nil),     // 11: kratos.api.Data.Auth.Admin
@@ -863,7 +863,7 @@ var file_conf_conf_proto_depIdxs = []int32{
 	4,  // 3: kratos.api.Bootstrap.log:type_name -> kratos.api.Log
 	6,  // 4: kratos.api.Server.http:type_name -> kratos.api.Server.HTTP
 	7,  // 5: kratos.api.Server.grpc:type_name -> kratos.api.Server.GRPC
-	8,  // 6: kratos.api.Data.mysql:type_name -> kratos.api.Data.Mysql
+	8,  // 6: kratos.api.Data.postgres:type_name -> kratos.api.Data.Postgres
 	9,  // 7: kratos.api.Data.etcd:type_name -> kratos.api.Data.Etcd
 	10, // 8: kratos.api.Data.auth:type_name -> kratos.api.Data.Auth
 	12, // 9: kratos.api.Trace.jaeger:type_name -> kratos.api.Trace.Jaeger

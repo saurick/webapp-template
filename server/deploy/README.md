@@ -5,7 +5,7 @@
 - `compose/prod/`：单机或单宿主机的 Docker Compose 模板
 - `dev/`、`prod/`：Kubernetes 环境模板，分别对应开发与生产基线
 - `dashboard/`：可选的 Kubernetes Dashboard 辅助清单
-- `confs/mysql8.cnf`：Compose 场景下可复用的 MySQL 配置样例
+- Compose 模板当前默认使用 `postgres:18` 作为数据库基线
 
 ## 目录说明
 

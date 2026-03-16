@@ -24,9 +24,9 @@ data:
         ratio: 1
 
     data:
-      mysql:
+      postgres:
         debug: true
-        dsn: root:replace-me@tcp(mysql.your-project-dev.svc.cluster.local:3306)/app?charset=utf8mb4&parseTime=True&loc=Local&interpolateParams=true
+        dsn: postgres://postgres:replace-me@postgres.your-project-dev.svc.cluster.local:5432/app?sslmode=disable
       etcd:
         hosts:
           - etcd.your-project-dev.svc.cluster.local:2379

@@ -32,7 +32,7 @@ func InitAdminUsersIfNeeded(ctx context.Context, d *Data, cfg *conf.Data, l *log
 	var id int
 	err := d.sqldb.QueryRowContext(
 		ctx,
-		"SELECT id FROM admin_users WHERE username = ? LIMIT 1",
+		"SELECT id FROM admin_users WHERE username = $1 LIMIT 1",
 		username,
 	).Scan(&id)
 	if err == nil {
@@ -50,7 +50,7 @@ func InitAdminUsersIfNeeded(ctx context.Context, d *Data, cfg *conf.Data, l *log
 	now := time.Now()
 	_, err = d.sqldb.ExecContext(
 		ctx,
-		"INSERT INTO admin_users (username, password_hash, disabled, created_at, updated_at) VALUES (?, ?, 0, ?, ?)",
+		"INSERT INTO admin_users (username, password_hash, disabled, created_at, updated_at) VALUES ($1, $2, FALSE, $3, $4)",
 		username,
 		string(hash),
 		now,

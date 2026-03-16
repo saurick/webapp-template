@@ -205,12 +205,12 @@ func main() {
 	if dataCfg == nil {
 		panic(fmt.Errorf("bootstrap data config is nil, please check %s", confPath))
 	}
-	if dataCfg.Mysql == nil {
-		dataCfg.Mysql = &conf.Data_Mysql{}
+	if dataCfg.Postgres == nil {
+		dataCfg.Postgres = &conf.Data_Postgres{}
 	}
-	if v := strings.TrimSpace(os.Getenv("MYSQL_DSN")); v != "" {
+	if v := strings.TrimSpace(os.Getenv("POSTGRES_DSN")); v != "" {
 		// 关键兜底：只标记覆盖来源，不输出 DSN 明文，避免数据库密码进入日志。
-		dataCfg.Mysql.Dsn = v
+		dataCfg.Postgres.Dsn = v
 	}
 
 	// ===== 7. 组装应用（wireApp） =====

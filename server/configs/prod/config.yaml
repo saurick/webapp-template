@@ -25,10 +25,10 @@ trace:
 # 数据相关
 data:
   # 主数据库，保存核心数据
-  mysql:
+  postgres:
     # if true output sql
     debug: false
-    dsn: "root:YP*H%k%a7xK1*q@tcp(mysql:3306)/test_database_atlas?charset=utf8mb4&parseTime=True&loc=Local&interpolateParams=true"
+    dsn: "postgres://postgres:YP%2AH%25k%25a7xK1%2Aq@postgres:5432/test_database_atlas?sslmode=disable"
 
   # 缓存服务
   # redis:

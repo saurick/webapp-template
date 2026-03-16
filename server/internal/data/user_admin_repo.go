@@ -42,7 +42,7 @@ func (r *userAdminRepo) ListUsers(ctx context.Context, limit, offset int, userna
 
 	l.Infof("ListUsers start limit=%d offset=%d username_like=%q", limit, offset, usernameLike)
 
-	q := r.data.mysql.User.Query()
+	q := r.data.postgres.User.Query()
 	if usernameLike != "" {
 		q = q.Where(user.UsernameContains(usernameLike))
 	}
@@ -89,7 +89,7 @@ func (r *userAdminRepo) SetUserDisabled(ctx context.Context, userID int, disable
 		return biz.ErrBadParam
 	}
 
-	_, err := r.data.mysql.User.UpdateOneID(userID).SetDisabled(disabled).Save(ctx)
+	_, err := r.data.postgres.User.UpdateOneID(userID).SetDisabled(disabled).Save(ctx)
 	if err != nil {
 		if ent.IsNotFound(err) {
 			l.Warnf("SetUserDisabled not found user_id=%d", userID)

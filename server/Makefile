@@ -119,7 +119,7 @@ ent_migrate:
 	atlas migrate diff migrate \
 		--dir "file://internal/data/model/migrate" \
 		--to "ent://internal/data/model/schema" \
-		--dev-url "docker://mysql/8/ent"
+		--dev-url "docker://postgres/18/dev?search_path=public"
 
 # 重新计算迁移目录校验，如果改了 migration 的 sql 文件，必须重新计算校验，否则migrate_apply会报错，提示Error: checksum mismatch
 .PHONY: migrate_hash
@@ -148,7 +148,7 @@ migrate_apply:
 # 标记某个 migration 已应用（用于修复已手动执行但迁移状态未记录的情况）
 migrate_set:
 	@if [ -z "$$DB_URL" ]; then \
-		echo "ERROR: DB_URL is not set. Example: export DB_URL=mysql://user:pass@tcp(127.0.0.1:3306)/dbname?parseTime=true"; \
+		echo "ERROR: DB_URL is not set. Example: export DB_URL=postgres://postgres:password@127.0.0.1:5432/dbname?sslmode=disable"; \
 		exit 1; \
 	fi
 	@if [ -z "$$MIGRATE_VERSION" ]; then \
@@ -163,7 +163,7 @@ migrate_set:
 .PHONY: ent_generate
 # 用 ent generate 生成 ent 代码
 ent_generate:
-	cd internal/data/model && go generate && go mod tidy
+	go run -mod=mod entgo.io/ent/cmd/ent generate --target ./internal/data/model/ent ./internal/data/model/schema
 
 .PHONY: data
 # 最推荐流程：只生成 diff，不自动 apply
@@ -174,11 +174,12 @@ db_create:
 	@if [ -z "$$DB_URL" ]; then \
 		echo "ERROR: DB_URL is not set"; exit 1; \
 	fi
-	@# 从 DB_URL 里粗暴解析出 dbname（简单够用：取最后一个 / 后到 ? 前）
-	@DBNAME=$$(echo "$$DB_URL" | sed -E 's|.*/([^/?]+).*|\1|'); \
-	echo "Creating database $$DBNAME ..."; \
-	mysql -h 192.168.0.106 -P 3306 -uroot -p \
-	  -e "CREATE DATABASE IF NOT EXISTS \`$$DBNAME\` CHARACTER SET utf8mb4 COLLATE utf8mb4_bin;"
+	@python3 -c 'import sys, urllib.parse; u = urllib.parse.urlparse(sys.argv[1]); db = (u.path or "").lstrip("/"); admin = u._replace(path="/postgres"); print(db); print(urllib.parse.urlunparse(admin))' "$$DB_URL" | { \
+		read DBNAME; \
+		read ADMIN_URL; \
+		echo "Creating database $$DBNAME ..."; \
+		psql "$$ADMIN_URL" -v ON_ERROR_STOP=1 -c "CREATE DATABASE \"$$DBNAME\"" 2>/dev/null || psql "$$ADMIN_URL" -v ON_ERROR_STOP=1 -c "SELECT 1 FROM pg_database WHERE datname = '$$DBNAME'" >/dev/null; \
+	}
 
 # show help
 help:

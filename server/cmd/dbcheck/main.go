@@ -5,19 +5,20 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"net/url"
 	"os"
 	"strings"
 	"time"
 
-	_ "github.com/go-sql-driver/mysql"
+	_ "github.com/jackc/pgx/v5/stdlib"
 )
 
 // 默认参数：本机开发 / docker-compose
-// - 本机直接连 127.0.0.1:3306
-// - 在 compose 容器里跑的话，把 host 改成 mysql
+// - 本机直接连 127.0.0.1:5433
+// - 在 compose 容器里跑的话，把 host 改成 postgres
 const (
 	defaultHost = "127.0.0.1"
-	defaultPort = "3306"
+	defaultPort = "5433"
 	defaultDB   = "test_database_atlas"
 )
 
@@ -29,26 +30,27 @@ func getenv(key, def string) string {
 	return def
 }
 
-type mysqlAccount struct {
+type postgresAccount struct {
 	Name string
 	DSN  string
 }
 
 func main() {
-	host := getenv("MYSQL_HOST", defaultHost)
-	port := getenv("MYSQL_PORT", defaultPort)
-	db := getenv("MYSQL_DB", defaultDB)
+	host := getenv("POSTGRES_HOST", defaultHost)
+	port := getenv("POSTGRES_PORT", defaultPort)
+	db := getenv("POSTGRES_DB", defaultDB)
 
-	// 这三个账号按你现在的配置来
-	accounts := []mysqlAccount{
+	accounts := []postgresAccount{
 		{
-			Name: "root",
-			DSN:  fmt.Sprintf("root:%s@tcp(%s:%s)/%s?charset=utf8mb4&parseTime=true&loc=Local", getenv("MYSQL_ROOT_PASSWORD", "YP*H%k%a7xK1*q"), host, port, db),
+			Name: "postgres",
+			DSN:  buildPostgresDSN("postgres", getenv("POSTGRES_PASSWORD", "YP*H%k%a7xK1*q"), host, port, db),
 		},
-		{
-			Name: "test_user",
-			DSN:  fmt.Sprintf("test_user:%s@tcp(%s:%s)/%s?charset=utf8mb4&parseTime=true&loc=Local", getenv("MYSQL_TEST_PASSWORD", "2@&0kq%qFafA4d"), host, port, db),
-		},
+	}
+	if appUser := os.Getenv("POSTGRES_APP_USER"); appUser != "" {
+		accounts = append(accounts, postgresAccount{
+			Name: appUser,
+			DSN:  buildPostgresDSN(appUser, getenv("POSTGRES_APP_PASSWORD", ""), host, port, db),
+		})
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -56,10 +58,10 @@ func main() {
 
 	for _, acc := range accounts {
 		fmt.Println("-------------------------------------------------")
-		fmt.Printf("Testing MySQL account: %s\n", acc.Name)
+		fmt.Printf("Testing PostgreSQL account: %s\n", acc.Name)
 		fmt.Printf("DSN (masked): %s\n", maskPassword(acc.DSN))
 
-		if err := testMySQL(ctx, acc.DSN); err != nil {
+		if err := testPostgres(ctx, acc.DSN); err != nil {
 			fmt.Printf("❌ %s connect failed: %v\n", acc.Name, err)
 		} else {
 			fmt.Printf("✅ %s connect OK\n", acc.Name)
@@ -67,8 +69,19 @@ func main() {
 	}
 }
 
-func testMySQL(ctx context.Context, dsn string) error {
-	db, err := sql.Open("mysql", dsn)
+func buildPostgresDSN(user, password, host, port, db string) string {
+	return fmt.Sprintf(
+		"postgres://%s:%s@%s:%s/%s?sslmode=disable",
+		url.QueryEscape(user),
+		url.QueryEscape(password),
+		host,
+		port,
+		db,
+	)
+}
+
+func testPostgres(ctx context.Context, dsn string) error {
+	db, err := sql.Open("pgx", dsn)
 	if err != nil {
 		return fmt.Errorf("sql.Open: %w", err)
 	}
@@ -88,7 +101,7 @@ func testMySQL(ctx context.Context, dsn string) error {
 }
 
 func maskPassword(dsn string) string {
-	// 格式: user:pass@tcp(....)
+	// 格式: postgres://user:pass@host/db
 	// 思路:
 	//   1) 找到最后一个 '@' 作为“用户信息和地址的分界”
 	//   2) 在这个 @ 之前，找到最后一个 ':' 当成“密码起点”

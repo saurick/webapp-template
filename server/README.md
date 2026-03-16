@@ -4,7 +4,7 @@
 
 - Kratos
 - Ent + Atlas
-- MySQL
+- PostgreSQL
 - OpenTelemetry（可选）
 
 ## 架构分层

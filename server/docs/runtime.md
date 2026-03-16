@@ -45,7 +45,7 @@ go run ./cmd/server -conf ./configs/dev/config.yaml
 - `/healthz`
   - 进程级健康检查，返回 `ok`
 - `/readyz`
-  - 就绪检查，当前默认只检查 MySQL 连通性，成功返回 `ready`
+  - 就绪检查，当前默认只检查 PostgreSQL 连通性，成功返回 `ready`
 
 如果容器内存在静态目录，还会挂载前端静态资源：
 
@@ -65,7 +65,7 @@ go run ./cmd/server -conf ./configs/dev/config.yaml
 
 当前模板默认把以下项目视为启动硬依赖：
 
-- MySQL
+- PostgreSQL
 
 当前配置里虽然还保留了 `etcd` 字段，但默认代码路径并未实际初始化 etcd 客户端，因此它不是当前运行时的启动硬依赖。
 

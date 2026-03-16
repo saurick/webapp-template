@@ -17,7 +17,7 @@
 ## 模板健康检查边界
 
 - 本模板默认保留最小健康检查骨架：`/healthz`、`/readyz`、启动阶段的数据库就绪等待，以及 `compose` 中数据库服务的 `healthcheck + depends_on: service_healthy`。
-- 模板层默认只检查“最常见且几乎所有派生项目都会依赖”的硬依赖；当前通用基线是 MySQL，`/readyz` 不应预埋 Redis、MQ、OSS、第三方 API 等项目特有依赖。
+- 模板层默认只检查“最常见且几乎所有派生项目都会依赖”的硬依赖；当前通用基线是 PostgreSQL，`/readyz` 不应预埋 Redis、MQ、OSS、第三方 API 等项目特有依赖。
 - 模板层建议补齐健康检查的最小回归测试，以及 `readyz` 失败时的结构化日志；这些属于低成本高复用的基线能力。
 - 业务容器自身的 `compose healthcheck`、额外依赖的就绪检查、复杂 `/health/details`、K8s probe 与告警策略，默认下沉到派生项目按部署形态和真实依赖决定，不要在模板里过度预埋。
 - 若派生项目长期使用 `docker compose` 且日常运维依赖容器 `healthy/unhealthy` 状态，可在派生项目中为业务容器补 `healthcheck`；若仅做人工发布与最小巡检，可继续沿用模板默认骨架。

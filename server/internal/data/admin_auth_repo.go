@@ -42,7 +42,7 @@ func (r *adminAuthRepo) GetAdminByID(ctx context.Context, id int) (*biz.AdminUse
 
 	err := r.data.sqldb.QueryRowContext(
 		ctx,
-		"SELECT id, username, password_hash, disabled FROM admin_users WHERE id = ? LIMIT 1",
+		"SELECT id, username, password_hash, disabled FROM admin_users WHERE id = $1 LIMIT 1",
 		id,
 	).Scan(&adminID, &uname, &passwordHash, &disabled)
 	if err != nil {
@@ -78,7 +78,7 @@ func (r *adminAuthRepo) GetAdminByUsername(ctx context.Context, username string)
 
 	err := r.data.sqldb.QueryRowContext(
 		ctx,
-		"SELECT id, username, password_hash, disabled FROM admin_users WHERE username = ? LIMIT 1",
+		"SELECT id, username, password_hash, disabled FROM admin_users WHERE username = $1 LIMIT 1",
 		username,
 	).Scan(&id, &uname, &passwordHash, &disabled)
 	if err != nil {
@@ -105,7 +105,7 @@ func (r *adminAuthRepo) UpdateAdminLastLogin(ctx context.Context, id int, t time
 
 	_, err := r.data.sqldb.ExecContext(
 		ctx,
-		"UPDATE admin_users SET last_login_at = ?, updated_at = ? WHERE id = ?",
+		"UPDATE admin_users SET last_login_at = $1, updated_at = $2 WHERE id = $3",
 		t,
 		time.Now(),
 		id,
