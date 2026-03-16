@@ -8,13 +8,13 @@ services:
     ports:
       - "${POSTGRES_PORT:-5433}:5432"
     environment:
-      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:-YP*H%k%a7xK1*q}"
-      POSTGRES_DB: "${POSTGRES_DB:-test_database_atlas}"
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:-replace-me}"
+      POSTGRES_DB: "${POSTGRES_DB:-webapp_template}"
       POSTGRES_USER: "${POSTGRES_USER:-postgres}"
-    mem_limit: "${POSTGRES_MEM_LIMIT:-512m}"
-    mem_reservation: "${POSTGRES_MEM_RESERVATION:-256m}"
+    mem_limit: "${POSTGRES_MEM_LIMIT:-256m}"
+    mem_reservation: "${POSTGRES_MEM_RESERVATION:-128m}"
     volumes:
-      - "${POSTGRES_DATA_DIR:-/data/your-project/postgres/data}:/var/lib/postgresql/data"
+      - "${POSTGRES_DATA_DIR:-/data/your-project/postgres}:/var/lib/postgresql"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -p 5432 -U \"$${POSTGRES_USER}\" -d \"$${POSTGRES_DB}\""]
       interval: 5s
@@ -42,8 +42,10 @@ services:
       PROMETHEUS_QUERY_SUPPORT_SPANMETRICS_CONNECTOR: true
       METRICS_STORAGE_TYPE: prometheus
       PROMETHEUS_SERVER_URL: "${PROMETHEUS_SERVER_URL:-http://prometheus:9090}"
-    mem_limit: "${JAEGER_MEM_LIMIT:-128m}"
-    mem_reservation: "${JAEGER_MEM_RESERVATION:-64m}"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    mem_limit: "${JAEGER_MEM_LIMIT:-96m}"
+    mem_reservation: "${JAEGER_MEM_RESERVATION:-48m}"
     networks: {}
 
   app-server:
@@ -61,8 +63,8 @@ services:
     environment:
       TZ: "${TZ:-Asia/Shanghai}"
       # 设计意图：默认 DSN 必须与本项目 prod 配置保持一致，避免 .env 未显式覆盖时误连占位库名或占位密码。
-      POSTGRES_DSN: "${POSTGRES_DSN:-postgres://postgres:YP%2AH%25k%25a7xK1%2Aq@postgres:5432/test_database_atlas?sslmode=disable}"
+      POSTGRES_DSN: "${POSTGRES_DSN:-postgres://postgres:replace-me@postgres:5432/webapp_template?sslmode=disable}"
       TRACE_ENDPOINT: "${TRACE_ENDPOINT:-jaeger:4318}"
-    mem_limit: "${APP_MEM_LIMIT:-192m}"
-    mem_reservation: "${APP_MEM_RESERVATION:-96m}"
+    mem_limit: "${APP_MEM_LIMIT:-160m}"
+    mem_reservation: "${APP_MEM_RESERVATION:-80m}"
     networks: {}

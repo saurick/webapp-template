@@ -19,7 +19,7 @@ import (
 const (
 	defaultHost = "127.0.0.1"
 	defaultPort = "5433"
-	defaultDB   = "test_database_atlas"
+	defaultDB   = "webapp_template"
 )
 
 // 方便通过环境变量覆盖

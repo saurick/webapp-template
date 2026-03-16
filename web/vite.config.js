@@ -89,12 +89,12 @@ export default defineConfig(({ command, mode }) => {
 
     server: {
       host: '0.0.0.0', // 监听所有地址，方便局域网测试
-      port: 5173,
+      port: 5175,
       open: true,
       proxy: {
-        // 前端发 /rpc/... → 直接转到 Kratos http://localhost:8000/rpc/...
+        // 本地需与 simulator/trade 并行开发，模板 dev 后端口径固定到 8200，避免继续撞占 8000。
         '/rpc': {
-          target: 'http://localhost:8000',
+          target: 'http://localhost:8200',
           changeOrigin: true,
         },
       },

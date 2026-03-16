@@ -5,7 +5,7 @@ trace:
 
 data:
   postgres:
-    dsn: "postgres://test_user:replace-me@192.168.0.106:5432/test_database_atlas?sslmode=disable"
+    dsn: "postgres://test_user:replace-me@192.168.0.106:5432/webapp_template?sslmode=disable"
   auth:
     jwtSecret: "replace-with-local-dev-jwt-secret"
     admin:

@@ -5,6 +5,19 @@
 - 阻塞/风险：示例文件仍保留占位值，派生项目初始化后必须自行填写真实密码和私钥。
 
 ## 2026-03-16
+- 完成：修复模板项目本地无法独立访问的问题。根因是 `/Users/simon/projects/webapp-template/server/configs/dev/config.yaml` 仍占用 `8000/9000`，与 `collision-simulator` 本地后端撞端口，导致模板服务起不来；同时 `/Users/simon/projects/webapp-template/web/vite.config.js` 也仍把代理指向 `localhost:8000`。现已把模板开发后端改到 `8200/9200`，前端 dev server 固定到 `5175` 并同步代理到 `8200`。
+- 验证：已启动本地模板后端并清掉旧的 `8000/9000` 模板进程，`curl http://127.0.0.1:8200/healthz` 返回 `ok`，`curl http://127.0.0.1:5175/rpc/auth` 调用 `admin_login` 也已返回 `code=0`。
+- 下一步：若后续还会新增更多本地派生项目，建议继续沿用“前端/后端端口显式分配”的做法，避免再靠 Vite 自动顺延端口。
+- 阻塞/风险：模板本地服务现已能独立跑，但仍依赖 `config.local.yaml` 里的远端 PG DSN；如果远端库暂时不可达，前端页面仍会表现为后端报错而不是纯前端问题。
+
+## 2026-03-16
+- 完成：修正模板仓库生产口径里残留的旧库名 `test_database_atlas`，`/Users/simon/projects/webapp-template/server/configs/prod/config.yaml`、`/Users/simon/projects/webapp-template/server/deploy/compose/prod/compose.yml`、`/Users/simon/projects/webapp-template/server/deploy/compose/prod/.env.example` 已统一切到 `webapp_template`，并补上 PostgreSQL 18 所需的 `/var/lib/postgresql` 挂载方式与 `host.docker.internal` 兜底映射。
+- 完成：已在 `47.84.12.211` 备份原环境与 MySQL dump（目录同 `/root/deploy/pg-migration-20260316T113507`），完成 `webapp_template` 的 PostgreSQL baseline 迁移、兼容数据导入、镜像发布与服务切换；当前 `webapp-template-server` 已直连 `webapp-template-postgres`，旧 `webapp-template-mysql` 已停止但未删除。
+- 验证：已通过 `atlas migrate status` 确认 `webapp_template` 到最新版本，`users/admin_users` 数据已从 MySQL 同步（各 `1` 行），`http://47.84.12.211:8200/healthz` 与 `http://47.84.12.211:8200/readyz` 均返回 `ok/ready`。
+- 下一步：若后续有真实派生项目继续沿用该模板，建议在初始化阶段一并把 `PROJECT_SLUG`、数据库名和远端密码替换为项目专属值，避免长期复用模板默认凭据。
+- 阻塞/风险：模板仓库的 MySQL 历史数据本就较少，当前只保留现有 PostgreSQL schema 能承接的部分；若以后又把被裁掉的模板字段/表加回来，需要重新评估是否补历史数据。
+
+## 2026-03-16
 - 完成：补齐本地开发配置收口，`/Users/simon/projects/webapp-template/web/.gitignore` 现已忽略 `.vite-cache/`，`/Users/simon/projects/webapp-template/server/.gitignore` 现已忽略 `configs/dev/config.local.yaml`；同时将 `/Users/simon/projects/webapp-template/server/configs/dev/config.yaml` 改回无密钥的本地 PostgreSQL 默认值，并让 `/Users/simon/projects/webapp-template/server/cmd/server/main.go` 支持自动叠加未跟踪的 `config.local.yaml`，避免远端私有 DSN 继续污染工作区。
 - 验证：已执行 `cd /Users/simon/projects/webapp-template/server && go test ./cmd/server`，命令通过；`git status --short` 也已确认 `.vite-cache/` 与 `config.local.yaml` 不再作为未跟踪噪声出现。
 - 下一步：若模板后续还要派生新项目，可在初始化脚本里追加一条提示，提醒开发者优先写 `configs/dev/config.local.yaml`，不要直接改公共 `config.yaml`。

@@ -28,7 +28,8 @@ data:
   postgres:
     # if true output sql
     debug: false
-    dsn: "postgres://postgres:YP%2AH%25k%25a7xK1%2Aq@postgres:5432/test_database_atlas?sslmode=disable"
+    # 生产环境密码由 compose 注入 POSTGRES_DSN 覆盖，仓库内仅保留脱敏占位值。
+    dsn: "postgres://postgres:replace-me@postgres:5432/webapp_template?sslmode=disable"
 
   # 缓存服务
   # redis:
