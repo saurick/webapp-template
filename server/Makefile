@@ -209,6 +209,9 @@ MAIN_PKG ?= ./cmd/server
 DEV_BIN ?= ./bin/server-dev
 ARGS ?=
 
+# 当前项目本地 dev 会占用的端口；dev_stop/dev_restart 只清理这些端口，避免误杀别的项目。
+DEV_PORTS ?= 8200 9200
+
 .PHONY: dev_build
 # build dev binary (stable path)
 dev_build:
@@ -225,6 +228,40 @@ run: dev_build
 .PHONY: dev
 # alias of run
 dev: run
+
+.PHONY: dev_stop
+# stop local dev process by known ports (兼容 macOS / Ubuntu)
+dev_stop:
+	@echo ">>> stopping dev listeners on: $(DEV_PORTS)"
+	@for p in $(DEV_PORTS); do \
+		if command -v lsof >/dev/null 2>&1; then \
+			pids="$$(lsof -tiTCP:$$p -sTCP:LISTEN 2>/dev/null || true)"; \
+			if [ -n "$$pids" ]; then \
+				echo ">>> kill port $$p via lsof: $$pids"; \
+				kill $$pids 2>/dev/null || true; \
+			fi; \
+		elif command -v fuser >/dev/null 2>&1; then \
+			echo ">>> kill port $$p via fuser"; \
+			fuser -k $$p/tcp >/dev/null 2>&1 || true; \
+		else \
+			echo "ERROR: neither lsof nor fuser is available; cannot stop port $$p"; \
+			exit 1; \
+		fi; \
+	done
+	@sleep 1
+	@for p in $(DEV_PORTS); do \
+		if command -v lsof >/dev/null 2>&1; then \
+			pids="$$(lsof -tiTCP:$$p -sTCP:LISTEN 2>/dev/null || true)"; \
+			if [ -n "$$pids" ]; then \
+				echo ">>> force kill port $$p: $$pids"; \
+				kill -9 $$pids 2>/dev/null || true; \
+			fi; \
+		fi; \
+	done
+
+.PHONY: dev_restart
+# restart local dev binary after clearing stale listeners
+dev_restart: dev_stop dev
 
 .PHONY: clean_dev
 # clean dev binary

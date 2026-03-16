@@ -5,6 +5,12 @@
 - 阻塞/风险：示例文件仍保留占位值，派生项目初始化后必须自行填写真实密码和私钥。
 
 ## 2026-03-16
+- 完成：为 `/Users/simon/projects/webapp-template/server/Makefile` 增加 `dev_stop` 与 `dev_restart`，按模板项目当前本地后端端口 `8200 9200` 自动清理旧 dev 进程，并兼容 `lsof` / `fuser`，减少切项目时端口残留导致的启动失败。
+- 验证：已执行 `cd /Users/simon/projects/webapp-template/server && make dev_stop && make help | rg 'dev_stop|dev_restart'`，目标可以正常执行并出现在帮助列表中。
+- 下一步：若模板后续还会派生更多项目，可把 `DEV_PORTS` 作为初始化脚本需要同步替换的变量，避免派生后忘记改端口。
+- 阻塞/风险：当前 `dev_stop` 仍只覆盖模板后端；若你同时开着模板前端 `5175`，仍需要单独在 web 目录管理或另补前端脚本。
+
+## 2026-03-16
 - 完成：修复模板项目本地无法独立访问的问题。根因是 `/Users/simon/projects/webapp-template/server/configs/dev/config.yaml` 仍占用 `8000/9000`，与 `collision-simulator` 本地后端撞端口，导致模板服务起不来；同时 `/Users/simon/projects/webapp-template/web/vite.config.js` 也仍把代理指向 `localhost:8000`。现已把模板开发后端改到 `8200/9200`，前端 dev server 固定到 `5175` 并同步代理到 `8200`。
 - 验证：已启动本地模板后端并清掉旧的 `8000/9000` 模板进程，`curl http://127.0.0.1:8200/healthz` 返回 `ok`，`curl http://127.0.0.1:5175/rpc/auth` 调用 `admin_login` 也已返回 `code=0`。
 - 下一步：若后续还会新增更多本地派生项目，建议继续沿用“前端/后端端口显式分配”的做法，避免再靠 Vite 自动顺延端口。
