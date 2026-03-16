@@ -5,6 +5,12 @@
 - 阻塞/风险：示例文件仍保留占位值，派生项目初始化后必须自行填写真实密码和私钥。
 
 ## 2026-03-16
+- 完成：补齐本地开发配置收口，`/Users/simon/projects/webapp-template/web/.gitignore` 现已忽略 `.vite-cache/`，`/Users/simon/projects/webapp-template/server/.gitignore` 现已忽略 `configs/dev/config.local.yaml`；同时将 `/Users/simon/projects/webapp-template/server/configs/dev/config.yaml` 改回无密钥的本地 PostgreSQL 默认值，并让 `/Users/simon/projects/webapp-template/server/cmd/server/main.go` 支持自动叠加未跟踪的 `config.local.yaml`，避免远端私有 DSN 继续污染工作区。
+- 验证：已执行 `cd /Users/simon/projects/webapp-template/server && go test ./cmd/server`，命令通过；`git status --short` 也已确认 `.vite-cache/` 与 `config.local.yaml` 不再作为未跟踪噪声出现。
+- 下一步：若模板后续还要派生新项目，可在初始化脚本里追加一条提示，提醒开发者优先写 `configs/dev/config.local.yaml`，不要直接改公共 `config.yaml`。
+- 阻塞/风险：当前远端私有 DSN 仍保存在本机未跟踪的 `config.local.yaml` / `.env` 中；这对安全更好，但换机器时需要手动复制本地覆盖文件。
+
+## 2026-03-16
 - 完成：将 `/Users/simon/projects/webapp-template/web/vite.config.js` 的开发缓存目录改为仓库内独立 `.vite-cache`，避免与其他项目共用 `/tmp/.vite-cache` 时出现 `Outdated Optimize Dep` 和懒加载页面动态导入失败。
 - 验证：已执行 `cd /Users/simon/projects/webapp-template/web && pnpm build`，构建通过。
 - 下一步：模板派生项目可直接沿用这套仓库隔离缓存配置，减少多项目并行开发时的 Vite 依赖缓存抖动。
