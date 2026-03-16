@@ -1,4 +1,10 @@
 ## 2026-03-16
+- 完成：新增 `/Users/simon/projects/webapp-template/server/configs/dev/config.local.example.yaml`，把本地私有覆盖的最小推荐字段固定成可跟踪示例，明确展示 `trace.jaeger.endpoint`、`data.postgres.dsn` 与 `auth` 的覆盖写法，方便模板派生项目后快速落地自己的本地配置。
+- 验证：示例文件仅使用当前启动链已支持的配置路径；`make dev` 会先读公共 `config.yaml`，再由同目录未跟踪的 `config.local.yaml` 覆盖，而不是替换占位字符串。
+- 下一步：若后续把模板初始化脚本继续收口，可让 `scripts/init-project.sh` 在首跑时顺手提示这份 example 文件。
+- 阻塞/风险：示例文件仍保留占位值，派生项目初始化后必须自行填写真实密码和私钥。
+
+## 2026-03-16
 - 完成：将 `/Users/simon/projects/webapp-template/web/vite.config.js` 的开发缓存目录改为仓库内独立 `.vite-cache`，避免与其他项目共用 `/tmp/.vite-cache` 时出现 `Outdated Optimize Dep` 和懒加载页面动态导入失败。
 - 验证：已执行 `cd /Users/simon/projects/webapp-template/web && pnpm build`，构建通过。
 - 下一步：模板派生项目可直接沿用这套仓库隔离缓存配置，减少多项目并行开发时的 Vite 依赖缓存抖动。
@@ -409,6 +415,14 @@
 - 验证：`cd /Users/simon/projects/webapp-template/server && go test ./cmd/server` 通过；`rg -n --hidden -g '!**/.git/**' -g '!progress.md' -e 'collision-simulator|trade-erp|simulator-server' /Users/simon/projects/webapp-template` 结果为空。
 - 下一步：如需历史文档完全无跨项目字样，可再单独清理 `progress.md` 历史记录。
 - 阻塞/风险：无。
+## 2026-03-16
+- 完成：将仓库根 `.gitignore` 补齐 `web/.vite-cache/`，并沿用既有 `server/.gitignore` 对 `configs/dev/config.local.yaml` 的忽略规则，避免模板仓库继续提交前端缓存与本地私有 dev 配置。
+- 完成：把 `/Users/simon/projects/webapp-template/server/configs/dev/config.yaml` 收口为“公开基线配置”：共享 trace/PG/redis 示例地址统一改为 `192.168.0.106`，数据库连接示例改成 `postgres://test_user:replace-me@192.168.0.106:5432/test_database_atlas?...`，移除真实密码、JWT、管理员密码和 Telegram token，改为占位值并在注释里明确要求走 `POSTGRES_DSN`、`TRACE_ENDPOINT` 或 `config.local.yaml` 覆盖。
+- 完成：保留既有 `config.local.yaml + POSTGRES_DSN/TRACE_ENDPOINT` 启动兜底链路，并把 `Makefile` 中 Atlas 迁移的 DB_URL 示例同步改成 `192.168.0.106` 的公开示例，避免模板继续输出 `127.0.0.1` 的旧联调口径。
+- 验证：`cd /Users/simon/projects/webapp-template/server && go test ./cmd/server`；`git -C /Users/simon/projects/webapp-template check-ignore -v web/.vite-cache server/configs/dev/config.local.yaml`；`rg -n "127\\.0\\.0\\.1:4318|postgres://[^\\n]*127\\.0\\.0\\.1" /Users/simon/projects/collision-simulator /Users/simon/projects/trade-erp /Users/simon/projects/webapp-template -g '!**/.git/**'`。
+- 下一步：若要让派生项目初始化更顺手，可在模板 README 或 `scripts/init-project.sh` 里补一段 “如何创建 `config.local.yaml`” 的引导。
+- 阻塞/风险：模板仓库当前只提供公开基线示例，不包含任何可直接连库的真实 dev 凭据；派生项目初始化后仍需团队自行准备本地覆盖文件或环境变量。
+
 
 ## 2026-03-03
 - 完成：清理 `server/api/jsonrpc/v1/jsonrpc.proto` 中易引起跨项目误解的示例注释，将 `collision.*` 示例替换为 `erp.*` 示例，并重新生成对应产物（`jsonrpc.pb.go`、`jsonrpc_grpc.pb.go`、`jsonrpc_http.pb.go`、`jsonrpc.swagger.json`），确保源文件与生成文件口径一致。

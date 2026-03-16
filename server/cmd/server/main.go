@@ -6,6 +6,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"server/internal/conf"
@@ -86,6 +87,34 @@ func resolveConfPath(flagVal string) string {
 	return "./configs/dev/config.yaml"
 }
 
+func resolveLocalConfPath(confPath string) string {
+	ext := filepath.Ext(confPath)
+	if ext == "" {
+		return ""
+	}
+	if strings.HasSuffix(confPath, ".local"+ext) {
+		return ""
+	}
+	localPath := strings.TrimSuffix(confPath, ext) + ".local" + ext
+	if fi, err := os.Stat(localPath); err == nil && !fi.IsDir() {
+		return localPath
+	}
+	return ""
+}
+
+func buildConfigSources(confPath string) []config.Source {
+	paths := []string{confPath}
+	// 本地联调兜底：若存在未跟踪的 config.local.yaml，则覆盖公共 dev 配置，避免把私有 DSN 提交进仓库。
+	if localPath := resolveLocalConfPath(confPath); localPath != "" {
+		paths = append(paths, localPath)
+	}
+	sources := make([]config.Source, 0, len(paths))
+	for _, path := range paths {
+		sources = append(sources, file.NewSource(path))
+	}
+	return sources
+}
+
 // 初始化 TracerProvider：优先远端 OTLP（异步 Batch），失败或未配置就本地 no-op 风格
 func initTracerProvider(traceName, traceEndpoint string, baseLogger log.Logger) *tracesdk.TracerProvider {
 	helper := log.NewHelper(baseLogger)
@@ -133,9 +162,10 @@ func main() {
 	fmt.Println("using conf path:", confPath)
 
 	// ===== 1. 加载配置文件 =====
+	sources := buildConfigSources(confPath)
 	c := config.New(
 		config.WithSource(
-			file.NewSource(confPath),
+			sources...,
 		),
 	)
 	defer c.Close()

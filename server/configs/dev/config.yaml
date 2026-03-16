@@ -15,7 +15,7 @@ trace:
   jaeger:
     traceName: ""
     # http endpoint
-    endpoint: 127.0.0.1:4318
+    endpoint: 192.168.0.106:4318
     # endpoint: http://192.168.0.106:4318/v1/traces
     # gRPC endpoint
     # endpoint: http://192.168.0.106:4317
@@ -25,15 +25,16 @@ trace:
 # 数据相关
 data:
   # 主数据库，保存核心数据
-  mysql:
+  postgres:
     # if true output sql
     debug: true
-    dsn: "root:YP*H%k%a7xK1*q@tcp(127.0.0.1:3306)/test_database_atlas?charset=utf8mb4&parseTime=True&loc=Local&interpolateParams=true"
+    # 公共 dev 配置只保留共享 PG 的 192 地址，真实密码请走 POSTGRES_DSN 或 config.local.yaml。
+    dsn: "postgres://test_user:replace-me@192.168.0.106:5432/test_database_atlas?sslmode=disable"
 
   # 缓存服务
   # redis:
   #   network: tcp
-  #   address: 127.0.0.1:6379
+  #   address: 192.168.0.106:6379
   #   password: ""
   #   database: 0
   #   readTimeout: 0.2s
@@ -41,15 +42,15 @@ data:
   etcd:
     hosts:
       - etcd:2379
-  # 认证相关
+  # 认证相关：仓库只保留公开占位值，真实私钥/密码请在本地覆盖。
   auth:
-    jwtSecret: "eB6Cc5Mz/OB/WrHyKJMQLnmj160ropjq3j167pkIGUI="
+    jwtSecret: "replace-me-dev-jwt-secret"
     jwtExpireSeconds: 604800 # 7 days
     admin:
       username: "admin"
-      password: "adminadmin"
+      password: "replace-me-admin-password"
 
 # notify:
 #   telegram:
-#     apiToken: "6835874767:AAHqdz2jT8B_fInZ8ff5EmUT8ndsWVzO--M"
-#     chatId: -4184591934
+#     apiToken: "replace-me-telegram-token"
+#     chatId: 0

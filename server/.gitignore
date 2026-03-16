@@ -36,6 +36,7 @@ bin/
 .env
 .env.local
 .env.*.local
+configs/dev/config.local.yaml
 
 # Develop tools
 .vscode/

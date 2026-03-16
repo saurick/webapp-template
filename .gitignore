@@ -3,6 +3,7 @@
 
 web/node_modules/
 web/build/
+web/.vite-cache/
 
 server/bin/
 output/
