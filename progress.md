@@ -1,4 +1,10 @@
 ## 2026-03-19
+- 完成：为实验室环境补上一套真正可长期查看的 Grafana 总览看板，新增 `/Users/simon/projects/webapp-template/server/deploy/lab-ha/manifests/grafana-loki-datasource.yaml` 与 `/Users/simon/projects/webapp-template/server/deploy/lab-ha/manifests/grafana-lab-overview-dashboard.yaml`；其中 Grafana 新增了 `Loki` 数据源，并自动导入 `HA Lab / Ops Overview` 看板，覆盖节点就绪数、WebApp 副本、告警数量、blackbox 最小成功率、Velero 备份统计、集群 CPU/内存、活跃告警表格和常用运维链接。
+- 验证：Grafana API 已返回 `Loki` 数据源；`/api/search?query=HA%20Lab` 已命中 `HA Lab / Ops Overview`，看板 UID 为 `lab-ha-overview`；直接访问 `http://192.168.0.108:30081/d/lab-ha-overview/ha-lab-ops-overview` 返回 `200`；关键 PromQL 查询（节点 Ready、WebApp 副本、Velero 成功数、最后一次备份年龄、blackbox 最小成功率）均已单独校验通过。
+- 下一步：若后续值班场景继续深化，可再按需要补 `CloudNativePG` 角色、Longhorn 容量、Harbor 仓库容量等细分面板，但当前这版已经可以承担实验室总览看板角色。
+- 阻塞/风险：当前 Grafana 总览主要聚焦实验室里最关键的稳态与故障面，没有追求把每个组件所有指标都堆进首页；这是为了控制维护成本和看板复杂度，方便后续 AI 或人工接手继续扩展。
+
+## 2026-03-19
 - 完成：继续增强 Portal 的运维摘要能力，在 `/Users/simon/projects/webapp-template/server/deploy/lab-ha/manifests/platform-portal.yaml` 里把快照卡片扩展为包含最新成功 GitLab pipeline、最近一次 Velero smoke backup 完成时间和最近一次 Alertmanager webhook 投递时间，让首页能更直观看到“最近一次关键验证结果”。
 - 验证：`kubectl rollout restart deployment/lab-portal -n lab-portal` 后，`http://192.168.0.108:30088` 返回的新 HTML 已包含 `Velero Backup`、`Alert Delivery`、`pipeline #9` 等关键字，说明新摘要卡片已生效。
 - 下一步：如果后续需要更像正式值班面板，可再补“最近一次 GitOps sync 修复时间”和“最近一次黑盒探测异常时间”，但当前这版已经够日常使用。

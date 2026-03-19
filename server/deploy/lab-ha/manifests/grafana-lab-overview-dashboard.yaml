@@ -1,0 +1,261 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: lab-ha-grafana-ops-overview
+  namespace: monitoring
+  labels:
+    grafana_dashboard: "1"
+    release: kube-prometheus-stack
+data:
+  lab-ha-ops-overview.json: |-
+    {
+      "id": null,
+      "uid": "lab-ha-overview",
+      "title": "HA Lab / Ops Overview",
+      "tags": ["lab-ha", "ops"],
+      "timezone": "browser",
+      "schemaVersion": 39,
+      "version": 1,
+      "refresh": "30s",
+      "time": {
+        "from": "now-6h",
+        "to": "now"
+      },
+      "panels": [
+        {
+          "id": 1,
+          "type": "stat",
+          "title": "Ready Nodes",
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "gridPos": {"h": 5, "w": 4, "x": 0, "y": 0},
+          "targets": [
+            {
+              "expr": "sum(kube_node_status_condition{condition=\"Ready\",status=\"true\"})",
+              "instant": true,
+              "refId": "A"
+            }
+          ],
+          "options": {
+            "colorMode": "value",
+            "graphMode": "none",
+            "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}
+          },
+          "fieldConfig": {"defaults": {"unit": "none", "thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": null}, {"color": "green", "value": 3}]}}}
+        },
+        {
+          "id": 2,
+          "type": "stat",
+          "title": "WebApp Ready Replicas",
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "gridPos": {"h": 5, "w": 4, "x": 4, "y": 0},
+          "targets": [
+            {
+              "expr": "kube_deployment_status_replicas_available{namespace=\"webapp\",deployment=\"webapp-template\"}",
+              "instant": true,
+              "refId": "A"
+            }
+          ],
+          "options": {
+            "colorMode": "value",
+            "graphMode": "none",
+            "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}
+          },
+          "fieldConfig": {"defaults": {"unit": "none", "thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": null}, {"color": "yellow", "value": 1}, {"color": "green", "value": 2}]}}}
+        },
+        {
+          "id": 3,
+          "type": "stat",
+          "title": "Firing Alerts",
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "gridPos": {"h": 5, "w": 4, "x": 8, "y": 0},
+          "targets": [
+            {
+              "expr": "sum(ALERTS{alertstate=\"firing\",alertname!=\"Watchdog\"})",
+              "instant": true,
+              "refId": "A"
+            }
+          ],
+          "options": {
+            "colorMode": "value",
+            "graphMode": "none",
+            "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}
+          },
+          "fieldConfig": {"defaults": {"unit": "none", "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "yellow", "value": 1}, {"color": "red", "value": 3}]}}}
+        },
+        {
+          "id": 4,
+          "type": "stat",
+          "title": "Blackbox Min Success",
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "gridPos": {"h": 5, "w": 4, "x": 12, "y": 0},
+          "targets": [
+            {
+              "expr": "min(probe_success{job=\"blackbox-exporter-prometheus-blackbox-exporter\"})",
+              "instant": true,
+              "refId": "A"
+            }
+          ],
+          "options": {
+            "colorMode": "value",
+            "graphMode": "none",
+            "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}
+          },
+          "fieldConfig": {"defaults": {"unit": "none", "thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": null}, {"color": "green", "value": 1}]}}}
+        },
+        {
+          "id": 5,
+          "type": "stat",
+          "title": "Velero Success (24h)",
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "gridPos": {"h": 5, "w": 4, "x": 16, "y": 0},
+          "targets": [
+            {
+              "expr": "sum(increase(velero_backup_success_total[24h]))",
+              "instant": true,
+              "refId": "A"
+            }
+          ],
+          "options": {
+            "colorMode": "value",
+            "graphMode": "none",
+            "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}
+          },
+          "fieldConfig": {"defaults": {"unit": "none", "thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": null}, {"color": "green", "value": 1}]}}}
+        },
+        {
+          "id": 6,
+          "type": "stat",
+          "title": "Last Backup Age",
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "gridPos": {"h": 5, "w": 4, "x": 20, "y": 0},
+          "targets": [
+            {
+              "expr": "time() - max(velero_backup_last_successful_timestamp)",
+              "instant": true,
+              "refId": "A"
+            }
+          ],
+          "options": {
+            "colorMode": "value",
+            "graphMode": "none",
+            "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}
+          },
+          "fieldConfig": {"defaults": {"unit": "s", "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "yellow", "value": 86400}, {"color": "red", "value": 172800}]}}}
+        },
+        {
+          "id": 7,
+          "type": "timeseries",
+          "title": "Cluster CPU Usage",
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "gridPos": {"h": 8, "w": 8, "x": 0, "y": 5},
+          "targets": [
+            {
+              "expr": "100 - (avg(rate(node_cpu_seconds_total{mode=\"idle\"}[5m])) * 100)",
+              "legendFormat": "avg cpu",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": {"defaults": {"unit": "percent", "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "yellow", "value": 70}, {"color": "red", "value": 85}]}}},
+          "options": {"legend": {"displayMode": "list", "placement": "bottom"}, "tooltip": {"mode": "single"}}
+        },
+        {
+          "id": 8,
+          "type": "timeseries",
+          "title": "Cluster Memory Usage",
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "gridPos": {"h": 8, "w": 8, "x": 8, "y": 5},
+          "targets": [
+            {
+              "expr": "100 * (1 - (sum(node_memory_MemAvailable_bytes) / sum(node_memory_MemTotal_bytes)))",
+              "legendFormat": "memory used",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": {"defaults": {"unit": "percent", "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "yellow", "value": 75}, {"color": "red", "value": 90}]}}},
+          "options": {"legend": {"displayMode": "list", "placement": "bottom"}, "tooltip": {"mode": "single"}}
+        },
+        {
+          "id": 9,
+          "type": "timeseries",
+          "title": "Blackbox Targets",
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "gridPos": {"h": 8, "w": 8, "x": 16, "y": 5},
+          "targets": [
+            {
+              "expr": "probe_success{job=\"blackbox-exporter-prometheus-blackbox-exporter\"}",
+              "legendFormat": "{{instance}}",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": {"defaults": {"unit": "none", "min": 0, "max": 1, "thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": null}, {"color": "green", "value": 1}]}}},
+          "options": {"legend": {"displayMode": "table", "placement": "bottom"}, "tooltip": {"mode": "multi"}}
+        },
+        {
+          "id": 10,
+          "type": "timeseries",
+          "title": "Firing Alerts Over Time",
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "gridPos": {"h": 8, "w": 12, "x": 0, "y": 13},
+          "targets": [
+            {
+              "expr": "sum(ALERTS{alertstate=\"firing\",alertname!=\"Watchdog\"})",
+              "legendFormat": "firing alerts",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": {"defaults": {"unit": "none"}},
+          "options": {"legend": {"displayMode": "list", "placement": "bottom"}, "tooltip": {"mode": "single"}}
+        },
+        {
+          "id": 11,
+          "type": "timeseries",
+          "title": "Velero Success Count",
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "gridPos": {"h": 8, "w": 12, "x": 12, "y": 13},
+          "targets": [
+            {
+              "expr": "velero_backup_success_total",
+              "legendFormat": "{{schedule}} {{backupName}}",
+              "refId": "A"
+            }
+          ],
+          "fieldConfig": {"defaults": {"unit": "none"}},
+          "options": {"legend": {"displayMode": "table", "placement": "bottom"}, "tooltip": {"mode": "multi"}}
+        },
+        {
+          "id": 12,
+          "type": "table",
+          "title": "Active Alerts Table",
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "gridPos": {"h": 8, "w": 12, "x": 0, "y": 21},
+          "targets": [
+            {
+              "expr": "ALERTS{alertstate=\"firing\",alertname!=\"Watchdog\"}",
+              "format": "table",
+              "instant": true,
+              "refId": "A"
+            }
+          ],
+          "transformations": [
+            {
+              "id": "organize",
+              "options": {
+                "excludeByName": {"Time": true, "Value": true},
+                "indexByName": {"alertname": 0, "severity": 1, "namespace": 2, "pod": 3, "instance": 4}
+              }
+            }
+          ],
+          "options": {"showHeader": true}
+        },
+        {
+          "id": 13,
+          "type": "text",
+          "title": "Quick Links",
+          "gridPos": {"h": 8, "w": 12, "x": 12, "y": 21},
+          "options": {
+            "mode": "markdown",
+            "content": "### Daily Ops Links\n\n- [Portal](http://192.168.0.108:30088)\n- [WebApp](http://192.168.0.108:32668)\n- [GitLab Pipelines](http://192.168.0.108:8929/root/webapp-template-lab/-/pipelines)\n- [Argo CD](https://192.168.0.108:30443)\n- [TEST_REPORT.md](http://192.168.0.108:8929/root/webapp-template-lab/-/blob/main/server/deploy/lab-ha/docs/TEST_REPORT.md)\n\nUse Grafana Explore with the Loki datasource for log triage."
+          }
+        }
+      ]
+    }

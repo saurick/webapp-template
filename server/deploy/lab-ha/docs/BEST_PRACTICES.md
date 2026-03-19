@@ -8,6 +8,7 @@
 
 ## 为什么当前这样选
 
+- `Prometheus` 已经承担当前实验室的指标型 TSDB 角色，所以没有再额外引入 `VictoriaMetrics`、`Mimir`、`InfluxDB`、`TimescaleDB` 之类的时序系统；在 `3 x 4C/8G` 资源下，这样更稳、更省心。
 - 不用 `ELK/OpenSearch` 主线：避免把内存压爆
 - 不用 `Ceph` 主线：避免把 IO、CPU、恢复复杂度拉高
 - `Loki` 改成独立轻量 deployment：避免 chart 默认缓存/sidecar 在小集群里额外吃资源
@@ -54,6 +55,7 @@
 - `Harbor` 当前关闭 `trivy`，否则 3 节点资源会更紧
 - `Prometheus` 保留 1 副本 + 5d retention，足够实验用途
 - `Loki` 只保 1 副本 + 本地持久卷，不做生产级分布式
+- 如果后续明确需要日志全文检索、复杂审计聚合或 Discover/Kibana 式分析，再单独评估 `OpenSearch`；当前资源档位下，`Loki + Grafana` 比 `ELK` 更符合稳定优先原则
 
 ## 后续扩展建议
 

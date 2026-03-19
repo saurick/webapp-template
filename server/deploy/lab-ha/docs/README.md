@@ -51,6 +51,8 @@
 - 发布与平台: `Harbor + GitLab + GitLab Runner + Argo CD + Argo Rollouts`
 - 业务: `webapp-template`
 
+补充说明：当前指标型 TSDB 就是 `Prometheus`；当前日志主线是 `Loki`，没有额外叠加 `ELK/OpenSearch`。
+
 ## 推荐阅读顺序
 
 1. `http://192.168.0.108:30088`

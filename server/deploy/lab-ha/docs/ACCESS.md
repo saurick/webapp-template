@@ -8,6 +8,7 @@
 - Portal: `http://192.168.0.108:30088`
 - Harbor: `http://192.168.0.108:30002`
 - Grafana: `http://192.168.0.108:30081`
+- Grafana Ops Dashboard: `http://192.168.0.108:30081/d/lab-ha-overview/ha-lab-ops-overview`
 - Prometheus: `http://192.168.0.108:30090`
 - Alertmanager: `http://192.168.0.108:30093`
 - Argo CD: `https://192.168.0.108:30443`
