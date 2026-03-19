@@ -1,0 +1,54 @@
+image:
+  repository: docker.m.daocloud.io/velero/velero
+
+initContainers:
+  - name: velero-plugin-for-aws
+    image: docker.m.daocloud.io/velero/velero-plugin-for-aws:v1.13.1
+    imagePullPolicy: IfNotPresent
+    volumeMounts:
+      - mountPath: /target
+        name: plugins
+
+configuration:
+  backupStorageLocation:
+    - name: default
+      provider: aws
+      bucket: velero
+      default: true
+      accessMode: ReadWrite
+      config:
+        region: us-east-1
+        s3ForcePathStyle: true
+        s3Url: http://seaweedfs-s3.object-storage.svc.cluster.local:8333
+        insecureSkipTLSVerify: true
+  volumeSnapshotLocation: []
+  uploaderType: kopia
+  defaultBackupStorageLocation: default
+  defaultBackupTTL: 168h
+
+credentials:
+  useSecret: true
+  secretContents:
+    cloud: |
+      [default]
+      aws_access_key_id = veleroaccesskey
+      aws_secret_access_key = velerosecretkey
+
+backupsEnabled: true
+snapshotsEnabled: false
+deployNodeAgent: false
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+metrics:
+  enabled: true
+  serviceMonitor:
+    enabled: true
+    additionalLabels:
+      release: kube-prometheus-stack

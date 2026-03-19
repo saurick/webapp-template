@@ -1,0 +1,20 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: webapp-template-lab
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: http://192.168.0.108:8929/root/webapp-template-lab.git
+    targetRevision: main
+    path: server/deploy/lab-ha/argocd/webapp
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: webapp
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

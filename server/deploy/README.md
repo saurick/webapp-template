@@ -1,10 +1,11 @@
 # server/deploy 部署模板说明
 
-`server/deploy` 提供两套部署模板，方便派生项目按实际环境二选一或按需裁剪：
+`server/deploy` 提供两套主模板和一套实验室高可用落地目录，方便派生项目按实际环境二选一或按需裁剪：
 
 - `compose/prod/`：单机或单宿主机的 Docker Compose 模板
 - `dev/`、`prod/`：Kubernetes 环境模板，分别对应开发与生产基线
 - `dashboard/`：可选的 Kubernetes Dashboard 辅助清单
+- `lab-ha/`：当前模板在三台实验室 VM 上的高可用部署实录、值文件、运维脚本与测试文档
 - Compose 模板当前默认使用 `postgres:18` 作为数据库基线
 
 ## 目录说明
@@ -47,6 +48,19 @@
   - `kubernetes-dashboard-ingress.yaml`
 
 说明：详细用法见 `/Users/simon/projects/webapp-template/server/deploy/dashboard/README.md`。
+
+### 实验室高可用目录
+
+- 入口目录：`/Users/simon/projects/webapp-template/server/deploy/lab-ha`
+- 适合：需要复现当前三节点实验室高可用环境，或继续在此基础上让 AI/工程师接手扩展
+- 关键内容：
+  - `docs/README.md`
+  - `docs/ACCESS.md`
+  - `docs/TEST_REPORT.md`
+  - `manifests/*.yaml`
+  - `scripts/ha-node-bootstrap.sh`
+
+说明：该目录用于“实验室级已落地结果管理”，不替代模板默认的通用 `dev/`、`prod/` 部署骨架。
 
 ## 初始化后必须替换的占位符
 

@@ -1,0 +1,105 @@
+serviceMonitor:
+  enabled: true
+  defaults:
+    labels:
+      release: kube-prometheus-stack
+    interval: 30s
+    scrapeTimeout: 10s
+  targets:
+    - name: gitlab
+      url: http://192.168.0.108:8929/users/sign_in
+      labels:
+        component: gitlab
+        access: external
+    - name: webapp
+      url: http://192.168.0.108:32668/readyz
+      hostname: app.192.168.0.108.nip.io
+      labels:
+        component: webapp
+        access: ingress
+    - name: harbor
+      url: http://192.168.0.108:32668/api/v2.0/ping
+      hostname: harbor.192.168.0.108.nip.io
+      labels:
+        component: harbor
+        access: ingress
+    - name: grafana
+      url: http://192.168.0.108:32668/login
+      hostname: grafana.192.168.0.108.nip.io
+      labels:
+        component: grafana
+        access: ingress
+    - name: argocd
+      url: http://192.168.0.108:32668/
+      hostname: argocd.192.168.0.108.nip.io
+      labels:
+        component: argocd
+        access: ingress
+    - name: prometheus
+      url: http://192.168.0.108:32668/-/ready
+      hostname: prometheus.192.168.0.108.nip.io
+      labels:
+        component: prometheus
+        access: ingress
+    - name: alertmanager
+      url: http://192.168.0.108:32668/-/ready
+      hostname: alertmanager.192.168.0.108.nip.io
+      labels:
+        component: alertmanager
+        access: ingress
+    - name: longhorn
+      url: http://192.168.0.108:32668/
+      hostname: longhorn.192.168.0.108.nip.io
+      labels:
+        component: longhorn
+        access: ingress
+    - name: hubble
+      url: http://192.168.0.108:32668/
+      hostname: hubble.192.168.0.108.nip.io
+      labels:
+        component: hubble
+        access: ingress
+    - name: seaweedfs-filer
+      url: http://192.168.0.108:32668/
+      hostname: seaweedfs.192.168.0.108.nip.io
+      labels:
+        component: seaweedfs
+        access: ingress
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    cpu: 200m
+    memory: 256Mi
+
+config:
+  modules:
+    http_2xx:
+      prober: http
+      timeout: 5s
+      http:
+        valid_http_versions: ["HTTP/1.1", "HTTP/2.0"]
+        follow_redirects: true
+        preferred_ip_protocol: ip4
+        valid_status_codes: [200, 302, 401, 405]
+
+serviceMonitorSelectorNilUsesHelmValues: false
+
+podMonitoring:
+  enabled: false
+
+prometheusRule:
+  enabled: true
+  additionalLabels:
+    release: kube-prometheus-stack
+  rules:
+    - alert: LabEndpointDown
+      expr: probe_success{job=~"prometheus-blackbox-exporter.*"} == 0
+      for: 2m
+      labels:
+        severity: warning
+      annotations:
+        summary: "实验室入口异常"
+        description: "{{ $labels.instance }} 连续 2 分钟探测失败。"

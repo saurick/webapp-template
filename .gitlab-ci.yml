@@ -1,0 +1,31 @@
+stages:
+  - validate
+  - deploy
+
+variables:
+  KUBECONFIG: /home/gitlab-runner/.kube/config
+
+validate_lab:
+  stage: validate
+  tags:
+    - shell
+    - lab
+  script:
+    - "kubectl get nodes"
+    - "curl -fsS http://192.168.0.108:8929/users/sign_in >/dev/null"
+    - "curl -fsS -H 'Host: harbor.192.168.0.108.nip.io' http://192.168.0.108:32668/api/v2.0/ping >/dev/null"
+    - "curl -fsS -H 'Host: app.192.168.0.108.nip.io' http://192.168.0.108:32668/readyz >/dev/null"
+
+deploy_lab:
+  stage: deploy
+  tags:
+    - shell
+    - lab
+  resource_group: lab-cluster
+  script:
+    - "kubectl apply -f server/deploy/prod/webapp-template-lab.yaml"
+    - "kubectl rollout status deployment/webapp-template -n webapp --timeout=300s"
+    - "curl -fsS -H 'Host: app.192.168.0.108.nip.io' http://192.168.0.108:32668/healthz"
+    - "curl -fsS -H 'Host: app.192.168.0.108.nip.io' http://192.168.0.108:32668/readyz"
+  only:
+    - main

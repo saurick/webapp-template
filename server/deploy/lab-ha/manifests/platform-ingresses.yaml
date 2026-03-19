@@ -1,0 +1,94 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: prometheus
+  namespace: monitoring
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: prometheus.192.168.0.108.nip.io
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: kube-prometheus-stack-prometheus
+                port:
+                  number: 9090
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: alertmanager
+  namespace: monitoring
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: alertmanager.192.168.0.108.nip.io
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: kube-prometheus-stack-alertmanager
+                port:
+                  number: 9093
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: longhorn
+  namespace: longhorn-system
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: longhorn.192.168.0.108.nip.io
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: longhorn-frontend
+                port:
+                  number: 80
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: hubble
+  namespace: kube-system
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: hubble.192.168.0.108.nip.io
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: hubble-ui
+                port:
+                  number: 80
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: seaweedfs
+  namespace: object-storage
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: seaweedfs.192.168.0.108.nip.io
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: seaweedfs-filer-client
+                port:
+                  number: 8888

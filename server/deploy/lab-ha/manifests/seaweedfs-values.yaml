@@ -1,0 +1,50 @@
+image:
+  registry: docker.m.daocloud.io
+  repository: chrislusf/seaweedfs
+  tag: "4.17"
+
+global:
+  enableSecurity: false
+
+master:
+  replicas: 3
+  volumeSizeLimitMB: 5120
+  defaultReplication: "001"
+  data:
+    type: persistentVolumeClaim
+    size: 2Gi
+    storageClass: longhorn
+  logs:
+    type: emptyDir
+
+volume:
+  replicas: 3
+  dataDirs:
+    - name: data1
+      type: persistentVolumeClaim
+      size: 20Gi
+      storageClass: longhorn
+      maxVolumes: 7
+  idx:
+    type: persistentVolumeClaim
+    size: 5Gi
+    storageClass: longhorn
+  logs:
+    type: emptyDir
+
+filer:
+  replicas: 2
+  data:
+    type: persistentVolumeClaim
+    size: 5Gi
+    storageClass: longhorn
+  logs:
+    type: emptyDir
+
+s3:
+  enabled: true
+  replicas: 2
+  enableAuth: false
+
+globalMonitoring:
+  enabled: true

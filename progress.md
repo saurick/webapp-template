@@ -1,3 +1,16 @@
+## 2026-03-19
+- 完成：把本次三节点实验室高可用部署的关键文档、值文件、脚本和镜像归档统一收口到 `/Users/simon/projects/webapp-template/server/deploy/lab-ha`，新增 `README.md / ACCESS.md / BEST_PRACTICES.md / TEST_REPORT.md / HANDOVER.md`，并补充 `platform-ingresses.yaml`、`blackbox-values.yaml`、`webapp-governance.yaml` 等实验清单；同时更新 `/Users/simon/projects/webapp-template/server/deploy/README.md`，明确 `lab-ha/` 是当前实验室 HA 落地目录而不是模板默认基线。
+- 完成：继续把实验环境打磨到可访问、可观测、可接手状态：为 Prometheus / Alertmanager / Longhorn / Hubble / SeaweedFS 新增入口，补齐 `blackbox-exporter` 探测 10 个关键站点，修正 SeaweedFS volume 索引持久化问题，切换 `webapp-template` 运行镜像到 Harbor，并确认 Harbor 镜像路径可被节点通过 containerd/CRI 拉取。
+- 完成：验证层面补齐了最终收口：`bash scripts/qa/full.sh` 再次全量通过；关键 K8s 清单 `server-side dry-run` 通过；GitLab Runner `verify` 通过；GitLab CI 配置经 GitLab Lint 返回 `valid=true`；外部入口 `webapp/harbor/grafana/prometheus/alertmanager/argocd/longhorn/hubble/seaweedfs/gitlab` 均已实测可达；黑盒探测 `probe_success` 最小值为 `1`；删除一个 webapp pod 后依旧可从 Harbor 路径恢复并保持 `/readyz` 正常。
+- 下一步：如果后续允许提交并推送仓库改动，就把当前 `lab-ha/` 清单和 `.gitlab-ci.yml` 真正推到 GitLab 项目里，让 Argo CD / GitLab Runner 从“已准备好”升级成“远端仓库驱动的完整 GitOps/CD 闭环”；若继续保持实验室模式，则优先补 Velero/Sealed Secrets/更强的告警出口。
+- 阻塞/风险：当前仍是三台 VM 的实验室 HA，不具备硬件级高可用；虚拟化网络对 MetalLB VIP 的外部直连不稳定，因此对外统一采用 `192.168.0.108:32668` 的 NodePort + Host 域名；另外 GitLab 虽已可访问且 Runner 已就绪，但远端仓库中的 CI/CD 文件若要真正触发流水线，仍需要一次显式提交/推送把本地最新清单同步上去。
+
+## 2026-03-19
+- 完成：补齐 GitLab Shell Runner 的最小流水线入口，新增 `/Users/simon/projects/webapp-template/.gitlab-ci.yml` 与 `/Users/simon/projects/webapp-template/server/deploy/prod/webapp-template-lab.yaml`，让实验室环境中的 GitLab Runner 可以直接对 3 节点集群执行 `kubectl apply + rollout status + healthz/readyz` 校验，不再只停留在“平台组件已装好但代码仓没有最小 CD 链路”的状态。
+- 验证：当前模板仓已成功推送到实验室 GitLab 项目 `http://192.168.0.108:8929/root/webapp-template-lab`；`gitlab-runner verify` 已返回 `is alive`；集群内 `webapp-template` 实例通过 `Host: app.192.168.0.108.nip.io` + ingress NodePort 返回 `/healthz=ok`、`/readyz=ready`，注册/登录/管理员登录均已实测通过。
+- 下一步：若后续继续把 Harbor 镜像推送完全接入 GitLab CI，可在 Runner 节点补齐可持续的镜像构建方式（例如 rootless buildkit 或独立构建机），并把当前人工导入 containerd 的镜像分发链路替换为“CI 构建 -> Harbor -> GitOps/rollout”。
+- 阻塞/风险：实验室网络对 MetalLB VIP 与部分上游镜像仓库存在可达性限制，因此当前外部访问口径以 `192.168.0.108:32668` 这类 NodePort + Host 头为主；另外流水线当前侧重部署校验，尚未把镜像构建完全收口到 GitLab Runner 内部。
+
 ## 2026-03-18
 - 完成：为 `/Users/simon/projects/webapp-template/web/public/favicon.svg` 新增一套与当前首页一致的深色底 + 青色/琥珀色点缀 favicon，并在 `/Users/simon/projects/webapp-template/web/index.html` 与 `/Users/simon/projects/webapp-template/web/public/index.html` 接入统一 `icon` 引用和 `theme-color`，让模板默认标签页图标不再沿用空白或浏览器默认图标。
 - 验证：已执行 `pnpm --dir /Users/simon/projects/webapp-template/web build`，构建通过；产物 `/Users/simon/projects/webapp-template/web/build/favicon.svg` 已正常生成并可被入口 HTML 引用。

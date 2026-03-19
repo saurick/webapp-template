@@ -1,0 +1,13 @@
+---
+apiVersion: bitnami.com/v1alpha1
+kind: SealedSecret
+metadata:
+  name: lab-sealed-example
+  namespace: webapp
+spec:
+  encryptedData:
+    message: AgANetL4AcTAoDuwyu1W9MPBLDyT4iBD7oQM29wfIhWcG1Nvz/ItRicWA95WTsV4TJtR+IQ2ADqh7RzZ+AjYjQO/vh+fjv84qTQWQNuy58G01dumljRbWmexBNG0NiC5yBnbbQVLyDjgfTfo6uffdScR2PyxcviDxCBmrrauMiAdQKUKCs80Uu+C7rmsIkZ3ACF688v1p8qofuM6zJ96uHGm+c/H7yPa8FelrCxXHnByW3ddID626olzGAt3D2BwpiRSjK7k8aq/TpMMstFzqOr0hFMn0XOnX+OR/8gPstbiXc+iJ11cxY0arvlBAimbSkCJHbNLXzxx3wup2spMVsBEZRzEvb4iib17pTCfjMyU/qR9pyx1JZh6IIlAIylB5SSt4fNuwZXcnkaZFNi9cE5n81Tq5GNUKOWkpaZQ5+87JpTfcLTDnAxpaOgcgm04b+KQ5zEw0YU0WcO+rtduvG5mjV21HK1AES/yeEC1qFL8OFiCdzxEEpE1yUFBWKQb1QVUtJ6Qv+zAJADpkHK8vOH7Ojw5TPMmPv+/6yavGveTQPuTWz7NWNIJ0wNvRi6ItVEuQVJM9uxK3lBl+Sq0NbQrqPG9TK+o2w5tl3fAKnIqS5z3x6Ayj+Kc8VjJYJxo/Eb/4JnztfYhsLhKOwUvRMyQdQCCeyd17zQq7StzdsdeFonNivMIJq6kf30R2FXHORxXqhMMzbkv4g==
+  template:
+    metadata:
+      name: lab-sealed-example
+      namespace: webapp
