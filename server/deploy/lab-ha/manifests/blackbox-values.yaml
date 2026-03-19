@@ -13,58 +13,50 @@ serviceMonitor:
         access: external
     - name: webapp
       url: http://192.168.0.108:32668/readyz
-      hostname: app.192.168.0.108.nip.io
       labels:
         component: webapp
-        access: ingress
+        access: direct
     - name: harbor
-      url: http://192.168.0.108:32668/api/v2.0/ping
-      hostname: harbor.192.168.0.108.nip.io
+      url: http://192.168.0.108:30002/api/v2.0/ping
       labels:
         component: harbor
-        access: ingress
+        access: direct
     - name: grafana
-      url: http://192.168.0.108:32668/login
-      hostname: grafana.192.168.0.108.nip.io
+      url: http://192.168.0.108:30081/login
       labels:
         component: grafana
-        access: ingress
+        access: direct
     - name: argocd
-      url: http://192.168.0.108:32668/
-      hostname: argocd.192.168.0.108.nip.io
+      url: https://192.168.0.108:30443/
+      module: https_2xx_insecure
       labels:
         component: argocd
-        access: ingress
+        access: direct
     - name: prometheus
-      url: http://192.168.0.108:32668/-/ready
-      hostname: prometheus.192.168.0.108.nip.io
+      url: http://192.168.0.108:30090/-/ready
       labels:
         component: prometheus
-        access: ingress
+        access: direct
     - name: alertmanager
-      url: http://192.168.0.108:32668/-/ready
-      hostname: alertmanager.192.168.0.108.nip.io
+      url: http://192.168.0.108:30093/-/ready
       labels:
         component: alertmanager
-        access: ingress
+        access: direct
     - name: longhorn
-      url: http://192.168.0.108:32668/
-      hostname: longhorn.192.168.0.108.nip.io
+      url: http://192.168.0.108:30084/
       labels:
         component: longhorn
-        access: ingress
+        access: direct
     - name: hubble
-      url: http://192.168.0.108:32668/
-      hostname: hubble.192.168.0.108.nip.io
+      url: http://192.168.0.108:30085/
       labels:
         component: hubble
-        access: ingress
+        access: direct
     - name: seaweedfs-filer
-      url: http://192.168.0.108:32668/
-      hostname: seaweedfs.192.168.0.108.nip.io
+      url: http://192.168.0.108:30888/
       labels:
         component: seaweedfs
-        access: ingress
+        access: direct
 
 resources:
   requests:
@@ -83,6 +75,16 @@ config:
         valid_http_versions: ["HTTP/1.1", "HTTP/2.0"]
         follow_redirects: true
         preferred_ip_protocol: ip4
+        valid_status_codes: [200, 302, 401, 405]
+    https_2xx_insecure:
+      prober: http
+      timeout: 5s
+      http:
+        valid_http_versions: ["HTTP/1.1", "HTTP/2.0"]
+        follow_redirects: true
+        preferred_ip_protocol: ip4
+        tls_config:
+          insecure_skip_verify: true
         valid_status_codes: [200, 302, 401, 405]
 
 serviceMonitorSelectorNilUsesHelmValues: false

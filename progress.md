@@ -1,4 +1,11 @@
 ## 2026-03-19
+- 完成：修复“浏览器里大部分链接打不开”的访问层问题，确认根因是当前用户环境对 `*.nip.io` 主机名与 Host 头入口不稳定，因此把实验室站点主入口统一改成 `192.168.0.108:port` 直连模式；同时为 `webapp-template` 增加无 host 的默认 Ingress 规则，使主站可直接通过 `http://192.168.0.108:32668` 打开，并把 Grafana/Prometheus/Alertmanager/Argo CD/Longhorn/Hubble/SeaweedFS/Harbor 都收口为各自独立的直连端口。
+- 完成：同步把 `.gitlab-ci.yml`、`blackbox-values.yaml`、`ACCESS.md`、`BEST_PRACTICES.md`、`HANDOVER.md` 等配置与文档切换到直连入口口径，并重新升级 blackbox-exporter，让探测目标对齐当前真实可访问地址。
+- 验证：本机直接访问 `http://192.168.0.108:32668`、`http://192.168.0.108:30002`、`http://192.168.0.108:30081`、`http://192.168.0.108:30090/graph`、`http://192.168.0.108:30093/`、`https://192.168.0.108:30443/`、`http://192.168.0.108:30084/`、`http://192.168.0.108:30085/`、`http://192.168.0.108:30888/`、`http://192.168.0.108:30086/`、`http://192.168.0.108:30333/`、`http://192.168.0.108:8929/users/sign_in` 均已得到可用响应；其中 WebApp 首页 HTML 已成功抓取，Prometheus/Alertmanager/Harbor 页面内容也已实测可读。
+- 下一步：若后续用户本机代理策略已修复，可再把 `nip.io` 域名入口恢复成辅助可读地址；否则继续坚持 `IP:Port` 作为实验室默认入口即可。
+- 阻塞/风险：这次修复优先保证“马上能打开”，因此访问口径从 prettier 的主机名切到了更直接的 IP:Port；主机名 Ingress 仍保留在集群里，但不再作为主推荐入口。
+
+## 2026-03-19
 - 完成：继续把实验室高可用链路补齐到可交接状态，新增并落地 `Velero`、`Sealed Secrets`、`Alertmanager webhook sink`、`Argo CD` 仓库凭据密文管理与 `webapp-template-lab` 自动同步应用；同时为 GitLab 增加独立远程 `gitlab`，把本地部署文档与实验清单以 `feat(deploy): 补齐实验室高可用部署基线`、`fix(deploy): 修正 Argo CD 应用目录`、`fix(deploy): 去重实验目录命名空间资源` 三次提交推送到实验室仓库 `git@192.168.0.108:root/webapp-template-lab.git`。
 - 验证：GitLab 最近 3 条 pipeline 已全部 `success`；Argo CD `webapp-template-lab` 当前 `Synced + Healthy` 且自动同步到修正后的 `f3f81f7`；`Velero` 的 `BackupStorageLocation default` 已 `Available`，`webapp-smoke-backup` 已 `Completed`；`SealedSecret repo-webapp-template-lab` 与 `lab-sealed-example` 都已成功解封；`alert-webhook-receiver` 已收到 Alertmanager POST；`probe_success` 最小值保持为 `1`。
 - 下一步：若用户后续提供飞书/钉钉/Telegram webhook 或 SMTP 参数，可把当前实验室 webhook sink 平滑替换成真实通知出口；若允许继续增强恢复能力，可追加 `Velero restore` 演练与更细粒度的定时备份策略。

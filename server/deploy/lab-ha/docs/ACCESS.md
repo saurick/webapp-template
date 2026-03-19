@@ -2,18 +2,18 @@
 
 ## 访问入口
 
-说明：当前虚拟化网络下，MetalLB VIP 对外部机器不稳定，因此统一采用 `node2 (192.168.0.108)` 的 ingress NodePort 暴露站点。
+说明：当前用户侧浏览器/代理环境对 `*.nip.io` 这类主机名不稳定，因此实验室对外访问已统一切到 `192.168.0.108` 的直连 `IP:Port` 方案；这是目前最稳、最直接、最少踩坑的入口口径。
 
-- WebApp: `http://app.192.168.0.108.nip.io:32668`
-- Harbor: `http://harbor.192.168.0.108.nip.io:32668`
-- Grafana: `http://grafana.192.168.0.108.nip.io:32668`
-- Prometheus: `http://prometheus.192.168.0.108.nip.io:32668`
-- Alertmanager: `http://alertmanager.192.168.0.108.nip.io:32668`
-- Argo CD: `http://argocd.192.168.0.108.nip.io:32668`
-- Hubble UI: `http://hubble.192.168.0.108.nip.io:32668`
-- Longhorn UI: `http://longhorn.192.168.0.108.nip.io:32668`
-- SeaweedFS Filer UI: `http://seaweedfs.192.168.0.108.nip.io:32668`
-- Alert Sink: `http://alertsink.192.168.0.108.nip.io:32668`
+- WebApp: `http://192.168.0.108:32668`
+- Harbor: `http://192.168.0.108:30002`
+- Grafana: `http://192.168.0.108:30081`
+- Prometheus: `http://192.168.0.108:30090`
+- Alertmanager: `http://192.168.0.108:30093`
+- Argo CD: `https://192.168.0.108:30443`
+- Hubble UI: `http://192.168.0.108:30085`
+- Longhorn UI: `http://192.168.0.108:30084`
+- SeaweedFS Filer UI: `http://192.168.0.108:30888`
+- Alert Sink: `http://192.168.0.108:30086`
 - SeaweedFS S3: `http://192.168.0.108:30333`
 - GitLab: `http://192.168.0.108:8929`
 
@@ -50,3 +50,9 @@
 - `origin`: 继续保留 GitHub 模板上游
 - `gitlab`: 当前实验室部署仓库，建议用于 CI/CD / Argo CD / 演练环境
 - 默认不要同时推两个远程，除非明确说明
+
+## 历史入口说明
+
+- `*.192.168.0.108.nip.io:32668` 这组基于 Host 头的入口仍保留在集群内配置里
+- 但对当前浏览器环境不再作为主推荐入口
+- 后续若本机代理绕过规则已修好，可再切回主机名入口

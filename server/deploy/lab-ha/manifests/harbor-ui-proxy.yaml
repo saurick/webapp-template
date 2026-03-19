@@ -1,0 +1,97 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: harbor-ui-proxy-nginx
+  namespace: harbor
+data:
+  nginx.conf: |
+    worker_processes  1;
+    events { worker_connections 1024; }
+    http {
+      client_max_body_size 0;
+      proxy_buffering off;
+      server {
+        listen 8080;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto http;
+        proxy_set_header X-Forwarded-Port 30002;
+        proxy_set_header X-Real-IP $remote_addr;
+
+        location /api/ {
+          proxy_pass http://harbor-core.harbor.svc.cluster.local:80;
+        }
+
+        location /service/ {
+          proxy_pass http://harbor-core.harbor.svc.cluster.local:80;
+        }
+
+        location /v2/ {
+          proxy_pass http://harbor-core.harbor.svc.cluster.local:80;
+        }
+
+        location /c/ {
+          proxy_pass http://harbor-core.harbor.svc.cluster.local:80;
+        }
+
+        location /chartrepo/ {
+          proxy_pass http://harbor-core.harbor.svc.cluster.local:80;
+        }
+
+        location / {
+          proxy_pass http://harbor-portal.harbor.svc.cluster.local:80;
+        }
+      }
+    }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: harbor-ui-proxy
+  namespace: harbor
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: harbor-ui-proxy
+  template:
+    metadata:
+      labels:
+        app: harbor-ui-proxy
+    spec:
+      containers:
+        - name: nginx
+          image: docker.m.daocloud.io/library/nginx:1.27-alpine
+          ports:
+            - containerPort: 8080
+              name: http
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi
+          volumeMounts:
+            - name: config
+              mountPath: /etc/nginx/nginx.conf
+              subPath: nginx.conf
+      volumes:
+        - name: config
+          configMap:
+            name: harbor-ui-proxy-nginx
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: harbor-ui-proxy
+  namespace: harbor
+spec:
+  type: NodePort
+  selector:
+    app: harbor-ui-proxy
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http
+      nodePort: 30002

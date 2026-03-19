@@ -4,7 +4,7 @@
 
 - 集群 kubeconfig（本机）: `/Users/simon/.kube/ha-lab.conf`
 - GitLab: 宿主机 `192.168.0.108:8929`
-- Harbor / Grafana / Prometheus / Argo CD / WebApp: 统一走 `192.168.0.108:32668` + Host 域名
+- Harbor / Grafana / Prometheus / Argo CD / WebApp: 当前主入口统一改为 `192.168.0.108:port` 直连
 - 实验室部署清单集中在 `server/deploy/lab-ha/`
 - `webapp-template` 运行镜像当前已切到 Harbor：`harbor.192.168.0.108.nip.io:32668/library/webapp-template-server:ha-lab`
 - GitLab Runner 已经 `verify` 通过，`.gitlab-ci.yml` 也已通过 GitLab CI Lint
@@ -30,7 +30,7 @@
 
 ## 已知实验室限制
 
-- MetalLB VIP 对外部客户端不稳定，因此外部统一走 node2 NodePort
+- MetalLB VIP 和 `nip.io` 主机名在当前用户环境里都不够稳定，因此外部统一走 node2 的直连 `IP:Port`
 - GitLab 目前是单点宿主机服务，不是 HA GitLab
 - Harbor 当前关闭 `trivy`
 - Loki 当前为轻量单实例，不是分布式日志集群
