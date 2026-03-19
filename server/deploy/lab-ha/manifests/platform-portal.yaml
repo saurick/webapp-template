@@ -292,6 +292,9 @@ data:
               <a class="card" href="http://192.168.0.108:30081/d/lab-ha-postgres/ha-lab-postgresql-and-backup" target="_blank" rel="noreferrer">
                 <small>Database</small><strong>PostgreSQL &amp; Backup</strong><span>Primary/replica roles, lag, DB size, and Velero backup signals.</span>
               </a>
+              <a class="card" href="http://192.168.0.108:30081/d/lab-ha-gitops/ha-lab-gitops-and-delivery" target="_blank" rel="noreferrer">
+                <small>Delivery</small><strong>GitOps &amp; Delivery</strong><span>Argo CD sync, GitLab probe, rollout controller, and release signals.</span>
+              </a>
               <a class="card" href="http://192.168.0.108:30090/graph" target="_blank" rel="noreferrer">
                 <small>Metrics</small><strong>Prometheus</strong><span>Raw scrape and query UI.</span>
               </a>

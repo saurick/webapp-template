@@ -26,7 +26,9 @@
 - `manifests/grafana-lab-overview-dashboard.yaml`: Grafana 值班总览看板
 - `manifests/grafana-lab-data-services-dashboard.yaml`: Grafana 数据与存储看板
 - `manifests/grafana-lab-postgres-backup-dashboard.yaml`: Grafana PostgreSQL 与备份看板
+- `manifests/grafana-lab-gitops-dashboard.yaml`: Grafana GitOps 与交付看板
 - `manifests/grafana-loki-datasource.yaml`: Grafana Loki 数据源
+- `manifests/argocd-rollouts-metrics.yaml`: Argo CD / Argo Rollouts 指标采集清单
 - `manifests/blackbox-values.yaml`: Blackbox Exporter 探测配置
 - `manifests/alert-webhook-receiver.yaml`: 实验室默认 webhook 告警接收器
 - `manifests/webapp-governance.yaml`: webapp 命名空间治理基线

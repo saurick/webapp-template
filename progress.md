@@ -1,4 +1,10 @@
 ## 2026-03-19
+- 完成：继续补齐交付链路的值班面，新增 `/Users/simon/projects/webapp-template/server/deploy/lab-ha/manifests/argocd-rollouts-metrics.yaml` 与 `/Users/simon/projects/webapp-template/server/deploy/lab-ha/manifests/grafana-lab-gitops-dashboard.yaml`，让 Prometheus 开始抓取 `Argo CD server`、`Argo CD application controller` 与 `Argo Rollouts` 指标，并在 Grafana 新增 `HA Lab / GitOps & Delivery` 看板；同时把 Portal 再补一张 `GitOps & Delivery` 卡片。
+- 验证：Prometheus 已能查询到 `argocd_app_info`、`argocd_app_sync_total`、`argocd_cluster_connection_status`、`argo_rollouts_controller_info` 等关键指标；Grafana 搜索已出现 `HA Lab / GitOps & Delivery`，地址 `http://192.168.0.108:30081/d/lab-ha-gitops/ha-lab-gitops-and-delivery` 返回 `200`；Portal 页面也已出现新的交付看板入口。
+- 下一步：若后续要继续逼近正式值班体系，可再考虑给 Harbor 和 Longhorn 补更细的专项看板；当前总览 + 数据存储 + PostgreSQL 备份 + GitOps 交付四张看板，已经形成一套完整的实验室值班面板体系。
+- 阻塞/风险：当前 Harbor 仍主要依靠 blackbox 与 deployment 可用副本作为运维信号，没有单独补更重的业务 exporter；这仍是基于实验室资源预算做的克制选择。
+
+## 2026-03-19
 - 完成：继续把 Grafana 看板拆得更适合值班使用，新增 `/Users/simon/projects/webapp-template/server/deploy/lab-ha/manifests/cnpg-podmonitor.yaml` 与 `/Users/simon/projects/webapp-template/server/deploy/lab-ha/manifests/grafana-lab-postgres-backup-dashboard.yaml`，让 `CloudNativePG` 的实例角色、复制 lag、数据库大小、提交速率和 Velero 备份信号都能在单独的 PostgreSQL 看板里观察；同时把 Portal 再补一张 `PostgreSQL & Backup` 入口卡片。
 - 验证：Prometheus 已出现 `database/app-pg-lab` 目标，`cnpg_collector_up`、`cnpg_pg_replication_in_recovery`、`cnpg_pg_replication_lag`、`cnpg_pg_database_size_bytes`、`velero_backup_last_status` 等指标均可查询；Grafana 新看板地址 `http://192.168.0.108:30081/d/lab-ha-postgres/ha-lab-postgresql-and-backup` 返回 `200`。
 - 下一步：如果后续还想更细，可以再给 Harbor/Longhorn 做更偏平台运维的专项仪表盘，但当前总览 + 数据存储 + PG 备份三张看板已经能覆盖大多数实验室值班场景。
