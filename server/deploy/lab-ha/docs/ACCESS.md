@@ -28,6 +28,7 @@
 
 - Portal is the navigation homepage for this lab environment
 - It now includes a dedicated favicon and one-click copy buttons for default credentials
+- It also includes an operational snapshot area for CI, GitOps, HA drills, and blackbox guidance
 
 ## 当前实验室默认凭据
 

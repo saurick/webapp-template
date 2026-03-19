@@ -144,6 +144,12 @@ data:
             gap: 16px;
             margin-top: 24px;
           }
+          .snapshot {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 16px;
+            margin-top: 24px;
+          }
           .note {
             padding: 18px;
             border-radius: 18px;
@@ -222,6 +228,30 @@ data:
             color: var(--ok);
             font-weight: 600;
           }
+          .status-card {
+            padding: 18px;
+            border-radius: 18px;
+            background: linear-gradient(180deg, rgba(10,20,34,0.96), rgba(8,16,28,0.94));
+            border: 1px solid rgba(255,255,255,0.08);
+          }
+          .status-card h2 {
+            margin: 0 0 8px;
+            font-size: 16px;
+          }
+          .status-value {
+            font-size: 28px;
+            font-weight: 700;
+            margin: 0 0 8px;
+          }
+          .status-card p {
+            margin: 0;
+            color: var(--muted);
+            line-height: 1.7;
+            font-size: 14px;
+          }
+          .status-card a {
+            color: var(--accent);
+          }
         </style>
       </head>
       <body>
@@ -279,6 +309,43 @@ data:
               </a>
             </div>
             <div class="tag">Stable direct browser endpoints</div>
+          </section>
+
+          <section class="snapshot">
+            <div class="status-card">
+              <h2>CI Pipeline</h2>
+              <div class="status-value status-ok">Passed</div>
+              <p>
+                Latest verified GitLab pipeline passed in the final delivery run.
+                Open <a href="http://192.168.0.108:8929/root/webapp-template-lab/-/pipelines" target="_blank" rel="noreferrer">pipeline history</a>
+                for the newest record.
+              </p>
+            </div>
+            <div class="status-card">
+              <h2>GitOps Sync</h2>
+              <div class="status-value status-ok">Synced</div>
+              <p>
+                Argo CD application is synced and healthy for the lab deployment path.
+                Open <a href="https://192.168.0.108:30443" target="_blank" rel="noreferrer">Argo CD</a>
+                to inspect current revision and drift.
+              </p>
+            </div>
+            <div class="status-card">
+              <h2>HA Drills</h2>
+              <div class="status-value status-ok">Passed</div>
+              <p>
+                PostgreSQL failover, API VIP failover, SeaweedFS volume restart, and webapp pod recovery
+                all passed in the latest verified drill set.
+              </p>
+            </div>
+            <div class="status-card">
+              <h2>Blackbox Probes</h2>
+              <div class="status-value status-ok">Healthy</div>
+              <p>
+                Human-facing entrypoints are under Prometheus blackbox probing.
+                Direct truth remains in Prometheus and Alertmanager, not in the static page itself.
+              </p>
+            </div>
           </section>
 
           <section class="creds">
@@ -374,10 +441,16 @@ data:
                 Full runbook, access notes, HA drills, and handover docs live in
                 <code>server/deploy/lab-ha/docs</code> inside the repository.
               </p>
+              <ul>
+                <li><a href="http://192.168.0.108:8929/root/webapp-template-lab/-/blob/main/server/deploy/lab-ha/docs/ACCESS.md" target="_blank" rel="noreferrer">ACCESS.md</a></li>
+                <li><a href="http://192.168.0.108:8929/root/webapp-template-lab/-/blob/main/server/deploy/lab-ha/docs/TEST_REPORT.md" target="_blank" rel="noreferrer">TEST_REPORT.md</a></li>
+                <li><a href="http://192.168.0.108:8929/root/webapp-template-lab/-/blob/main/server/deploy/lab-ha/docs/HANDOVER.md" target="_blank" rel="noreferrer">HANDOVER.md</a></li>
+              </ul>
             </div>
           </section>
         </div>
         <script>
+          // Portal 只做静态导航与复制反馈，实时状态仍以 Prometheus / GitLab 为准。
           document.querySelectorAll('.copy').forEach((button) => {
             button.addEventListener('click', async () => {
               const value = button.getAttribute('data-copy') || '';

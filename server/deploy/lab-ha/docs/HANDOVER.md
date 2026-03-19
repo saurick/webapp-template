@@ -6,6 +6,7 @@
 - GitLab: 宿主机 `192.168.0.108:8929`
 - Harbor / Grafana / Prometheus / Argo CD / WebApp: 当前主入口统一改为 `192.168.0.108:port` 直连
 - Portal: `http://192.168.0.108:30088`
+- Portal 已包含入口导航、默认账号复制、S3 API 说明、CI/GitOps/演练快照卡片；适合作为第一入口
 - 实验室部署清单集中在 `server/deploy/lab-ha/`
 - `webapp-template` 运行镜像当前已切到 Harbor：`harbor.192.168.0.108.nip.io:32668/library/webapp-template-server:ha-lab`
 - GitLab Runner 已经 `verify` 通过，`.gitlab-ci.yml` 也已通过 GitLab CI Lint

@@ -52,7 +52,8 @@
 
 ## 推荐阅读顺序
 
-1. `docs/ACCESS.md`
-2. `docs/TEST_REPORT.md`
-3. `docs/BEST_PRACTICES.md`
-4. `docs/HANDOVER.md`
+1. `http://192.168.0.108:30088`
+2. `docs/ACCESS.md`
+3. `docs/TEST_REPORT.md`
+4. `docs/BEST_PRACTICES.md`
+5. `docs/HANDOVER.md`
