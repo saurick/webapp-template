@@ -24,6 +24,11 @@
 - It is expected to return `AccessDenied` in a normal browser tab because the browser does not sign S3 requests
 - For a human-friendly UI, use `http://192.168.0.108:30888`
 
+## Portal note
+
+- Portal is the navigation homepage for this lab environment
+- It now includes a dedicated favicon and one-click copy buttons for default credentials
+
 ## 当前实验室默认凭据
 
 - WebApp admin: `admin / AdminLab123!`

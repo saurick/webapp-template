@@ -1,4 +1,10 @@
 ## 2026-03-19
+- 完成：继续增强实验室门户页 `/Users/simon/projects/webapp-template/server/deploy/lab-ha/manifests/platform-portal.yaml`，为 Portal 增加专用 favicon、统一视觉风格、默认账号一键复制按钮、平台定位说明与更完整的运维提示；并通过 `kubectl rollout restart deployment/lab-portal -n lab-portal` 让基于 ConfigMap subPath 的页面更新真正生效。
+- 验证：`http://192.168.0.108:30088` 已能返回新版门户 HTML，页面中已包含 `rel="icon"` 与 `data-copy` 按钮标记；Portal 继续正常可访问，主入口仍保持可用。
+- 下一步：如果后续还想再提升体验，可以继续给 Portal 加“最近一次演练结果/最近一次 GitLab pipeline 状态”这类摘要信息，但当前这版已经满足日常导航、账号提示和 API/UI 区分。
+- 阻塞/风险：Portal 是静态页，当前不做实时跨域健康探测，以避免引入浏览器 CORS 兼容问题；状态真源仍以 Prometheus / blackbox 与文档为准。
+
+## 2026-03-19
 - 完成：修复 GitLab 浏览器登录入口，根因是 root 用户仍保留 `password_automatically_set` 初始化标记，导致 `/users/sign_in` 持续跳转到 `/admin/initial_setup/new`；现在已通过 Rails runner 清除初始化标记，浏览器访问登录页恢复正常。
 - 完成：新增实验室门户页 `/Users/simon/projects/webapp-template/server/deploy/lab-ha/manifests/platform-portal.yaml`，通过 `http://192.168.0.108:30088` 汇总所有当前稳定的直连地址，并在门户页明确说明 SeaweedFS S3 端口 `30333` 是 API 端口、浏览器看到 `AccessDenied` 属于预期行为。
 - 验证：`curl -I http://192.168.0.108:8929/users/sign_in` 已返回 `200 OK`；门户页可直接打开；黑盒探测已追加 `portal` 目标；访问说明与接手文档同步更新。

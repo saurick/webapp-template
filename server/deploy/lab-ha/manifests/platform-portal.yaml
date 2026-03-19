@@ -16,6 +16,11 @@ data:
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <title>HA Lab Portal</title>
+        <link
+          rel="icon"
+          type="image/svg+xml"
+          href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0%25' stop-color='%2366d9ef'/%3E%3Cstop offset='100%25' stop-color='%23ffd166'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='64' height='64' rx='18' fill='%2307111f'/%3E%3Cpath d='M16 44V20h8l8 12 8-12h8v24h-8V31l-8 11-8-11v13z' fill='url(%23g)'/%3E%3Ccircle cx='50' cy='16' r='5' fill='%23ffd166'/%3E%3C/svg%3E"
+        >
         <style>
           :root {
             --bg: #07111f;
@@ -25,11 +30,12 @@ data:
             --muted: #9bb4d1;
             --accent: #66d9ef;
             --accent-2: #ffd166;
+            --ok: #7bd88f;
           }
           * { box-sizing: border-box; }
           body {
             margin: 0;
-            font-family: "Segoe UI", "Helvetica Neue", sans-serif;
+            font-family: "Avenir Next", "Segoe UI", "Helvetica Neue", sans-serif;
             background:
               radial-gradient(circle at top left, rgba(102,217,239,0.18), transparent 32%),
               radial-gradient(circle at top right, rgba(255,209,102,0.14), transparent 28%),
@@ -68,6 +74,23 @@ data:
             max-width: 760px;
             line-height: 1.7;
             font-size: 16px;
+          }
+          .pill-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 18px;
+          }
+          .pill {
+            border-radius: 999px;
+            padding: 8px 12px;
+            border: 1px solid rgba(255,255,255,0.08);
+            background: rgba(255,255,255,0.04);
+            color: var(--muted);
+            font-size: 13px;
+          }
+          .pill b {
+            color: var(--text);
           }
           .grid {
             display: grid;
@@ -115,6 +138,12 @@ data:
             gap: 16px;
             margin-top: 24px;
           }
+          .creds {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 16px;
+            margin-top: 24px;
+          }
           .note {
             padding: 18px;
             border-radius: 18px;
@@ -131,6 +160,47 @@ data:
             line-height: 1.7;
             font-size: 14px;
           }
+          .cred {
+            padding: 18px;
+            border-radius: 18px;
+            background: linear-gradient(180deg, rgba(11,21,36,0.96), rgba(9,16,28,0.94));
+            border: 1px solid rgba(255,255,255,0.08);
+          }
+          .cred h2 {
+            margin: 0 0 12px;
+            font-size: 18px;
+          }
+          .cred-line {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 0;
+            border-top: 1px solid rgba(255,255,255,0.06);
+          }
+          .cred-line:first-of-type { border-top: 0; }
+          .cred-label {
+            color: var(--muted);
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+          }
+          .cred-value {
+            color: var(--text);
+            font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+            font-size: 13px;
+            word-break: break-all;
+          }
+          .copy {
+            border: 0;
+            border-radius: 999px;
+            padding: 7px 12px;
+            background: rgba(102,217,239,0.14);
+            color: var(--accent);
+            cursor: pointer;
+            font-size: 12px;
+          }
+          .copy:hover { background: rgba(102,217,239,0.22); }
           ul { margin: 10px 0 0; padding-left: 18px; }
           code {
             background: rgba(255,255,255,0.06);
@@ -148,6 +218,10 @@ data:
             letter-spacing: 0.05em;
             text-transform: uppercase;
           }
+          .status-ok {
+            color: var(--ok);
+            font-weight: 600;
+          }
         </style>
       </head>
       <body>
@@ -160,9 +234,18 @@ data:
               stable <code>192.168.0.108:port</code> endpoints so they keep working even when
               <code>nip.io</code> or Host-header based routes are unreliable on the client side.
             </p>
+            <div class="pill-row">
+              <div class="pill"><b>Mode</b> Experiment HA</div>
+              <div class="pill"><b>Nodes</b> 3 VM / single stable host</div>
+              <div class="pill"><b>Status</b> <span class="status-ok">Healthy</span></div>
+              <div class="pill"><b>Best Entry</b> IP:Port direct</div>
+            </div>
             <div class="grid">
               <a class="card" href="http://192.168.0.108:32668" target="_blank" rel="noreferrer">
                 <small>App</small><strong>WebApp</strong><span>Main product site.</span>
+              </a>
+              <a class="card" href="http://192.168.0.108:30088" target="_blank" rel="noreferrer">
+                <small>Portal</small><strong>Lab Portal</strong><span>This navigation page itself.</span>
               </a>
               <a class="card" href="http://192.168.0.108:30002" target="_blank" rel="noreferrer">
                 <small>Registry</small><strong>Harbor</strong><span>Container registry UI.</span>
@@ -198,15 +281,83 @@ data:
             <div class="tag">Stable direct browser endpoints</div>
           </section>
 
+          <section class="creds">
+            <div class="cred">
+              <h2>Default Accounts</h2>
+              <div class="cred-line">
+                <div>
+                  <div class="cred-label">WebApp</div>
+                  <div class="cred-value">admin / AdminLab123!</div>
+                </div>
+                <button class="copy" data-copy="admin / AdminLab123!">Copy</button>
+              </div>
+              <div class="cred-line">
+                <div>
+                  <div class="cred-label">Harbor</div>
+                  <div class="cred-value">admin / HarborAdmin123!</div>
+                </div>
+                <button class="copy" data-copy="admin / HarborAdmin123!">Copy</button>
+              </div>
+              <div class="cred-line">
+                <div>
+                  <div class="cred-label">Grafana</div>
+                  <div class="cred-value">admin / Grafana123!</div>
+                </div>
+                <button class="copy" data-copy="admin / Grafana123!">Copy</button>
+              </div>
+              <div class="cred-line">
+                <div>
+                  <div class="cred-label">Argo CD</div>
+                  <div class="cred-value">admin / aLgJjYwPdezuEzSw</div>
+                </div>
+                <button class="copy" data-copy="admin / aLgJjYwPdezuEzSw">Copy</button>
+              </div>
+              <div class="cred-line">
+                <div>
+                  <div class="cred-label">GitLab</div>
+                  <div class="cred-value">root / L4b!Runr2026#Git</div>
+                </div>
+                <button class="copy" data-copy="root / L4b!Runr2026#Git">Copy</button>
+              </div>
+            </div>
+
+            <div class="cred">
+              <h2>Quick Notes</h2>
+              <div class="cred-line">
+                <div>
+                  <div class="cred-label">Argo CD</div>
+                  <div class="cred-value">Self-signed HTTPS. Browser warning once is expected.</div>
+                </div>
+              </div>
+              <div class="cred-line">
+                <div>
+                  <div class="cred-label">SeaweedFS S3</div>
+                  <div class="cred-value">30333 is API-only. Browser AccessDenied is expected.</div>
+                </div>
+              </div>
+              <div class="cred-line">
+                <div>
+                  <div class="cred-label">Filer UI</div>
+                  <div class="cred-value">Use 30888 for human browsing and basic object checks.</div>
+                </div>
+              </div>
+              <div class="cred-line">
+                <div>
+                  <div class="cred-label">GitOps</div>
+                  <div class="cred-value">GitLab CI + Argo CD already drive the lab deployment path.</div>
+                </div>
+              </div>
+            </div>
+          </section>
+
           <section class="notes">
             <div class="note">
-              <h2>Default accounts</h2>
+              <h2>What Portal is for</h2>
               <ul>
-                <li>WebApp admin: <code>admin / AdminLab123!</code></li>
-                <li>Harbor: <code>admin / HarborAdmin123!</code></li>
-                <li>Grafana: <code>admin / Grafana123!</code></li>
-                <li>Argo CD: <code>admin / aLgJjYwPdezuEzSw</code></li>
-                <li>GitLab: <code>root / L4b!Runr2026#Git</code></li>
+                <li>Central landing page for every lab system.</li>
+                <li>Reduces the need to remember many ports.</li>
+                <li>Explains which endpoints are web pages and which are APIs.</li>
+                <li>Lets future operators or AI pick up the lab quickly.</li>
               </ul>
             </div>
             <div class="note">
@@ -226,6 +377,23 @@ data:
             </div>
           </section>
         </div>
+        <script>
+          document.querySelectorAll('.copy').forEach((button) => {
+            button.addEventListener('click', async () => {
+              const value = button.getAttribute('data-copy') || '';
+              try {
+                await navigator.clipboard.writeText(value);
+                const old = button.textContent;
+                button.textContent = 'Copied';
+                setTimeout(() => {
+                  button.textContent = old;
+                }, 1200);
+              } catch (_err) {
+                button.textContent = 'Copy manually';
+              }
+            });
+          });
+        </script>
       </body>
     </html>
 ---
