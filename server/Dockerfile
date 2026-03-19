@@ -5,12 +5,15 @@ ARG BUILDPLATFORM=linux/amd64
 ARG RUNTIMEPLATFORM=linux/amd64
 ARG GO_TARGETOS=linux
 ARG GO_TARGETARCH=amd64
+ARG NODE_BUILDER_IMAGE=node:24.14.0
+ARG GO_BUILDER_IMAGE=golang:1.24.1
+ARG RUNTIME_BASE_IMAGE=alpine:3.21
 
 # ======================
 # 1) 构建前端静态文件
 # ======================
-# 与根目录 .n-node-version 对齐，避免容器与本地 Node 小版本漂移。
-FROM --platform=$BUILDPLATFORM node:24.14.0 AS web-builder
+# 与根目录 .n-node-version 对齐，避免容器与本地 Node 小版本漂移；同时保留 build arg，便于在受限网络下切换镜像源。
+FROM --platform=$BUILDPLATFORM ${NODE_BUILDER_IMAGE} AS web-builder
 
 WORKDIR /web
 
@@ -34,7 +37,7 @@ RUN pnpm run build   # 输出到 web/build
 # ======================
 # 2) Builder 阶段
 # ======================
-FROM --platform=$BUILDPLATFORM golang:1.24.1 AS builder
+FROM --platform=$BUILDPLATFORM ${GO_BUILDER_IMAGE} AS builder
 
 ARG GO_TARGETOS
 ARG GO_TARGETARCH
@@ -76,7 +79,7 @@ RUN --mount=type=cache,id=gomod,target=/go/pkg/mod \
 # ======================
 # 3) Runtime 阶段
 # ======================
-FROM --platform=$RUNTIMEPLATFORM alpine:3.21
+FROM --platform=$RUNTIMEPLATFORM ${RUNTIME_BASE_IMAGE}
 
 ARG GIT_SHA
 ARG GIT_SHA_SHORT

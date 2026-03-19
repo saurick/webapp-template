@@ -1,0 +1,29 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: webapp-template-prod-trial
+  namespace: webapp-prod-trial
+spec:
+  rules:
+    # 保留当前已跑通的试验入口，避免切内部域名时一次 apply 直接打断现有验证链路。
+    - host: webapp-trial.192.168.0.108.nip.io
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: webapp-template-prod-trial
+                port:
+                  number: 80
+    # 内部域名统一采用保留域名 home.arpa，避免依赖公网域名或与 .local/mDNS 冲突。
+    - host: webapp-trial.lab.home.arpa
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: webapp-template-prod-trial
+                port:
+                  number: 80

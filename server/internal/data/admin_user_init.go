@@ -3,7 +3,6 @@ package data
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"time"
 
@@ -29,28 +28,16 @@ func InitAdminUsersIfNeeded(ctx context.Context, d *Data, cfg *conf.Data, l *log
 		return nil
 	}
 
-	var id int
-	err := d.sqldb.QueryRowContext(
-		ctx,
-		"SELECT id FROM admin_users WHERE username = $1 LIMIT 1",
-		username,
-	).Scan(&id)
-	if err == nil {
-		return nil
-	}
-	if !errors.Is(err, sql.ErrNoRows) {
-		return err
-	}
-
 	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
 		return err
 	}
 
 	now := time.Now()
-	_, err = d.sqldb.ExecContext(
+	// 多副本并发启动时，管理员初始化必须保持幂等，避免“先查后插”在唯一键上互相踩踏。
+	result, err := d.sqldb.ExecContext(
 		ctx,
-		"INSERT INTO admin_users (username, password_hash, disabled, created_at, updated_at) VALUES ($1, $2, FALSE, $3, $4)",
+		"INSERT INTO admin_users (username, password_hash, disabled, created_at, updated_at) VALUES ($1, $2, FALSE, $3, $4) ON CONFLICT (username) DO NOTHING",
 		username,
 		string(hash),
 		now,
@@ -58,6 +45,17 @@ func InitAdminUsersIfNeeded(ctx context.Context, d *Data, cfg *conf.Data, l *log
 	)
 	if err != nil {
 		return err
+	}
+
+	affected, err := result.RowsAffected()
+	if err != nil {
+		l.Warnf("admin_users init rows affected unavailable username=%s err=%v", username, err)
+		l.Info("admin_users init completed without rows-affected detail")
+		return nil
+	}
+	if affected == 0 {
+		l.Infof("admin_users admin already exists, skip create username=%s", username)
+		return nil
 	}
 
 	l.Info("create admin_users admin success")

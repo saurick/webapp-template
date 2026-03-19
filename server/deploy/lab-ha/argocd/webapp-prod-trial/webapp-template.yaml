@@ -1,0 +1,242 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: webapp-prod-trial
+  labels:
+    pod-security.kubernetes.io/enforce: baseline
+    pod-security.kubernetes.io/audit: baseline
+    pod-security.kubernetes.io/warn: baseline
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: webapp-template-prod-trial-config
+  namespace: webapp-prod-trial
+type: Opaque
+stringData:
+  config.yaml: |
+    server:
+      http:
+        addr: 0.0.0.0:8000
+        timeout: 10s
+      grpc:
+        addr: 0.0.0.0:9000
+        timeout: 10s
+
+    log:
+      debug: false
+
+    trace:
+      jaeger:
+        traceName: webapp-template.service
+        endpoint: ""
+        ratio: 0
+
+    data:
+      postgres:
+        debug: false
+        dsn: postgres://replace-me@127.0.0.1:5432/webapp_template?sslmode=disable
+      etcd:
+        hosts:
+          - 127.0.0.1:2379
+      auth:
+        jwtSecret: REPLACE_ME_FROM_ENV
+        jwtExpireSeconds: 604800
+        admin:
+          username: REPLACE_ME_FROM_ENV
+          password: REPLACE_ME_FROM_ENV
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: webapp-template-prod-trial
+  namespace: webapp-prod-trial
+  labels:
+    app.kubernetes.io/name: webapp-template
+    app.kubernetes.io/instance: prod-trial
+spec:
+  replicas: 2
+  revisionHistoryLimit: 3
+  minReadySeconds: 10
+  progressDeadlineSeconds: 300
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: webapp-template
+      app.kubernetes.io/instance: prod-trial
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: webapp-template
+        app.kubernetes.io/instance: prod-trial
+    spec:
+      terminationGracePeriodSeconds: 30
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/name: webapp-template
+              app.kubernetes.io/instance: prod-trial
+      containers:
+        - name: server
+          # 生产试验使用独立不可变 tag，避免节点继续命中旧缓存，也方便按 tag 快速回滚。
+          image: harbor.192.168.0.108.nip.io:32668/library/webapp-template-server:20260319T235639-admin-init-fix
+          imagePullPolicy: IfNotPresent
+          command: ["/app/server", "-conf", "/config/config.yaml"]
+          env:
+            - name: POSTGRES_DSN
+              valueFrom:
+                secretKeyRef:
+                  name: webapp-template-prod-trial-runtime
+                  key: postgres_dsn
+            - name: WEBAPP_JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: webapp-template-prod-trial-runtime
+                  key: jwt_secret
+            - name: WEBAPP_ADMIN_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: webapp-template-prod-trial-runtime
+                  key: admin_username
+            - name: WEBAPP_ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: webapp-template-prod-trial-runtime
+                  key: admin_password
+            - name: TRACE_ENDPOINT
+              valueFrom:
+                secretKeyRef:
+                  name: webapp-template-prod-trial-runtime
+                  key: trace_endpoint
+                  optional: true
+          ports:
+            - name: http
+              containerPort: 8000
+            - name: grpc
+              containerPort: 9000
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 768Mi
+          startupProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            periodSeconds: 5
+            failureThreshold: 12
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 20
+            periodSeconds: 20
+          volumeMounts:
+            - name: config
+              mountPath: /config
+              readOnly: true
+      volumes:
+        - name: config
+          secret:
+            secretName: webapp-template-prod-trial-config
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: webapp-template-prod-trial
+  namespace: webapp-prod-trial
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: webapp-template
+      app.kubernetes.io/instance: prod-trial
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: webapp-template-prod-trial
+  namespace: webapp-prod-trial
+spec:
+  selector:
+    app.kubernetes.io/name: webapp-template
+    app.kubernetes.io/instance: prod-trial
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+    - name: grpc
+      port: 9000
+      targetPort: grpc
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: webapp-template-prod-trial
+  namespace: webapp-prod-trial
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-body-size: "8m"
+spec:
+  ingressClassName: nginx
+  rules:
+    # 当前先用独立试验 host，与现有 lab 应用隔离；若后续切到正式域名，再按运维口径替换。
+    - host: webapp-trial.192.168.0.108.nip.io
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: webapp-template-prod-trial
+                port:
+                  number: 80
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: webapp-template-prod-trial
+  namespace: webapp-prod-trial
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: webapp-template
+      app.kubernetes.io/instance: prod-trial
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - ports:
+        - protocol: TCP
+          port: 8000
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: database
+      ports:
+        - protocol: TCP
+          port: 5432
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53

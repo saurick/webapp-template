@@ -1,0 +1,30 @@
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: webapp-prod-trial-quota
+  namespace: webapp-prod-trial
+spec:
+  hard:
+    requests.cpu: "500m"
+    requests.memory: 1Gi
+    limits.cpu: "2000m"
+    limits.memory: 3072Mi
+    pods: "4"
+---
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: webapp-prod-trial-defaults
+  namespace: webapp-prod-trial
+spec:
+  limits:
+    - type: Container
+      defaultRequest:
+        cpu: 100m
+        memory: 256Mi
+      default:
+        cpu: 500m
+        memory: 768Mi
+      max:
+        cpu: 500m
+        memory: 768Mi

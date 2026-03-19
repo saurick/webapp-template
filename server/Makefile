@@ -295,10 +295,16 @@ image_gc:
 # 本地/开发环境额外打一个固定tag，可以是dev或者latest
 # 部署时就可以一直写 webapp-template-server:dev（或 :latest）
 FIXED_TAG ?= dev
+NODE_BUILDER_IMAGE ?= node:24.14.0
+GO_BUILDER_IMAGE ?= golang:1.24.1
+RUNTIME_BASE_IMAGE ?= alpine:3.21
 
 # 构建服务器镜像（在 server/ 目录执行）
 build_server:
 	docker build \
+		--build-arg NODE_BUILDER_IMAGE="$(NODE_BUILDER_IMAGE)" \
+		--build-arg GO_BUILDER_IMAGE="$(GO_BUILDER_IMAGE)" \
+		--build-arg RUNTIME_BASE_IMAGE="$(RUNTIME_BASE_IMAGE)" \
 		--build-arg GIT_SHA="$(GIT_SHA)" \
 		--build-arg GIT_SHA_SHORT="$(GIT_SHA_SHORT)" \
 		--build-arg BUILD_TIME="$(BUILD_TIME)" \

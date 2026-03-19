@@ -102,6 +102,40 @@ func resolveLocalConfPath(confPath string) string {
 	return ""
 }
 
+func overrideFromEnv(dataCfg *conf.Data, baseLogger log.Logger) {
+	helper := log.NewHelper(baseLogger)
+
+	if dataCfg.Postgres == nil {
+		dataCfg.Postgres = &conf.Data_Postgres{}
+	}
+	if v := strings.TrimSpace(os.Getenv("POSTGRES_DSN")); v != "" {
+		// 关键兜底：只记录覆盖来源，不输出 DSN 明文，避免数据库密码进入日志。
+		dataCfg.Postgres.Dsn = v
+		helper.Info("postgres dsn overridden from env")
+	}
+
+	if dataCfg.Auth == nil {
+		dataCfg.Auth = &conf.Data_Auth{}
+	}
+	if v := strings.TrimSpace(os.Getenv("WEBAPP_JWT_SECRET")); v != "" {
+		// 生产试验口径下，JWT 密钥走运行时 Secret 注入，避免继续写死在 Git 清单里。
+		dataCfg.Auth.JwtSecret = v
+		helper.Info("jwt secret overridden from env")
+	}
+
+	if dataCfg.Auth.Admin == nil {
+		dataCfg.Auth.Admin = &conf.Data_Auth_Admin{}
+	}
+	if v := strings.TrimSpace(os.Getenv("WEBAPP_ADMIN_USERNAME")); v != "" {
+		dataCfg.Auth.Admin.Username = v
+		helper.Info("admin username overridden from env")
+	}
+	if v := strings.TrimSpace(os.Getenv("WEBAPP_ADMIN_PASSWORD")); v != "" {
+		dataCfg.Auth.Admin.Password = v
+		helper.Info("admin password overridden from env")
+	}
+}
+
 func buildConfigSources(confPath string) []config.Source {
 	paths := []string{confPath}
 	// 本地联调兜底：若存在未跟踪的 config.local.yaml，则覆盖公共 dev 配置，避免把私有 DSN 提交进仓库。
@@ -235,13 +269,7 @@ func main() {
 	if dataCfg == nil {
 		panic(fmt.Errorf("bootstrap data config is nil, please check %s", confPath))
 	}
-	if dataCfg.Postgres == nil {
-		dataCfg.Postgres = &conf.Data_Postgres{}
-	}
-	if v := strings.TrimSpace(os.Getenv("POSTGRES_DSN")); v != "" {
-		// 关键兜底：只标记覆盖来源，不输出 DSN 明文，避免数据库密码进入日志。
-		dataCfg.Postgres.Dsn = v
-	}
+	overrideFromEnv(dataCfg, logger)
 
 	// ===== 7. 组装应用（wireApp） =====
 	// 这里 wireApp 里用到的 TracerProvider 类型要记得是 *tracesdk.TracerProvider
