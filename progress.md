@@ -1,3 +1,9 @@
+## 2026-03-18
+- 完成：为 `/Users/simon/projects/webapp-template/web/public/favicon.svg` 新增一套与当前首页一致的深色底 + 青色/琥珀色点缀 favicon，并在 `/Users/simon/projects/webapp-template/web/index.html` 与 `/Users/simon/projects/webapp-template/web/public/index.html` 接入统一 `icon` 引用和 `theme-color`，让模板默认标签页图标不再沿用空白或浏览器默认图标。
+- 验证：已执行 `pnpm --dir /Users/simon/projects/webapp-template/web build`，构建通过；产物 `/Users/simon/projects/webapp-template/web/build/favicon.svg` 已正常生成并可被入口 HTML 引用。
+- 下一步：派生项目初始化后，如果已经确定品牌名或主色，可以直接替换 `web/public/favicon.svg` 的渐变和字母标识，不需要改 JS 逻辑。
+- 阻塞/风险：当前采用 SVG favicon，现代浏览器兼容性足够；若后续明确需要兼容极旧浏览器或 iOS 主屏图标，再补 `png/ico/apple-touch-icon` 即可。
+
 ## 2026-03-16
 - 完成：新增 `/Users/simon/projects/webapp-template/server/configs/dev/config.local.example.yaml`，把本地私有覆盖的最小推荐字段固定成可跟踪示例，明确展示 `trace.jaeger.endpoint`、`data.postgres.dsn` 与 `auth` 的覆盖写法，方便模板派生项目后快速落地自己的本地配置。
 - 验证：示例文件仅使用当前启动链已支持的配置路径；`make dev` 会先读公共 `config.yaml`，再由同目录未跟踪的 `config.local.yaml` 覆盖，而不是替换占位字符串。
