@@ -316,7 +316,7 @@ data:
               <h2>CI Pipeline</h2>
               <div class="status-value status-ok">Passed</div>
               <p>
-                Latest verified GitLab pipeline passed in the final delivery run.
+                Latest verified GitLab pipeline <code>#9</code> passed in the current delivery run.
                 Open <a href="http://192.168.0.108:8929/root/webapp-template-lab/-/pipelines" target="_blank" rel="noreferrer">pipeline history</a>
                 for the newest record.
               </p>
@@ -336,6 +336,22 @@ data:
               <p>
                 PostgreSQL failover, API VIP failover, SeaweedFS volume restart, and webapp pod recovery
                 all passed in the latest verified drill set.
+              </p>
+            </div>
+            <div class="status-card">
+              <h2>Velero Backup</h2>
+              <div class="status-value status-ok">Completed</div>
+              <p>
+                Smoke backup <code>webapp-smoke-backup</code> completed successfully on
+                <code>2026-03-19T05:40:23Z</code> and the daily schedule remains enabled.
+              </p>
+            </div>
+            <div class="status-card">
+              <h2>Alert Delivery</h2>
+              <div class="status-value status-ok">Delivered</div>
+              <p>
+                Alertmanager POST requests were last observed at <code>2026-03-19T08:44:14Z</code>
+                on the lab webhook sink, confirming the default outbound alert path still works.
               </p>
             </div>
             <div class="status-card">

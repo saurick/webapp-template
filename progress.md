@@ -1,4 +1,10 @@
 ## 2026-03-19
+- 完成：继续增强 Portal 的运维摘要能力，在 `/Users/simon/projects/webapp-template/server/deploy/lab-ha/manifests/platform-portal.yaml` 里把快照卡片扩展为包含最新成功 GitLab pipeline、最近一次 Velero smoke backup 完成时间和最近一次 Alertmanager webhook 投递时间，让首页能更直观看到“最近一次关键验证结果”。
+- 验证：`kubectl rollout restart deployment/lab-portal -n lab-portal` 后，`http://192.168.0.108:30088` 返回的新 HTML 已包含 `Velero Backup`、`Alert Delivery`、`pipeline #9` 等关键字，说明新摘要卡片已生效。
+- 下一步：如果后续需要更像正式值班面板，可再补“最近一次 GitOps sync 修复时间”和“最近一次黑盒探测异常时间”，但当前这版已经够日常使用。
+- 阻塞/风险：Portal 里的这些时间戳是“最后一次人工验证时写入的静态摘要”，不是浏览器实时拉取；这样做是为了保持实现简单、避免额外跨域与认证复杂度。
+
+## 2026-03-19
 - 完成：继续把 Portal 做成更像“实验室运维首页”的入口，在 `/Users/simon/projects/webapp-template/server/deploy/lab-ha/manifests/platform-portal.yaml` 中新增 `CI Pipeline / GitOps Sync / HA Drills / Blackbox Probes` 四张快照卡片，并补充 GitLab pipelines 与测试报告的直达链接；同时保留一条简明中文注释，说明复制交互是静态辅助，实时状态真源仍在 Prometheus / GitLab。
 - 验证：重启 `lab-portal` 后，`http://192.168.0.108:30088` 返回的新页面已包含 favicon、复制按钮、快照卡片和文档链接；实际抓取 HTML 时，`HA Lab Portal`、`data-copy=`、`CI Pipeline`、`TEST_REPORT.md` 均已命中。
 - 下一步：如果后续还想继续完善，可以再把“最近一次备份结果”和“最近一次告警出口测试时间”做成同样的静态摘要卡片，但当前版本已经足够作为稳定的第一入口。
