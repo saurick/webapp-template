@@ -56,12 +56,52 @@ data:
             border-radius: 24px;
             box-shadow: 0 24px 80px rgba(0,0,0,0.28);
           }
+          .hero-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 18px;
+          }
+          .hero-copy {
+            min-width: 0;
+            flex: 1;
+          }
           .eyebrow {
             color: var(--accent);
             text-transform: uppercase;
             letter-spacing: 0.18em;
             font-size: 12px;
             margin-bottom: 14px;
+          }
+          .lang-switch {
+            display: inline-flex;
+            gap: 8px;
+            padding: 6px;
+            border-radius: 999px;
+            border: 1px solid rgba(255,255,255,0.08);
+            background: rgba(255,255,255,0.04);
+          }
+          .lang-btn {
+            border: 0;
+            border-radius: 999px;
+            padding: 8px 12px;
+            min-width: 64px;
+            background: transparent;
+            color: var(--muted);
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            letter-spacing: 0.04em;
+            transition: background 160ms ease, color 160ms ease, transform 160ms ease;
+          }
+          .lang-btn:hover {
+            color: var(--text);
+            transform: translateY(-1px);
+          }
+          .lang-btn[aria-pressed="true"] {
+            background: linear-gradient(180deg, rgba(102,217,239,0.28), rgba(102,217,239,0.16));
+            color: var(--text);
+            box-shadow: inset 0 0 0 1px rgba(102,217,239,0.18);
           }
           h1 {
             margin: 0;
@@ -252,79 +292,100 @@ data:
           .status-card a {
             color: var(--accent);
           }
+          @media (max-width: 720px) {
+            .hero-head {
+              flex-direction: column;
+            }
+            .lang-switch {
+              align-self: flex-start;
+            }
+          }
         </style>
       </head>
       <body>
         <div class="wrap">
           <section class="hero">
-            <div class="eyebrow">3-node HA Lab</div>
-            <h1>WebApp Platform Portal</h1>
-            <p class="sub">
-              Direct browser entrypoints for the current lab cluster. These links are mapped to
-              stable <code>192.168.0.108:port</code> endpoints so they keep working even when
-              <code>nip.io</code> or Host-header based routes are unreliable on the client side.
-            </p>
+            <div class="hero-head">
+              <div class="hero-copy">
+                <div class="eyebrow" data-i18n="hero.eyebrow">3-node HA Lab</div>
+                <h1 data-i18n="hero.title">WebApp Platform Portal</h1>
+                <p class="sub" data-i18n-html="hero.sub">
+                  Direct browser entrypoints for the current lab cluster. These links are mapped to
+                  stable <code>192.168.0.108:port</code> endpoints so they keep working even when
+                  <code>nip.io</code> or Host-header based routes are unreliable on the client side.
+                </p>
+              </div>
+              <div
+                class="lang-switch"
+                role="group"
+                aria-label="Switch language"
+                data-i18n-aria-label="language.switch"
+              >
+                <button type="button" class="lang-btn" data-lang="zh" aria-pressed="false">中文</button>
+                <button type="button" class="lang-btn" data-lang="en" aria-pressed="true">EN</button>
+              </div>
+            </div>
             <div class="pill-row">
-              <div class="pill"><b>Mode</b> Experiment HA</div>
-              <div class="pill"><b>Nodes</b> 3 VM / single stable host</div>
-              <div class="pill"><b>Status</b> <span class="status-ok">Healthy</span></div>
-              <div class="pill"><b>Best Entry</b> IP:Port direct</div>
+              <div class="pill" data-i18n-html="pill.mode"><b>Mode</b> Experiment HA</div>
+              <div class="pill" data-i18n-html="pill.nodes"><b>Nodes</b> 3 VM / single stable host</div>
+              <div class="pill" data-i18n-html="pill.status"><b>Status</b> <span class="status-ok">Healthy</span></div>
+              <div class="pill" data-i18n-html="pill.bestEntry"><b>Best Entry</b> IP:Port direct</div>
             </div>
             <div class="grid">
-              <a class="card" href="http://192.168.0.108:32668" target="_blank" rel="noreferrer">
+              <a class="card" href="http://192.168.0.108:32668" target="_blank" rel="noreferrer" data-i18n-html="cards.app">
                 <small>App</small><strong>WebApp</strong><span>Main product site.</span>
               </a>
-              <a class="card" href="http://192.168.0.108:30088" target="_blank" rel="noreferrer">
+              <a class="card" href="http://192.168.0.108:30088" target="_blank" rel="noreferrer" data-i18n-html="cards.portal">
                 <small>Portal</small><strong>Lab Portal</strong><span>This navigation page itself.</span>
               </a>
-              <a class="card" href="http://192.168.0.108:30002" target="_blank" rel="noreferrer">
+              <a class="card" href="http://192.168.0.108:30002" target="_blank" rel="noreferrer" data-i18n-html="cards.registry">
                 <small>Registry</small><strong>Harbor</strong><span>Container registry UI.</span>
               </a>
-              <a class="card" href="http://192.168.0.108:30081" target="_blank" rel="noreferrer">
+              <a class="card" href="http://192.168.0.108:30081" target="_blank" rel="noreferrer" data-i18n-html="cards.grafana">
                 <small>Metrics</small><strong>Grafana</strong><span>Dashboards and observability.</span>
               </a>
-              <a class="card" href="http://192.168.0.108:30081/d/lab-ha-overview/ha-lab-ops-overview" target="_blank" rel="noreferrer">
+              <a class="card" href="http://192.168.0.108:30081/d/lab-ha-overview/ha-lab-ops-overview" target="_blank" rel="noreferrer" data-i18n-html="cards.ops">
                 <small>Ops</small><strong>Ops Overview</strong><span>Daily on-call dashboard for cluster, app, backup, and alerts.</span>
               </a>
-              <a class="card" href="http://192.168.0.108:30081/d/lab-ha-data/ha-lab-data-and-storage" target="_blank" rel="noreferrer">
+              <a class="card" href="http://192.168.0.108:30081/d/lab-ha-data/ha-lab-data-and-storage" target="_blank" rel="noreferrer" data-i18n-html="cards.data">
                 <small>Data</small><strong>Data &amp; Storage</strong><span>Database, Harbor, Longhorn, SeaweedFS, and PVC health view.</span>
               </a>
-              <a class="card" href="http://192.168.0.108:30081/d/lab-ha-postgres/ha-lab-postgresql-and-backup" target="_blank" rel="noreferrer">
+              <a class="card" href="http://192.168.0.108:30081/d/lab-ha-postgres/ha-lab-postgresql-and-backup" target="_blank" rel="noreferrer" data-i18n-html="cards.database">
                 <small>Database</small><strong>PostgreSQL &amp; Backup</strong><span>Primary/replica roles, lag, DB size, and Velero backup signals.</span>
               </a>
-              <a class="card" href="http://192.168.0.108:30081/d/lab-ha-gitops/ha-lab-gitops-and-delivery" target="_blank" rel="noreferrer">
+              <a class="card" href="http://192.168.0.108:30081/d/lab-ha-gitops/ha-lab-gitops-and-delivery" target="_blank" rel="noreferrer" data-i18n-html="cards.delivery">
                 <small>Delivery</small><strong>GitOps &amp; Delivery</strong><span>Argo CD sync, GitLab probe, rollout controller, and release signals.</span>
               </a>
-              <a class="card" href="http://192.168.0.108:30090/graph" target="_blank" rel="noreferrer">
+              <a class="card" href="http://192.168.0.108:30090/graph" target="_blank" rel="noreferrer" data-i18n-html="cards.prometheus">
                 <small>Metrics</small><strong>Prometheus</strong><span>Raw scrape and query UI.</span>
               </a>
-              <a class="card" href="http://192.168.0.108:30093" target="_blank" rel="noreferrer">
+              <a class="card" href="http://192.168.0.108:30093" target="_blank" rel="noreferrer" data-i18n-html="cards.alertmanager">
                 <small>Alerts</small><strong>Alertmanager</strong><span>Alert grouping and routing.</span>
               </a>
-              <a class="card" href="https://192.168.0.108:30443" target="_blank" rel="noreferrer">
+              <a class="card" href="https://192.168.0.108:30443" target="_blank" rel="noreferrer" data-i18n-html="cards.argocd">
                 <small>GitOps</small><strong>Argo CD</strong><span>Self-signed HTTPS. Browser may ask you to continue once.</span>
               </a>
-              <a class="card" href="http://192.168.0.108:30084" target="_blank" rel="noreferrer">
+              <a class="card" href="http://192.168.0.108:30084" target="_blank" rel="noreferrer" data-i18n-html="cards.longhorn">
                 <small>Storage</small><strong>Longhorn</strong><span>Persistent volume UI.</span>
               </a>
-              <a class="card" href="http://192.168.0.108:30085" target="_blank" rel="noreferrer">
+              <a class="card" href="http://192.168.0.108:30085" target="_blank" rel="noreferrer" data-i18n-html="cards.hubble">
                 <small>Network</small><strong>Hubble</strong><span>Cilium flow visibility UI.</span>
               </a>
-              <a class="card" href="http://192.168.0.108:30888" target="_blank" rel="noreferrer">
+              <a class="card" href="http://192.168.0.108:30888" target="_blank" rel="noreferrer" data-i18n-html="cards.seaweedfs">
                 <small>Object Store</small><strong>SeaweedFS Filer</strong><span>Human-friendly browser UI.</span>
               </a>
-              <a class="card" href="http://192.168.0.108:30086" target="_blank" rel="noreferrer">
+              <a class="card" href="http://192.168.0.108:30086" target="_blank" rel="noreferrer" data-i18n-html="cards.alertSink">
                 <small>Alerts</small><strong>Alert Sink</strong><span>Webhook receiver used for smoke tests.</span>
               </a>
-              <a class="card" href="http://192.168.0.108:8929/users/sign_in" target="_blank" rel="noreferrer">
+              <a class="card" href="http://192.168.0.108:8929/users/sign_in" target="_blank" rel="noreferrer" data-i18n-html="cards.gitlab">
                 <small>Source Code</small><strong>GitLab</strong><span>CI/CD and experiment repo.</span>
               </a>
             </div>
-            <div class="tag">Stable direct browser endpoints</div>
+            <div class="tag" data-i18n="tag.stableEndpoints">Stable direct browser endpoints</div>
           </section>
 
           <section class="snapshot">
-            <div class="status-card">
+            <div class="status-card" data-i18n-html="snapshot.pipeline">
               <h2>CI Pipeline</h2>
               <div class="status-value status-ok">Passed</div>
               <p>
@@ -333,7 +394,7 @@ data:
                 for the newest record.
               </p>
             </div>
-            <div class="status-card">
+            <div class="status-card" data-i18n-html="snapshot.gitops">
               <h2>GitOps Sync</h2>
               <div class="status-value status-ok">Synced</div>
               <p>
@@ -342,7 +403,7 @@ data:
                 to inspect current revision and drift.
               </p>
             </div>
-            <div class="status-card">
+            <div class="status-card" data-i18n-html="snapshot.drills">
               <h2>HA Drills</h2>
               <div class="status-value status-ok">Passed</div>
               <p>
@@ -350,7 +411,7 @@ data:
                 all passed in the latest verified drill set.
               </p>
             </div>
-            <div class="status-card">
+            <div class="status-card" data-i18n-html="snapshot.backup">
               <h2>Velero Backup</h2>
               <div class="status-value status-ok">Completed</div>
               <p>
@@ -358,7 +419,7 @@ data:
                 <code>2026-03-19T05:40:23Z</code> and the daily schedule remains enabled.
               </p>
             </div>
-            <div class="status-card">
+            <div class="status-card" data-i18n-html="snapshot.alerts">
               <h2>Alert Delivery</h2>
               <div class="status-value status-ok">Delivered</div>
               <p>
@@ -366,7 +427,7 @@ data:
                 on the lab webhook sink, confirming the default outbound alert path still works.
               </p>
             </div>
-            <div class="status-card">
+            <div class="status-card" data-i18n-html="snapshot.blackbox">
               <h2>Blackbox Probes</h2>
               <div class="status-value status-ok">Healthy</div>
               <p>
@@ -378,68 +439,68 @@ data:
 
           <section class="creds">
             <div class="cred">
-              <h2>Default Accounts</h2>
+              <h2 data-i18n="cred.defaultAccountsTitle">Default Accounts</h2>
               <div class="cred-line">
                 <div>
                   <div class="cred-label">WebApp</div>
                   <div class="cred-value">admin / AdminLab123!</div>
                 </div>
-                <button class="copy" data-copy="admin / AdminLab123!">Copy</button>
+                <button type="button" class="copy" data-copy="admin / AdminLab123!" data-copy-state="default">Copy</button>
               </div>
               <div class="cred-line">
                 <div>
                   <div class="cred-label">Harbor</div>
                   <div class="cred-value">admin / HarborAdmin123!</div>
                 </div>
-                <button class="copy" data-copy="admin / HarborAdmin123!">Copy</button>
+                <button type="button" class="copy" data-copy="admin / HarborAdmin123!" data-copy-state="default">Copy</button>
               </div>
               <div class="cred-line">
                 <div>
                   <div class="cred-label">Grafana</div>
                   <div class="cred-value">admin / Grafana123!</div>
                 </div>
-                <button class="copy" data-copy="admin / Grafana123!">Copy</button>
+                <button type="button" class="copy" data-copy="admin / Grafana123!" data-copy-state="default">Copy</button>
               </div>
               <div class="cred-line">
                 <div>
                   <div class="cred-label">Argo CD</div>
                   <div class="cred-value">admin / aLgJjYwPdezuEzSw</div>
                 </div>
-                <button class="copy" data-copy="admin / aLgJjYwPdezuEzSw">Copy</button>
+                <button type="button" class="copy" data-copy="admin / aLgJjYwPdezuEzSw" data-copy-state="default">Copy</button>
               </div>
               <div class="cred-line">
                 <div>
                   <div class="cred-label">GitLab</div>
                   <div class="cred-value">root / L4b!Runr2026#Git</div>
                 </div>
-                <button class="copy" data-copy="root / L4b!Runr2026#Git">Copy</button>
+                <button type="button" class="copy" data-copy="root / L4b!Runr2026#Git" data-copy-state="default">Copy</button>
               </div>
             </div>
 
             <div class="cred">
-              <h2>Quick Notes</h2>
+              <h2 data-i18n="cred.quickNotesTitle">Quick Notes</h2>
               <div class="cred-line">
                 <div>
                   <div class="cred-label">Argo CD</div>
-                  <div class="cred-value">Self-signed HTTPS. Browser warning once is expected.</div>
+                  <div class="cred-value" data-i18n="quickNotes.argocd">Self-signed HTTPS. Browser warning once is expected.</div>
                 </div>
               </div>
               <div class="cred-line">
                 <div>
                   <div class="cred-label">SeaweedFS S3</div>
-                  <div class="cred-value">30333 is API-only. Browser AccessDenied is expected.</div>
+                  <div class="cred-value" data-i18n="quickNotes.seaweedfsS3">30333 is API-only. Browser AccessDenied is expected.</div>
                 </div>
               </div>
               <div class="cred-line">
                 <div>
                   <div class="cred-label">Filer UI</div>
-                  <div class="cred-value">Use 30888 for human browsing and basic object checks.</div>
+                  <div class="cred-value" data-i18n="quickNotes.filerUi">Use 30888 for human browsing and basic object checks.</div>
                 </div>
               </div>
               <div class="cred-line">
                 <div>
                   <div class="cred-label">GitOps</div>
-                  <div class="cred-value">GitLab CI + Argo CD already drive the lab deployment path.</div>
+                  <div class="cred-value" data-i18n="quickNotes.gitops">GitLab CI + Argo CD already drive the lab deployment path.</div>
                 </div>
               </div>
             </div>
@@ -447,25 +508,25 @@ data:
 
           <section class="notes">
             <div class="note">
-              <h2>What Portal is for</h2>
+              <h2 data-i18n="notes.purposeTitle">What Portal is for</h2>
               <ul>
-                <li>Central landing page for every lab system.</li>
-                <li>Reduces the need to remember many ports.</li>
-                <li>Explains which endpoints are web pages and which are APIs.</li>
-                <li>Lets future operators or AI pick up the lab quickly.</li>
+                <li data-i18n="notes.purpose1">Central landing page for every lab system.</li>
+                <li data-i18n="notes.purpose2">Reduces the need to remember many ports.</li>
+                <li data-i18n="notes.purpose3">Explains which endpoints are web pages and which are APIs.</li>
+                <li data-i18n="notes.purpose4">Lets future operators or AI pick up the lab quickly.</li>
               </ul>
             </div>
             <div class="note">
-              <h2>SeaweedFS S3 note</h2>
-              <p>
+              <h2 data-i18n="notes.seaweedfsTitle">SeaweedFS S3 note</h2>
+              <p data-i18n-html="notes.seaweedfsBody">
                 <code>http://192.168.0.108:30333</code> is an S3 API endpoint, not a normal web UI.
                 Browsers hit it without signed credentials, so an <code>AccessDenied</code> XML response
                 is expected. Use <code>30888</code> for the filer UI instead.
               </p>
             </div>
             <div class="note">
-              <h2>Docs</h2>
-              <p>
+              <h2 data-i18n="notes.docsTitle">Docs</h2>
+              <p data-i18n-html="notes.docsBody">
                 Full runbook, access notes, HA drills, and handover docs live in
                 <code>server/deploy/lab-ha/docs</code> inside the repository.
               </p>
@@ -478,22 +539,216 @@ data:
           </section>
         </div>
         <script>
-          // Portal 只做静态导航与复制反馈，实时状态仍以 Prometheus / GitLab 为准。
-          document.querySelectorAll('.copy').forEach((button) => {
+          const PORTAL_LANGUAGE_STORAGE_KEY = 'labPortalLanguage';
+          const translations = {
+            en: {
+              'document.title': 'HA Lab Portal',
+              'language.switch': 'Switch language',
+              'hero.eyebrow': '3-node HA Lab',
+              'hero.title': 'WebApp Platform Portal',
+              'hero.sub': 'Direct browser entrypoints for the current lab cluster. These links are mapped to stable <code>192.168.0.108:port</code> endpoints so they keep working even when <code>nip.io</code> or Host-header based routes are unreliable on the client side.',
+              'pill.mode': '<b>Mode</b> Experiment HA',
+              'pill.nodes': '<b>Nodes</b> 3 VM / single stable host',
+              'pill.status': '<b>Status</b> <span class="status-ok">Healthy</span>',
+              'pill.bestEntry': '<b>Best Entry</b> IP:Port direct',
+              'cards.app': '<small>App</small><strong>WebApp</strong><span>Main product site.</span>',
+              'cards.portal': '<small>Portal</small><strong>Lab Portal</strong><span>This navigation page itself.</span>',
+              'cards.registry': '<small>Registry</small><strong>Harbor</strong><span>Container registry UI.</span>',
+              'cards.grafana': '<small>Metrics</small><strong>Grafana</strong><span>Dashboards and observability.</span>',
+              'cards.ops': '<small>Ops</small><strong>Ops Overview</strong><span>Daily on-call dashboard for cluster, app, backup, and alerts.</span>',
+              'cards.data': '<small>Data</small><strong>Data &amp; Storage</strong><span>Database, Harbor, Longhorn, SeaweedFS, and PVC health view.</span>',
+              'cards.database': '<small>Database</small><strong>PostgreSQL &amp; Backup</strong><span>Primary/replica roles, lag, DB size, and Velero backup signals.</span>',
+              'cards.delivery': '<small>Delivery</small><strong>GitOps &amp; Delivery</strong><span>Argo CD sync, GitLab probe, rollout controller, and release signals.</span>',
+              'cards.prometheus': '<small>Metrics</small><strong>Prometheus</strong><span>Raw scrape and query UI.</span>',
+              'cards.alertmanager': '<small>Alerts</small><strong>Alertmanager</strong><span>Alert grouping and routing.</span>',
+              'cards.argocd': '<small>GitOps</small><strong>Argo CD</strong><span>Self-signed HTTPS. Browser may ask you to continue once.</span>',
+              'cards.longhorn': '<small>Storage</small><strong>Longhorn</strong><span>Persistent volume UI.</span>',
+              'cards.hubble': '<small>Network</small><strong>Hubble</strong><span>Cilium flow visibility UI.</span>',
+              'cards.seaweedfs': '<small>Object Store</small><strong>SeaweedFS Filer</strong><span>Human-friendly browser UI.</span>',
+              'cards.alertSink': '<small>Alerts</small><strong>Alert Sink</strong><span>Webhook receiver used for smoke tests.</span>',
+              'cards.gitlab': '<small>Source Code</small><strong>GitLab</strong><span>CI/CD and experiment repo.</span>',
+              'tag.stableEndpoints': 'Stable direct browser endpoints',
+              'snapshot.pipeline': '<h2>CI Pipeline</h2><div class="status-value status-ok">Passed</div><p>Latest verified GitLab pipeline <code>#9</code> passed in the current delivery run. Open <a href="http://192.168.0.108:8929/root/webapp-template-lab/-/pipelines" target="_blank" rel="noreferrer">pipeline history</a> for the newest record.</p>',
+              'snapshot.gitops': '<h2>GitOps Sync</h2><div class="status-value status-ok">Synced</div><p>Argo CD application is synced and healthy for the lab deployment path. Open <a href="https://192.168.0.108:30443" target="_blank" rel="noreferrer">Argo CD</a> to inspect current revision and drift.</p>',
+              'snapshot.drills': '<h2>HA Drills</h2><div class="status-value status-ok">Passed</div><p>PostgreSQL failover, API VIP failover, SeaweedFS volume restart, and webapp pod recovery all passed in the latest verified drill set.</p>',
+              'snapshot.backup': '<h2>Velero Backup</h2><div class="status-value status-ok">Completed</div><p>Smoke backup <code>webapp-smoke-backup</code> completed successfully on <code>2026-03-19T05:40:23Z</code> and the daily schedule remains enabled.</p>',
+              'snapshot.alerts': '<h2>Alert Delivery</h2><div class="status-value status-ok">Delivered</div><p>Alertmanager POST requests were last observed at <code>2026-03-19T08:44:14Z</code> on the lab webhook sink, confirming the default outbound alert path still works.</p>',
+              'snapshot.blackbox': '<h2>Blackbox Probes</h2><div class="status-value status-ok">Healthy</div><p>Human-facing entrypoints are under Prometheus blackbox probing. Direct truth remains in Prometheus and Alertmanager, not in the static page itself.</p>',
+              'cred.defaultAccountsTitle': 'Default Accounts',
+              'cred.quickNotesTitle': 'Quick Notes',
+              'quickNotes.argocd': 'Self-signed HTTPS. Browser warning once is expected.',
+              'quickNotes.seaweedfsS3': '30333 is API-only. Browser AccessDenied is expected.',
+              'quickNotes.filerUi': 'Use 30888 for human browsing and basic object checks.',
+              'quickNotes.gitops': 'GitLab CI + Argo CD already drive the lab deployment path.',
+              'notes.purposeTitle': 'What Portal is for',
+              'notes.purpose1': 'Central landing page for every lab system.',
+              'notes.purpose2': 'Reduces the need to remember many ports.',
+              'notes.purpose3': 'Explains which endpoints are web pages and which are APIs.',
+              'notes.purpose4': 'Lets future operators or AI pick up the lab quickly.',
+              'notes.seaweedfsTitle': 'SeaweedFS S3 note',
+              'notes.seaweedfsBody': '<code>http://192.168.0.108:30333</code> is an S3 API endpoint, not a normal web UI. Browsers hit it without signed credentials, so an <code>AccessDenied</code> XML response is expected. Use <code>30888</code> for the filer UI instead.',
+              'notes.docsTitle': 'Docs',
+              'notes.docsBody': 'Full runbook, access notes, HA drills, and handover docs live in <code>server/deploy/lab-ha/docs</code> inside the repository.',
+              'copy.default': 'Copy',
+              'copy.success': 'Copied',
+              'copy.fallback': 'Copy manually',
+            },
+            zh: {
+              'document.title': '高可用实验室门户',
+              'language.switch': '切换语言',
+              'hero.eyebrow': '3 节点高可用实验室',
+              'hero.title': 'WebApp 平台导航门户',
+              'hero.sub': '当前实验集群的人类可直接访问入口页。这些链接统一映射到稳定的 <code>192.168.0.108:port</code> 端口，因此即使客户端侧的 <code>nip.io</code> 或基于 Host 头的路由不稳定，也仍可直接打开。',
+              'pill.mode': '<b>模式</b> 实验高可用',
+              'pill.nodes': '<b>节点</b> 3 台 VM / 单稳定入口主机',
+              'pill.status': '<b>状态</b> <span class="status-ok">健康</span>',
+              'pill.bestEntry': '<b>最佳入口</b> 直连 IP:Port',
+              'cards.app': '<small>应用</small><strong>WebApp</strong><span>主业务站点。</span>',
+              'cards.portal': '<small>门户</small><strong>实验室导航页</strong><span>就是当前这张导航页。</span>',
+              'cards.registry': '<small>镜像仓库</small><strong>Harbor</strong><span>容器镜像仓库界面。</span>',
+              'cards.grafana': '<small>监控</small><strong>Grafana</strong><span>仪表盘与可观测性入口。</span>',
+              'cards.ops': '<small>运维</small><strong>运维总览</strong><span>集群、应用、备份与告警的日常值班看板。</span>',
+              'cards.data': '<small>数据</small><strong>数据与存储</strong><span>数据库、Harbor、Longhorn、SeaweedFS 与 PVC 健康视图。</span>',
+              'cards.database': '<small>数据库</small><strong>PostgreSQL 与备份</strong><span>主从角色、复制延迟、库大小与 Velero 备份信号。</span>',
+              'cards.delivery': '<small>交付</small><strong>GitOps 与交付</strong><span>Argo CD 同步、GitLab 探活、Rollout 控制器与发布信号。</span>',
+              'cards.prometheus': '<small>监控</small><strong>Prometheus</strong><span>原始抓取与查询界面。</span>',
+              'cards.alertmanager': '<small>告警</small><strong>Alertmanager</strong><span>告警聚合与路由入口。</span>',
+              'cards.argocd': '<small>GitOps</small><strong>Argo CD</strong><span>自签 HTTPS；浏览器首次访问可能需要手动继续。</span>',
+              'cards.longhorn': '<small>存储</small><strong>Longhorn</strong><span>持久卷管理界面。</span>',
+              'cards.hubble': '<small>网络</small><strong>Hubble</strong><span>Cilium 流量可视化界面。</span>',
+              'cards.seaweedfs': '<small>对象存储</small><strong>SeaweedFS Filer</strong><span>适合人工查看的文件浏览界面。</span>',
+              'cards.alertSink': '<small>告警</small><strong>Alert Sink</strong><span>用于 smoke test 的 Webhook 接收器。</span>',
+              'cards.gitlab': '<small>源码</small><strong>GitLab</strong><span>CI/CD 与实验仓库入口。</span>',
+              'tag.stableEndpoints': '稳定的浏览器直连入口',
+              'snapshot.pipeline': '<h2>CI 流水线</h2><div class="status-value status-ok">通过</div><p>当前交付链路里最近一次确认通过的 GitLab 流水线是 <code>#9</code>。可打开 <a href="http://192.168.0.108:8929/root/webapp-template-lab/-/pipelines" target="_blank" rel="noreferrer">流水线历史</a> 查看最新记录。</p>',
+              'snapshot.gitops': '<h2>GitOps 同步</h2><div class="status-value status-ok">已同步</div><p>当前实验部署路径上的 Argo CD 应用处于同步且健康状态。可打开 <a href="https://192.168.0.108:30443" target="_blank" rel="noreferrer">Argo CD</a> 查看当前版本与漂移情况。</p>',
+              'snapshot.drills': '<h2>高可用演练</h2><div class="status-value status-ok">通过</div><p>最近一次确认演练中，PostgreSQL 故障切换、API VIP 故障切换、SeaweedFS volume 重启和 webapp Pod 自愈均已通过。</p>',
+              'snapshot.backup': '<h2>Velero 备份</h2><div class="status-value status-ok">完成</div><p>Smoke 备份 <code>webapp-smoke-backup</code> 已于 <code>2026-03-19T05:40:23Z</code> 成功完成，日常定时任务仍保持启用。</p>',
+              'snapshot.alerts': '<h2>告警投递</h2><div class="status-value status-ok">已送达</div><p>实验室 webhook sink 最近一次观测到 Alertmanager POST 请求的时间是 <code>2026-03-19T08:44:14Z</code>，说明默认对外告警链路仍然可用。</p>',
+              'snapshot.blackbox': '<h2>Blackbox 探测</h2><div class="status-value status-ok">健康</div><p>面向人的入口页都在 Prometheus blackbox 探测之下。真实状态仍以 Prometheus 和 Alertmanager 为准，而不是这张静态页本身。</p>',
+              'cred.defaultAccountsTitle': '默认账号',
+              'cred.quickNotesTitle': '快速说明',
+              'quickNotes.argocd': '自签 HTTPS，浏览器首次出现证书警告属于预期。',
+              'quickNotes.seaweedfsS3': '30333 仅提供 API，浏览器看到 AccessDenied 属于预期。',
+              'quickNotes.filerUi': '人工访问与基础对象检查请使用 30888。',
+              'quickNotes.gitops': '当前实验部署路径已由 GitLab CI + Argo CD 驱动。',
+              'notes.purposeTitle': 'Portal 的用途',
+              'notes.purpose1': '作为实验室所有系统的统一落地页。',
+              'notes.purpose2': '减少记忆大量端口的成本。',
+              'notes.purpose3': '说明哪些入口是网页，哪些入口只是 API。',
+              'notes.purpose4': '让后续值班人员或 AI 能更快接手环境。',
+              'notes.seaweedfsTitle': 'SeaweedFS S3 说明',
+              'notes.seaweedfsBody': '<code>http://192.168.0.108:30333</code> 是 S3 API 入口，不是普通网页界面。浏览器在没有签名凭据时访问它，返回 <code>AccessDenied</code> XML 属于预期；人工浏览请改用 <code>30888</code> 的 filer UI。',
+              'notes.docsTitle': '文档',
+              'notes.docsBody': '完整 runbook、访问说明、高可用演练与交接文档都在仓库内的 <code>server/deploy/lab-ha/docs</code> 目录。',
+              'copy.default': '复制',
+              'copy.success': '已复制',
+              'copy.fallback': '请手动复制',
+            },
+          };
+
+          const langButtons = Array.from(document.querySelectorAll('.lang-btn'));
+          const copyButtons = Array.from(document.querySelectorAll('.copy'));
+          let currentLocale = 'en';
+
+          const getMessage = (locale, key) => {
+            return translations[locale][key] || translations.en[key] || '';
+          };
+
+          const renderCopyButton = (button) => {
+            const state = button.getAttribute('data-copy-state') || 'default';
+            const messageKey = state === 'default' ? 'copy.default' : `copy.${state}`;
+            button.textContent = getMessage(currentLocale, messageKey);
+          };
+
+          const setActiveLanguage = (locale) => {
+            langButtons.forEach((button) => {
+              button.setAttribute('aria-pressed', button.getAttribute('data-lang') === locale ? 'true' : 'false');
+            });
+          };
+
+          const applyTranslations = (locale) => {
+            currentLocale = locale;
+            document.documentElement.lang = locale === 'zh' ? 'zh-CN' : 'en';
+            document.title = getMessage(locale, 'document.title');
+
+            document.querySelectorAll('[data-i18n]').forEach((node) => {
+              const key = node.getAttribute('data-i18n');
+              node.textContent = getMessage(locale, key);
+            });
+
+            document.querySelectorAll('[data-i18n-html]').forEach((node) => {
+              const key = node.getAttribute('data-i18n-html');
+              node.innerHTML = getMessage(locale, key);
+            });
+
+            document.querySelectorAll('[data-i18n-aria-label]').forEach((node) => {
+              const key = node.getAttribute('data-i18n-aria-label');
+              node.setAttribute('aria-label', getMessage(locale, key));
+            });
+
+            copyButtons.forEach((button) => {
+              renderCopyButton(button);
+            });
+            setActiveLanguage(locale);
+          };
+
+          const loadPreferredLocale = () => {
+            // 本地已有明确选择时优先复用；没有存储再按浏览器语言回退。
+            try {
+              const stored = window.localStorage.getItem(PORTAL_LANGUAGE_STORAGE_KEY);
+              if (stored === 'zh' || stored === 'en') {
+                return stored;
+              }
+            } catch (_err) {
+              // 无痕或受限环境拿不到 localStorage 时，继续走浏览器语言兜底。
+            }
+            return navigator.language && navigator.language.toLowerCase().startsWith('zh') ? 'zh' : 'en';
+          };
+
+          const savePreferredLocale = (locale) => {
+            try {
+              window.localStorage.setItem(PORTAL_LANGUAGE_STORAGE_KEY, locale);
+            } catch (_err) {
+              // 语言切换仍然生效，只是不记忆下次访问偏好。
+            }
+          };
+
+          // Portal 只做静态导航、轻量双语与复制反馈，实时状态仍以 Prometheus / GitLab 为准。
+          langButtons.forEach((button) => {
+            button.addEventListener('click', () => {
+              const locale = button.getAttribute('data-lang') || 'en';
+              savePreferredLocale(locale);
+              applyTranslations(locale);
+            });
+          });
+
+          copyButtons.forEach((button) => {
+            renderCopyButton(button);
             button.addEventListener('click', async () => {
               const value = button.getAttribute('data-copy') || '';
+              clearTimeout(button._copyTimer);
               try {
                 await navigator.clipboard.writeText(value);
-                const old = button.textContent;
-                button.textContent = 'Copied';
-                setTimeout(() => {
-                  button.textContent = old;
+                button.setAttribute('data-copy-state', 'success');
+                renderCopyButton(button);
+                button._copyTimer = setTimeout(() => {
+                  button.setAttribute('data-copy-state', 'default');
+                  renderCopyButton(button);
                 }, 1200);
               } catch (_err) {
-                button.textContent = 'Copy manually';
+                // 剪贴板权限不可用时保留人工复制提示，避免用户误以为已经成功。
+                button.setAttribute('data-copy-state', 'fallback');
+                renderCopyButton(button);
+                button._copyTimer = setTimeout(() => {
+                  button.setAttribute('data-copy-state', 'default');
+                  renderCopyButton(button);
+                }, 1800);
               }
             });
           });
+
+          applyTranslations(loadPreferredLocale());
         </script>
       </body>
     </html>

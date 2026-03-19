@@ -1,3 +1,10 @@
+## 2026-03-20
+- 完成：为 `/Users/simon/projects/webapp-template/server/deploy/lab-ha/manifests/platform-portal.yaml` 的实验室 Portal 补齐轻量中英文切换，保持纯静态实现：页头新增 `中文 / EN` 语言开关，文案统一收口到原生 `translations` 表，默认优先读取 `localStorage`，没有持久化选择时按浏览器语言回退；同时把复制按钮反馈也切到当前语言，并保留剪贴板权限失败时的人工复制兜底提示。
+- 完成：已将更新后的 Portal 清单应用到 `lab-portal` 命名空间，并对 `deployment/lab-portal` 执行 `rollout restart`，确保通过 `subPath` 挂载的 `index.html` 立即刷新到线上 `http://192.168.0.108:30088/`。
+- 验证：`kubectl --kubeconfig /Users/simon/.kube/ha-lab.conf apply --dry-run=client -f /Users/simon/projects/webapp-template/server/deploy/lab-ha/manifests/platform-portal.yaml`；`kubectl --kubeconfig /Users/simon/.kube/ha-lab.conf apply -f /Users/simon/projects/webapp-template/server/deploy/lab-ha/manifests/platform-portal.yaml`；`kubectl --kubeconfig /Users/simon/.kube/ha-lab.conf -n lab-portal rollout status deployment/lab-portal --timeout=120s`；`curl -fsS http://192.168.0.108:30088/ | rg -n "lang-switch|labPortalLanguage|切换语言|Portal 的用途|Switch language"`；Playwright 实测 `?v=20260320-lang` 下中文/英文切换、生效持久化、页面标题/文案联动，以及复制按钮在剪贴板失败后的多语言兜底提示和自动恢复。
+- 下一步：如果后续确认 Portal 会长期承担交接和值班入口，可再把快照卡片中的时间戳与状态从静态文案抽成生成式配置，避免双语文本和运行态信息长期手工维护。
+- 阻塞/风险：当前双语仍是手写字典，后续若新增 Portal 卡片或说明文案，需要同步补 `zh/en` 两份键值；另外 Playwright 环境下浏览器剪贴板权限受限，所以自动化校验命中了“请手动复制 / Copy manually”兜底分支，真实浏览器在授权后仍会返回正常“已复制 / Copied”提示。
+
 ## 2026-03-19
 - 完成：继续补齐交付链路的值班面，新增 `/Users/simon/projects/webapp-template/server/deploy/lab-ha/manifests/argocd-rollouts-metrics.yaml` 与 `/Users/simon/projects/webapp-template/server/deploy/lab-ha/manifests/grafana-lab-gitops-dashboard.yaml`，让 Prometheus 开始抓取 `Argo CD server`、`Argo CD application controller` 与 `Argo Rollouts` 指标，并在 Grafana 新增 `HA Lab / GitOps & Delivery` 看板；同时把 Portal 再补一张 `GitOps & Delivery` 卡片。
 - 验证：Prometheus 已能查询到 `argocd_app_info`、`argocd_app_sync_total`、`argocd_cluster_connection_status`、`argo_rollouts_controller_info` 等关键指标；Grafana 搜索已出现 `HA Lab / GitOps & Delivery`，地址 `http://192.168.0.108:30081/d/lab-ha-gitops/ha-lab-gitops-and-delivery` 返回 `200`；Portal 页面也已出现新的交付看板入口。
