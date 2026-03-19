@@ -5,6 +5,12 @@
 - 阻塞/风险：当前 Grafana 总览主要聚焦实验室里最关键的稳态与故障面，没有追求把每个组件所有指标都堆进首页；这是为了控制维护成本和看板复杂度，方便后续 AI 或人工接手继续扩展。
 
 ## 2026-03-19
+- 完成：继续补齐“运维看板”这一层，在 `/Users/simon/projects/webapp-template/server/deploy/lab-ha/manifests/` 下新增 `grafana-loki-datasource.yaml`、`grafana-lab-overview-dashboard.yaml`、`grafana-lab-data-services-dashboard.yaml`，让 Grafana 现在同时具备实验室总览与数据/存储分视图；另外同步把 Portal 加上 `Data & Storage` 入口卡片，并把访问文档补到新的看板 URL。
+- 验证：Grafana API 已返回 3 个数据源（`Prometheus`、`Alertmanager`、`Loki`），并且 `/api/search?query=HA%20Lab` 已同时返回 `HA Lab / Ops Overview` 与 `HA Lab / Data & Storage` 两张看板；两条直接访问地址都返回 `200`；关键 PromQL 查询（PG Ready、SeaweedFS Ready、Longhorn Ready、PVC used/capacity、Harbor deployment ready、Velero backup age、blackbox min success）都已单独验通。
+- 下一步：如果后续还要往正式值班体系走，可以继续细分 `CloudNativePG`、`Longhorn`、`Harbor` 的专项看板，但当前这两张已足够承担实验室值班总览与数据面巡检。
+- 阻塞/风险：当前 `CloudNativePG` 和 `Longhorn/Harbor` 看板主要依赖 `kube-state-metrics`、`kubelet_volume_stats_*` 与 blackbox 维度，没有额外引入更重的专用监控组件；这是基于 `3 x 4C/8G` 资源约束做的有意取舍。
+
+## 2026-03-19
 - 完成：继续增强 Portal 的运维摘要能力，在 `/Users/simon/projects/webapp-template/server/deploy/lab-ha/manifests/platform-portal.yaml` 里把快照卡片扩展为包含最新成功 GitLab pipeline、最近一次 Velero smoke backup 完成时间和最近一次 Alertmanager webhook 投递时间，让首页能更直观看到“最近一次关键验证结果”。
 - 验证：`kubectl rollout restart deployment/lab-portal -n lab-portal` 后，`http://192.168.0.108:30088` 返回的新 HTML 已包含 `Velero Backup`、`Alert Delivery`、`pipeline #9` 等关键字，说明新摘要卡片已生效。
 - 下一步：如果后续需要更像正式值班面板，可再补“最近一次 GitOps sync 修复时间”和“最近一次黑盒探测异常时间”，但当前这版已经够日常使用。

@@ -23,6 +23,9 @@
 - `manifests/platform-ingresses.yaml`: 平台 UI 入口
 - `manifests/platform-nodeports.yaml`: 当前稳定直连入口端口映射
 - `manifests/platform-portal.yaml`: 实验室门户页
+- `manifests/grafana-lab-overview-dashboard.yaml`: Grafana 值班总览看板
+- `manifests/grafana-lab-data-services-dashboard.yaml`: Grafana 数据与存储看板
+- `manifests/grafana-loki-datasource.yaml`: Grafana Loki 数据源
 - `manifests/blackbox-values.yaml`: Blackbox Exporter 探测配置
 - `manifests/alert-webhook-receiver.yaml`: 实验室默认 webhook 告警接收器
 - `manifests/webapp-governance.yaml`: webapp 命名空间治理基线

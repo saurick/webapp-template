@@ -286,6 +286,9 @@ data:
               <a class="card" href="http://192.168.0.108:30081/d/lab-ha-overview/ha-lab-ops-overview" target="_blank" rel="noreferrer">
                 <small>Ops</small><strong>Ops Overview</strong><span>Daily on-call dashboard for cluster, app, backup, and alerts.</span>
               </a>
+              <a class="card" href="http://192.168.0.108:30081/d/lab-ha-data/ha-lab-data-and-storage" target="_blank" rel="noreferrer">
+                <small>Data</small><strong>Data &amp; Storage</strong><span>Database, Harbor, Longhorn, SeaweedFS, and PVC health view.</span>
+              </a>
               <a class="card" href="http://192.168.0.108:30090/graph" target="_blank" rel="noreferrer">
                 <small>Metrics</small><strong>Prometheus</strong><span>Raw scrape and query UI.</span>
               </a>
