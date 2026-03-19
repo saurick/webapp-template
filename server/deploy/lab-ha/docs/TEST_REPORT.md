@@ -11,6 +11,7 @@
 - `Velero`：默认 `BackupStorageLocation` 已进入 `Available`，`webapp-smoke-backup` 已 `Completed`
 - `Sealed Secrets`：示例 `lab-sealed-example` 已成功解封成 `Secret`
 - `Harbor / GitLab / Runner / Argo CD / Argo Rollouts`：运行正常
+- `Lab Portal`：直连入口页可打开
 
 ## 业务验证
 
@@ -78,6 +79,18 @@
 
 - 操作：生成 `lab-sealed-example.yaml`，应用到 `webapp` 命名空间
 - 结果：控制器成功解封，对应 Secret 中 `message=hello-ha`
+- 结论：通过
+
+### 10. GitLab 浏览器登录入口修复
+
+- 操作：清理 root 用户 `password_automatically_set` 等初始化标记
+- 结果：`/users/sign_in` 不再重定向到 `/admin/initial_setup/new`
+- 结论：通过
+
+### 11. 浏览器入口直连修复
+
+- 操作：把实验室访问口径切到 `192.168.0.108:port`，并新增平台门户页
+- 结果：WebApp / Harbor / Grafana / Prometheus / Alertmanager / Argo CD / Longhorn / Hubble / SeaweedFS / GitLab / Portal 均可直接访问
 - 结论：通过
 
 ## 当前结论

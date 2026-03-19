@@ -1,4 +1,11 @@
 ## 2026-03-19
+- 完成：修复 GitLab 浏览器登录入口，根因是 root 用户仍保留 `password_automatically_set` 初始化标记，导致 `/users/sign_in` 持续跳转到 `/admin/initial_setup/new`；现在已通过 Rails runner 清除初始化标记，浏览器访问登录页恢复正常。
+- 完成：新增实验室门户页 `/Users/simon/projects/webapp-template/server/deploy/lab-ha/manifests/platform-portal.yaml`，通过 `http://192.168.0.108:30088` 汇总所有当前稳定的直连地址，并在门户页明确说明 SeaweedFS S3 端口 `30333` 是 API 端口、浏览器看到 `AccessDenied` 属于预期行为。
+- 验证：`curl -I http://192.168.0.108:8929/users/sign_in` 已返回 `200 OK`；门户页可直接打开；黑盒探测已追加 `portal` 目标；访问说明与接手文档同步更新。
+- 下一步：如果用户仍希望把所有入口统一成一个 HTTPS 域名，可在后续有稳定 DNS/证书前提下，把门户页作为唯一入口继续扩展成“实验室运维首页”。
+- 阻塞/风险：当前门户页和大部分站点入口以 `192.168.0.108:port` 形式暴露，这是为兼容当前网络环境做的稳定性优先取舍，不是最终生产级域名方案。
+
+## 2026-03-19
 - 完成：修复“浏览器里大部分链接打不开”的访问层问题，确认根因是当前用户环境对 `*.nip.io` 主机名与 Host 头入口不稳定，因此把实验室站点主入口统一改成 `192.168.0.108:port` 直连模式；同时为 `webapp-template` 增加无 host 的默认 Ingress 规则，使主站可直接通过 `http://192.168.0.108:32668` 打开，并把 Grafana/Prometheus/Alertmanager/Argo CD/Longhorn/Hubble/SeaweedFS/Harbor 都收口为各自独立的直连端口。
 - 完成：同步把 `.gitlab-ci.yml`、`blackbox-values.yaml`、`ACCESS.md`、`BEST_PRACTICES.md`、`HANDOVER.md` 等配置与文档切换到直连入口口径，并重新升级 blackbox-exporter，让探测目标对齐当前真实可访问地址。
 - 验证：本机直接访问 `http://192.168.0.108:32668`、`http://192.168.0.108:30002`、`http://192.168.0.108:30081`、`http://192.168.0.108:30090/graph`、`http://192.168.0.108:30093/`、`https://192.168.0.108:30443/`、`http://192.168.0.108:30084/`、`http://192.168.0.108:30085/`、`http://192.168.0.108:30888/`、`http://192.168.0.108:30086/`、`http://192.168.0.108:30333/`、`http://192.168.0.108:8929/users/sign_in` 均已得到可用响应；其中 WebApp 首页 HTML 已成功抓取，Prometheus/Alertmanager/Harbor 页面内容也已实测可读。

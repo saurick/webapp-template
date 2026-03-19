@@ -11,6 +11,11 @@ serviceMonitor:
       labels:
         component: gitlab
         access: external
+    - name: portal
+      url: http://192.168.0.108:30088/
+      labels:
+        component: portal
+        access: direct
     - name: webapp
       url: http://192.168.0.108:32668/readyz
       labels:

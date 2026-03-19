@@ -5,11 +5,13 @@
 - 集群 kubeconfig（本机）: `/Users/simon/.kube/ha-lab.conf`
 - GitLab: 宿主机 `192.168.0.108:8929`
 - Harbor / Grafana / Prometheus / Argo CD / WebApp: 当前主入口统一改为 `192.168.0.108:port` 直连
+- Portal: `http://192.168.0.108:30088`
 - 实验室部署清单集中在 `server/deploy/lab-ha/`
 - `webapp-template` 运行镜像当前已切到 Harbor：`harbor.192.168.0.108.nip.io:32668/library/webapp-template-server:ha-lab`
 - GitLab Runner 已经 `verify` 通过，`.gitlab-ci.yml` 也已通过 GitLab CI Lint
 - Argo CD 仓库凭据已改为 `SealedSecret` 管理，避免明文仓库密码落库
 - Velero 当前只做对象级备份，不默认承担 PVC 数据面恢复
+- SeaweedFS S3 端口是 API，不是网页；用户若反馈 `AccessDenied`，属于预期现象
 
 ## 后续 AI 优先检查项
 

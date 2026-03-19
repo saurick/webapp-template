@@ -21,6 +21,8 @@
 - `manifests/sealed-secrets-values.yaml`: Sealed Secrets 控制器值文件
 - `manifests/alertmanager-values.yaml`: Alertmanager 路由与 webhook 出口配置
 - `manifests/platform-ingresses.yaml`: 平台 UI 入口
+- `manifests/platform-nodeports.yaml`: 当前稳定直连入口端口映射
+- `manifests/platform-portal.yaml`: 实验室门户页
 - `manifests/blackbox-values.yaml`: Blackbox Exporter 探测配置
 - `manifests/alert-webhook-receiver.yaml`: 实验室默认 webhook 告警接收器
 - `manifests/webapp-governance.yaml`: webapp 命名空间治理基线

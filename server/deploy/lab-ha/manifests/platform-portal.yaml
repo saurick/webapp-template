@@ -1,0 +1,282 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: lab-portal
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: lab-portal-site
+  namespace: lab-portal
+data:
+  index.html: |
+    <!doctype html>
+    <html lang="en">
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>HA Lab Portal</title>
+        <style>
+          :root {
+            --bg: #07111f;
+            --panel: #0e1c2f;
+            --line: #1f3654;
+            --text: #eaf3ff;
+            --muted: #9bb4d1;
+            --accent: #66d9ef;
+            --accent-2: #ffd166;
+          }
+          * { box-sizing: border-box; }
+          body {
+            margin: 0;
+            font-family: "Segoe UI", "Helvetica Neue", sans-serif;
+            background:
+              radial-gradient(circle at top left, rgba(102,217,239,0.18), transparent 32%),
+              radial-gradient(circle at top right, rgba(255,209,102,0.14), transparent 28%),
+              linear-gradient(180deg, #07111f 0%, #081521 100%);
+            color: var(--text);
+            min-height: 100vh;
+          }
+          .wrap {
+            max-width: 1180px;
+            margin: 0 auto;
+            padding: 32px 20px 56px;
+          }
+          .hero {
+            padding: 28px;
+            border: 1px solid rgba(102,217,239,0.15);
+            background: rgba(14,28,47,0.78);
+            backdrop-filter: blur(10px);
+            border-radius: 24px;
+            box-shadow: 0 24px 80px rgba(0,0,0,0.28);
+          }
+          .eyebrow {
+            color: var(--accent);
+            text-transform: uppercase;
+            letter-spacing: 0.18em;
+            font-size: 12px;
+            margin-bottom: 14px;
+          }
+          h1 {
+            margin: 0;
+            font-size: clamp(28px, 5vw, 52px);
+            line-height: 1.04;
+          }
+          .sub {
+            margin: 14px 0 0;
+            color: var(--muted);
+            max-width: 760px;
+            line-height: 1.7;
+            font-size: 16px;
+          }
+          .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 16px;
+            margin-top: 22px;
+          }
+          .card {
+            display: block;
+            text-decoration: none;
+            color: inherit;
+            padding: 18px;
+            border-radius: 18px;
+            border: 1px solid rgba(255,255,255,0.08);
+            background: linear-gradient(180deg, rgba(15,28,44,0.95), rgba(11,20,34,0.92));
+            transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
+          }
+          .card:hover {
+            transform: translateY(-2px);
+            border-color: rgba(102,217,239,0.45);
+            box-shadow: 0 14px 36px rgba(0,0,0,0.22);
+          }
+          .card small {
+            display: block;
+            color: var(--accent);
+            text-transform: uppercase;
+            letter-spacing: 0.16em;
+            margin-bottom: 10px;
+            font-size: 11px;
+          }
+          .card strong {
+            display: block;
+            font-size: 20px;
+            margin-bottom: 8px;
+          }
+          .card span {
+            display: block;
+            color: var(--muted);
+            line-height: 1.6;
+            font-size: 14px;
+          }
+          .notes {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 16px;
+            margin-top: 24px;
+          }
+          .note {
+            padding: 18px;
+            border-radius: 18px;
+            background: rgba(8,16,29,0.86);
+            border: 1px solid rgba(255,255,255,0.08);
+          }
+          .note h2 {
+            margin: 0 0 10px;
+            font-size: 16px;
+          }
+          .note p,
+          .note li {
+            color: var(--muted);
+            line-height: 1.7;
+            font-size: 14px;
+          }
+          ul { margin: 10px 0 0; padding-left: 18px; }
+          code {
+            background: rgba(255,255,255,0.06);
+            padding: 2px 6px;
+            border-radius: 6px;
+          }
+          .tag {
+            display: inline-block;
+            margin-top: 12px;
+            padding: 8px 12px;
+            border-radius: 999px;
+            background: rgba(255,209,102,0.12);
+            color: var(--accent-2);
+            font-size: 12px;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="wrap">
+          <section class="hero">
+            <div class="eyebrow">3-node HA Lab</div>
+            <h1>WebApp Platform Portal</h1>
+            <p class="sub">
+              Direct browser entrypoints for the current lab cluster. These links are mapped to
+              stable <code>192.168.0.108:port</code> endpoints so they keep working even when
+              <code>nip.io</code> or Host-header based routes are unreliable on the client side.
+            </p>
+            <div class="grid">
+              <a class="card" href="http://192.168.0.108:32668" target="_blank" rel="noreferrer">
+                <small>App</small><strong>WebApp</strong><span>Main product site.</span>
+              </a>
+              <a class="card" href="http://192.168.0.108:30002" target="_blank" rel="noreferrer">
+                <small>Registry</small><strong>Harbor</strong><span>Container registry UI.</span>
+              </a>
+              <a class="card" href="http://192.168.0.108:30081" target="_blank" rel="noreferrer">
+                <small>Metrics</small><strong>Grafana</strong><span>Dashboards and observability.</span>
+              </a>
+              <a class="card" href="http://192.168.0.108:30090/graph" target="_blank" rel="noreferrer">
+                <small>Metrics</small><strong>Prometheus</strong><span>Raw scrape and query UI.</span>
+              </a>
+              <a class="card" href="http://192.168.0.108:30093" target="_blank" rel="noreferrer">
+                <small>Alerts</small><strong>Alertmanager</strong><span>Alert grouping and routing.</span>
+              </a>
+              <a class="card" href="https://192.168.0.108:30443" target="_blank" rel="noreferrer">
+                <small>GitOps</small><strong>Argo CD</strong><span>Self-signed HTTPS. Browser may ask you to continue once.</span>
+              </a>
+              <a class="card" href="http://192.168.0.108:30084" target="_blank" rel="noreferrer">
+                <small>Storage</small><strong>Longhorn</strong><span>Persistent volume UI.</span>
+              </a>
+              <a class="card" href="http://192.168.0.108:30085" target="_blank" rel="noreferrer">
+                <small>Network</small><strong>Hubble</strong><span>Cilium flow visibility UI.</span>
+              </a>
+              <a class="card" href="http://192.168.0.108:30888" target="_blank" rel="noreferrer">
+                <small>Object Store</small><strong>SeaweedFS Filer</strong><span>Human-friendly browser UI.</span>
+              </a>
+              <a class="card" href="http://192.168.0.108:30086" target="_blank" rel="noreferrer">
+                <small>Alerts</small><strong>Alert Sink</strong><span>Webhook receiver used for smoke tests.</span>
+              </a>
+              <a class="card" href="http://192.168.0.108:8929/users/sign_in" target="_blank" rel="noreferrer">
+                <small>Source Code</small><strong>GitLab</strong><span>CI/CD and experiment repo.</span>
+              </a>
+            </div>
+            <div class="tag">Stable direct browser endpoints</div>
+          </section>
+
+          <section class="notes">
+            <div class="note">
+              <h2>Default accounts</h2>
+              <ul>
+                <li>WebApp admin: <code>admin / AdminLab123!</code></li>
+                <li>Harbor: <code>admin / HarborAdmin123!</code></li>
+                <li>Grafana: <code>admin / Grafana123!</code></li>
+                <li>Argo CD: <code>admin / aLgJjYwPdezuEzSw</code></li>
+                <li>GitLab: <code>root / L4b!Runr2026#Git</code></li>
+              </ul>
+            </div>
+            <div class="note">
+              <h2>SeaweedFS S3 note</h2>
+              <p>
+                <code>http://192.168.0.108:30333</code> is an S3 API endpoint, not a normal web UI.
+                Browsers hit it without signed credentials, so an <code>AccessDenied</code> XML response
+                is expected. Use <code>30888</code> for the filer UI instead.
+              </p>
+            </div>
+            <div class="note">
+              <h2>Docs</h2>
+              <p>
+                Full runbook, access notes, HA drills, and handover docs live in
+                <code>server/deploy/lab-ha/docs</code> inside the repository.
+              </p>
+            </div>
+          </section>
+        </div>
+      </body>
+    </html>
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: lab-portal
+  namespace: lab-portal
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: lab-portal
+  template:
+    metadata:
+      labels:
+        app: lab-portal
+    spec:
+      containers:
+        - name: nginx
+          image: docker.m.daocloud.io/library/nginx:1.27-alpine
+          ports:
+            - containerPort: 80
+              name: http
+          resources:
+            requests:
+              cpu: 30m
+              memory: 32Mi
+            limits:
+              cpu: 150m
+              memory: 96Mi
+          volumeMounts:
+            - name: html
+              mountPath: /usr/share/nginx/html/index.html
+              subPath: index.html
+      volumes:
+        - name: html
+          configMap:
+            name: lab-portal-site
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: lab-portal
+  namespace: lab-portal
+spec:
+  type: NodePort
+  selector:
+    app: lab-portal
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+      nodePort: 30088

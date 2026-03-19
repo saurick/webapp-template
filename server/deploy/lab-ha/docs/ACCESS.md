@@ -5,6 +5,7 @@
 说明：当前用户侧浏览器/代理环境对 `*.nip.io` 这类主机名不稳定，因此实验室对外访问已统一切到 `192.168.0.108` 的直连 `IP:Port` 方案；这是目前最稳、最直接、最少踩坑的入口口径。
 
 - WebApp: `http://192.168.0.108:32668`
+- Portal: `http://192.168.0.108:30088`
 - Harbor: `http://192.168.0.108:30002`
 - Grafana: `http://192.168.0.108:30081`
 - Prometheus: `http://192.168.0.108:30090`
@@ -16,6 +17,12 @@
 - Alert Sink: `http://192.168.0.108:30086`
 - SeaweedFS S3: `http://192.168.0.108:30333`
 - GitLab: `http://192.168.0.108:8929`
+
+## S3 endpoint note
+
+- `http://192.168.0.108:30333` is the SeaweedFS S3 API endpoint
+- It is expected to return `AccessDenied` in a normal browser tab because the browser does not sign S3 requests
+- For a human-friendly UI, use `http://192.168.0.108:30888`
 
 ## 当前实验室默认凭据
 
