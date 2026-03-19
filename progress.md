@@ -1,4 +1,10 @@
 ## 2026-03-19
+- 完成：继续把实验室高可用链路补齐到可交接状态，新增并落地 `Velero`、`Sealed Secrets`、`Alertmanager webhook sink`、`Argo CD` 仓库凭据密文管理与 `webapp-template-lab` 自动同步应用；同时为 GitLab 增加独立远程 `gitlab`，把本地部署文档与实验清单以 `feat(deploy): 补齐实验室高可用部署基线`、`fix(deploy): 修正 Argo CD 应用目录`、`fix(deploy): 去重实验目录命名空间资源` 三次提交推送到实验室仓库 `git@192.168.0.108:root/webapp-template-lab.git`。
+- 验证：GitLab 最近 3 条 pipeline 已全部 `success`；Argo CD `webapp-template-lab` 当前 `Synced + Healthy` 且自动同步到修正后的 `f3f81f7`；`Velero` 的 `BackupStorageLocation default` 已 `Available`，`webapp-smoke-backup` 已 `Completed`；`SealedSecret repo-webapp-template-lab` 与 `lab-sealed-example` 都已成功解封；`alert-webhook-receiver` 已收到 Alertmanager POST；`probe_success` 最小值保持为 `1`。
+- 下一步：若用户后续提供飞书/钉钉/Telegram webhook 或 SMTP 参数，可把当前实验室 webhook sink 平滑替换成真实通知出口；若允许继续增强恢复能力，可追加 `Velero restore` 演练与更细粒度的定时备份策略。
+- 阻塞/风险：当前仍遵循三台 VM 的实验室 HA 边界；Argo CD 仓库凭据已改为 SealedSecret 管理，但真实生产环境仍建议把 PAT/Deploy Token 再下沉到更正式的密钥管理；Velero 当前只验证了对象级备份，不承担 PVC 数据面恢复。
+
+## 2026-03-19
 - 完成：把本次三节点实验室高可用部署的关键文档、值文件、脚本和镜像归档统一收口到 `/Users/simon/projects/webapp-template/server/deploy/lab-ha`，新增 `README.md / ACCESS.md / BEST_PRACTICES.md / TEST_REPORT.md / HANDOVER.md`，并补充 `platform-ingresses.yaml`、`blackbox-values.yaml`、`webapp-governance.yaml` 等实验清单；同时更新 `/Users/simon/projects/webapp-template/server/deploy/README.md`，明确 `lab-ha/` 是当前实验室 HA 落地目录而不是模板默认基线。
 - 完成：继续把实验环境打磨到可访问、可观测、可接手状态：为 Prometheus / Alertmanager / Longhorn / Hubble / SeaweedFS 新增入口，补齐 `blackbox-exporter` 探测 10 个关键站点，修正 SeaweedFS volume 索引持久化问题，切换 `webapp-template` 运行镜像到 Harbor，并确认 Harbor 镜像路径可被节点通过 containerd/CRI 拉取。
 - 完成：验证层面补齐了最终收口：`bash scripts/qa/full.sh` 再次全量通过；关键 K8s 清单 `server-side dry-run` 通过；GitLab Runner `verify` 通过；GitLab CI 配置经 GitLab Lint 返回 `valid=true`；外部入口 `webapp/harbor/grafana/prometheus/alertmanager/argocd/longhorn/hubble/seaweedfs/gitlab` 均已实测可达；黑盒探测 `probe_success` 最小值为 `1`；删除一个 webapp pod 后依旧可从 Harbor 路径恢复并保持 `/readyz` 正常。
