@@ -1,4 +1,11 @@
 ## 2026-03-20
+- 完成：更新 `/Users/simon/projects/webapp-template/AGENTS.md` 的 Git 推送约定，明确当前仓库默认发布 remote 为 `origin` 与 `gitlab`，默认顺序为“先 `origin`、后 `gitlab`”，并约定不能只跟随 upstream 推送单个 remote。
+- 完成：补充多 remote 失败处理口径：若 `gitlab` 因本地服务离线或网络异常不可用，不阻断对 `origin` 的成功推送，也不做回滚，而是按“部分成功”汇报，并在结果中逐一说明各 remote 状态。
+- 验证：人工复核 `/Users/simon/projects/webapp-template/AGENTS.md` 新增条目，确认已覆盖“默认发布 remote”“推送顺序”“单 remote 失败不阻断后续 remote”“用户显式指定 remote 时严格遵循”四类协作边界。
+- 下一步：后续若仓库新增新的长期发布 remote，应先更新 `/Users/simon/projects/webapp-template/AGENTS.md` 的发布 remote 列表，再调整默认推送行为，避免把临时 fork 或上游模板 remote 误当成发布目标。
+- 阻塞/风险：当前规则是项目级约定，不会自动修改本地 Git upstream；若后续工具仍只按 upstream 推送，仍需要以 `AGENTS.md` 为准显式覆盖。
+
+## 2026-03-20
 - 完成：为 `/Users/simon/projects/webapp-template/server/deploy/lab-ha/manifests/platform-portal.yaml` 的实验室 Portal 补齐轻量中英文切换，保持纯静态实现：页头新增 `中文 / EN` 语言开关，文案统一收口到原生 `translations` 表，默认优先读取 `localStorage`，没有持久化选择时按浏览器语言回退；同时把复制按钮反馈也切到当前语言，并保留剪贴板权限失败时的人工复制兜底提示。
 - 完成：已将更新后的 Portal 清单应用到 `lab-portal` 命名空间，并对 `deployment/lab-portal` 执行 `rollout restart`，确保通过 `subPath` 挂载的 `index.html` 立即刷新到线上 `http://192.168.0.108:30088/`。
 - 验证：`kubectl --kubeconfig /Users/simon/.kube/ha-lab.conf apply --dry-run=client -f /Users/simon/projects/webapp-template/server/deploy/lab-ha/manifests/platform-portal.yaml`；`kubectl --kubeconfig /Users/simon/.kube/ha-lab.conf apply -f /Users/simon/projects/webapp-template/server/deploy/lab-ha/manifests/platform-portal.yaml`；`kubectl --kubeconfig /Users/simon/.kube/ha-lab.conf -n lab-portal rollout status deployment/lab-portal --timeout=120s`；`curl -fsS http://192.168.0.108:30088/ | rg -n "lang-switch|labPortalLanguage|切换语言|Portal 的用途|Switch language"`；Playwright 实测 `?v=20260320-lang` 下中文/英文切换、生效持久化、页面标题/文案联动，以及复制按钮在剪贴板失败后的多语言兜底提示和自动恢复。
