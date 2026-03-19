@@ -1,4 +1,10 @@
 ## 2026-03-19
+- 完成：继续把 Grafana 看板拆得更适合值班使用，新增 `/Users/simon/projects/webapp-template/server/deploy/lab-ha/manifests/cnpg-podmonitor.yaml` 与 `/Users/simon/projects/webapp-template/server/deploy/lab-ha/manifests/grafana-lab-postgres-backup-dashboard.yaml`，让 `CloudNativePG` 的实例角色、复制 lag、数据库大小、提交速率和 Velero 备份信号都能在单独的 PostgreSQL 看板里观察；同时把 Portal 再补一张 `PostgreSQL & Backup` 入口卡片。
+- 验证：Prometheus 已出现 `database/app-pg-lab` 目标，`cnpg_collector_up`、`cnpg_pg_replication_in_recovery`、`cnpg_pg_replication_lag`、`cnpg_pg_database_size_bytes`、`velero_backup_last_status` 等指标均可查询；Grafana 新看板地址 `http://192.168.0.108:30081/d/lab-ha-postgres/ha-lab-postgresql-and-backup` 返回 `200`。
+- 下一步：如果后续还想更细，可以再给 Harbor/Longhorn 做更偏平台运维的专项仪表盘，但当前总览 + 数据存储 + PG 备份三张看板已经能覆盖大多数实验室值班场景。
+- 阻塞/风险：Harbor 与 Longhorn 当前没有再额外引入更重的专用 exporter，数据仍主要来自 `kube-state-metrics`、`kubelet_volume_stats_*`、blackbox 与 Pod/Deployment 维度；这是为了控制小集群资源占用的有意取舍。
+
+## 2026-03-19
 - 完成：为实验室环境补上一套真正可长期查看的 Grafana 总览看板，新增 `/Users/simon/projects/webapp-template/server/deploy/lab-ha/manifests/grafana-loki-datasource.yaml` 与 `/Users/simon/projects/webapp-template/server/deploy/lab-ha/manifests/grafana-lab-overview-dashboard.yaml`；其中 Grafana 新增了 `Loki` 数据源，并自动导入 `HA Lab / Ops Overview` 看板，覆盖节点就绪数、WebApp 副本、告警数量、blackbox 最小成功率、Velero 备份统计、集群 CPU/内存、活跃告警表格和常用运维链接。
 - 验证：Grafana API 已返回 `Loki` 数据源；`/api/search?query=HA%20Lab` 已命中 `HA Lab / Ops Overview`，看板 UID 为 `lab-ha-overview`；直接访问 `http://192.168.0.108:30081/d/lab-ha-overview/ha-lab-ops-overview` 返回 `200`；关键 PromQL 查询（节点 Ready、WebApp 副本、Velero 成功数、最后一次备份年龄、blackbox 最小成功率）均已单独校验通过。
 - 下一步：若后续值班场景继续深化，可再按需要补 `CloudNativePG` 角色、Longhorn 容量、Harbor 仓库容量等细分面板，但当前这版已经可以承担实验室总览看板角色。

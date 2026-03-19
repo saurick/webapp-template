@@ -10,6 +10,7 @@
 - Grafana: `http://192.168.0.108:30081`
 - Grafana Ops Dashboard: `http://192.168.0.108:30081/d/lab-ha-overview/ha-lab-ops-overview`
 - Grafana Data Dashboard: `http://192.168.0.108:30081/d/lab-ha-data/ha-lab-data-and-storage`
+- Grafana PostgreSQL Dashboard: `http://192.168.0.108:30081/d/lab-ha-postgres/ha-lab-postgresql-and-backup`
 - Prometheus: `http://192.168.0.108:30090`
 - Alertmanager: `http://192.168.0.108:30093`
 - Argo CD: `https://192.168.0.108:30443`
