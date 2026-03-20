@@ -1,4 +1,10 @@
 ## 2026-03-20
+- 完成：修正 Helm 模板编辑器配置的错误前提。将 `/Users/simon/projects/webapp-template/.vscode/settings.json` 中 chart `templates/*.yaml`、`*.tpl` 的语言关联从错误的 `helm-template` 改为 `helm`，并把 `/Users/simon/projects/webapp-template/.vscode/extensions.json` 的推荐扩展补全为 `ms-kubernetes-tools.vscode-kubernetes-tools + Tim-Koehler.helm-intellisense`，让语法模式与补全/lint 组合回到一致口径。
+- 验证：本机已确认安装 `ms-kubernetes-tools.vscode-kubernetes-tools`；其 package.json 明确注册了 `helm` 语言，并内建 `**/templates/*.yaml|yml|tpl` filenamePatterns；`Tim-Koehler.helm-intellisense` 的运行时代码也确认对 `yaml` 与 `helm` 语言注册补全 provider，说明当前修正后的工作区配置与扩展实现一致。
+- 下一步：在 VS Code 中执行一次 `Developer: Reload Window`，然后重新打开 `/Users/simon/projects/webapp-template/server/deploy/lab-ha/charts/webapp-template/templates/deployment.yaml`；若状态栏语言模式仍显示 `YAML`，手动切到 `Helm` 一次即可把缓存的旧语言模式纠正过来。
+- 阻塞/风险：VS Code 对已打开编辑器可能沿用旧的语言模式缓存；即使仓库配置已经修正，如果窗口未 reload 或当前标签页未重新打开，仍可能暂时继续显示旧的 YAML 误报。
+
+## 2026-03-20
 - 完成：新增 `/Users/simon/projects/webapp-template/server/deploy/lab-ha/docs/CILIUM_HUBBLE_RUNBOOK.md`，把当前 `Cilium eBPF + Hubble + MetalLB L2` 口径下最常用、且已在 live 集群验证过的命令整理成一份独立运行/排障手册，覆盖 `KubeProxyReplacement` 快速确认、`NodePort/LoadBalancer` 的 BPF LB map 检查、endpoint/policy 排查、`cilium-dbg monitor` 实时看 drop 与 policy verdict，以及如何区分 `eBPF datapath` 问题和 `MetalLB L2 / 外部路由` 问题；同时更新 `/Users/simon/projects/webapp-template/server/deploy/lab-ha/docs/README.md` 索引。
 - 下一步：如果后续你要继续做 `Cilium BGP` 或 native routing 实验，再在这份 runbook 上补“BGP peer 建立、路由通告与多集群互联”的独立章节，不要和当前 `eBPF` 排障步骤混在一起。
 - 阻塞/风险：当前手册刻意只写现场已验证命令，没有引入额外 `hubble` CLI 安装步骤；因此实时流量观察仍以 `Hubble UI` 和 `cilium-dbg monitor` 为主，后续若你希望用命令行过滤 flow，再单独补 `hubble` CLI 的安装与使用口径。
