@@ -19,6 +19,7 @@
 - `docs/PROD_TRIAL.md`: WebApp 生产试验 Runbook
 - `docs/INTERNAL_DNS.md`: 内部域名与内网 DNS 说明
 - `docs/OPS_CHECKLIST.md`: 日常巡检清单
+- `docs/CILIUM_HUBBLE_RUNBOOK.md`: Cilium eBPF 与 Hubble 运行/排障手册
 - `docs/TROUBLESHOOTING.md`: 常见故障排查手册
 - `docs/RECOVERY_RUNBOOK.md`: 恢复与故障演练手册
 - `scripts/helm-release.sh`: Helm 统一入口，负责 repo 初始化、模板渲染与 release 同步
@@ -90,6 +91,8 @@
 - 发布与平台: `Harbor + GitLab + GitLab Runner + Argo CD + Argo Rollouts`
 - 业务: `webapp-template`
 
+补充说明：当前集群的 Pod 网络、NetworkPolicy 与 Service datapath 都统一收口到 `Cilium`；`kube-proxy replacement` 已开启，`ClusterIP / NodePort / LoadBalancer` 由 `Cilium eBPF` 处理。
+补充说明：当前对外路由发布仍以现有 `MetalLB L2` 方案为主，`BGP` 暂未启用；是否继续引入 `Cilium BGP Control Plane`，按跨子网可达、对外路由收敛和多集群诉求单独评估。
 补充说明：当前指标型 TSDB 就是 `Prometheus`；当前日志主线是 `Loki`，没有额外叠加 `ELK/OpenSearch`。
 补充说明：若要先在本仓库推进低风险生产试验，请优先走 `docs/PROD_TRIAL.md` 的独立命名空间方案，不要直接覆盖当前 `lab` 应用。
 补充说明：若当前阶段先走内网访问，请优先使用 `manifests/argocd-webapp-prod-trial-app-internal.yaml` 对应的 internal values overlay，不要急着把业务入口直接暴露公网。
