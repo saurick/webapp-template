@@ -85,12 +85,12 @@ data:
         {
           "id": 4,
           "type": "stat",
-          "title": "Blackbox Min Success",
+          "title": "Jaeger Probe",
           "datasource": {"type": "prometheus", "uid": "prometheus"},
           "gridPos": {"h": 5, "w": 4, "x": 12, "y": 0},
           "targets": [
             {
-              "expr": "min(probe_success{job=\"blackbox-exporter-prometheus-blackbox-exporter\"})",
+              "expr": "max(probe_success{job=\"blackbox-exporter-prometheus-blackbox-exporter\",target=\"jaeger\"})",
               "instant": true,
               "refId": "A"
             }
@@ -254,7 +254,7 @@ data:
           "gridPos": {"h": 8, "w": 12, "x": 12, "y": 21},
           "options": {
             "mode": "markdown",
-            "content": "### Daily Ops Links\n\n- [Portal](http://192.168.0.108:30088)\n- [WebApp](http://192.168.0.108:32668)\n- [GitLab Pipelines](http://192.168.0.108:8929/root/webapp-template-lab/-/pipelines)\n- [Argo CD](https://192.168.0.108:30443)\n- [TEST_REPORT.md](http://192.168.0.108:8929/root/webapp-template-lab/-/blob/main/server/deploy/lab-ha/docs/TEST_REPORT.md)\n\nUse Grafana Explore with the Loki datasource for log triage."
+            "content": "### Daily Ops Links\n\n- [Portal](http://192.168.0.108:30088)\n- [WebApp](http://192.168.0.108:32668)\n- [Jaeger](http://192.168.0.108:30686)\n- [GitLab Pipelines](http://192.168.0.108:8929/root/webapp-template-lab/-/pipelines)\n- [Argo CD](https://192.168.0.108:30443)\n- [TEST_REPORT.md](http://192.168.0.108:8929/root/webapp-template-lab/-/blob/main/server/deploy/lab-ha/docs/TEST_REPORT.md)\n\n### Grafana Triage Flow\n\n1. 在 Explore 里先看 Loki 日志。\n2. 点日志详情里的 `trace.id` / `trace_id` 直接跳 Jaeger。\n3. 在 Jaeger trace 详情里再用 `Logs for this span` 回查同一时间窗日志。"
           }
         }
       ]

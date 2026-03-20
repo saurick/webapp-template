@@ -8,6 +8,7 @@
 - Portal: `http://192.168.0.108:30088`
 - Harbor: `http://192.168.0.108:30002`
 - Grafana: `http://192.168.0.108:30081`
+- Jaeger: `http://192.168.0.108:30686`
 - Grafana Ops Dashboard: `http://192.168.0.108:30081/d/lab-ha-overview/ha-lab-ops-overview`
 - Grafana Data Dashboard: `http://192.168.0.108:30081/d/lab-ha-data/ha-lab-data-and-storage`
 - Grafana PostgreSQL Dashboard: `http://192.168.0.108:30081/d/lab-ha-postgres/ha-lab-postgresql-and-backup`
@@ -21,6 +22,14 @@
 - Alert Sink: `http://192.168.0.108:30086`
 - SeaweedFS S3: `http://192.168.0.108:30333`
 - GitLab: `http://192.168.0.108:8929`
+
+## Tracing note
+
+- `Jaeger` 当前采用单实例 + 内存存储，只用于实验室 tracing 与排障
+- Jaeger Pod 重启、升级或被重新调度后，历史 trace 会丢失；它不是当前环境的持久化真源
+- 集群内默认 OTLP HTTP 入口：`jaeger.monitoring.svc.cluster.local:4318`
+- Grafana 已预置 `Jaeger` datasource，并把 Loki 日志里的 `trace.id` / `trace_id` 关联到 Jaeger
+- 值班排障建议口径：先在 Grafana Explore 看 Loki，再点日志详情里的 trace 链接进入 Jaeger
 
 ## S3 endpoint note
 

@@ -15,5 +15,18 @@ data:
         uid: loki
         access: proxy
         url: http://loki.logging:3100/
+        editable: false
         jsonData:
           maxLines: 2000
+          # 直接从 Loki 日志点进 Jaeger，减少值班时手工复制 trace_id。
+          derivedFields:
+            - datasourceUid: jaeger
+              matcherRegex: '"trace.id":"([a-f0-9]{32})"'
+              name: trace.id
+              url: '$${__value.raw}'
+              urlDisplayLabel: View trace
+            - datasourceUid: jaeger
+              matcherRegex: '"trace_id":"([a-f0-9]{32})"'
+              name: trace_id
+              url: '$${__value.raw}'
+              urlDisplayLabel: View trace

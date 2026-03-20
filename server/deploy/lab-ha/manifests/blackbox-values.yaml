@@ -6,6 +6,11 @@ serviceMonitor:
     interval: 30s
     scrapeTimeout: 10s
   targets:
+    - name: jaeger
+      url: http://192.168.0.108:30686/
+      labels:
+        component: jaeger
+        access: direct
     - name: gitlab
       url: http://192.168.0.108:8929/users/sign_in
       labels:

@@ -240,11 +240,13 @@ data:
           .copy {
             border: 0;
             border-radius: 999px;
+            min-width: 112px;
             padding: 7px 12px;
             background: rgba(102,217,239,0.14);
             color: var(--accent);
             cursor: pointer;
             font-size: 12px;
+            white-space: nowrap;
           }
           .copy:hover { background: rgba(102,217,239,0.22); }
           ul { margin: 10px 0 0; padding-left: 18px; }
@@ -445,35 +447,35 @@ data:
                   <div class="cred-label">WebApp</div>
                   <div class="cred-value">admin / AdminLab123!</div>
                 </div>
-                <button type="button" class="copy" data-copy="admin / AdminLab123!" data-copy-state="default">Copy</button>
+                <button type="button" class="copy" data-copy="AdminLab123!" data-copy-state="default">Copy password</button>
               </div>
               <div class="cred-line">
                 <div>
                   <div class="cred-label">Harbor</div>
                   <div class="cred-value">admin / HarborAdmin123!</div>
                 </div>
-                <button type="button" class="copy" data-copy="admin / HarborAdmin123!" data-copy-state="default">Copy</button>
+                <button type="button" class="copy" data-copy="HarborAdmin123!" data-copy-state="default">Copy password</button>
               </div>
               <div class="cred-line">
                 <div>
                   <div class="cred-label">Grafana</div>
                   <div class="cred-value">admin / Grafana123!</div>
                 </div>
-                <button type="button" class="copy" data-copy="admin / Grafana123!" data-copy-state="default">Copy</button>
+                <button type="button" class="copy" data-copy="Grafana123!" data-copy-state="default">Copy password</button>
               </div>
               <div class="cred-line">
                 <div>
                   <div class="cred-label">Argo CD</div>
                   <div class="cred-value">admin / aLgJjYwPdezuEzSw</div>
                 </div>
-                <button type="button" class="copy" data-copy="admin / aLgJjYwPdezuEzSw" data-copy-state="default">Copy</button>
+                <button type="button" class="copy" data-copy="aLgJjYwPdezuEzSw" data-copy-state="default">Copy password</button>
               </div>
               <div class="cred-line">
                 <div>
                   <div class="cred-label">GitLab</div>
                   <div class="cred-value">root / L4b!Runr2026#Git</div>
                 </div>
-                <button type="button" class="copy" data-copy="root / L4b!Runr2026#Git" data-copy-state="default">Copy</button>
+                <button type="button" class="copy" data-copy="L4b!Runr2026#Git" data-copy-state="default">Copy password</button>
               </div>
             </div>
 
@@ -532,6 +534,9 @@ data:
               </p>
               <ul>
                 <li><a href="http://192.168.0.108:8929/root/webapp-template-lab/-/blob/main/server/deploy/lab-ha/docs/ACCESS.md" target="_blank" rel="noreferrer">ACCESS.md</a></li>
+                <li><a href="http://192.168.0.108:8929/root/webapp-template-lab/-/blob/main/server/deploy/lab-ha/docs/OPS_CHECKLIST.md" target="_blank" rel="noreferrer">OPS_CHECKLIST.md</a></li>
+                <li><a href="http://192.168.0.108:8929/root/webapp-template-lab/-/blob/main/server/deploy/lab-ha/docs/TROUBLESHOOTING.md" target="_blank" rel="noreferrer">TROUBLESHOOTING.md</a></li>
+                <li><a href="http://192.168.0.108:8929/root/webapp-template-lab/-/blob/main/server/deploy/lab-ha/docs/RECOVERY_RUNBOOK.md" target="_blank" rel="noreferrer">RECOVERY_RUNBOOK.md</a></li>
                 <li><a href="http://192.168.0.108:8929/root/webapp-template-lab/-/blob/main/server/deploy/lab-ha/docs/TEST_REPORT.md" target="_blank" rel="noreferrer">TEST_REPORT.md</a></li>
                 <li><a href="http://192.168.0.108:8929/root/webapp-template-lab/-/blob/main/server/deploy/lab-ha/docs/HANDOVER.md" target="_blank" rel="noreferrer">HANDOVER.md</a></li>
               </ul>
@@ -589,9 +594,9 @@ data:
               'notes.seaweedfsBody': '<code>http://192.168.0.108:30333</code> is an S3 API endpoint, not a normal web UI. Browsers hit it without signed credentials, so an <code>AccessDenied</code> XML response is expected. Use <code>30888</code> for the filer UI instead.',
               'notes.docsTitle': 'Docs',
               'notes.docsBody': 'Full runbook, access notes, HA drills, and handover docs live in <code>server/deploy/lab-ha/docs</code> inside the repository.',
-              'copy.default': 'Copy',
+              'copy.default': 'Copy password',
               'copy.success': 'Copied',
-              'copy.fallback': 'Copy manually',
+              'copy.fallback': 'Manual copy',
             },
             zh: {
               'document.title': '高可用实验室门户',
@@ -641,9 +646,9 @@ data:
               'notes.seaweedfsBody': '<code>http://192.168.0.108:30333</code> 是 S3 API 入口，不是普通网页界面。浏览器在没有签名凭据时访问它，返回 <code>AccessDenied</code> XML 属于预期；人工浏览请改用 <code>30888</code> 的 filer UI。',
               'notes.docsTitle': '文档',
               'notes.docsBody': '完整 runbook、访问说明、高可用演练与交接文档都在仓库内的 <code>server/deploy/lab-ha/docs</code> 目录。',
-              'copy.default': '复制',
+              'copy.default': '复制密码',
               'copy.success': '已复制',
-              'copy.fallback': '请手动复制',
+              'copy.fallback': '手动复制',
             },
           };
 
@@ -726,6 +731,7 @@ data:
           copyButtons.forEach((button) => {
             renderCopyButton(button);
             button.addEventListener('click', async () => {
+              // 页面继续展示“账号 / 密码”，但按钮只复制密码，避免粘贴时把用户名一并带走。
               const value = button.getAttribute('data-copy') || '';
               clearTimeout(button._copyTimer);
               try {

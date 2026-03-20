@@ -29,8 +29,8 @@ stringData:
     trace:
       jaeger:
         traceName: webapp-template.service
-        endpoint: ""
-        ratio: 0
+        endpoint: jaeger.monitoring.svc.cluster.local:4318
+        ratio: 1
 
     data:
       postgres:
@@ -86,7 +86,7 @@ spec:
       containers:
         - name: server
           # 生产试验使用独立不可变 tag，避免节点继续命中旧缓存，也方便按 tag 快速回滚。
-          image: harbor.192.168.0.108.nip.io:32668/library/webapp-template-server:20260319T235639-admin-init-fix
+          image: harbor.192.168.0.108.nip.io:32668/library/webapp-template-server:20260320T085934-521371ba-local
           imagePullPolicy: IfNotPresent
           command: ["/app/server", "-conf", "/config/config.yaml"]
           env:
@@ -240,3 +240,10 @@ spec:
           port: 53
         - protocol: TCP
           port: 53
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: monitoring
+      ports:
+        - protocol: TCP
+          port: 4318

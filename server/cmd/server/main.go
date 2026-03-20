@@ -5,6 +5,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"math"
 	"os"
 	"path/filepath"
 	"strings"
@@ -149,39 +150,74 @@ func buildConfigSources(confPath string) []config.Source {
 	return sources
 }
 
-// 初始化 TracerProvider：优先远端 OTLP（异步 Batch），失败或未配置就本地 no-op 风格
-func initTracerProvider(traceName, traceEndpoint string, baseLogger log.Logger) *tracesdk.TracerProvider {
+// 采样率统一夹到 [0,1]，避免配置脏值把 tracing 行为搞成不可预期。
+func normalizeTraceRatio(ratio float64) float64 {
+	switch {
+	case math.IsNaN(ratio), math.IsInf(ratio, 0):
+		return 0
+	case ratio <= 0:
+		return 0
+	case ratio >= 1:
+		return 1
+	default:
+		return ratio
+	}
+}
+
+// 统一走 ParentBased，既保留上游采样决策，也允许当前服务按比例控制根 span。
+func buildTraceSampler(ratio float64) tracesdk.Sampler {
+	return tracesdk.ParentBased(tracesdk.TraceIDRatioBased(normalizeTraceRatio(ratio)))
+}
+
+// 初始化 TracerProvider：优先远端 OTLP（异步 Batch），失败或未配置就本地 provider。
+func initTracerProvider(traceName, traceEndpoint string, traceRatio float64, baseLogger log.Logger) *tracesdk.TracerProvider {
 	helper := log.NewHelper(baseLogger)
 	var tp *tracesdk.TracerProvider
+	normalizedRatio := normalizeTraceRatio(traceRatio)
+	resourceOption := tracesdk.WithResource(resource.NewSchemaless(
+		semconv.ServiceNameKey.String(traceName),
+	))
+	samplerOption := tracesdk.WithSampler(buildTraceSampler(normalizedRatio))
 
 	// 1) 有 endpoint → 尝试 OTLP HTTP exporter
 	if traceEndpoint != "" {
-		fmt.Println("init tp with endpoint", traceEndpoint)
-
 		exp, err := otlptracehttp.New(
 			context.Background(),
 			otlptracehttp.WithEndpoint(traceEndpoint),
 			otlptracehttp.WithInsecure(),
 		)
 		if err != nil {
-			helper.Errorf("init otlp exporter failed: %v, fallback to local tracer", err)
+			helper.Warnw(
+				"msg", "init otlp exporter failed, fallback to local tracer",
+				"trace_endpoint", traceEndpoint,
+				"trace_ratio", normalizedRatio,
+				"error", err,
+			)
 		} else {
 			tp = tracesdk.NewTracerProvider(
+				samplerOption,
 				tracesdk.WithBatcher(exp), // ✅ 异步批量导出，不阻塞请求
-				tracesdk.WithResource(resource.NewSchemaless(
-					semconv.ServiceNameKey.String(traceName),
-				)),
+				resourceOption,
+			)
+			helper.Infow(
+				"msg", "tracer provider initialized",
+				"mode", "otlp-http",
+				"trace_endpoint", traceEndpoint,
+				"trace_ratio", normalizedRatio,
 			)
 		}
 	}
 
-	// 2) 没配 endpoint 或 exporter 初始化失败 → 本地 TracerProvider（无 exporter，近似 no-op）
+	// 2) 没配 endpoint 或 exporter 初始化失败 → 本地 provider，仅保留进程内 span 语义。
 	if tp == nil {
-		fmt.Println("init tp failed or endpoint empty, use local tracer")
 		tp = tracesdk.NewTracerProvider(
-			tracesdk.WithResource(resource.NewSchemaless(
-				semconv.ServiceNameKey.String(traceName),
-			)),
+			samplerOption,
+			resourceOption,
+		)
+		helper.Infow(
+			"msg", "tracer provider initialized without remote exporter",
+			"mode", "local",
+			"trace_ratio", normalizedRatio,
 		)
 	}
 
@@ -225,12 +261,14 @@ func main() {
 	// ===== 3. 安全地读取 Trace 配置（避免 nil pointer） =====
 	traceName := TraceName
 	traceEndpoint := ""
+	traceRatio := 0.0
 
 	if bc.Trace != nil && bc.Trace.Jaeger != nil {
 		if bc.Trace.Jaeger.TraceName != "" {
 			traceName = bc.Trace.Jaeger.TraceName
 		}
 		traceEndpoint = bc.Trace.Jaeger.Endpoint
+		traceRatio = bc.Trace.Jaeger.Ratio
 	}
 	if v := strings.TrimSpace(os.Getenv("TRACE_ENDPOINT")); v != "" {
 		// 关键兜底：模板默认走本项目 jaeger，只有接外部 tracing 或排查特殊问题时才覆盖。
@@ -242,7 +280,7 @@ func main() {
 	defer cleanupTaskGroup()
 
 	// ===== 5. 初始化 OpenTelemetry（带兜底，不会因为没连上 Jaeger 就阻塞） =====
-	tp := initTracerProvider(traceName, traceEndpoint, logger)
+	tp := initTracerProvider(traceName, traceEndpoint, traceRatio, logger)
 	// 进程退出前 flush 一下（不阻塞请求，只在退出时）
 	defer func() {
 		_ = tp.ForceFlush(context.Background())

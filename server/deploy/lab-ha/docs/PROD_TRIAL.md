@@ -51,7 +51,7 @@
 - `jwt_secret`
 - `admin_username`
 - `admin_password`
-- `trace_endpoint`（可空）
+- `trace_endpoint`（可空；留空时默认走集群内 `jaeger.monitoring.svc.cluster.local:4318`）
 
 ## 部署步骤
 
@@ -98,7 +98,8 @@ kubectl --kubeconfig /Users/simon/.kube/ha-lab.conf apply \
 3. `curl --noproxy '*' -H 'Host: webapp-trial.192.168.0.108.nip.io' http://192.168.0.108:32668/healthz`
 4. `curl --noproxy '*' -H 'Host: webapp-trial.192.168.0.108.nip.io' http://192.168.0.108:32668/readyz`
 5. 管理员登录、普通登录、核心接口最少走一遍
-6. 删除一个 Pod，确认流量可继续通过
+6. `bash /Users/simon/projects/webapp-template/server/deploy/lab-ha/scripts/check-webapp-prod-trial-tracing.sh`
+7. 删除一个 Pod，确认流量可继续通过
 
 如果已经切内部域名，验证命令应同步替换成真实内部 FQDN。
 
@@ -136,3 +137,4 @@ kubectl --kubeconfig /Users/simon/.kube/ha-lab.conf -n webapp-prod-trial rollout
 - Argo CD 默认不启用自动同步，减少误发布风险
 - 敏感配置走环境变量 Secret 注入，不继续把生产试验凭据写进 Git 清单
 - 资源配额只允许这套试验最多吃掉一小块固定预算，避免把整台 VM 拖死
+- `prod-trial` 默认 NetworkPolicy 只放行 PostgreSQL、DNS 和 Jaeger OTLP HTTP；后续若继续收紧 egress，不要漏掉 `monitoring` 命名空间 `4318/TCP`，否则 Jaeger UI 虽然正常，应用 trace 仍会超时

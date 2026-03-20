@@ -149,7 +149,7 @@ data:
           "gridPos": {"h": 8, "w": 12, "x": 12, "y": 21},
           "options": {
             "mode": "markdown",
-            "content": "### Data Plane Guidance\n\n- Current TSDB is **Prometheus**.\n- Current log stack is **Loki + Promtail**, not ELK.\n- For SeaweedFS human browsing, use `30888`; `30333` is S3 API only.\n- Harbor and SeaweedFS are intentionally tuned for this resource budget.\n- Use Grafana Explore with the Loki datasource for `webapp` log triage."
+            "content": "### Data Plane Guidance\n\n- Current TSDB is **Prometheus**.\n- Current log stack is **Loki + Promtail**, not ELK.\n- Current trace backend is **Jaeger v2**.\n- For SeaweedFS human browsing, use `30888`; `30333` is S3 API only.\n- Harbor and SeaweedFS are intentionally tuned for this resource budget.\n- `webapp` 排障优先走 `Loki -> trace.id -> Jaeger -> Logs for this span`。"
           }
         }
       ]

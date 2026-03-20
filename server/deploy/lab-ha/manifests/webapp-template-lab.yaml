@@ -29,8 +29,8 @@ stringData:
     trace:
       jaeger:
         traceName: webapp-template.service
-        endpoint: ""
-        ratio: 0
+        endpoint: jaeger.monitoring.svc.cluster.local:4318
+        ratio: 0.1
 
     data:
       postgres:
@@ -178,6 +178,13 @@ spec:
   policyTypes:
     - Ingress
     - Egress
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: monitoring
+      ports:
+        - protocol: TCP
+          port: 4318
   ingress:
     - ports:
         - protocol: TCP

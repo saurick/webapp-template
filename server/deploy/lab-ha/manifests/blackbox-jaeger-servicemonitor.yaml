@@ -1,0 +1,50 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: blackbox-exporter-prometheus-blackbox-exporter-jaeger
+  namespace: monitoring
+  annotations:
+    meta.helm.sh/release-name: blackbox-exporter
+    meta.helm.sh/release-namespace: monitoring
+  labels:
+    app.kubernetes.io/instance: blackbox-exporter
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: prometheus-blackbox-exporter
+    app.kubernetes.io/version: v0.25.0
+    helm.sh/chart: prometheus-blackbox-exporter-9.2.0
+    release: kube-prometheus-stack
+    component: jaeger
+    access: direct
+spec:
+  jobLabel: blackbox-exporter
+  namespaceSelector:
+    matchNames:
+      - monitoring
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: blackbox-exporter
+      app.kubernetes.io/name: prometheus-blackbox-exporter
+  endpoints:
+    - port: http
+      path: /probe
+      scheme: http
+      interval: 30s
+      scrapeTimeout: 10s
+      honorTimestamps: true
+      params:
+        module:
+          - http_2xx
+        target:
+          - http://192.168.0.108:30686/
+      metricRelabelings:
+        # 先用桥接对象补 live Jaeger 探测，后续 Helm 真源恢复后可按同名资源平滑接管。
+        - action: replace
+          sourceLabels:
+            - instance
+          targetLabel: instance
+          replacement: http://192.168.0.108:30686/
+        - action: replace
+          sourceLabels:
+            - target
+          targetLabel: target
+          replacement: jaeger

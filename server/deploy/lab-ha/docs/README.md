@@ -25,6 +25,7 @@
 - `manifests/velero-values.yaml`: Velero 对接 SeaweedFS S3 的值文件
 - `manifests/sealed-secrets-values.yaml`: Sealed Secrets 控制器值文件
 - `manifests/alertmanager-values.yaml`: Alertmanager 路由与 webhook 出口配置
+- `manifests/jaeger.yaml`: Jaeger v2 轻量 tracing 基线
 - `manifests/platform-ingresses.yaml`: 平台 UI 入口
 - `manifests/platform-nodeports.yaml`: 当前稳定直连入口端口映射
 - `manifests/platform-portal.yaml`: 实验室门户页
@@ -33,8 +34,10 @@
 - `manifests/grafana-lab-postgres-backup-dashboard.yaml`: Grafana PostgreSQL 与备份看板
 - `manifests/grafana-lab-gitops-dashboard.yaml`: Grafana GitOps 与交付看板
 - `manifests/grafana-loki-datasource.yaml`: Grafana Loki 数据源
+- `manifests/grafana-jaeger-datasource.yaml`: Grafana Jaeger 数据源与 trace 回查日志配置
 - `manifests/argocd-rollouts-metrics.yaml`: Argo CD / Argo Rollouts 指标采集清单
 - `manifests/blackbox-values.yaml`: Blackbox Exporter 探测配置
+- `manifests/blackbox-jaeger-servicemonitor.yaml`: Jaeger blackbox 探测桥接清单
 - `manifests/alert-webhook-receiver.yaml`: 实验室默认 webhook 告警接收器
 - `manifests/webapp-governance.yaml`: webapp 命名空间治理基线
 - `manifests/webapp-template-lab.yaml`: 集群内实验室应用清单副本
@@ -46,6 +49,7 @@
 - `argocd/webapp-prod-trial-internal/ingress-host-patch.yaml`: WebApp 内部域名 overlay
 - `manifests/argocd-repo-secret-sealed.yaml`: Argo CD 仓库凭据的 SealedSecret
 - `scripts/ha-node-bootstrap.sh`: 节点初始化脚本
+- `scripts/check-webapp-prod-trial-tracing.sh`: 触发 WebApp 请求并确认 Jaeger 中出现服务名
 - `artifacts/webapp-template-server-ha-lab.tar`: 本次实验构建出的应用镜像归档
 
 ## 当前范围
@@ -62,6 +66,7 @@
 - 存储: `Longhorn + SeaweedFS`
 - 数据库: `CloudNativePG`
 - 监控: `Prometheus + Alertmanager + Grafana + node-exporter + kube-state-metrics + blackbox-exporter`
+- 链路追踪: `Jaeger v2（单实例、内存存储）`
 - 日志: `Loki + Promtail`
 - 备份与密钥: `Velero + Sealed Secrets`
 - 发布与平台: `Harbor + GitLab + GitLab Runner + Argo CD + Argo Rollouts`
