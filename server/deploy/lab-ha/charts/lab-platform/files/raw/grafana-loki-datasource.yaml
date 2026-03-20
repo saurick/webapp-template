@@ -18,15 +18,10 @@ data:
         editable: false
         jsonData:
           maxLines: 2000
-          # 直接从 Loki 日志点进 Jaeger，减少值班时手工复制 trace_id。
+          # 只对已采样链路暴露跳转字段，避免低采样环境里把未上报 trace 也做成可点击链接。
           derivedFields:
             - datasourceUid: jaeger
-              matcherRegex: '"trace.id":"([a-f0-9]{32})"'
-              name: trace.id
-              url: '$${__value.raw}'
-              urlDisplayLabel: View trace
-            - datasourceUid: jaeger
-              matcherRegex: '"trace_id":"([a-f0-9]{32})"'
-              name: trace_id
+              matcherRegex: '"trace_link_id":"([a-f0-9]{32})"'
+              name: trace_link_id
               url: '$${__value.raw}'
               urlDisplayLabel: View trace

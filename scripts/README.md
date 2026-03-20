@@ -88,7 +88,7 @@ bash scripts/qa/db-guard.sh
   - `server/internal/data/model/migrate/*`
 - 常用环境变量：
   - `SKIP_DB_GUARD=1`：跳过检查
-  - `QA_BASE_RANGE=origin/main...HEAD`：显式指定 diff 范围
+  - `QA_BASE_RANGE=origin/master...HEAD`：显式指定 diff 范围
 
 ## 5) secrets
 
@@ -105,7 +105,7 @@ bash scripts/qa/secrets.sh
   - `SKIP_SECRETS_SCAN=1`
   - `SECRETS_STRICT=1`
   - `SECRETS_STAGED_ONLY=1`（仅扫描 staged 内容）
-  - `QA_BASE_RANGE=origin/main...HEAD`
+  - `QA_BASE_RANGE=origin/master...HEAD`
 
 ## 6) shellcheck
 

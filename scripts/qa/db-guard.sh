@@ -15,7 +15,7 @@ print_help() {
 
 环境变量:
   SKIP_DB_GUARD=1    跳过检查
-  QA_BASE_RANGE=...  指定 diff 范围（例：origin/main...HEAD）
+  QA_BASE_RANGE=...  指定 diff 范围（例：origin/master...HEAD）
 USAGE
 }
 

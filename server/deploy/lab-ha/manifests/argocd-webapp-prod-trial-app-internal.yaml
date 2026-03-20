@@ -7,7 +7,7 @@ spec:
   project: default
   source:
     repoURL: http://192.168.0.108:8929/root/webapp-template-lab.git
-    targetRevision: main
+    targetRevision: master
     # 内部域名切换仍复用同一个 Application，避免双应用同时管理同一命名空间。
     path: server/deploy/lab-ha/charts/webapp-template
     helm:

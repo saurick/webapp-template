@@ -24,6 +24,9 @@ spec:
 {{ include "webapp-template.selectorLabels" . | nindent 6 }}
   template:
     metadata:
+      annotations:
+        # 配置 Secret 变化后主动滚动 Pod，避免 tracing / DSN 等运行时配置更新仍卡在旧进程里。
+        checksum/config-secret: {{ .Values.configSecret.content | sha256sum }}
       labels:
 {{ include "webapp-template.selectorLabels" . | nindent 8 }}
     spec:

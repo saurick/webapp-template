@@ -28,8 +28,8 @@
 - `Jaeger` 当前采用单实例 + 内存存储，只用于实验室 tracing 与排障
 - Jaeger Pod 重启、升级或被重新调度后，历史 trace 会丢失；它不是当前环境的持久化真源
 - 集群内默认 OTLP HTTP 入口：`jaeger.monitoring.svc.cluster.local:4318`
-- Grafana 已预置 `Jaeger` datasource，并把 Loki 日志里的 `trace.id` / `trace_id` 关联到 Jaeger
-- 值班排障建议口径：先在 Grafana Explore 看 Loki，再点日志详情里的 trace 链接进入 Jaeger
+- Grafana 已预置 `Jaeger` datasource，并通过 `trace_link_id` 只给已采样日志展示 `View trace`，避免低采样场景点进 Jaeger 直接 `404`
+- 值班排障建议口径：先在 Grafana Explore 看 Loki，再点 sampled 日志上的 `View trace` 进入 Jaeger
 
 ## S3 endpoint note
 

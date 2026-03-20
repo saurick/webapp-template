@@ -533,12 +533,12 @@ data:
                 <code>server/deploy/lab-ha/docs</code> inside the repository.
               </p>
               <ul>
-                <li><a href="http://192.168.0.108:8929/root/webapp-template-lab/-/blob/main/server/deploy/lab-ha/docs/ACCESS.md" target="_blank" rel="noreferrer">ACCESS.md</a></li>
-                <li><a href="http://192.168.0.108:8929/root/webapp-template-lab/-/blob/main/server/deploy/lab-ha/docs/OPS_CHECKLIST.md" target="_blank" rel="noreferrer">OPS_CHECKLIST.md</a></li>
-                <li><a href="http://192.168.0.108:8929/root/webapp-template-lab/-/blob/main/server/deploy/lab-ha/docs/TROUBLESHOOTING.md" target="_blank" rel="noreferrer">TROUBLESHOOTING.md</a></li>
-                <li><a href="http://192.168.0.108:8929/root/webapp-template-lab/-/blob/main/server/deploy/lab-ha/docs/RECOVERY_RUNBOOK.md" target="_blank" rel="noreferrer">RECOVERY_RUNBOOK.md</a></li>
-                <li><a href="http://192.168.0.108:8929/root/webapp-template-lab/-/blob/main/server/deploy/lab-ha/docs/TEST_REPORT.md" target="_blank" rel="noreferrer">TEST_REPORT.md</a></li>
-                <li><a href="http://192.168.0.108:8929/root/webapp-template-lab/-/blob/main/server/deploy/lab-ha/docs/HANDOVER.md" target="_blank" rel="noreferrer">HANDOVER.md</a></li>
+                <li><a href="http://192.168.0.108:8929/root/webapp-template-lab/-/blob/master/server/deploy/lab-ha/docs/ACCESS.md" target="_blank" rel="noreferrer">ACCESS.md</a></li>
+                <li><a href="http://192.168.0.108:8929/root/webapp-template-lab/-/blob/master/server/deploy/lab-ha/docs/OPS_CHECKLIST.md" target="_blank" rel="noreferrer">OPS_CHECKLIST.md</a></li>
+                <li><a href="http://192.168.0.108:8929/root/webapp-template-lab/-/blob/master/server/deploy/lab-ha/docs/TROUBLESHOOTING.md" target="_blank" rel="noreferrer">TROUBLESHOOTING.md</a></li>
+                <li><a href="http://192.168.0.108:8929/root/webapp-template-lab/-/blob/master/server/deploy/lab-ha/docs/RECOVERY_RUNBOOK.md" target="_blank" rel="noreferrer">RECOVERY_RUNBOOK.md</a></li>
+                <li><a href="http://192.168.0.108:8929/root/webapp-template-lab/-/blob/master/server/deploy/lab-ha/docs/TEST_REPORT.md" target="_blank" rel="noreferrer">TEST_REPORT.md</a></li>
+                <li><a href="http://192.168.0.108:8929/root/webapp-template-lab/-/blob/master/server/deploy/lab-ha/docs/HANDOVER.md" target="_blank" rel="noreferrer">HANDOVER.md</a></li>
               </ul>
             </div>
           </section>
@@ -788,9 +788,9 @@ spec:
               cpu: 150m
               memory: 96Mi
           volumeMounts:
+            # 避免 subPath 导致 ConfigMap 更新后页面内容不热刷新。
             - name: html
-              mountPath: /usr/share/nginx/html/index.html
-              subPath: index.html
+              mountPath: /usr/share/nginx/html
       volumes:
         - name: html
           configMap:

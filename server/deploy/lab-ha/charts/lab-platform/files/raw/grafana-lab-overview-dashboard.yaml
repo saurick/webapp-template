@@ -254,7 +254,7 @@ data:
           "gridPos": {"h": 8, "w": 12, "x": 12, "y": 21},
           "options": {
             "mode": "markdown",
-            "content": "### Daily Ops Links\n\n- [Portal](http://192.168.0.108:30088)\n- [WebApp](http://192.168.0.108:32668)\n- [Jaeger](http://192.168.0.108:30686)\n- [GitLab Pipelines](http://192.168.0.108:8929/root/webapp-template-lab/-/pipelines)\n- [Argo CD](https://192.168.0.108:30443)\n- [TEST_REPORT.md](http://192.168.0.108:8929/root/webapp-template-lab/-/blob/main/server/deploy/lab-ha/docs/TEST_REPORT.md)\n\n### Grafana Triage Flow\n\n1. 在 Explore 里先看 Loki 日志。\n2. 点日志详情里的 `trace.id` / `trace_id` 直接跳 Jaeger。\n3. 在 Jaeger trace 详情里再用 `Logs for this span` 回查同一时间窗日志。"
+            "content": "### Daily Ops Links\n\n- [Portal](http://192.168.0.108:30088)\n- [WebApp](http://192.168.0.108:32668)\n- [Jaeger](http://192.168.0.108:30686)\n- [GitLab Pipelines](http://192.168.0.108:8929/root/webapp-template-lab/-/pipelines)\n- [Argo CD](https://192.168.0.108:30443)\n- [TEST_REPORT.md](http://192.168.0.108:8929/root/webapp-template-lab/-/blob/master/server/deploy/lab-ha/docs/TEST_REPORT.md)\n\n### Grafana Triage Flow\n\n1. 在 Explore 里先看 Loki 日志。\n2. 只对带 `View trace` 的 sampled 日志点进 Jaeger；底层使用 `trace_link_id`，避免低采样场景误跳 404。\n3. 在 Jaeger trace 详情里再用 `Logs for this span` 回查同一时间窗日志。"
           }
         }
       ]

@@ -9,6 +9,7 @@
 - `cmd/server/main.go` 启动时会初始化全局 logger
 - `service`、`biz`、`data` 层默认都会打日志
 - HTTP 层已内置 `request_id` 过滤器，日志会自动带上 `request_id`
+- 日志会额外输出 `trace_sampled`；只有 trace 真正被采样时才输出 `trace_link_id`，供 Loki 安全跳转 Jaeger
 - 关键鉴权与后台账号链路已保留成功 / 失败日志
 
 ### Trace

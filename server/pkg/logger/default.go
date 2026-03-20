@@ -6,6 +6,7 @@ import (
 
 	"github.com/go-kratos/kratos/v2/log"
 	"github.com/go-kratos/kratos/v2/middleware/tracing"
+	oteltrace "go.opentelemetry.io/otel/trace"
 )
 
 type TaskIDKey struct{}
@@ -20,6 +21,8 @@ func NewDefaultLogger(id, name, version string, debug bool) log.Logger {
 		"service.version", version,
 		"request_id", RequestID(),
 		"trace.id", tracing.TraceID(),
+		"trace_sampled", TraceSampled(),
+		"trace_link_id", TraceLinkID(),
 		"span.id", tracing.SpanID(),
 		"task.id", TaskID(),
 	)
@@ -65,4 +68,28 @@ func RequestIDFromContext(ctx context.Context) string {
 
 func WithRequestID(ctx context.Context, requestID string) context.Context {
 	return context.WithValue(ctx, RequestIDKey{}, requestID)
+}
+
+func TraceSampled() log.Valuer {
+	return func(ctx context.Context) interface{} {
+		if ctx == nil {
+			return false
+		}
+		return oteltrace.SpanContextFromContext(ctx).IsSampled()
+	}
+}
+
+func TraceLinkID() log.Valuer {
+	return func(ctx context.Context) interface{} {
+		if ctx == nil {
+			return ""
+		}
+
+		spanCtx := oteltrace.SpanContextFromContext(ctx)
+		// 只给已采样链路暴露跳转用 trace id，避免 Loki 在低采样场景里生成点进去就是 404 的假链接。
+		if !spanCtx.IsValid() || !spanCtx.IsSampled() {
+			return ""
+		}
+		return spanCtx.TraceID().String()
+	}
 }

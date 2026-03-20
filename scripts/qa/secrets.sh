@@ -17,7 +17,7 @@ print_help() {
   SKIP_SECRETS_SCAN=1   跳过检查
   SECRETS_STRICT=1      命中或工具缺失时阻断
   SECRETS_STAGED_ONLY=1 仅扫描 staged 内容（用于 pre-commit）
-  QA_BASE_RANGE=...     指定 diff 范围（例：origin/main...HEAD）
+  QA_BASE_RANGE=...     指定 diff 范围（例：origin/master...HEAD）
 USAGE
 }
 
