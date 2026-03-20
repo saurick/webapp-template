@@ -1,0 +1,160 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: jaeger-config
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/name: jaeger
+    app.kubernetes.io/component: tracing
+data:
+  config.yaml: |
+    service:
+      extensions: [jaeger_storage, jaeger_query]
+      pipelines:
+        traces:
+          receivers: [otlp]
+          processors: [memory_limiter, batch]
+          exporters: [jaeger_storage_exporter]
+      telemetry:
+        metrics:
+          readers:
+            - pull:
+                exporter:
+                  prometheus:
+                    host: 0.0.0.0
+                    port: 8888
+    extensions:
+      jaeger_query:
+        storage:
+          traces: memstore
+      jaeger_storage:
+        backends:
+          memstore:
+            memory:
+              max_traces: 20000
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+            endpoint: 0.0.0.0:4317
+          http:
+            endpoint: 0.0.0.0:4318
+    processors:
+      memory_limiter:
+        check_interval: 5s
+        limit_mib: 256
+        spike_limit_mib: 64
+      batch:
+        send_batch_size: 512
+        timeout: 2s
+    exporters:
+      jaeger_storage_exporter:
+        trace_storage: memstore
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jaeger
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/name: jaeger
+    app.kubernetes.io/component: tracing
+spec:
+  replicas: 1
+  revisionHistoryLimit: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: jaeger
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: jaeger
+        app.kubernetes.io/component: tracing
+    spec:
+      containers:
+        - name: jaeger
+          # 当前实验室只做轻量 tracing 基线，不引入 operator 和外部存储，避免把资源与维护复杂度抬高。
+          image: jaegertracing/jaeger:2.14.1
+          imagePullPolicy: IfNotPresent
+          args:
+            - --config=file:/etc/jaeger/config.yaml
+          ports:
+            - name: query
+              containerPort: 16686
+            - name: otlp-grpc
+              containerPort: 4317
+            - name: otlp-http
+              containerPort: 4318
+            - name: metrics
+              containerPort: 8888
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 768Mi
+          readinessProbe:
+            tcpSocket:
+              port: query
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket:
+              port: query
+            initialDelaySeconds: 20
+            periodSeconds: 20
+          volumeMounts:
+            - name: config
+              mountPath: /etc/jaeger
+              readOnly: true
+      volumes:
+        - name: config
+          configMap:
+            name: jaeger-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: jaeger
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/name: jaeger
+    app.kubernetes.io/component: tracing
+    release: kube-prometheus-stack
+spec:
+  selector:
+    app.kubernetes.io/name: jaeger
+  ports:
+    - name: query
+      port: 16686
+      targetPort: query
+    - name: otlp-grpc
+      port: 4317
+      targetPort: otlp-grpc
+    - name: otlp-http
+      port: 4318
+      targetPort: otlp-http
+    - name: metrics
+      port: 8888
+      targetPort: metrics
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: jaeger
+  namespace: monitoring
+  labels:
+    release: kube-prometheus-stack
+spec:
+  namespaceSelector:
+    matchNames:
+      - monitoring
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: jaeger
+      release: kube-prometheus-stack
+  endpoints:
+    - port: metrics
+      interval: 30s
+      scrapeTimeout: 10s

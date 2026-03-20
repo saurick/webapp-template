@@ -22,6 +22,7 @@
   - `migrate_online.sh`
 
 说明：详细用法见 `/Users/simon/projects/webapp-template/server/deploy/compose/prod/README.md`。
+补充说明：`compose/prod` 不适用 `lab-ha` 的 Helm 真源约定，继续按 Compose 模板执行。
 
 ### Kubernetes 模板
 
@@ -57,10 +58,13 @@
   - `docs/README.md`
   - `docs/ACCESS.md`
   - `docs/TEST_REPORT.md`
+  - `/Users/simon/projects/webapp-template/docs/deployment-conventions.md`
+  - `scripts/helm-release.sh`
+  - `charts/`
   - `manifests/*.yaml`
   - `scripts/ha-node-bootstrap.sh`
 
-说明：该目录用于“实验室级已落地结果管理”，不替代模板默认的通用 `dev/`、`prod/` 部署骨架。
+说明：该目录用于“实验室级已落地结果管理”，不替代模板默认的通用 `dev/`、`prod/` 部署骨架；当前实验目录内部的第三方组件与自定义平台资源，已统一收口到 Helm 入口管理。
 
 ## 初始化后必须替换的占位符
 

@@ -19,6 +19,22 @@
 
 > 注意：该方案适用于实验室环境；若三台 VM 运行在同一宿主机上，宿主机仍为单点。
 
+## 1.1 Helm 入口
+
+当前实验目录的 chart 安装与升级统一走：
+
+```bash
+bash /Users/simon/projects/webapp-template/server/deploy/lab-ha/scripts/helm-release.sh repos
+bash /Users/simon/projects/webapp-template/server/deploy/lab-ha/scripts/helm-release.sh template
+bash /Users/simon/projects/webapp-template/server/deploy/lab-ha/scripts/helm-release.sh apply
+```
+
+说明：
+
+- 第三方 chart 使用固定版本，和当前实验集群对齐
+- 平台自定义对象通过本地 `charts/lab-platform` 交给 Helm 管理
+- `webapp-template` 的 `lab / prod-trial / internal` 三种形态统一走 `charts/webapp-template`
+
 ---
 
 ## 2. 前提假设
@@ -81,10 +97,10 @@
 
 ## 阶段 C：入口层
 
-1. 部署 `MetalLB`
-2. 配地址池与 `L2Advertisement`
-3. 部署 `ingress-nginx`
-4. 部署 `cert-manager`
+1. 通过 Helm 部署 `MetalLB`
+2. 通过 `lab-platform` chart 下发地址池与 `L2Advertisement`
+3. 通过 Helm 部署 `ingress-nginx`
+4. 通过 Helm 部署 `cert-manager`
 
 验收：
 
@@ -113,14 +129,14 @@
 
 ## 阶段 E：观测与安全治理
 
-1. 部署 `kube-prometheus-stack`
-2. 部署 `Loki`
-3. 部署 `Promtail` 或 `Fluent Bit`
+1. 通过 Helm 部署 `kube-prometheus-stack`
+2. 通过 `lab-platform` chart 部署轻量 `Loki`
+3. 通过 Helm 部署 `Promtail`
 4. 部署 `Hubble`
 5. 部署 `Kyverno`
 6. 部署 `Trivy Operator`
-7. 部署 `Sealed Secrets`
-8. 部署 `Velero`
+7. 通过 Helm 部署 `Sealed Secrets`
+8. 通过 Helm 部署 `Velero`
 
 验收：
 
@@ -133,11 +149,11 @@
 
 ## 阶段 F：CI/CD 与平台服务
 
-1. 部署 `Harbor`
+1. 通过 Helm 部署 `Harbor`
 2. 部署 `GitLab`
 3. 部署 `GitLab Runner`
-4. 部署 `Argo CD`
-5. 部署 `Argo Rollouts`
+4. 通过 Helm 部署 `Argo CD`
+5. 通过 Helm 部署 `Argo Rollouts`
 
 建议：
 
@@ -157,16 +173,17 @@
 
 1. 构建 `webapp-template` 镜像
 2. 推送 Harbor
-3. 为应用准备：
+3. 通过 `charts/webapp-template` 准备 `lab` 或 `prod-trial` values
+4. 由 Argo CD 从 Helm chart 渲染：
    - namespace
    - secret
-   - configmap
    - deployment
    - service
    - ingress
-4. 接 PostgreSQL
-5. 接对象存储
-6. 接 Prometheus / Grafana / Loki
+   - `ResourceQuota / LimitRange / NetworkPolicy / PDB`
+5. 接 PostgreSQL
+6. 接对象存储
+7. 接 Prometheus / Grafana / Loki
 
 验收：
 
@@ -235,6 +252,13 @@
 10. `GitLab + Runner`
 
 这样可以先保证集群、存储、数据库、观测、业务验证这条主链路稳定，再补较重的代码平台。
+
+补充命令：
+
+```bash
+ONLY=ingress-nginx bash /Users/simon/projects/webapp-template/server/deploy/lab-ha/scripts/helm-release.sh template
+ONLY=lab-platform bash /Users/simon/projects/webapp-template/server/deploy/lab-ha/scripts/helm-release.sh apply
+```
 
 ---
 

@@ -1,0 +1,14 @@
+ingress:
+  rules:
+    # 保留当前已跑通的试验入口，避免切内部域名时一次切换打断现有验证链路。
+    - host: webapp-trial.192.168.0.108.nip.io
+      paths:
+        - path: /
+          pathType: Prefix
+          servicePort: 80
+    # 内部域名统一采用 home.arpa，避免依赖公网域名或与 .local/mDNS 冲突。
+    - host: webapp-trial.lab.home.arpa
+      paths:
+        - path: /
+          pathType: Prefix
+          servicePort: 80

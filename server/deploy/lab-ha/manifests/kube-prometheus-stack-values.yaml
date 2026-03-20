@@ -1,0 +1,43 @@
+grafana:
+  adminPassword: Grafana123!
+  image:
+    registry: docker.m.daocloud.io
+    repository: grafana/grafana
+  initChownData:
+    image:
+      registry: docker.m.daocloud.io
+      repository: library/busybox
+  persistence:
+    enabled: true
+    size: 5Gi
+    storageClassName: longhorn
+
+kube-state-metrics:
+  image:
+    registry: registry.aliyuncs.com
+    repository: google_containers/kube-state-metrics
+
+kubeEtcd:
+  enabled: true
+
+prometheus:
+  prometheusSpec:
+    replicas: 1
+    retention: 5d
+    storageSpec:
+      volumeClaimTemplate:
+        spec:
+          accessModes:
+            - ReadWriteOnce
+          resources:
+            requests:
+              storage: 20Gi
+          storageClassName: longhorn
+
+prometheusOperator:
+  admissionWebhooks:
+    patch:
+      image:
+        registry: registry.aliyuncs.com
+        repository: google_containers/kube-webhook-certgen
+        tag: v1.5.3

@@ -113,5 +113,8 @@ prometheusRule:
       labels:
         severity: warning
       annotations:
-        summary: "实验室入口异常"
-        description: "{{ $labels.instance }} 连续 2 分钟探测失败。"
+        summary: "实验室入口异常（{{ $labels.target }})"
+        description: "目标 {{ $labels.target }} 对应入口 {{ $labels.instance }} 连续 2 分钟探测失败。先打开 dashboard_url 看值班总览，再按 runbook_url 排查。"
+        dashboard_url: "http://192.168.0.108:30081/d/lab-ha-overview/ha-lab-ops-overview"
+        runbook_url: "http://192.168.0.108:8929/root/webapp-template-lab/-/blob/master/server/deploy/lab-ha/docs/TROUBLESHOOTING.md"
+        alertmanager_url: "http://192.168.0.108:30093/#/alerts"

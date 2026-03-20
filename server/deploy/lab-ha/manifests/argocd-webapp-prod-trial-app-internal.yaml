@@ -9,7 +9,12 @@ spec:
     repoURL: http://192.168.0.108:8929/root/webapp-template-lab.git
     targetRevision: main
     # 内部域名切换仍复用同一个 Application，避免双应用同时管理同一命名空间。
-    path: server/deploy/lab-ha/argocd/webapp-prod-trial-internal
+    path: server/deploy/lab-ha/charts/webapp-template
+    helm:
+      releaseName: webapp-template-prod-trial
+      valueFiles:
+        - values-prod-trial.yaml
+        - values-prod-trial-internal.yaml
   destination:
     server: https://kubernetes.default.svc
     namespace: webapp-prod-trial

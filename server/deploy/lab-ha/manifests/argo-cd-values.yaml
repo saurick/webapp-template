@@ -1,0 +1,12 @@
+applicationSet:
+  replicas: 1
+
+controller:
+  replicas: 1
+
+repoServer:
+  replicas: 1
+
+server:
+  service:
+    type: ClusterIP

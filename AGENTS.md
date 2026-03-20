@@ -39,6 +39,16 @@
 - 初始化阶段优先保留：质量门禁、错误码治理、最小健康检查、基础可观测性与通用鉴权骨架；不要因为“像模板”就顺手删掉这些基线能力。
 - 初始化阶段若要删除未使用的部署物或模块，默认移动到系统回收站；尤其是 K8s 清单、远端发布脚本、示例后台业务页，应按当前项目真实需求裁剪。
 
+## 部署真源约定
+
+- `server/deploy/compose/prod` 继续是单机/单宿主机的 `Compose` 主路径，不适用 `lab-ha` 这套 Helm 规则；不要因为看到项目级部署约定文档，就反推 Compose 也需要 Helm 化。
+- 先判断当前改动目标的主路径：模板默认骨架走 `Kustomize`，`server/deploy/lab-ha` 的第三方平台组件与实验业务部署走 `Helm`。
+- `server/deploy/lab-ha` 内同一资源禁止长期并存 `Helm / Kustomize / 裸 YAML / 现场 patch` 多个主路径；应急 patch 允许先止血，但同一轮必须回收到仓库真源，并更新 `progress.md`。
+- `lab-ha` 的第三方组件统一通过 `/Users/simon/projects/webapp-template/server/deploy/lab-ha/scripts/helm-release.sh` 管理；新增或修改 release 时，优先补 values / chart / Argo source，而不是继续堆新的手工 apply 路径。
+- `lab-ha` 下保留在 `manifests/` 的平台自定义 YAML，若已由 `charts/lab-platform` 接管，则这些文件只作为原始内容来源与文档落点，不再视为独立安装入口。
+- `webapp-template` 在实验环境中的 `lab / prod-trial / internal` 形态统一走 `server/deploy/lab-ha/charts/webapp-template`；不要再为同一业务资源新增新的 Kustomize overlay 作为主路径。
+- 部署路径变更时，必须同步检查 Argo CD `Application.source`、runbook / README / handover、验证脚本，避免文档、GitOps、live 集群三方漂移。
+
 ## 错误码约定
 
 - 服务端错误码唯一来源：`server/internal/errcode/catalog.go`。

@@ -8,6 +8,7 @@
 - Portal: `http://192.168.0.108:30088`
 - Portal 已包含入口导航、默认账号复制、S3 API 说明、CI/GitOps/演练快照卡片；适合作为第一入口
 - 实验室部署清单集中在 `server/deploy/lab-ha/`
+- Helm 统一入口：`bash /Users/simon/projects/webapp-template/server/deploy/lab-ha/scripts/helm-release.sh <repos|template|apply|list>`
 - `webapp-template` 运行镜像当前已切到 Harbor：`harbor.192.168.0.108.nip.io:32668/library/webapp-template-server:ha-lab`
 - GitLab Runner 已经 `verify` 通过，`.gitlab-ci.yml` 也已通过 GitLab CI Lint
 - Argo CD 仓库凭据已改为 `SealedSecret` 管理，避免明文仓库密码落库
@@ -21,6 +22,7 @@
 3. `curl --noproxy '*' -H 'Host: app.192.168.0.108.nip.io' http://192.168.0.108:32668/readyz`
 4. `curl --noproxy '*' -u 'admin:HarborAdmin123!' http://harbor.192.168.0.108.nip.io:32668/api/v2.0/users/current`
 5. `ssh root@192.168.0.108 'gitlab-runner verify'`
+6. `bash /Users/simon/projects/webapp-template/server/deploy/lab-ha/scripts/helm-release.sh list`
 
 ## 变更原则
 
@@ -30,6 +32,7 @@
 - 若要把 GitOps 真正闭环到 Argo CD，同步时要先明确：
   - 是否允许把 lab manifest 真正提交到 GitLab 仓库
   - 当前已切换到 Harbor 拉镜像，后续重点是让 GitLab 提交自动驱动 Argo CD 同步
+- 自定义平台资源虽然仍保留在 `manifests/` 目录，但 Helm 实际安装入口已经收口到 `charts/lab-platform`；不要再新增“只靠 kubectl apply 才生效”的第三条部署路径
 
 ## 已知实验室限制
 

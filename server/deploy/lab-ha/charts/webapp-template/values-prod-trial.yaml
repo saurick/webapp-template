@@ -1,0 +1,212 @@
+namespace:
+  create: true
+  name: webapp-prod-trial
+  labels:
+    pod-security.kubernetes.io/enforce: baseline
+    pod-security.kubernetes.io/audit: baseline
+    pod-security.kubernetes.io/warn: baseline
+
+app:
+  name: webapp-template
+  instance: prod-trial
+
+configSecret:
+  name: webapp-template-prod-trial-config
+  content: |
+    server:
+      http:
+        addr: 0.0.0.0:8000
+        timeout: 10s
+      grpc:
+        addr: 0.0.0.0:9000
+        timeout: 10s
+
+    log:
+      debug: false
+
+    trace:
+      jaeger:
+        traceName: webapp-template.service
+        endpoint: jaeger.monitoring.svc.cluster.local:4318
+        ratio: 1
+
+    data:
+      postgres:
+        debug: false
+        dsn: postgres://replace-me@127.0.0.1:5432/webapp_template?sslmode=disable
+      etcd:
+        hosts:
+          - 127.0.0.1:2379
+      auth:
+        jwtSecret: REPLACE_ME_FROM_ENV
+        jwtExpireSeconds: 604800
+        admin:
+          username: REPLACE_ME_FROM_ENV
+          password: REPLACE_ME_FROM_ENV
+
+deployment:
+  name: webapp-template-prod-trial
+  replicas: 2
+  revisionHistoryLimit: 3
+  minReadySeconds: 10
+  progressDeadlineSeconds: 300
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  terminationGracePeriodSeconds: 30
+  image: harbor.192.168.0.108.nip.io:32668/library/webapp-template-server:20260320T085934-521371ba-local
+  command:
+    - /app/server
+    - -conf
+    - /config/config.yaml
+  env:
+    - name: POSTGRES_DSN
+      valueFrom:
+        secretKeyRef:
+          name: webapp-template-prod-trial-runtime
+          key: postgres_dsn
+    - name: WEBAPP_JWT_SECRET
+      valueFrom:
+        secretKeyRef:
+          name: webapp-template-prod-trial-runtime
+          key: jwt_secret
+    - name: WEBAPP_ADMIN_USERNAME
+      valueFrom:
+        secretKeyRef:
+          name: webapp-template-prod-trial-runtime
+          key: admin_username
+    - name: WEBAPP_ADMIN_PASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: webapp-template-prod-trial-runtime
+          key: admin_password
+    - name: TRACE_ENDPOINT
+      valueFrom:
+        secretKeyRef:
+          name: webapp-template-prod-trial-runtime
+          key: trace_endpoint
+          optional: true
+  ports:
+    - name: http
+      containerPort: 8000
+    - name: grpc
+      containerPort: 9000
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 768Mi
+  startupProbe:
+    httpGet:
+      path: /healthz
+      port: http
+    periodSeconds: 5
+    failureThreshold: 12
+  readinessProbe:
+    httpGet:
+      path: /readyz
+      port: http
+    initialDelaySeconds: 10
+    periodSeconds: 10
+  livenessProbe:
+    httpGet:
+      path: /healthz
+      port: http
+    initialDelaySeconds: 20
+    periodSeconds: 20
+  topologySpreadConstraints:
+    - maxSkew: 1
+      topologyKey: kubernetes.io/hostname
+      whenUnsatisfiable: ScheduleAnyway
+  volumeMounts:
+    - name: config
+      mountPath: /config
+      readOnly: true
+  volumes:
+    - name: config
+      secret:
+        secretName: webapp-template-prod-trial-config
+
+service:
+  name: webapp-template-prod-trial
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+    - name: grpc
+      port: 9000
+      targetPort: grpc
+
+pdb:
+  name: webapp-template-prod-trial
+  minAvailable: 1
+
+ingress:
+  name: webapp-template-prod-trial
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-body-size: "8m"
+  ingressClassName: nginx
+  rules:
+    - host: webapp-trial.192.168.0.108.nip.io
+      paths:
+        - path: /
+          pathType: Prefix
+          servicePort: 80
+
+networkPolicy:
+  name: webapp-template-prod-trial
+  ingress:
+    - ports:
+        - protocol: TCP
+          port: 8000
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: database
+      ports:
+        - protocol: TCP
+          port: 5432
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: monitoring
+      ports:
+        - protocol: TCP
+          port: 4318
+
+resourceQuota:
+  name: webapp-prod-trial-quota
+  hard:
+    requests.cpu: "500m"
+    requests.memory: 1Gi
+    limits.cpu: "2000m"
+    limits.memory: 3072Mi
+    pods: "4"
+
+limitRange:
+  name: webapp-prod-trial-defaults
+  limits:
+    - type: Container
+      defaultRequest:
+        cpu: 100m
+        memory: 256Mi
+      default:
+        cpu: 500m
+        memory: 768Mi
+      max:
+        cpu: 500m
+        memory: 768Mi

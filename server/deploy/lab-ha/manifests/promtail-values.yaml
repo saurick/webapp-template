@@ -1,0 +1,7 @@
+config:
+  clients:
+    - url: http://loki.logging.svc.cluster.local:3100/loki/api/v1/push
+
+image:
+  registry: docker.m.daocloud.io
+  repository: grafana/promtail

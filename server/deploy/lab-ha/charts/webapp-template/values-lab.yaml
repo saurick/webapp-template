@@ -1,0 +1,174 @@
+namespace:
+  create: true
+  name: webapp
+  labels:
+    pod-security.kubernetes.io/enforce: baseline
+    pod-security.kubernetes.io/audit: baseline
+    pod-security.kubernetes.io/warn: baseline
+
+app:
+  name: webapp-template
+
+configSecret:
+  name: webapp-template-config
+  content: |
+    server:
+      http:
+        addr: 0.0.0.0:8000
+        timeout: 10s
+      grpc:
+        addr: 0.0.0.0:9000
+        timeout: 10s
+
+    log:
+      debug: false
+
+    trace:
+      jaeger:
+        traceName: webapp-template.service
+        endpoint: jaeger.monitoring.svc.cluster.local:4318
+        ratio: 0.1
+
+    data:
+      postgres:
+        debug: false
+        dsn: postgres://webapp_owner:WebappPg123!@app-pg-rw.database.svc.cluster.local:5432/webapp_template?sslmode=disable
+      etcd:
+        hosts:
+          - 127.0.0.1:2379
+      auth:
+        jwtSecret: uM1J0T3gP8vL4X2n9K6qH5sR7bN3cD1f
+        jwtExpireSeconds: 604800
+        admin:
+          username: admin
+          password: AdminLab123!
+
+deployment:
+  name: webapp-template
+  replicas: 2
+  revisionHistoryLimit: 10
+  image: harbor.192.168.0.108.nip.io:32668/library/webapp-template-server:ha-lab
+  command:
+    - /app/server
+    - -conf
+    - /config/config.yaml
+  ports:
+    - name: http
+      containerPort: 8000
+    - name: grpc
+      containerPort: 9000
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 768Mi
+  readinessProbe:
+    httpGet:
+      path: /readyz
+      port: http
+    initialDelaySeconds: 10
+    periodSeconds: 10
+  livenessProbe:
+    httpGet:
+      path: /healthz
+      port: http
+    initialDelaySeconds: 20
+    periodSeconds: 20
+  topologySpreadConstraints:
+    - maxSkew: 1
+      topologyKey: kubernetes.io/hostname
+      whenUnsatisfiable: ScheduleAnyway
+  volumeMounts:
+    - name: config
+      mountPath: /config
+      readOnly: true
+  volumes:
+    - name: config
+      secret:
+        secretName: webapp-template-config
+
+service:
+  name: webapp-template
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+    - name: grpc
+      port: 9000
+      targetPort: grpc
+
+pdb:
+  name: webapp-template
+  minAvailable: 1
+
+ingress:
+  name: webapp-template
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-body-size: "8m"
+  ingressClassName: nginx
+  rules:
+    - paths:
+        - path: /
+          pathType: Prefix
+          servicePort: 80
+    - host: app.192.168.0.108.nip.io
+      paths:
+        - path: /
+          pathType: Prefix
+          servicePort: 80
+
+networkPolicy:
+  name: webapp-template
+  ingress:
+    - ports:
+        - protocol: TCP
+          port: 8000
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: database
+      ports:
+        - protocol: TCP
+          port: 5432
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: monitoring
+      ports:
+        - protocol: TCP
+          port: 4318
+
+resourceQuota:
+  name: webapp-quota
+  hard:
+    requests.cpu: "1"
+    requests.memory: 2Gi
+    limits.cpu: "2"
+    limits.memory: 3Gi
+    pods: "10"
+
+limitRange:
+  name: webapp-defaults
+  limits:
+    - type: Container
+      defaultRequest:
+        cpu: 100m
+        memory: 128Mi
+      default:
+        cpu: 500m
+        memory: 512Mi
+      max:
+        cpu: "1"
+        memory: 1Gi

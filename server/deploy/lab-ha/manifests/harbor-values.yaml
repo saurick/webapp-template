@@ -1,0 +1,71 @@
+core:
+  image:
+    repository: docker.m.daocloud.io/goharbor/harbor-core
+
+database:
+  internal:
+    image:
+      repository: docker.m.daocloud.io/goharbor/harbor-db
+
+exporter:
+  image:
+    repository: docker.m.daocloud.io/goharbor/harbor-exporter
+
+expose:
+  type: ingress
+  ingress:
+    className: nginx
+    hosts:
+      core: harbor.192.168.0.120.nip.io
+      notary: notary.192.168.0.120.nip.io
+  tls:
+    enabled: false
+
+externalURL: http://192.168.0.108:30002
+
+global:
+  imageRegistry: docker.m.daocloud.io
+
+harborAdminPassword: HarborAdmin123!
+
+jobservice:
+  image:
+    repository: docker.m.daocloud.io/goharbor/harbor-jobservice
+
+nginx:
+  image:
+    repository: docker.m.daocloud.io/goharbor/nginx-photon
+
+persistence:
+  persistentVolumeClaim:
+    database:
+      storageClass: longhorn
+    jobservice:
+      jobLog:
+        storageClass: longhorn
+    redis:
+      storageClass: longhorn
+    registry:
+      storageClass: longhorn
+    trivy:
+      storageClass: longhorn
+
+portal:
+  image:
+    repository: docker.m.daocloud.io/goharbor/harbor-portal
+
+redis:
+  internal:
+    image:
+      repository: docker.m.daocloud.io/goharbor/redis-photon
+
+registry:
+  controller:
+    image:
+      repository: docker.m.daocloud.io/goharbor/harbor-registryctl
+  registry:
+    image:
+      repository: docker.m.daocloud.io/goharbor/registry-photon
+
+trivy:
+  enabled: false

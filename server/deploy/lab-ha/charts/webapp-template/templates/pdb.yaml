@@ -1,0 +1,13 @@
+# yamllint disable-file
+{{- if .Values.pdb.enabled }}
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ required "pdb.name is required" .Values.pdb.name }}
+  namespace: {{ required "namespace.name is required" .Values.namespace.name }}
+spec:
+  minAvailable: {{ .Values.pdb.minAvailable }}
+  selector:
+    matchLabels:
+{{ include "webapp-template.selectorLabels" . | nindent 6 }}
+{{- end }}

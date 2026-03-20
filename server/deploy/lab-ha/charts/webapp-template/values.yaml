@@ -1,0 +1,67 @@
+namespace:
+  create: true
+  name: ""
+  labels: {}
+
+app:
+  name: ""
+  instance: ""
+
+configSecret:
+  name: ""
+  type: Opaque
+  dataKey: config.yaml
+  content: ""
+
+deployment:
+  name: ""
+  replicas: 1
+  revisionHistoryLimit: 3
+  minReadySeconds: 0
+  progressDeadlineSeconds: null
+  strategy: {}
+  terminationGracePeriodSeconds: null
+  image: ""
+  imagePullPolicy: IfNotPresent
+  command: []
+  env: []
+  ports: []
+  resources: {}
+  startupProbe: null
+  readinessProbe: {}
+  livenessProbe: {}
+  topologySpreadConstraints: []
+  volumeMounts: []
+  volumes: []
+
+service:
+  name: ""
+  ports: []
+
+pdb:
+  enabled: true
+  name: ""
+  minAvailable: 1
+
+ingress:
+  enabled: true
+  name: ""
+  annotations: {}
+  ingressClassName: nginx
+  rules: []
+
+networkPolicy:
+  enabled: true
+  name: ""
+  ingress: []
+  egress: []
+
+resourceQuota:
+  enabled: true
+  name: ""
+  hard: {}
+
+limitRange:
+  enabled: true
+  name: ""
+  limits: []

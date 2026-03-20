@@ -4,7 +4,7 @@
 
 - `webapp-prod-trial` 先走内部域名，不急着暴露公网
 - 管理面和业务入口统一改成“域名访问”，逐步替换 `nip.io + IP:Port`
-- 保持现有 `prod-trial` 清单可用，内部域名改动通过独立 overlay 落地
+- 保持现有 `prod-trial` 配置可用，内部域名改动通过独立 values overlay 落地
 
 ## 什么时候用内部域名
 
@@ -64,20 +64,22 @@
 
 ## 清单位置
 
-- 当前运行中的基础试验清单：`argocd/webapp-prod-trial/`
-- 内部域名 overlay：`argocd/webapp-prod-trial-internal/`
+- 当前运行中的基础试验 values：`charts/webapp-template/values-prod-trial.yaml`
+- 内部域名 overlay：`charts/webapp-template/values-prod-trial-internal.yaml`
 - Argo CD 切换清单：`manifests/argocd-webapp-prod-trial-app-internal.yaml`
 
 内部域名 overlay 会在保留当前 `nip.io` 试验 Host 的前提下，额外增加一个内部域名 Host，避免切换时直接打断现有验证链路。
 
 ## 切换步骤
 
-1. 修改 `/Users/simon/projects/webapp-template/server/deploy/lab-ha/argocd/webapp-prod-trial-internal/ingress-host-patch.yaml`
+1. 修改 `/Users/simon/projects/webapp-template/server/deploy/lab-ha/charts/webapp-template/values-prod-trial-internal.yaml`
 2. 当前默认内部域名是 `webapp-trial.lab.home.arpa`；如果你后面想换成别的内部命名，再改这里
 3. 预览输出：
 
 ```bash
-kubectl kustomize /Users/simon/projects/webapp-template/server/deploy/lab-ha/argocd/webapp-prod-trial-internal | rg -n 'host:|image:'
+helm template webapp-template-prod-trial /Users/simon/projects/webapp-template/server/deploy/lab-ha/charts/webapp-template \
+  -f /Users/simon/projects/webapp-template/server/deploy/lab-ha/charts/webapp-template/values-prod-trial.yaml \
+  -f /Users/simon/projects/webapp-template/server/deploy/lab-ha/charts/webapp-template/values-prod-trial-internal.yaml | rg -n 'host:|image:'
 ```
 
 4. 如果访问端与集群在同一二层广播域，只做本机临时验证时，可先加 `hosts`：
@@ -86,21 +88,14 @@ kubectl kustomize /Users/simon/projects/webapp-template/server/deploy/lab-ha/arg
 192.168.0.120 webapp-trial.lab.home.arpa
 ```
 
-5. 再应用内部域名 overlay：
-
-```bash
-kubectl --kubeconfig /Users/simon/.kube/ha-lab.conf apply \
-  -k /Users/simon/projects/webapp-template/server/deploy/lab-ha/argocd/webapp-prod-trial-internal
-```
-
-6. 如果是 Argo CD 接管模式，再把现有应用切到 internal overlay：
+5. 如果是 Argo CD 接管模式，再把现有应用切到 internal overlay：
 
 ```bash
 kubectl --kubeconfig /Users/simon/.kube/ha-lab.conf apply \
   -f /Users/simon/projects/webapp-template/server/deploy/lab-ha/manifests/argocd-webapp-prod-trial-app-internal.yaml
 ```
 
-7. 验证：
+6. 验证：
 
 同二层广播域场景：
 
@@ -143,7 +138,7 @@ bash /Users/simon/projects/webapp-template/server/deploy/lab-ha/scripts/check-we
 
 - 当前仍共享 `webapp_template` 数据库，只适合生产试验
 - 当前内部域名方案默认还是 HTTP；正式长期使用时再补内部 TLS
-- 当前内部域名 overlay 默认同时保留现有 `webapp-trial.192.168.0.108.nip.io`，等内部域名验证稳定后，再决定是否移除旧 Host
+- 当前内部域名 values overlay 默认同时保留现有 `webapp-trial.192.168.0.108.nip.io`，等内部域名验证稳定后，再决定是否移除旧 Host
 - 当前 `192.168.0.120` 这条入口依赖 `MetalLB L2`，是否能从客户端直达，取决于客户端是否真正位于可学习该 VIP 的二层网络
 - 当前阶段正式推荐入口已经收口为 `webapp-trial.lab.home.arpa + NodePort 32668/30943 + 多节点 A 记录`，不是单一节点 IP
 - 当前阶段优先验证“域名访问 + 恢复 + 滚动更新”，不是公网暴露

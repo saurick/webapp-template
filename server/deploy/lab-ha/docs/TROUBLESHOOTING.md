@@ -212,3 +212,24 @@ kubectl --kubeconfig /Users/simon/.kube/ha-lab.conf get backupstoragelocation -n
 ```
 
 这四步都过，通常说明主链路还是健康的。
+
+## 10. 收到 `LabEndpointDown` 告警
+
+### 去哪里看
+
+- Alertmanager：`http://192.168.0.108:30093/#/alerts`
+- Grafana 总览：`http://192.168.0.108:30081/d/lab-ha-overview/ha-lab-ops-overview`
+- Runbook：`http://192.168.0.108:8929/root/webapp-template-lab/-/blob/master/server/deploy/lab-ha/docs/TROUBLESHOOTING.md`
+
+### 处理顺序
+
+1. 打开告警详情，先确认 `target` 和 `instance`
+2. 点 `dashboard_url` 看值班总览是否只有单点异常
+3. 如果是入口探测异常，先看同类目标是否一起失败
+4. 再按本手册对应章节排查具体组件
+
+### 判断
+
+- 只有 `jaeger` 失败：优先看 tracing 与 blackbox，不要先怀疑业务主链路
+- `grafana/prometheus/alertmanager` 一起失败：先看监控栈整体
+- `webapp` 单独失败：优先看应用与数据库

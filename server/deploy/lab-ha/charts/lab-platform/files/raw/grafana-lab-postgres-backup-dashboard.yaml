@@ -1,0 +1,146 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: lab-ha-grafana-postgres-backup
+  namespace: monitoring
+  labels:
+    grafana_dashboard: "1"
+    release: kube-prometheus-stack
+data:
+  lab-ha-postgres-backup.json: |-
+    {
+      "id": null,
+      "uid": "lab-ha-postgres",
+      "title": "HA Lab / PostgreSQL & Backup",
+      "tags": ["lab-ha", "postgres", "backup"],
+      "timezone": "browser",
+      "schemaVersion": 39,
+      "version": 1,
+      "refresh": "30s",
+      "time": {
+        "from": "now-6h",
+        "to": "now"
+      },
+      "panels": [
+        {
+          "id": 1,
+          "type": "stat",
+          "title": "Collector Up",
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "gridPos": {"h": 5, "w": 4, "x": 0, "y": 0},
+          "targets": [{"expr": "sum(cnpg_collector_up{namespace=\"database\"})", "instant": true, "refId": "A"}],
+          "options": {"colorMode": "value", "graphMode": "none", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}},
+          "fieldConfig": {"defaults": {"unit": "none", "thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": null}, {"color": "yellow", "value": 2}, {"color": "green", "value": 3}]}}}
+        },
+        {
+          "id": 2,
+          "type": "stat",
+          "title": "Primary Count",
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "gridPos": {"h": 5, "w": 4, "x": 4, "y": 0},
+          "targets": [{"expr": "count(cnpg_pg_replication_in_recovery{namespace=\"database\"} == 0)", "instant": true, "refId": "A"}],
+          "options": {"colorMode": "value", "graphMode": "none", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}},
+          "fieldConfig": {"defaults": {"unit": "none", "thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": null}, {"color": "green", "value": 1}]}}}
+        },
+        {
+          "id": 3,
+          "type": "stat",
+          "title": "Streaming Replicas",
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "gridPos": {"h": 5, "w": 4, "x": 8, "y": 0},
+          "targets": [{"expr": "max(cnpg_pg_replication_streaming_replicas{namespace=\"database\"})", "instant": true, "refId": "A"}],
+          "options": {"colorMode": "value", "graphMode": "none", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}},
+          "fieldConfig": {"defaults": {"unit": "none", "thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": null}, {"color": "yellow", "value": 1}, {"color": "green", "value": 2}]}}}
+        },
+        {
+          "id": 4,
+          "type": "stat",
+          "title": "Max Replication Lag",
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "gridPos": {"h": 5, "w": 4, "x": 12, "y": 0},
+          "targets": [{"expr": "max(cnpg_pg_replication_lag{namespace=\"database\"})", "instant": true, "refId": "A"}],
+          "options": {"colorMode": "value", "graphMode": "none", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}},
+          "fieldConfig": {"defaults": {"unit": "s", "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "yellow", "value": 2}, {"color": "red", "value": 10}]}}}
+        },
+        {
+          "id": 5,
+          "type": "stat",
+          "title": "Last Backup Status",
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "gridPos": {"h": 5, "w": 4, "x": 16, "y": 0},
+          "targets": [{"expr": "max(velero_backup_last_status)", "instant": true, "refId": "A"}],
+          "options": {"colorMode": "value", "graphMode": "none", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}},
+          "fieldConfig": {"defaults": {"unit": "none", "thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": null}, {"color": "green", "value": 1}]}}}
+        },
+        {
+          "id": 6,
+          "type": "stat",
+          "title": "Last Backup Age",
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "gridPos": {"h": 5, "w": 4, "x": 20, "y": 0},
+          "targets": [{"expr": "time() - max(velero_backup_last_successful_timestamp)", "instant": true, "refId": "A"}],
+          "options": {"colorMode": "value", "graphMode": "none", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}},
+          "fieldConfig": {"defaults": {"unit": "s", "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "yellow", "value": 86400}, {"color": "red", "value": 172800}]}}}
+        },
+        {
+          "id": 7,
+          "type": "timeseries",
+          "title": "Webapp DB Size by Pod",
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "gridPos": {"h": 8, "w": 8, "x": 0, "y": 5},
+          "targets": [{"expr": "cnpg_pg_database_size_bytes{namespace=\"database\",datname=\"webapp_template\"}", "legendFormat": "{{pod}}", "refId": "A"}],
+          "fieldConfig": {"defaults": {"unit": "bytes"}},
+          "options": {"legend": {"displayMode": "table", "placement": "bottom"}, "tooltip": {"mode": "multi"}}
+        },
+        {
+          "id": 8,
+          "type": "timeseries",
+          "title": "Replication Lag",
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "gridPos": {"h": 8, "w": 8, "x": 8, "y": 5},
+          "targets": [{"expr": "cnpg_pg_replication_lag{namespace=\"database\"}", "legendFormat": "{{pod}}", "refId": "A"}],
+          "fieldConfig": {"defaults": {"unit": "s"}},
+          "options": {"legend": {"displayMode": "table", "placement": "bottom"}, "tooltip": {"mode": "multi"}}
+        },
+        {
+          "id": 9,
+          "type": "timeseries",
+          "title": "Commit Rate",
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "gridPos": {"h": 8, "w": 8, "x": 16, "y": 5},
+          "targets": [{"expr": "rate(cnpg_pg_stat_database_xact_commit{namespace=\"database\",datname=\"webapp_template\"}[5m])", "legendFormat": "{{pod}}", "refId": "A"}],
+          "fieldConfig": {"defaults": {"unit": "ops"}},
+          "options": {"legend": {"displayMode": "table", "placement": "bottom"}, "tooltip": {"mode": "multi"}}
+        },
+        {
+          "id": 10,
+          "type": "table",
+          "title": "PostgreSQL Roles",
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "gridPos": {"h": 8, "w": 12, "x": 0, "y": 13},
+          "targets": [{"expr": "cnpg_pg_replication_in_recovery{namespace=\"database\"}", "format": "table", "instant": true, "refId": "A"}, {"expr": "cnpg_pg_replication_streaming_replicas{namespace=\"database\"}", "format": "table", "instant": true, "refId": "B"}, {"expr": "cnpg_collector_up{namespace=\"database\"}", "format": "table", "instant": true, "refId": "C"}],
+          "transformations": [{"id": "joinByField", "options": {"byField": "pod", "mode": "outer"}}, {"id": "organize", "options": {"excludeByName": {"Time": true, "Time 1": true, "Time 2": true}, "renameByName": {"Value": "InRecovery", "Value #B": "StreamingReplicas", "Value #C": "CollectorUp"}, "indexByName": {"pod": 0, "Value": 1, "Value #B": 2, "Value #C": 3}}}],
+          "options": {"showHeader": true}
+        },
+        {
+          "id": 11,
+          "type": "table",
+          "title": "Backup Signals",
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "gridPos": {"h": 8, "w": 12, "x": 12, "y": 13},
+          "targets": [{"expr": "velero_backup_last_status", "format": "table", "instant": true, "refId": "A"}, {"expr": "velero_backup_last_successful_timestamp", "format": "table", "instant": true, "refId": "B"}],
+          "transformations": [{"id": "joinByField", "options": {"byField": "pod", "mode": "outer"}}, {"id": "organize", "options": {"excludeByName": {"Time": true, "Time 1": true}, "renameByName": {"Value": "LastStatus", "Value #B": "LastSuccessTs"}, "indexByName": {"schedule": 0, "pod": 1, "Value": 2, "Value #B": 3}}}],
+          "options": {"showHeader": true}
+        },
+        {
+          "id": 12,
+          "type": "text",
+          "title": "DB Ops Notes",
+          "gridPos": {"h": 8, "w": 24, "x": 0, "y": 21},
+          "options": {
+            "mode": "markdown",
+            "content": "### Database & Backup Notes\n\n- Primary should show `InRecovery = 0`; replicas show `1`.\n- `Streaming Replicas` on the primary should normally be `2` in this lab.\n- `Last Backup Status = 1` means the most recent backup succeeded.\n- Use Velero UI signals here and deeper logs in the Velero pod logs when a backup fails."
+          }
+        }
+      ]
+    }

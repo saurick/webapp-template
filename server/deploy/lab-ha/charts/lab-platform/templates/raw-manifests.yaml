@@ -1,0 +1,11 @@
+# yamllint disable-file
+{{- /*
+把现有实验清单直接作为原文注入 Helm，避免 Grafana dashboard 里的 {{legend}} 之类字段被 Helm 误当模板解析。
+真正的单一来源仍然是 server/deploy/lab-ha/manifests/，由 helm-release.sh 在渲染前同步到 files/raw。
+*/ -}}
+{{- $files := .Files.Glob "files/raw/*.yaml" }}
+{{- range $path, $_ := $files }}
+---
+# Source: {{ $path }}
+{{ $.Files.Get $path }}
+{{- end }}

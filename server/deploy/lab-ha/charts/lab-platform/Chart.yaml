@@ -1,0 +1,6 @@
+apiVersion: v2
+name: lab-platform
+description: 实验室 HA 平台的自定义补充资源，统一交给 Helm 管理。
+type: application
+version: 0.1.0
+appVersion: "2026.03.20"

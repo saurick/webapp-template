@@ -1,0 +1,10 @@
+defaultSettings:
+  createDefaultDiskLabeledNodes: false
+  defaultDataPath: /var/lib/longhorn
+
+global:
+  cattle:
+    systemDefaultRegistry: docker.m.daocloud.io
+
+persistence:
+  defaultClassReplicaCount: 2

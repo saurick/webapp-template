@@ -1,0 +1,11 @@
+# yamllint disable-file
+{{- if .Values.resourceQuota.enabled }}
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: {{ required "resourceQuota.name is required" .Values.resourceQuota.name }}
+  namespace: {{ required "namespace.name is required" .Values.namespace.name }}
+spec:
+  hard:
+{{ toYaml .Values.resourceQuota.hard | nindent 4 }}
+{{- end }}

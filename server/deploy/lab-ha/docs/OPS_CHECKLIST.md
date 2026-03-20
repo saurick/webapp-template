@@ -98,6 +98,12 @@ kubectl --kubeconfig /Users/simon/.kube/ha-lab.conf logs -n monitoring deploy/al
 - `webapp-daily` 计划仍存在
 - webhook sink 最近仍有 Alertmanager 请求记录
 
+补充说明：
+
+- 打开 `http://192.168.0.108:30093/#/alerts` 查看活跃告警
+- `LabEndpointDown` 现在会直接带 `dashboard_url` 与 `runbook_url`
+- 值班时优先按“告警 -> Grafana 总览 -> Runbook”顺序处理
+
 ## 每周巡检
 
 ### 1. 看黑盒探测最小成功率

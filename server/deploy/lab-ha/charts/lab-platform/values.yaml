@@ -1,0 +1,9 @@
+metallb:
+  enabled: true
+  namespace: metallb-system
+  addressPool:
+    name: primary-pool
+    addresses:
+      - 192.168.0.120-192.168.0.130
+  l2Advertisement:
+    name: primary-l2

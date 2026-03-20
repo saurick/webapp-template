@@ -1,0 +1,11 @@
+# yamllint disable-file
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ required "service.name is required" .Values.service.name }}
+  namespace: {{ required "namespace.name is required" .Values.namespace.name }}
+spec:
+  selector:
+{{ include "webapp-template.selectorLabels" . | nindent 4 }}
+  ports:
+{{ toYaml .Values.service.ports | nindent 4 }}

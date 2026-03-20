@@ -10,11 +10,9 @@
 ## 目录
 
 - `manifests/argocd-webapp-prod-trial-app.yaml`：Argo CD 应用定义
-- `manifests/argocd-webapp-prod-trial-app-internal.yaml`：切换到内部域名 overlay 的 Argo CD 应用定义
-- `argocd/webapp-prod-trial/kustomization.yaml`：生产试验 Kustomize 入口
-- `argocd/webapp-prod-trial-internal/kustomization.yaml`：内部域名 overlay
-- `argocd/webapp-prod-trial/webapp-template.yaml`：生产试验应用清单
-- `argocd/webapp-prod-trial/webapp-governance.yaml`：生产试验资源边界
+- `manifests/argocd-webapp-prod-trial-app-internal.yaml`：切换到内部域名 values overlay 的 Argo CD 应用定义
+- `charts/webapp-template/values-prod-trial.yaml`：生产试验 Helm values
+- `charts/webapp-template/values-prod-trial-internal.yaml`：内部域名 Helm values overlay
 - `argocd/webapp-prod-trial/runtime-secret.example.yaml`：运行时 Secret 示例
 - `docs/INTERNAL_DNS.md`：内部域名与内网 DNS 落地说明
 
@@ -70,11 +68,11 @@ kubectl --kubeconfig /Users/simon/.kube/ha-lab.conf apply \
 
 如果当前阶段先走内网访问，不急着开放公网，建议优先使用：
 
-- `/Users/simon/projects/webapp-template/server/deploy/lab-ha/argocd/webapp-prod-trial-internal`
+- `/Users/simon/projects/webapp-template/server/deploy/lab-ha/manifests/argocd-webapp-prod-trial-app-internal.yaml`
 
 操作顺序：
 
-1. 先把 `ingress-host-patch.yaml` 里的占位域名改成真实内部域名
+1. 先确认 `/Users/simon/projects/webapp-template/server/deploy/lab-ha/charts/webapp-template/values-prod-trial-internal.yaml` 里的内部域名符合当前预期
 2. 如果访问端和集群处于同一二层广播域，在本机 `hosts` 或内网 DNS 中把该域名指向 `192.168.0.120`
 3. 如果访问端是通过 VPN / 子网路由去访问 `192.168.0.0/24`，先不要把“内部域名可达”建立在 `192.168.0.120` 上，而是先继续用节点 IP + NodePort 验证 Host 路由
 4. `192.168.0.120` 是 `MetalLB` 分配给 `ingress-nginx` 的 VIP，不是 `node1/node2/node3` 任意一台机器的固定 IP
@@ -84,7 +82,7 @@ kubectl --kubeconfig /Users/simon/.kube/ha-lab.conf apply \
 
 ```bash
 kubectl --kubeconfig /Users/simon/.kube/ha-lab.conf apply \
-  -k /Users/simon/projects/webapp-template/server/deploy/lab-ha/argocd/webapp-prod-trial-internal
+  -f /Users/simon/projects/webapp-template/server/deploy/lab-ha/manifests/argocd-webapp-prod-trial-app-internal.yaml
 ```
 
 完整说明见 `/Users/simon/projects/webapp-template/server/deploy/lab-ha/docs/INTERNAL_DNS.md`。

@@ -24,6 +24,8 @@ alertmanager:
         - namespace
         - alertname
         - severity
+        # blackbox 告警按 target 分组，避免多个入口异常被折叠成一条难以值班的聚合消息。
+        - target
       group_wait: 30s
       group_interval: 5m
       repeat_interval: 4h

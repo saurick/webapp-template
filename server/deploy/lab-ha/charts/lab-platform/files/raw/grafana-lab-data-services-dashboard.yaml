@@ -1,0 +1,156 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: lab-ha-grafana-data-services
+  namespace: monitoring
+  labels:
+    grafana_dashboard: "1"
+    release: kube-prometheus-stack
+data:
+  lab-ha-data-services.json: |-
+    {
+      "id": null,
+      "uid": "lab-ha-data",
+      "title": "HA Lab / Data & Storage",
+      "tags": ["lab-ha", "data", "storage"],
+      "timezone": "browser",
+      "schemaVersion": 39,
+      "version": 1,
+      "refresh": "30s",
+      "time": {
+        "from": "now-6h",
+        "to": "now"
+      },
+      "panels": [
+        {
+          "id": 1,
+          "type": "stat",
+          "title": "PG Ready Instances",
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "gridPos": {"h": 5, "w": 4, "x": 0, "y": 0},
+          "targets": [{"expr": "sum(kube_pod_status_ready{namespace=\"database\",condition=\"true\",pod=~\"app-pg-[0-9]+\"})", "instant": true, "refId": "A"}],
+          "options": {"colorMode": "value", "graphMode": "none", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}},
+          "fieldConfig": {"defaults": {"unit": "none", "thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": null}, {"color": "yellow", "value": 2}, {"color": "green", "value": 3}]}}}
+        },
+        {
+          "id": 2,
+          "type": "stat",
+          "title": "SeaweedFS Ready Replicas",
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "gridPos": {"h": 5, "w": 4, "x": 4, "y": 0},
+          "targets": [{"expr": "sum(kube_statefulset_status_replicas_ready{namespace=\"object-storage\"}) + sum(kube_deployment_status_replicas_available{namespace=\"object-storage\",deployment=\"seaweedfs-s3\"})", "instant": true, "refId": "A"}],
+          "options": {"colorMode": "value", "graphMode": "none", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}},
+          "fieldConfig": {"defaults": {"unit": "none", "thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": null}, {"color": "yellow", "value": 5}, {"color": "green", "value": 10}]}}}
+        },
+        {
+          "id": 3,
+          "type": "stat",
+          "title": "Longhorn Managers Ready",
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "gridPos": {"h": 5, "w": 4, "x": 8, "y": 0},
+          "targets": [{"expr": "kube_daemonset_status_number_ready{namespace=\"longhorn-system\",daemonset=\"longhorn-manager\"}", "instant": true, "refId": "A"}],
+          "options": {"colorMode": "value", "graphMode": "none", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}},
+          "fieldConfig": {"defaults": {"unit": "none", "thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": null}, {"color": "yellow", "value": 2}, {"color": "green", "value": 3}]}}}
+        },
+        {
+          "id": 4,
+          "type": "stat",
+          "title": "Harbor Ready Deployments",
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "gridPos": {"h": 5, "w": 4, "x": 12, "y": 0},
+          "targets": [{"expr": "sum(kube_deployment_status_replicas_available{namespace=\"harbor\"})", "instant": true, "refId": "A"}],
+          "options": {"colorMode": "value", "graphMode": "none", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}},
+          "fieldConfig": {"defaults": {"unit": "none", "thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": null}, {"color": "yellow", "value": 4}, {"color": "green", "value": 5}]}}}
+        },
+        {
+          "id": 5,
+          "type": "stat",
+          "title": "Persistent Data Usage",
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "gridPos": {"h": 5, "w": 4, "x": 16, "y": 0},
+          "targets": [{"expr": "100 * sum(kubelet_volume_stats_used_bytes{namespace=~\"database|object-storage|harbor|monitoring|logging\"}) / sum(kubelet_volume_stats_capacity_bytes{namespace=~\"database|object-storage|harbor|monitoring|logging\"})", "instant": true, "refId": "A"}],
+          "options": {"colorMode": "value", "graphMode": "none", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}},
+          "fieldConfig": {"defaults": {"unit": "percent", "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "yellow", "value": 65}, {"color": "red", "value": 85}]}}}
+        },
+        {
+          "id": 6,
+          "type": "stat",
+          "title": "Harbor Probe",
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "gridPos": {"h": 5, "w": 4, "x": 20, "y": 0},
+          "targets": [{"expr": "probe_success{job=\"blackbox-exporter-prometheus-blackbox-exporter\",target=\"harbor\"}", "instant": true, "refId": "A"}],
+          "options": {"colorMode": "value", "graphMode": "none", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}},
+          "fieldConfig": {"defaults": {"unit": "none", "thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": null}, {"color": "green", "value": 1}]}}}
+        },
+        {
+          "id": 7,
+          "type": "timeseries",
+          "title": "Persistent Volume Used Bytes by Namespace",
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "gridPos": {"h": 8, "w": 12, "x": 0, "y": 5},
+          "targets": [{"expr": "sum by (namespace) (kubelet_volume_stats_used_bytes{namespace=~\"database|object-storage|harbor|monitoring|logging\"})", "legendFormat": "{{namespace}}", "refId": "A"}],
+          "fieldConfig": {"defaults": {"unit": "bytes"}},
+          "options": {"legend": {"displayMode": "table", "placement": "bottom"}, "tooltip": {"mode": "multi"}}
+        },
+        {
+          "id": 8,
+          "type": "timeseries",
+          "title": "Persistent Volume Capacity by Namespace",
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "gridPos": {"h": 8, "w": 12, "x": 12, "y": 5},
+          "targets": [{"expr": "sum by (namespace) (kubelet_volume_stats_capacity_bytes{namespace=~\"database|object-storage|harbor|monitoring|logging\"})", "legendFormat": "{{namespace}}", "refId": "A"}],
+          "fieldConfig": {"defaults": {"unit": "bytes"}},
+          "options": {"legend": {"displayMode": "table", "placement": "bottom"}, "tooltip": {"mode": "multi"}}
+        },
+        {
+          "id": 9,
+          "type": "table",
+          "title": "Database Pods",
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "gridPos": {"h": 8, "w": 8, "x": 0, "y": 13},
+          "targets": [{"expr": "kube_pod_status_ready{namespace=\"database\",condition=\"true\",pod=~\"app-pg-[0-9]+\"}", "format": "table", "instant": true, "refId": "A"}],
+          "transformations": [{"id": "organize", "options": {"excludeByName": {"Time": true, "Value": true}, "indexByName": {"pod": 0, "namespace": 1, "instance": 2}}}],
+          "options": {"showHeader": true}
+        },
+        {
+          "id": 10,
+          "type": "table",
+          "title": "SeaweedFS Statefulsets",
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "gridPos": {"h": 8, "w": 8, "x": 8, "y": 13},
+          "targets": [{"expr": "kube_statefulset_status_replicas_ready{namespace=\"object-storage\"}", "format": "table", "instant": true, "refId": "A"}],
+          "transformations": [{"id": "organize", "options": {"excludeByName": {"Time": true, "Value": true}, "indexByName": {"statefulset": 0, "namespace": 1}}}],
+          "options": {"showHeader": true}
+        },
+        {
+          "id": 11,
+          "type": "table",
+          "title": "Harbor Deployments",
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "gridPos": {"h": 8, "w": 8, "x": 16, "y": 13},
+          "targets": [{"expr": "kube_deployment_status_replicas_available{namespace=\"harbor\"}", "format": "table", "instant": true, "refId": "A"}],
+          "transformations": [{"id": "organize", "options": {"excludeByName": {"Time": true, "Value": true}, "indexByName": {"deployment": 0, "namespace": 1}}}],
+          "options": {"showHeader": true}
+        },
+        {
+          "id": 12,
+          "type": "table",
+          "title": "Top PVC Usage",
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "gridPos": {"h": 8, "w": 12, "x": 0, "y": 21},
+          "targets": [{"expr": "topk(10, kubelet_volume_stats_used_bytes{namespace=~\"database|object-storage|harbor|monitoring|logging\"})", "format": "table", "instant": true, "refId": "A"}],
+          "transformations": [{"id": "organize", "options": {"excludeByName": {"Time": true, "Value": false}, "indexByName": {"namespace": 0, "persistentvolumeclaim": 1, "node": 2, "Value": 3}, "renameByName": {"Value": "UsedBytes"}}}],
+          "options": {"showHeader": true}
+        },
+        {
+          "id": 13,
+          "type": "text",
+          "title": "Data Plane Notes",
+          "gridPos": {"h": 8, "w": 12, "x": 12, "y": 21},
+          "options": {
+            "mode": "markdown",
+            "content": "### Data Plane Guidance\n\n- Current TSDB is **Prometheus**.\n- Current log stack is **Loki + Promtail**, not ELK.\n- Current trace backend is **Jaeger v2**.\n- For SeaweedFS human browsing, use `30888`; `30333` is S3 API only.\n- Harbor and SeaweedFS are intentionally tuned for this resource budget.\n- `webapp` 排障优先走 `Loki -> trace.id -> Jaeger -> Logs for this span`。"
+          }
+        }
+      ]
+    }
