@@ -35,6 +35,8 @@
 - 如果要切换到 `health`、`auth` 或 `mixed`，可在 GitLab 新建流水线页改变量
 - `auth` / `mixed` 默认仍是 `register` 模式，会创建真实用户；如需改成 `login`，请在 GitLab 页面额外提供 `LOADTEST_USERNAME` 和 `LOADTEST_PASSWORD`
 - 如果当前浏览器已经登录过 GitLab，`http://192.168.0.108:30088` 的 Portal 会自动展示“最近一次压测”摘要卡片，并给出 `Open pipeline / Open report` 入口
+- Grafana 统一压测看板：`http://192.168.0.108:30081/d/lab-ha-loadtest/ha-lab-load-test`
+- Grafana 官方 k6 看板：`http://192.168.0.108:30081/d/lab-ha-loadtest-official/ha-lab-load-test-official-k6`
 - `loadtest_lab` 会在每个 job artifact 里额外写一份固定路径副本：`server/deploy/lab-ha/artifacts/loadtest/job/{portal-summary.json,summary.json,report.html}`，方便 Portal 直接读取最近一次结果
 - 很短的压测（例如几秒级 smoke）可能会被 `k6` 跳过 HTML 报告导出，这种情况下 Portal 仍会展示状态和 `summary.json` 指标，但不会给 `Open report`
 - 当前 GitLab shell runner 已验证存在 `curl`，因此默认一键入口至少应保证 `system` 可跑，即使 `k6` 下载源暂时不可达
@@ -89,7 +91,8 @@ bash /Users/simon/projects/webapp-template/scripts/loadtest/run.sh auth \
 - 当前脚本会给每个请求带 `X-Request-Id`
 - `request_id` 前缀使用 `LOADTEST_RUN_ID`
 - 现有服务端已支持透传 `X-Request-Id`，所以可以直接在日志里按 `request_id=<LOADTEST_RUN_ID...>` 过滤
-- GitLab 手动流水线跑出来的 `report.html` 和 `summary.json` 都作为 artifacts 保留在 `192.168.0.108:8929`，不再依赖本地 `127.0.0.1` dashboard
+- 本地 `127.0.0.1:5665` 的 k6 dashboard 仍可作为单机临时调试入口，但只对发压机器本身可见
+- 团队默认统一看 Grafana 与 GitLab artifacts：`http://192.168.0.108:30081/d/lab-ha-loadtest/ha-lab-load-test` 作为实验室精简值班板，`http://192.168.0.108:30081/d/lab-ha-loadtest-official/ha-lab-load-test-official-k6` 作为官方 k6 指标板；GitLab 继续保留单次 `report.html` / `summary.json`
 
 建议同步观察：
 
@@ -100,6 +103,7 @@ bash /Users/simon/projects/webapp-template/scripts/loadtest/run.sh auth \
 ## 风险边界
 
 - `auth` / `mixed` 默认使用 `register` 模式，会创建真实用户
+- Grafana 压测看板当前只覆盖 `k6` engine；如果任务退化到 `curl fallback`，仍需回看 GitLab artifacts
 - `curl fallback` 目前只覆盖 `health/system` 两个安全场景；如果你在 GitLab 页手动切到 `auth/mixed`，仍应优先保证 runner 上有可用 `k6`
 - 当前脚本是“最小能力”，不是分布式压测平台，不负责历史趋势归档、多人协作和长期调度
 - 在 `3 x 4C/8G` 实验资源下，不建议一开始就把 `vus` 拉得很高；优先用保守并发观察拐点

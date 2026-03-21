@@ -78,6 +78,8 @@ sync_platform_raw() {
     grafana-jaeger-datasource.yaml
     grafana-lab-data-services-dashboard.yaml
     grafana-lab-gitops-dashboard.yaml
+    grafana-lab-loadtest-dashboard.yaml
+    grafana-lab-loadtest-official-dashboard.yaml
     grafana-lab-overview-dashboard.yaml
     grafana-lab-postgres-backup-dashboard.yaml
     grafana-loki-datasource.yaml

@@ -29,6 +29,9 @@ variables:
   LOADTEST_AUTH_ITERATIONS:
     value: "3"
     description: "auth/mixed 场景默认迭代次数。"
+  LOADTEST_PROMETHEUS_RW_URL:
+    value: "http://192.168.0.108:30090/api/v1/write"
+    description: "可选：k6 metrics 直接写入 Prometheus，供 Grafana 统一展示。留空则只保留 GitLab artifacts。"
 
 validate_lab:
   stage: validate
@@ -55,6 +58,7 @@ loadtest_lab:
     - when: never
   script:
     - 'export LOADTEST_RUN_ID="${LOADTEST_RUN_ID:-gitlab-${CI_PIPELINE_ID}-${CI_JOB_ID}-${LOADTEST_SCENARIO}}"'
+    - 'export LOADTEST_SOURCE="gitlab-ci"'
     - 'export K6_WEB_DASHBOARD=true'
     - 'export LOADTEST_RUN_DIR="server/deploy/lab-ha/artifacts/loadtest/${LOADTEST_RUN_ID}"'
     - 'export LOADTEST_JOB_DIR="server/deploy/lab-ha/artifacts/loadtest/job"'
@@ -70,6 +74,8 @@ loadtest_lab:
       LOADTEST_DURATION="${LOADTEST_DURATION}" \
       LOADTEST_VUS="${LOADTEST_VUS}" \
       LOADTEST_AUTH_ITERATIONS="${LOADTEST_AUTH_ITERATIONS}" \
+      LOADTEST_PROMETHEUS_RW_URL="${LOADTEST_PROMETHEUS_RW_URL}" \
+      LOADTEST_SOURCE="${LOADTEST_SOURCE}" \
       K6_WEB_DASHBOARD="${K6_WEB_DASHBOARD}" \
       bash scripts/loadtest/run.sh "${LOADTEST_SCENARIO}" || LOADTEST_EXIT=$?
 

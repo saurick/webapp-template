@@ -16,6 +16,7 @@ usage() {
   LOADTEST_USERNAME=alice
   LOADTEST_PASSWORD=Passw0rd!123
   LOADTEST_RUN_ID=lt-20260321-demo
+  LOADTEST_PROMETHEUS_RW_URL=http://192.168.0.108:30090/api/v1/write
   K6_WEB_DASHBOARD=true
 EOF
 }
@@ -101,6 +102,10 @@ ensure_downloaded_k6_binary() {
 	fi
 
 	os_name="${LOADTEST_K6_OS:-$(uname -s | tr '[:upper:]' '[:lower:]')}"
+	# Grafana k6 release 在 macOS 下使用 macos 作为资产前缀，而不是 darwin。
+	if [[ "${os_name}" == "darwin" ]]; then
+		os_name="macos"
+	fi
 	case "${LOADTEST_K6_ARCH:-$(uname -m)}" in
 	x86_64 | amd64) arch_name="amd64" ;;
 	arm64 | aarch64) arch_name="arm64" ;;
@@ -178,17 +183,34 @@ k6_dashboard="${K6_WEB_DASHBOARD:-true}"
 k6_dashboard_open="${K6_WEB_DASHBOARD_OPEN:-false}"
 k6_dashboard_port="${K6_WEB_DASHBOARD_PORT:-5665}"
 k6_image="${LOADTEST_K6_IMAGE:-grafana/k6:latest}"
+prometheus_rw_url="${LOADTEST_PROMETHEUS_RW_URL:-}"
+prometheus_rw_trend_stats="${LOADTEST_PROMETHEUS_RW_TREND_STATS:-p(95),p(99),avg,max,min}"
+loadtest_source="${LOADTEST_SOURCE:-manual}"
 dashboard_flag="$(printf '%s' "${k6_dashboard}" | tr '[:upper:]' '[:lower:]')"
+k6_run_args=(
+	--tag "testid=${loadtest_run_id}"
+	--tag "loadtest_scenario=${scenario}"
+	--tag "loadtest_source=${loadtest_source}"
+)
 
 mkdir -p "${output_dir}"
+
+if [[ -n "${prometheus_rw_url}" ]]; then
+	# 统一给每轮压测打 testid/scenario/source 标签，方便 Grafana 只筛当前批次。
+	k6_run_args=(-o experimental-prometheus-rw "${k6_run_args[@]}")
+fi
 
 cat >"${meta_path_host}" <<EOF
 SCENARIO=${scenario}
 BASE_URL=${base_url}
 LOADTEST_RUN_ID=${loadtest_run_id}
+LOADTEST_SOURCE=${loadtest_source}
 LOADTEST_HOST_HEADER=${LOADTEST_HOST_HEADER:-}
 LOADTEST_AUTH_MODE=${LOADTEST_AUTH_MODE:-}
 LOADTEST_USERNAME=${LOADTEST_USERNAME:-}
+LOADTEST_PROMETHEUS_RW_URL=${prometheus_rw_url}
+LOADTEST_PROMETHEUS_RW_ENABLED=$([[ -n "${prometheus_rw_url}" ]] && printf 'true' || printf 'false')
+K6_PROMETHEUS_RW_TREND_STATS=${prometheus_rw_trend_stats}
 K6_WEB_DASHBOARD=${k6_dashboard}
 K6_WEB_DASHBOARD_PORT=${k6_dashboard_port}
 EOF
@@ -214,8 +236,10 @@ if [[ -n "${local_k6_bin}" ]]; then
 	export K6_WEB_DASHBOARD_OPEN="${k6_dashboard_open}"
 	export K6_WEB_DASHBOARD_PORT="${k6_dashboard_port}"
 	export K6_WEB_DASHBOARD_EXPORT="${K6_WEB_DASHBOARD_EXPORT:-${dashboard_path_host}}"
+	export K6_PROMETHEUS_RW_SERVER_URL="${prometheus_rw_url}"
+	export K6_PROMETHEUS_RW_TREND_STATS="${prometheus_rw_trend_stats}"
 
-	"${local_k6_bin}" run --summary-export "${summary_path_host}" "${extra_args[@]}" "${script_path_host}"
+	"${local_k6_bin}" run --summary-export "${summary_path_host}" "${k6_run_args[@]}" "${extra_args[@]}" "${script_path_host}"
 else
 	if [[ "${scenario}" == "health" || "${scenario}" == "system" ]]; then
 		# shell runner 无法下载 k6 时，退化到仓库内置 curl 方案，保证一键入口仍可用。
@@ -267,8 +291,10 @@ else
 		-e K6_WEB_DASHBOARD_OPEN="${k6_dashboard_open}" \
 		-e K6_WEB_DASHBOARD_PORT="${k6_dashboard_port}" \
 		-e K6_WEB_DASHBOARD_EXPORT="/artifacts/report.html" \
+		-e K6_PROMETHEUS_RW_SERVER_URL="${prometheus_rw_url}" \
+		-e K6_PROMETHEUS_RW_TREND_STATS="${prometheus_rw_trend_stats}" \
 		"${k6_image}" \
-		run --summary-export /artifacts/summary.json "${extra_args[@]}" "${script_path_container}"
+		run --summary-export /artifacts/summary.json "${k6_run_args[@]}" "${extra_args[@]}" "${script_path_container}"
 fi
 
 printf 'summary json: %s\n' "${summary_path_host}"

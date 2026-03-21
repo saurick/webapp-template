@@ -43,6 +43,8 @@
 - `manifests/platform-nodeports.yaml`: 当前稳定直连入口端口映射
 - `manifests/platform-portal.yaml`: 实验室门户页
 - `manifests/grafana-lab-overview-dashboard.yaml`: Grafana 值班总览看板
+- `manifests/grafana-lab-loadtest-dashboard.yaml`: Grafana 压测趋势看板
+- `manifests/grafana-lab-loadtest-official-dashboard.yaml`: 官方 k6 Prometheus 看板（已适配实验室数据源）
 - `manifests/grafana-lab-data-services-dashboard.yaml`: Grafana 数据与存储看板
 - `manifests/grafana-lab-postgres-backup-dashboard.yaml`: Grafana PostgreSQL 与备份看板
 - `manifests/grafana-lab-gitops-dashboard.yaml`: Grafana GitOps 与交付看板
