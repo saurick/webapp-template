@@ -13,6 +13,7 @@
 - 统一入口：`/Users/simon/projects/webapp-template/scripts/loadtest/run.sh`
 - 通用说明：`/Users/simon/projects/webapp-template/scripts/loadtest/README.md`
 - `run.sh` 优先用本机 `k6`；没有本机 `k6` 时，会先尝试下载固定版本 `k6` 二进制，再尝试 `go install go.k6.io/k6@v0.49.0`，最后才回退到 `docker run grafana/k6`
+- 如果现场 runner 无法下载外部二进制、也没有 `go/docker`，`health/system` 会自动退化到仓库内置 `curl` fallback，继续产出 GitLab 可消费的 `summary.json` 与 `report.html`
 
 ## GitLab 一键入口
 
@@ -36,6 +37,7 @@
 - 如果当前浏览器已经登录过 GitLab，`http://192.168.0.108:30088` 的 Portal 会自动展示“最近一次压测”摘要卡片，并给出 `Open pipeline / Open report` 入口
 - `loadtest_lab` 会在每个 job artifact 里额外写一份固定路径副本：`server/deploy/lab-ha/artifacts/loadtest/job/{portal-summary.json,summary.json,report.html}`，方便 Portal 直接读取最近一次结果
 - 很短的压测（例如几秒级 smoke）可能会被 `k6` 跳过 HTML 报告导出，这种情况下 Portal 仍会展示状态和 `summary.json` 指标，但不会给 `Open report`
+- 当前 GitLab shell runner 已验证存在 `curl`，因此默认一键入口至少应保证 `system` 可跑，即使 `k6` 下载源暂时不可达
 
 ## 推荐执行顺序
 
@@ -98,5 +100,6 @@ bash /Users/simon/projects/webapp-template/scripts/loadtest/run.sh auth \
 ## 风险边界
 
 - `auth` / `mixed` 默认使用 `register` 模式，会创建真实用户
+- `curl fallback` 目前只覆盖 `health/system` 两个安全场景；如果你在 GitLab 页手动切到 `auth/mixed`，仍应优先保证 runner 上有可用 `k6`
 - 当前脚本是“最小能力”，不是分布式压测平台，不负责历史趋势归档、多人协作和长期调度
 - 在 `3 x 4C/8G` 实验资源下，不建议一开始就把 `vus` 拉得很高；优先用保守并发观察拐点

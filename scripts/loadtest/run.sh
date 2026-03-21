@@ -20,6 +20,46 @@ usage() {
 EOF
 }
 
+apply_k6_flag_overrides() {
+	local args=("$@")
+	local index=0
+	local current
+
+	while ((index < ${#args[@]})); do
+		current="${args[index]}"
+		case "${current}" in
+		--vus=*)
+			export LOADTEST_VUS="${current#*=}"
+			;;
+		--vus)
+			if ((index + 1 < ${#args[@]})); then
+				index=$((index + 1))
+				export LOADTEST_VUS="${args[index]}"
+			fi
+			;;
+		--duration=*)
+			export LOADTEST_DURATION="${current#*=}"
+			;;
+		--duration)
+			if ((index + 1 < ${#args[@]})); then
+				index=$((index + 1))
+				export LOADTEST_DURATION="${args[index]}"
+			fi
+			;;
+		--iterations=*)
+			export LOADTEST_ITERATIONS="${current#*=}"
+			;;
+		--iterations)
+			if ((index + 1 < ${#args[@]})); then
+				index=$((index + 1))
+				export LOADTEST_ITERATIONS="${args[index]}"
+			fi
+			;;
+		esac
+		index=$((index + 1))
+	done
+}
+
 rewrite_localhost_for_docker() {
 	local value="$1"
 	value="${value/http:\/\/127.0.0.1/http:\/\/host.docker.internal}"
@@ -52,6 +92,8 @@ ensure_go_k6_binary() {
 ensure_downloaded_k6_binary() {
 	local download_dir="${LOADTEST_K6_BIN_DIR:-${REPO_ROOT}/.cache/loadtest/bin}"
 	local download_version="${LOADTEST_K6_VERSION:-v0.49.0}"
+	local connect_timeout="${LOADTEST_K6_DOWNLOAD_CONNECT_TIMEOUT:-3}"
+	local max_time="${LOADTEST_K6_DOWNLOAD_MAX_TIME:-15}"
 	local os_name arch_name archive_name archive_url archive_path extract_root extracted_k6
 
 	if ! command -v curl >/dev/null 2>&1 || ! command -v tar >/dev/null 2>&1; then
@@ -83,7 +125,7 @@ ensure_downloaded_k6_binary() {
 	# shell runner 没有 k6 / go / docker 时，先尝试拉固定版本二进制，失败再继续回退。
 	printf 'download k6 binary: %s\n' "${archive_url}" >&2
 	rm -rf "${extract_root}"
-	if ! curl -fsSL "${archive_url}" -o "${archive_path}"; then
+	if ! curl -fsSL --connect-timeout "${connect_timeout}" --max-time "${max_time}" "${archive_url}" -o "${archive_path}"; then
 		rm -rf "${extract_root}" "${archive_path}"
 		return 1
 	fi
@@ -121,6 +163,7 @@ if [[ $# -gt 0 ]]; then
 	shift
 fi
 extra_args=("$@")
+apply_k6_flag_overrides "${extra_args[@]}"
 
 base_url="${BASE_URL:-http://127.0.0.1:8200}"
 loadtest_run_id="${LOADTEST_RUN_ID:-lt-$(date +%Y%m%d-%H%M%S)}"
@@ -164,6 +207,7 @@ elif local_k6_bin="$(ensure_go_k6_binary)"; then
 fi
 
 if [[ -n "${local_k6_bin}" ]]; then
+	printf 'LOADTEST_ENGINE=k6\n' >>"${meta_path_host}"
 	export BASE_URL="${base_url}"
 	export LOADTEST_RUN_ID="${loadtest_run_id}"
 	export K6_WEB_DASHBOARD="${k6_dashboard}"
@@ -173,10 +217,21 @@ if [[ -n "${local_k6_bin}" ]]; then
 
 	"${local_k6_bin}" run --summary-export "${summary_path_host}" "${extra_args[@]}" "${script_path_host}"
 else
+	if [[ "${scenario}" == "health" || "${scenario}" == "system" ]]; then
+		# shell runner 无法下载 k6 时，退化到仓库内置 curl 方案，保证一键入口仍可用。
+		printf 'LOADTEST_ENGINE=curl-fallback\n' >>"${meta_path_host}"
+		export BASE_URL="${base_url}"
+		export LOADTEST_RUN_ID="${loadtest_run_id}"
+		export LOADTEST_SUMMARY_PATH="${summary_path_host}"
+		export LOADTEST_REPORT_PATH="${dashboard_path_host}"
+		bash "${SCRIPT_DIR}/curl_fallback.sh" "${scenario}"
+		exit 0
+	fi
 	if ! command -v docker >/dev/null 2>&1; then
 		printf '缺少 k6 / Docker / go-install 兜底，无法运行压测\n' >&2
 		exit 127
 	fi
+	printf 'LOADTEST_ENGINE=docker\n' >>"${meta_path_host}"
 	# Docker fallback 需要把 localhost 改成 host.docker.internal，避免容器内回环到自己。
 	docker_base_url="$(rewrite_localhost_for_docker "${base_url}")"
 	docker_args=(

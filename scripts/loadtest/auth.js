@@ -14,7 +14,7 @@ ensureAuthConfig()
 
 export const options = {
   vus: Number(__ENV.LOADTEST_VUS || 1),
-  iterations: Number(__ENV.LOADTEST_ITERATIONS || 5),
+  iterations: Number(__ENV.LOADTEST_AUTH_ITERATIONS || __ENV.LOADTEST_ITERATIONS || 5),
   thresholds: {
     checks: ['rate>0.99'],
     http_req_failed: ['rate<0.01'],
@@ -28,4 +28,3 @@ export const options = {
 export default function authScenario() {
   runAuthFlow()
 }
-
