@@ -92,10 +92,12 @@ export function buildHeaders({
     headers.Authorization = `Bearer ${token}`
   }
 
-  return { ...headers, ...extra }
+  Object.keys(extra).forEach((key) => {
+    headers[key] = extra[key]
+  })
+  return headers
 }
 
 export function buildUniqueUsername(prefix = 'ltuser') {
   return sanitize(`${prefix}_${runId}_${__VU}_${__ITER}`).slice(0, 60)
 }
-

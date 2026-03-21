@@ -24,6 +24,13 @@ function sleepThinkTime() {
   sleep(thinkTimeMs / 1000)
 }
 
+function getObjectPath(value, path) {
+  return path.reduce((current, key) => {
+    if (current === null || current === undefined) return undefined
+    return current[key]
+  }, value)
+}
+
 function resolveAuthCredentials() {
   // 默认走 register，避免仓库必须预置固定账号才能先把压测链路跑通。
   if (authMode === 'login') {
@@ -62,7 +69,8 @@ export function runSystemFlow() {
     tags: { flow: 'system', step: 'ping' },
   })
   check(ping.payload, {
-    'system.ping returns pong': (payload) => payload?.result?.data?.pong === 'pong',
+    'system.ping returns pong': (payload) =>
+      getObjectPath(payload, ['result', 'data', 'pong']) === 'pong',
   })
 
   const version = rpcCall({
@@ -72,8 +80,8 @@ export function runSystemFlow() {
   })
   check(version.payload, {
     'system.version returns version': (payload) =>
-      typeof payload?.result?.data?.version === 'string' &&
-      payload.result.data.version.length > 0,
+      typeof getObjectPath(payload, ['result', 'data', 'version']) === 'string' &&
+      getObjectPath(payload, ['result', 'data', 'version']).length > 0,
   })
 
   sleepThinkTime()
@@ -88,14 +96,14 @@ export function runAuthFlow() {
     params: { username, password },
     tags: { flow: 'auth', step: method },
   })
-  const token = auth.payload?.result?.data?.access_token || ''
+  const token = getObjectPath(auth.payload, ['result', 'data', 'access_token']) || ''
 
   authTokenMissing.add(token === '', { flow: 'auth', step: method })
   check(auth.payload, {
     [`auth.${method} token present`]: (payload) =>
-      Boolean(payload?.result?.data?.access_token),
+      Boolean(getObjectPath(payload, ['result', 'data', 'access_token'])),
     [`auth.${method} username echoed`]: (payload) =>
-      payload?.result?.data?.username === username,
+      getObjectPath(payload, ['result', 'data', 'username']) === username,
   })
 
   // 上游登录失败时直接止损，避免后续 me/logout 继续制造噪声。
@@ -115,7 +123,7 @@ export function runAuthFlow() {
   })
   check(me.payload, {
     'auth.me returns same username': (payload) =>
-      payload?.result?.data?.username === username,
+      getObjectPath(payload, ['result', 'data', 'username']) === username,
   })
 
   if (logoutAfterAuth) {

@@ -29,6 +29,26 @@ rewrite_localhost_for_docker() {
 	printf '%s' "$value"
 }
 
+ensure_go_k6_binary() {
+	local go_bin_dir="${LOADTEST_GO_K6_BIN_DIR:-${REPO_ROOT}/.cache/loadtest/bin}"
+	local go_k6_bin="${go_bin_dir}/k6"
+	local go_k6_version="${LOADTEST_GO_K6_VERSION:-v0.49.0}"
+
+	if ! command -v go >/dev/null 2>&1; then
+		return 1
+	fi
+	if [[ -x "${go_k6_bin}" ]]; then
+		printf '%s' "${go_k6_bin}"
+		return 0
+	fi
+
+	# Shell runner 现场既没有本机 k6 也没有 Docker 时，退化到 go install 兜底。
+	mkdir -p "${go_bin_dir}"
+	printf 'install k6 via go: %s -> %s\n' "${go_k6_version}" "${go_k6_bin}" >&2
+	GOBIN="${go_bin_dir}" go install "go.k6.io/k6@${go_k6_version}"
+	printf '%s' "${go_k6_bin}"
+}
+
 scenario="${1:-mixed}"
 case "${scenario}" in
 health | system | auth | mixed) ;;
@@ -80,7 +100,14 @@ printf 'loadtest scenario=%s\n' "${scenario}"
 printf 'loadtest run_id=%s\n' "${loadtest_run_id}"
 printf 'loadtest output=%s\n' "${output_dir}"
 
+local_k6_bin=""
 if command -v k6 >/dev/null 2>&1; then
+	local_k6_bin="$(command -v k6)"
+elif local_k6_bin="$(ensure_go_k6_binary)"; then
+	:
+fi
+
+if [[ -n "${local_k6_bin}" ]]; then
 	export BASE_URL="${base_url}"
 	export LOADTEST_RUN_ID="${loadtest_run_id}"
 	export K6_WEB_DASHBOARD="${k6_dashboard}"
@@ -88,8 +115,12 @@ if command -v k6 >/dev/null 2>&1; then
 	export K6_WEB_DASHBOARD_PORT="${k6_dashboard_port}"
 	export K6_WEB_DASHBOARD_EXPORT="${K6_WEB_DASHBOARD_EXPORT:-${dashboard_path_host}}"
 
-	k6 run --summary-export "${summary_path_host}" "${extra_args[@]}" "${script_path_host}"
+	"${local_k6_bin}" run --summary-export "${summary_path_host}" "${extra_args[@]}" "${script_path_host}"
 else
+	if ! command -v docker >/dev/null 2>&1; then
+		printf '缺少 k6 / Docker / go-install 兜底，无法运行压测\n' >&2
+		exit 127
+	fi
 	# Docker fallback 需要把 localhost 改成 host.docker.internal，避免容器内回环到自己。
 	docker_base_url="$(rewrite_localhost_for_docker "${base_url}")"
 	docker_args=(

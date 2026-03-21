@@ -12,9 +12,11 @@ export const authTokenMissing = new Rate('auth_token_missing')
 export const authRegisterCreatedUsers = new Counter('auth_register_created_users')
 
 function stringifyTags(tags = {}) {
-  return Object.fromEntries(
-    Object.entries(tags).map(([key, value]) => [key, String(value)])
-  )
+  const result = {}
+  Object.keys(tags).forEach((key) => {
+    result[key] = String(tags[key])
+  })
+  return result
 }
 
 function nextRequestId() {
@@ -23,8 +25,15 @@ function nextRequestId() {
 }
 
 function isExpectedCode(actual, expected) {
-  if (Array.isArray(expected)) return expected.includes(actual)
-  return actual === expected
+	if (Array.isArray(expected)) return expected.includes(actual)
+	return actual === expected
+}
+
+function getObjectPath(value, path) {
+	return path.reduce((current, key) => {
+		if (current === null || current === undefined) return undefined
+		return current[key]
+	}, value)
 }
 
 export function httpGetText(path, { expectedStatus = 200, expectedBody, tags = {} } = {}) {
@@ -65,11 +74,15 @@ export function rpcCall({
     }),
     {
       headers: buildHeaders({ token, requestId }),
-      tags: stringifyTags({
-        url,
-        method,
-        ...tags,
-      }),
+      tags: stringifyTags(
+        Object.assign(
+          {
+            url,
+            method,
+          },
+          tags
+        )
+      ),
     }
   )
 
@@ -80,8 +93,8 @@ export function rpcCall({
     payload = null
   }
 
-  const resultCode = payload?.result?.code
-  const payloadOk = payload !== null && typeof resultCode === 'number'
+	const resultCode = getObjectPath(payload, ['result', 'code'])
+	const payloadOk = payload !== null && typeof resultCode === 'number'
 
   rpcPayloadFailed.add(!payloadOk, stringifyTags({ url, method }))
   rpcBizFailed.add(
@@ -98,4 +111,3 @@ export function rpcCall({
 
   return { response, payload, requestId }
 }
-
