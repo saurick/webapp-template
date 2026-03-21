@@ -1,9 +1,34 @@
 stages:
   - validate
+  - loadtest
   - deploy
 
 variables:
   KUBECONFIG: /home/gitlab-runner/.kube/config
+  PIPELINE_MODE:
+    value: "default"
+    description: "default=常规校验/发布；loadtest=运行实验室压测流水线"
+  LOADTEST_SCENARIO:
+    value: "system"
+    description: "压测场景：health/system/auth/mixed。默认 system，不写业务数据。"
+  LOADTEST_BASE_URL:
+    value: "http://192.168.0.108:32668"
+    description: "压测目标入口，默认实验室稳定 IP:Port。"
+  LOADTEST_HOST_HEADER:
+    value: ""
+    description: "可选 Host 头，例如 webapp-trial.lab.home.arpa。"
+  LOADTEST_DURATION:
+    value: "1m"
+    description: "health/system 场景默认时长。"
+  LOADTEST_VUS:
+    value: "5"
+    description: "health/system 场景默认并发。"
+  LOADTEST_AUTH_MODE:
+    value: "register"
+    description: "仅 auth/mixed 使用。register 会创建真实用户；login 需要额外提供账号密码。"
+  LOADTEST_AUTH_ITERATIONS:
+    value: "3"
+    description: "auth/mixed 场景默认迭代次数。"
 
 validate_lab:
   stage: validate
@@ -16,16 +41,85 @@ validate_lab:
     - "curl -fsS http://192.168.0.108:30002/api/v2.0/ping >/dev/null"
     - "curl -fsS http://192.168.0.108:32668/readyz >/dev/null"
 
+loadtest_lab:
+  stage: loadtest
+  tags:
+    - shell
+    - lab
+  resource_group: lab-loadtest
+  variables:
+    GIT_STRATEGY: clone
+  rules:
+    - if: '$PIPELINE_MODE == "loadtest"'
+      when: on_success
+    - when: never
+  script:
+    - 'export LOADTEST_RUN_ID="${LOADTEST_RUN_ID:-gitlab-${CI_PIPELINE_ID}-${CI_JOB_ID}-${LOADTEST_SCENARIO}}"'
+    - 'export K6_WEB_DASHBOARD=true'
+    - 'export LOADTEST_RUN_DIR="server/deploy/lab-ha/artifacts/loadtest/${LOADTEST_RUN_ID}"'
+    - 'export LOADTEST_JOB_DIR="server/deploy/lab-ha/artifacts/loadtest/job"'
+    - 'echo "loadtest pipeline_mode=${PIPELINE_MODE} scenario=${LOADTEST_SCENARIO} target=${LOADTEST_BASE_URL} run_id=${LOADTEST_RUN_ID}"'
+    - >
+      LOADTEST_EXIT=0
+      BASE_URL="${LOADTEST_BASE_URL}"
+      LOADTEST_RUN_ID="${LOADTEST_RUN_ID}"
+      LOADTEST_HOST_HEADER="${LOADTEST_HOST_HEADER}"
+      LOADTEST_AUTH_MODE="${LOADTEST_AUTH_MODE}"
+      LOADTEST_USERNAME="${LOADTEST_USERNAME:-}"
+      LOADTEST_PASSWORD="${LOADTEST_PASSWORD:-}"
+      LOADTEST_DURATION="${LOADTEST_DURATION}"
+      LOADTEST_VUS="${LOADTEST_VUS}"
+      LOADTEST_AUTH_ITERATIONS="${LOADTEST_AUTH_ITERATIONS}"
+      K6_WEB_DASHBOARD="${K6_WEB_DASHBOARD}"
+      bash scripts/loadtest/run.sh "${LOADTEST_SCENARIO}" || LOADTEST_EXIT=$?
+      mkdir -p "${LOADTEST_JOB_DIR}"
+      if [ -f "${LOADTEST_RUN_DIR}/meta.env" ]; then cp "${LOADTEST_RUN_DIR}/meta.env" "${LOADTEST_JOB_DIR}/meta.env"; fi
+      LOADTEST_HAS_SUMMARY=false
+      LOADTEST_HAS_REPORT=false
+      if [ -f "${LOADTEST_RUN_DIR}/summary.json" ]; then cp "${LOADTEST_RUN_DIR}/summary.json" "${LOADTEST_JOB_DIR}/summary.json"; LOADTEST_HAS_SUMMARY=true; fi
+      if [ -f "${LOADTEST_RUN_DIR}/report.html" ]; then cp "${LOADTEST_RUN_DIR}/report.html" "${LOADTEST_JOB_DIR}/report.html"; LOADTEST_HAS_REPORT=true; fi
+      LOADTEST_STATUS=success
+      if [ "${LOADTEST_EXIT}" -ne 0 ]; then LOADTEST_STATUS=failed; fi
+      cat > "${LOADTEST_JOB_DIR}/portal-summary.json" <<EOF
+      {
+        "run_id": "${LOADTEST_RUN_ID}",
+        "scenario": "${LOADTEST_SCENARIO}",
+        "base_url": "${LOADTEST_BASE_URL}",
+        "host_header": "${LOADTEST_HOST_HEADER}",
+        "status": "${LOADTEST_STATUS}",
+        "pipeline_id": "${CI_PIPELINE_ID}",
+        "job_id": "${CI_JOB_ID}",
+        "job_url": "${CI_JOB_URL}",
+        "pipeline_url": "${CI_PROJECT_URL}/-/pipelines/${CI_PIPELINE_ID}",
+        "created_at": "${CI_PIPELINE_CREATED_AT}",
+        "finished_at": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+        "has_summary": ${LOADTEST_HAS_SUMMARY},
+        "has_report": ${LOADTEST_HAS_REPORT}
+      }
+      EOF
+      echo "loadtest artifacts: ${CI_JOB_URL}/artifacts/browse/server/deploy/lab-ha/artifacts/loadtest/${LOADTEST_RUN_ID}/"
+      echo "loadtest fixed report: ${CI_PROJECT_URL}/-/jobs/${CI_JOB_ID}/artifacts/file/server/deploy/lab-ha/artifacts/loadtest/job/report.html"
+      echo "loadtest fixed summary: ${CI_PROJECT_URL}/-/jobs/${CI_JOB_ID}/artifacts/file/server/deploy/lab-ha/artifacts/loadtest/job/summary.json"
+      exit "${LOADTEST_EXIT}"
+  artifacts:
+    when: always
+    expire_in: 14 days
+    paths:
+      - server/deploy/lab-ha/artifacts/loadtest/
+
 deploy_lab:
   stage: deploy
   tags:
     - shell
     - lab
   resource_group: lab-cluster
+  rules:
+    - if: '$PIPELINE_MODE == "loadtest"'
+      when: never
+    - if: '$CI_COMMIT_BRANCH == "master"'
+      when: on_success
   script:
     - "kubectl apply -f server/deploy/prod/webapp-template-lab.yaml"
     - "kubectl rollout status deployment/webapp-template -n webapp --timeout=300s"
     - "curl -fsS http://192.168.0.108:32668/healthz"
     - "curl -fsS http://192.168.0.108:32668/readyz"
-  only:
-    - main

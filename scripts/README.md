@@ -22,6 +22,7 @@
 | `scripts/qa/fast.sh` | 快速检查（web lint+css、server 快速测试） | 日常开发高频执行 |
 | `scripts/qa/full.sh` | 全量检查（pre-push 默认调用） | 提交前 / 推送前 |
 | `scripts/qa/strict.sh` | 严格检查（warning 视为失败） | 发版前 / 主分支前 |
+| `scripts/loadtest/run.sh` | 运行最小 `k6` 压测场景 | 需要验证健康检查 / JSON-RPC / 登录链路时 |
 | `scripts/git-hooks/commit-msg.sh` | 校验提交信息规范 | commit-msg hook 自动执行 |
 
 ## Hook 对应关系
@@ -218,6 +219,16 @@ bash scripts/qa/full.sh
 ```
 
 - pre-push 默认以 `SECRETS_STRICT=1` 执行此脚本
+
+## 16) loadtest
+
+```bash
+bash scripts/loadtest/run.sh mixed
+```
+
+- 提供最小 `k6` 压测能力，覆盖 `health`、`system`、`auth`、`mixed` 四类场景。
+- 默认结果落到 `server/deploy/lab-ha/artifacts/loadtest/<run-id>/`。
+- 详细用法见 `/Users/simon/projects/webapp-template/scripts/loadtest/README.md` 与 `/Users/simon/projects/webapp-template/server/deploy/lab-ha/docs/LOAD_TEST.md`。
 - 执行顺序：
   - `db-guard` -> `error-code-sync` -> `error-codes` -> `secrets` -> `govulncheck`（默认提示模式）
   - web：`lint -> css -> (若定义 test 则执行) -> build`

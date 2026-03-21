@@ -17,6 +17,7 @@
 - `docs/TEST_REPORT.md`: 已完成的联调与故障演练结果
 - `docs/HANDOVER.md`: 给后续 AI/工程师的接手说明
 - `docs/PROD_TRIAL.md`: WebApp 生产试验 Runbook
+- `docs/LOAD_TEST.md`: 实验室最小压测能力与观测口径
 - `docs/INTERNAL_DNS.md`: 内部域名与内网 DNS 说明
 - `docs/OPS_CHECKLIST.md`: 日常巡检清单
 - `docs/CILIUM_HUBBLE_RUNBOOK.md`: Cilium eBPF 与 Hubble 运行/排障手册
@@ -61,6 +62,8 @@
 - `manifests/argocd-repo-secret-sealed.yaml`: Argo CD 仓库凭据的 SealedSecret
 - `scripts/ha-node-bootstrap.sh`: 节点初始化脚本
 - `scripts/check-webapp-prod-trial-tracing.sh`: 触发 WebApp 请求并确认 Jaeger 中出现服务名
+- `scripts/patch-alert-link-overrides.sh`: 给高频值班告警补本地 dashboard/runbook 链接
+- `/Users/simon/projects/webapp-template/scripts/loadtest/`: 仓库内最小 `k6` 压测脚本与统一入口
 - `artifacts/webapp-template-server-ha-lab.tar`: 本次实验构建出的应用镜像归档
 
 ## 当前范围
@@ -69,7 +72,7 @@
 - 三台 VM 位于同一稳定宿主机上，宿主机仍是单点
 - 当前外部访问主入口统一收口为 `192.168.0.108` 的直连 `IP:Port`
 - 这是对当前虚拟化网络和用户本机代理环境最稳定、最易维护的口径
-- `Portal` 已作为默认起始页，包含入口导航、默认账号、快照摘要与文档直达链接
+- `Portal` 已作为默认起始页，包含入口导航、默认账号、快照摘要、最近一次压测摘要与文档直达链接
 
 ## Helm 使用口径
 

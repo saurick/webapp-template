@@ -1,0 +1,106 @@
+# 压测脚本说明
+
+这套目录提供一组最小可跑的 `k6` 压测脚本，目标是先验证 `webapp-template` 的健康检查、基础 JSON-RPC 和鉴权链路，不额外引入压测平台。
+
+## 场景总览
+
+| 场景 | 默认目标 | 适用说明 |
+| --- | --- | --- |
+| `health` | `/healthz` + `/readyz` | 验证基础可用性与就绪检查 |
+| `system` | `system.ping` + `system.version` | 验证无鉴权 JSON-RPC 入口 |
+| `auth` | `auth.register/login` + `auth.me` | 验证登录态链路 |
+| `mixed` | `health + system + auth` | 第一轮联调默认入口 |
+
+## 快速开始
+
+### 1. 本地开发环境
+
+```bash
+BASE_URL=http://127.0.0.1:8200 \
+bash /Users/simon/projects/webapp-template/scripts/loadtest/run.sh mixed
+```
+
+### 2. 指定 k6 参数
+
+```bash
+BASE_URL=http://127.0.0.1:8200 \
+bash /Users/simon/projects/webapp-template/scripts/loadtest/run.sh health \
+  --vus 10 \
+  --duration 1m
+```
+
+### 3. 复用已有账号做登录压测
+
+```bash
+BASE_URL=http://127.0.0.1:8200 \
+LOADTEST_AUTH_MODE=login \
+LOADTEST_USERNAME=alice \
+LOADTEST_PASSWORD='Passw0rd!123' \
+bash /Users/simon/projects/webapp-template/scripts/loadtest/run.sh auth \
+  --vus 1 \
+  --iterations 20
+```
+
+### 4. 不想输入命令时
+
+GitLab 手动流水线入口：
+
+```text
+http://192.168.0.108:8929/root/webapp-template-lab/-/pipelines/new?ref=master&var[PIPELINE_MODE]=loadtest&var[LOADTEST_SCENARIO]=system
+```
+
+默认会跑安全的 `system` 场景，并把 `report.html` / `summary.json` 保留成 GitLab artifacts。
+如果当前浏览器已经登录过 GitLab，`http://192.168.0.108:30088` 的 Portal 还会直接显示最近一次 `loadtest_lab` 的状态摘要与结果入口。
+
+## 运行方式
+
+- `run.sh` 优先使用本机 `k6`
+- 本机未安装 `k6` 时，自动 fallback 到 `docker run grafana/k6`
+- fallback 到 Docker 时，如果 `BASE_URL` 是 `localhost/127.0.0.1`，脚本会自动改写成 `host.docker.internal`
+
+## 结果输出
+
+每次运行都会在下面目录创建独立结果：
+
+```text
+server/deploy/lab-ha/artifacts/loadtest/<LOADTEST_RUN_ID>/
+```
+
+默认包含：
+
+- `summary.json`：k6 汇总结果
+- `report.html`：Web Dashboard 导出的静态报告
+- `meta.env`：本次压测的关键信息
+
+GitLab `loadtest_lab` 还会把当前 job 的关键产物额外复制到固定路径，便于 Portal 直接读取：
+
+- `server/deploy/lab-ha/artifacts/loadtest/job/portal-summary.json`
+- `server/deploy/lab-ha/artifacts/loadtest/job/summary.json`
+- `server/deploy/lab-ha/artifacts/loadtest/job/report.html`
+
+说明：
+
+- `report.html` 依赖 `k6` 的 Web Dashboard 导出
+- 几秒级超短 smoke 可能因为“数据不足”被 `k6` 直接跳过导出；这时仍会保留 `summary.json`
+
+## 关键环境变量
+
+| 变量 | 默认值 | 说明 |
+| --- | --- | --- |
+| `BASE_URL` | `http://127.0.0.1:8200` | 目标服务入口 |
+| `LOADTEST_HOST_HEADER` | 空 | 需要 Host 路由时显式覆盖 |
+| `LOADTEST_RUN_ID` | 自动生成 | 当前压测批次 ID |
+| `LOADTEST_AUTH_MODE` | 自动推断 | `register` 或 `login` |
+| `LOADTEST_USERNAME` | 空 | `login` 模式账号 |
+| `LOADTEST_PASSWORD` | `Passw0rd!123` | `login` 模式密码；`register` 模式也复用它 |
+| `LOADTEST_THINK_TIME_MS` | `500` | 每轮请求后 sleep |
+| `LOADTEST_LOGOUT_AFTER_AUTH` | `false` | `auth` 场景结束前是否调用 `logout` |
+| `K6_WEB_DASHBOARD` | `true` | 是否开启 dashboard |
+| `K6_WEB_DASHBOARD_PORT` | `5665` | dashboard 端口 |
+
+## 设计约束
+
+- 默认 `auth` / `mixed` 会优先走 `register`，避免仓库必须预置测试账号
+- `register` 模式会创建真实用户，建议在开发环境、试验命名空间或独立数据库里使用
+- 每个请求都会带 `X-Request-Id`，格式以 `LOADTEST_RUN_ID` 开头，便于结合现有日志的 `request_id` 字段筛选这一轮流量
+- 额外附带 `X-Loadtest-Run-Id`，便于后续如果网关/代理要补维度时直接复用

@@ -31,6 +31,8 @@ data:
             --accent: #66d9ef;
             --accent-2: #ffd166;
             --ok: #7bd88f;
+            --warn: #ffd166;
+            --danger: #ff7b72;
           }
           * { box-sizing: border-box; }
           body {
@@ -270,11 +272,27 @@ data:
             color: var(--ok);
             font-weight: 600;
           }
+          .status-loading {
+            color: var(--accent);
+            font-weight: 600;
+          }
+          .status-warn {
+            color: var(--warn);
+            font-weight: 600;
+          }
+          .status-fail {
+            color: var(--danger);
+            font-weight: 700;
+          }
           .status-card {
             padding: 18px;
             border-radius: 18px;
             background: linear-gradient(180deg, rgba(10,20,34,0.96), rgba(8,16,28,0.94));
             border: 1px solid rgba(255,255,255,0.08);
+          }
+          .status-emphasis {
+            border-color: rgba(102,217,239,0.28);
+            box-shadow: inset 0 0 0 1px rgba(102,217,239,0.12);
           }
           .status-card h2 {
             margin: 0 0 8px;
@@ -293,6 +311,39 @@ data:
           }
           .status-card a {
             color: var(--accent);
+          }
+          .status-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 14px;
+          }
+          .status-link {
+            display: inline-flex;
+            align-items: center;
+            text-decoration: none;
+            border-radius: 999px;
+            padding: 8px 12px;
+            background: rgba(102,217,239,0.14);
+            color: var(--accent);
+            border: 1px solid rgba(102,217,239,0.12);
+            font-size: 13px;
+            font-weight: 600;
+            transition: transform 160ms ease, background 160ms ease, border-color 160ms ease;
+          }
+          .status-link:hover {
+            transform: translateY(-1px);
+            background: rgba(102,217,239,0.2);
+            border-color: rgba(102,217,239,0.28);
+          }
+          .status-link-secondary {
+            background: rgba(255,209,102,0.12);
+            border-color: rgba(255,209,102,0.16);
+            color: var(--accent-2);
+          }
+          .status-link-secondary:hover {
+            background: rgba(255,209,102,0.18);
+            border-color: rgba(255,209,102,0.28);
           }
           @media (max-width: 720px) {
             .hero-head {
@@ -332,6 +383,7 @@ data:
               <div class="pill" data-i18n-html="pill.nodes"><b>Nodes</b> 3 VM / single stable host</div>
               <div class="pill" data-i18n-html="pill.status"><b>Status</b> <span class="status-ok">Healthy</span></div>
               <div class="pill" data-i18n-html="pill.bestEntry"><b>Best Entry</b> IP:Port direct</div>
+              <div class="pill" data-i18n-html="pill.curated"><b>Portal Curated</b> 2026-03-21</div>
             </div>
             <div class="grid">
               <a class="card" href="http://192.168.0.108:32668" target="_blank" rel="noreferrer" data-i18n-html="cards.app">
@@ -357,6 +409,12 @@ data:
               </a>
               <a class="card" href="http://192.168.0.108:30081/d/lab-ha-gitops/ha-lab-gitops-and-delivery" target="_blank" rel="noreferrer" data-i18n-html="cards.delivery">
                 <small>Delivery</small><strong>GitOps &amp; Delivery</strong><span>Argo CD sync, GitLab probe, rollout controller, and release signals.</span>
+              </a>
+              <a class="card" href="http://192.168.0.108:8929/root/webapp-template-lab/-/pipelines/new?ref=master&amp;var[PIPELINE_MODE]=loadtest&amp;var[LOADTEST_SCENARIO]=system" target="_blank" rel="noreferrer" data-i18n-html="cards.runLoadtest">
+                <small>Testing</small><strong>Run Load Test</strong><span>GitLab one-click entry with a safe default system scenario and 192-address artifacts.</span>
+              </a>
+              <a class="card" href="http://192.168.0.108:8929/root/webapp-template-lab/-/blob/master/server/deploy/lab-ha/docs/LOAD_TEST.md" target="_blank" rel="noreferrer" data-i18n-html="cards.loadtest">
+                <small>Testing</small><strong>Load Test Guide</strong><span>k6 entry commands, safe scenarios, and observability flow for HA drills.</span>
               </a>
               <a class="card" href="http://192.168.0.108:30090/graph" target="_blank" rel="noreferrer" data-i18n-html="cards.prometheus">
                 <small>Metrics</small><strong>Prometheus</strong><span>Raw scrape and query UI.</span>
@@ -387,54 +445,77 @@ data:
           </section>
 
           <section class="snapshot">
+            <div class="status-card status-emphasis">
+              <h2 data-i18n="snapshot.loadtestTitle">Latest Load Test</h2>
+              <div id="loadtest-status" class="status-value status-loading" data-i18n="loadtest.state.loading">Loading</div>
+              <p id="loadtest-summary" data-i18n="loadtest.body.loading">Checking GitLab for the latest load test result.</p>
+              <div class="status-actions">
+                <a
+                  id="loadtest-primary-link"
+                  class="status-link"
+                  href="http://192.168.0.108:8929/root/webapp-template-lab/-/pipelines"
+                  target="_blank"
+                  rel="noreferrer"
+                  data-i18n="loadtest.action.openPipelines"
+                >Open pipelines</a>
+                <a
+                  id="loadtest-secondary-link"
+                  class="status-link status-link-secondary"
+                  href="http://192.168.0.108:8929/root/webapp-template-lab/-/pipelines/new?ref=master&amp;var[PIPELINE_MODE]=loadtest&amp;var[LOADTEST_SCENARIO]=system"
+                  target="_blank"
+                  rel="noreferrer"
+                  data-i18n="loadtest.action.run"
+                >Run load test</a>
+              </div>
+            </div>
             <div class="status-card" data-i18n-html="snapshot.pipeline">
               <h2>CI Pipeline</h2>
-              <div class="status-value status-ok">Passed</div>
+              <div class="status-value status-ok">Open live</div>
               <p>
-                Latest verified GitLab pipeline <code>#9</code> passed in the current delivery run.
-                Open <a href="http://192.168.0.108:8929/root/webapp-template-lab/-/pipelines" target="_blank" rel="noreferrer">pipeline history</a>
-                for the newest record.
+                Use <a href="http://192.168.0.108:8929/root/webapp-template-lab/-/pipelines" target="_blank" rel="noreferrer">GitLab pipeline history</a>
+                for the current build truth. This page intentionally no longer pins a single pipeline number.
               </p>
             </div>
             <div class="status-card" data-i18n-html="snapshot.gitops">
               <h2>GitOps Sync</h2>
-              <div class="status-value status-ok">Synced</div>
+              <div class="status-value status-ok">Check Argo</div>
               <p>
-                Argo CD application is synced and healthy for the lab deployment path.
-                Open <a href="https://192.168.0.108:30443" target="_blank" rel="noreferrer">Argo CD</a>
-                to inspect current revision and drift.
+                Current sync status, live revision, and drift should be checked in
+                <a href="https://192.168.0.108:30443" target="_blank" rel="noreferrer">Argo CD</a>
+                or the delivery dashboard, not inferred from this static page.
               </p>
             </div>
             <div class="status-card" data-i18n-html="snapshot.drills">
               <h2>HA Drills</h2>
-              <div class="status-value status-ok">Passed</div>
+              <div class="status-value status-ok">Use runbook</div>
               <p>
-                PostgreSQL failover, API VIP failover, SeaweedFS volume restart, and webapp pod recovery
-                all passed in the latest verified drill set.
+                Latest verified failover and recovery conclusions are kept in
+                <a href="http://192.168.0.108:8929/root/webapp-template-lab/-/blob/master/server/deploy/lab-ha/docs/TEST_REPORT.md" target="_blank" rel="noreferrer">TEST_REPORT.md</a>
+                and <a href="http://192.168.0.108:8929/root/webapp-template-lab/-/blob/master/server/deploy/lab-ha/docs/RECOVERY_RUNBOOK.md" target="_blank" rel="noreferrer">RECOVERY_RUNBOOK.md</a>.
               </p>
             </div>
             <div class="status-card" data-i18n-html="snapshot.backup">
               <h2>Velero Backup</h2>
-              <div class="status-value status-ok">Completed</div>
+              <div class="status-value status-ok">Check dashboard</div>
               <p>
-                Smoke backup <code>webapp-smoke-backup</code> completed successfully on
-                <code>2026-03-19T05:40:23Z</code> and the daily schedule remains enabled.
+                Current backup recency and recovery signals should be read from the PostgreSQL / backup dashboard
+                and live Velero objects instead of a frozen timestamp on this page.
               </p>
             </div>
             <div class="status-card" data-i18n-html="snapshot.alerts">
               <h2>Alert Delivery</h2>
-              <div class="status-value status-ok">Delivered</div>
+              <div class="status-value status-ok">Check live</div>
               <p>
-                Alertmanager POST requests were last observed at <code>2026-03-19T08:44:14Z</code>
-                on the lab webhook sink, confirming the default outbound alert path still works.
+                Use <a href="http://192.168.0.108:30093" target="_blank" rel="noreferrer">Alertmanager</a>
+                and the alert sink to confirm current routing. The portal only records the default path.
               </p>
             </div>
             <div class="status-card" data-i18n-html="snapshot.blackbox">
               <h2>Blackbox Probes</h2>
-              <div class="status-value status-ok">Healthy</div>
+              <div class="status-value status-ok">Check Grafana</div>
               <p>
                 Human-facing entrypoints are under Prometheus blackbox probing.
-                Direct truth remains in Prometheus and Alertmanager, not in the static page itself.
+                Direct truth remains in Prometheus, Grafana, and Alertmanager, not in the static page itself.
               </p>
             </div>
           </section>
@@ -537,6 +618,7 @@ data:
                 <li><a href="http://192.168.0.108:8929/root/webapp-template-lab/-/blob/master/server/deploy/lab-ha/docs/OPS_CHECKLIST.md" target="_blank" rel="noreferrer">OPS_CHECKLIST.md</a></li>
                 <li><a href="http://192.168.0.108:8929/root/webapp-template-lab/-/blob/master/server/deploy/lab-ha/docs/TROUBLESHOOTING.md" target="_blank" rel="noreferrer">TROUBLESHOOTING.md</a></li>
                 <li><a href="http://192.168.0.108:8929/root/webapp-template-lab/-/blob/master/server/deploy/lab-ha/docs/RECOVERY_RUNBOOK.md" target="_blank" rel="noreferrer">RECOVERY_RUNBOOK.md</a></li>
+                <li><a href="http://192.168.0.108:8929/root/webapp-template-lab/-/blob/master/server/deploy/lab-ha/docs/LOAD_TEST.md" target="_blank" rel="noreferrer">LOAD_TEST.md</a></li>
                 <li><a href="http://192.168.0.108:8929/root/webapp-template-lab/-/blob/master/server/deploy/lab-ha/docs/TEST_REPORT.md" target="_blank" rel="noreferrer">TEST_REPORT.md</a></li>
                 <li><a href="http://192.168.0.108:8929/root/webapp-template-lab/-/blob/master/server/deploy/lab-ha/docs/HANDOVER.md" target="_blank" rel="noreferrer">HANDOVER.md</a></li>
               </ul>
@@ -545,6 +627,15 @@ data:
         </div>
         <script>
           const PORTAL_LANGUAGE_STORAGE_KEY = 'labPortalLanguage';
+          const LOADTEST_RUN_URL = 'http://192.168.0.108:8929/root/webapp-template-lab/-/pipelines/new?ref=master&var[PIPELINE_MODE]=loadtest&var[LOADTEST_SCENARIO]=system';
+          const LOADTEST_PIPELINES_URL = 'http://192.168.0.108:8929/root/webapp-template-lab/-/pipelines';
+          const GITLAB_LOGIN_URL = 'http://192.168.0.108:8929/users/sign_in';
+          const GITLAB_PROJECT_ID = '1';
+          const LOADTEST_JOBS_API_PATH = `/gitlab-api/projects/${GITLAB_PROJECT_ID}/jobs?per_page=40&scope[]=created&scope[]=pending&scope[]=running&scope[]=failed&scope[]=success`;
+          const LOADTEST_PORTAL_SUMMARY_PATH = (jobId) => `/gitlab/root/webapp-template-lab/-/jobs/${jobId}/artifacts/raw/server/deploy/lab-ha/artifacts/loadtest/job/portal-summary.json`;
+          const LOADTEST_SUMMARY_PATH = (jobId) => `/gitlab/root/webapp-template-lab/-/jobs/${jobId}/artifacts/raw/server/deploy/lab-ha/artifacts/loadtest/job/summary.json`;
+          const LOADTEST_REPORT_URL = (jobId) => `http://192.168.0.108:8929/root/webapp-template-lab/-/jobs/${jobId}/artifacts/file/server/deploy/lab-ha/artifacts/loadtest/job/report.html`;
+          const LOADTEST_PIPELINE_URL = (pipelineId) => `http://192.168.0.108:8929/root/webapp-template-lab/-/pipelines/${pipelineId}`;
           const translations = {
             en: {
               'document.title': 'HA Lab Portal',
@@ -556,6 +647,7 @@ data:
               'pill.nodes': '<b>Nodes</b> 3 VM / single stable host',
               'pill.status': '<b>Status</b> <span class="status-ok">Healthy</span>',
               'pill.bestEntry': '<b>Best Entry</b> IP:Port direct',
+              'pill.curated': '<b>Portal Curated</b> 2026-03-21',
               'cards.app': '<small>App</small><strong>WebApp</strong><span>Main product site.</span>',
               'cards.portal': '<small>Portal</small><strong>Lab Portal</strong><span>This navigation page itself.</span>',
               'cards.registry': '<small>Registry</small><strong>Harbor</strong><span>Container registry UI.</span>',
@@ -564,6 +656,8 @@ data:
               'cards.data': '<small>Data</small><strong>Data &amp; Storage</strong><span>Database, Harbor, Longhorn, SeaweedFS, and PVC health view.</span>',
               'cards.database': '<small>Database</small><strong>PostgreSQL &amp; Backup</strong><span>Primary/replica roles, lag, DB size, and Velero backup signals.</span>',
               'cards.delivery': '<small>Delivery</small><strong>GitOps &amp; Delivery</strong><span>Argo CD sync, GitLab probe, rollout controller, and release signals.</span>',
+              'cards.runLoadtest': '<small>Testing</small><strong>Run Load Test</strong><span>GitLab one-click entry with a safe default system scenario and 192-address artifacts.</span>',
+              'cards.loadtest': '<small>Testing</small><strong>Load Test Guide</strong><span>k6 entry commands, safe scenarios, and observability flow for HA drills.</span>',
               'cards.prometheus': '<small>Metrics</small><strong>Prometheus</strong><span>Raw scrape and query UI.</span>',
               'cards.alertmanager': '<small>Alerts</small><strong>Alertmanager</strong><span>Alert grouping and routing.</span>',
               'cards.argocd': '<small>GitOps</small><strong>Argo CD</strong><span>Self-signed HTTPS. Browser may ask you to continue once.</span>',
@@ -573,12 +667,30 @@ data:
               'cards.alertSink': '<small>Alerts</small><strong>Alert Sink</strong><span>Webhook receiver used for smoke tests.</span>',
               'cards.gitlab': '<small>Source Code</small><strong>GitLab</strong><span>CI/CD and experiment repo.</span>',
               'tag.stableEndpoints': 'Stable direct browser endpoints',
-              'snapshot.pipeline': '<h2>CI Pipeline</h2><div class="status-value status-ok">Passed</div><p>Latest verified GitLab pipeline <code>#9</code> passed in the current delivery run. Open <a href="http://192.168.0.108:8929/root/webapp-template-lab/-/pipelines" target="_blank" rel="noreferrer">pipeline history</a> for the newest record.</p>',
-              'snapshot.gitops': '<h2>GitOps Sync</h2><div class="status-value status-ok">Synced</div><p>Argo CD application is synced and healthy for the lab deployment path. Open <a href="https://192.168.0.108:30443" target="_blank" rel="noreferrer">Argo CD</a> to inspect current revision and drift.</p>',
-              'snapshot.drills': '<h2>HA Drills</h2><div class="status-value status-ok">Passed</div><p>PostgreSQL failover, API VIP failover, SeaweedFS volume restart, and webapp pod recovery all passed in the latest verified drill set.</p>',
-              'snapshot.backup': '<h2>Velero Backup</h2><div class="status-value status-ok">Completed</div><p>Smoke backup <code>webapp-smoke-backup</code> completed successfully on <code>2026-03-19T05:40:23Z</code> and the daily schedule remains enabled.</p>',
-              'snapshot.alerts': '<h2>Alert Delivery</h2><div class="status-value status-ok">Delivered</div><p>Alertmanager POST requests were last observed at <code>2026-03-19T08:44:14Z</code> on the lab webhook sink, confirming the default outbound alert path still works.</p>',
-              'snapshot.blackbox': '<h2>Blackbox Probes</h2><div class="status-value status-ok">Healthy</div><p>Human-facing entrypoints are under Prometheus blackbox probing. Direct truth remains in Prometheus and Alertmanager, not in the static page itself.</p>',
+              'snapshot.loadtestTitle': 'Latest Load Test',
+              'loadtest.state.loading': 'Loading',
+              'loadtest.state.success': 'Passed',
+              'loadtest.state.failed': 'Failed',
+              'loadtest.state.running': 'Running',
+              'loadtest.state.pending': 'Pending',
+              'loadtest.state.notRun': 'Not run yet',
+              'loadtest.state.login': 'Login GitLab',
+              'loadtest.state.unavailable': 'Unavailable',
+              'loadtest.body.loading': 'Checking GitLab for the latest load test result.',
+              'loadtest.body.notRun': 'No loadtest_lab job has completed yet. Use the one-click entry to create the first run.',
+              'loadtest.body.login': 'Open GitLab once in this browser, then the portal can reuse that login state to show the latest result.',
+              'loadtest.body.unavailable': 'GitLab summary is temporarily unavailable. Use the pipeline history or rerun the scenario.',
+              'loadtest.action.openPipelines': 'Open pipelines',
+              'loadtest.action.openPipeline': 'Open pipeline',
+              'loadtest.action.openReport': 'Open report',
+              'loadtest.action.run': 'Run load test',
+              'loadtest.action.login': 'Login GitLab',
+              'snapshot.pipeline': '<h2>CI Pipeline</h2><div class="status-value status-ok">Open live</div><p>Use <a href="http://192.168.0.108:8929/root/webapp-template-lab/-/pipelines" target="_blank" rel="noreferrer">GitLab pipeline history</a> for the current build truth. This page intentionally no longer pins a single pipeline number.</p>',
+              'snapshot.gitops': '<h2>GitOps Sync</h2><div class="status-value status-ok">Check Argo</div><p>Current sync status, live revision, and drift should be checked in <a href="https://192.168.0.108:30443" target="_blank" rel="noreferrer">Argo CD</a> or the delivery dashboard, not inferred from this static page.</p>',
+              'snapshot.drills': '<h2>HA Drills</h2><div class="status-value status-ok">Use runbook</div><p>Latest verified failover and recovery conclusions are kept in <a href="http://192.168.0.108:8929/root/webapp-template-lab/-/blob/master/server/deploy/lab-ha/docs/TEST_REPORT.md" target="_blank" rel="noreferrer">TEST_REPORT.md</a> and <a href="http://192.168.0.108:8929/root/webapp-template-lab/-/blob/master/server/deploy/lab-ha/docs/RECOVERY_RUNBOOK.md" target="_blank" rel="noreferrer">RECOVERY_RUNBOOK.md</a>.</p>',
+              'snapshot.backup': '<h2>Velero Backup</h2><div class="status-value status-ok">Check dashboard</div><p>Current backup recency and recovery signals should be read from the PostgreSQL / backup dashboard and live Velero objects instead of a frozen timestamp on this page.</p>',
+              'snapshot.alerts': '<h2>Alert Delivery</h2><div class="status-value status-ok">Check live</div><p>Use <a href="http://192.168.0.108:30093" target="_blank" rel="noreferrer">Alertmanager</a> and the alert sink to confirm current routing. The portal only records the default path.</p>',
+              'snapshot.blackbox': '<h2>Blackbox Probes</h2><div class="status-value status-ok">Check Grafana</div><p>Human-facing entrypoints are under Prometheus blackbox probing. Direct truth remains in Prometheus, Grafana, and Alertmanager, not in the static page itself.</p>',
               'cred.defaultAccountsTitle': 'Default Accounts',
               'cred.quickNotesTitle': 'Quick Notes',
               'quickNotes.argocd': 'Self-signed HTTPS. Browser warning once is expected.',
@@ -608,6 +720,7 @@ data:
               'pill.nodes': '<b>节点</b> 3 台 VM / 单稳定入口主机',
               'pill.status': '<b>状态</b> <span class="status-ok">健康</span>',
               'pill.bestEntry': '<b>最佳入口</b> 直连 IP:Port',
+              'pill.curated': '<b>Portal 收口时间</b> 2026-03-21',
               'cards.app': '<small>应用</small><strong>WebApp</strong><span>主业务站点。</span>',
               'cards.portal': '<small>门户</small><strong>实验室导航页</strong><span>就是当前这张导航页。</span>',
               'cards.registry': '<small>镜像仓库</small><strong>Harbor</strong><span>容器镜像仓库界面。</span>',
@@ -616,6 +729,8 @@ data:
               'cards.data': '<small>数据</small><strong>数据与存储</strong><span>数据库、Harbor、Longhorn、SeaweedFS 与 PVC 健康视图。</span>',
               'cards.database': '<small>数据库</small><strong>PostgreSQL 与备份</strong><span>主从角色、复制延迟、库大小与 Velero 备份信号。</span>',
               'cards.delivery': '<small>交付</small><strong>GitOps 与交付</strong><span>Argo CD 同步、GitLab 探活、Rollout 控制器与发布信号。</span>',
+              'cards.runLoadtest': '<small>测试</small><strong>运行压测</strong><span>GitLab 一键入口，默认走安全的 system 场景，产物也落在 192 地址。</span>',
+              'cards.loadtest': '<small>测试</small><strong>压测指南</strong><span>k6 入口命令、安全场景与高可用演练时的观测路径。</span>',
               'cards.prometheus': '<small>监控</small><strong>Prometheus</strong><span>原始抓取与查询界面。</span>',
               'cards.alertmanager': '<small>告警</small><strong>Alertmanager</strong><span>告警聚合与路由入口。</span>',
               'cards.argocd': '<small>GitOps</small><strong>Argo CD</strong><span>自签 HTTPS；浏览器首次访问可能需要手动继续。</span>',
@@ -625,12 +740,30 @@ data:
               'cards.alertSink': '<small>告警</small><strong>Alert Sink</strong><span>用于 smoke test 的 Webhook 接收器。</span>',
               'cards.gitlab': '<small>源码</small><strong>GitLab</strong><span>CI/CD 与实验仓库入口。</span>',
               'tag.stableEndpoints': '稳定的浏览器直连入口',
-              'snapshot.pipeline': '<h2>CI 流水线</h2><div class="status-value status-ok">通过</div><p>当前交付链路里最近一次确认通过的 GitLab 流水线是 <code>#9</code>。可打开 <a href="http://192.168.0.108:8929/root/webapp-template-lab/-/pipelines" target="_blank" rel="noreferrer">流水线历史</a> 查看最新记录。</p>',
-              'snapshot.gitops': '<h2>GitOps 同步</h2><div class="status-value status-ok">已同步</div><p>当前实验部署路径上的 Argo CD 应用处于同步且健康状态。可打开 <a href="https://192.168.0.108:30443" target="_blank" rel="noreferrer">Argo CD</a> 查看当前版本与漂移情况。</p>',
-              'snapshot.drills': '<h2>高可用演练</h2><div class="status-value status-ok">通过</div><p>最近一次确认演练中，PostgreSQL 故障切换、API VIP 故障切换、SeaweedFS volume 重启和 webapp Pod 自愈均已通过。</p>',
-              'snapshot.backup': '<h2>Velero 备份</h2><div class="status-value status-ok">完成</div><p>Smoke 备份 <code>webapp-smoke-backup</code> 已于 <code>2026-03-19T05:40:23Z</code> 成功完成，日常定时任务仍保持启用。</p>',
-              'snapshot.alerts': '<h2>告警投递</h2><div class="status-value status-ok">已送达</div><p>实验室 webhook sink 最近一次观测到 Alertmanager POST 请求的时间是 <code>2026-03-19T08:44:14Z</code>，说明默认对外告警链路仍然可用。</p>',
-              'snapshot.blackbox': '<h2>Blackbox 探测</h2><div class="status-value status-ok">健康</div><p>面向人的入口页都在 Prometheus blackbox 探测之下。真实状态仍以 Prometheus 和 Alertmanager 为准，而不是这张静态页本身。</p>',
+              'snapshot.loadtestTitle': '最近一次压测',
+              'loadtest.state.loading': '加载中',
+              'loadtest.state.success': '通过',
+              'loadtest.state.failed': '失败',
+              'loadtest.state.running': '运行中',
+              'loadtest.state.pending': '排队中',
+              'loadtest.state.notRun': '尚未运行',
+              'loadtest.state.login': '先登录 GitLab',
+              'loadtest.state.unavailable': '暂不可用',
+              'loadtest.body.loading': '正在读取 GitLab 最近一次压测结果。',
+              'loadtest.body.notRun': '当前还没有完成过的 loadtest_lab 任务，先用一键入口跑第一轮。',
+              'loadtest.body.login': '请先在当前浏览器里登录一次 GitLab，Portal 才能复用登录态展示最近结果。',
+              'loadtest.body.unavailable': 'GitLab 摘要暂时不可用，请直接看流水线历史或重新触发一轮。',
+              'loadtest.action.openPipelines': '打开流水线',
+              'loadtest.action.openPipeline': '打开当前流水线',
+              'loadtest.action.openReport': '打开报告',
+              'loadtest.action.run': '运行压测',
+              'loadtest.action.login': '登录 GitLab',
+              'snapshot.pipeline': '<h2>CI 流水线</h2><div class="status-value status-ok">去看 live</div><p>当前构建真相请直接看 <a href="http://192.168.0.108:8929/root/webapp-template-lab/-/pipelines" target="_blank" rel="noreferrer">GitLab 流水线历史</a>。这张页面不再写死某一个流水线编号。</p>',
+              'snapshot.gitops': '<h2>GitOps 同步</h2><div class="status-value status-ok">查看 Argo</div><p>当前同步状态、live revision 和漂移情况，应直接在 <a href="https://192.168.0.108:30443" target="_blank" rel="noreferrer">Argo CD</a> 或交付看板里确认，而不是根据静态页推断。</p>',
+              'snapshot.drills': '<h2>高可用演练</h2><div class="status-value status-ok">看 runbook</div><p>最近一次确认通过的故障切换与恢复结论，统一以 <a href="http://192.168.0.108:8929/root/webapp-template-lab/-/blob/master/server/deploy/lab-ha/docs/TEST_REPORT.md" target="_blank" rel="noreferrer">TEST_REPORT.md</a> 和 <a href="http://192.168.0.108:8929/root/webapp-template-lab/-/blob/master/server/deploy/lab-ha/docs/RECOVERY_RUNBOOK.md" target="_blank" rel="noreferrer">RECOVERY_RUNBOOK.md</a> 为准。</p>',
+              'snapshot.backup': '<h2>Velero 备份</h2><div class="status-value status-ok">查看看板</div><p>当前备份新鲜度与恢复信号，请看 PostgreSQL / 备份看板和 live Velero 对象，不再在这里冻结某个时间戳。</p>',
+              'snapshot.alerts': '<h2>告警投递</h2><div class="status-value status-ok">查看 live</div><p>当前告警路由是否正常，请直接看 <a href="http://192.168.0.108:30093" target="_blank" rel="noreferrer">Alertmanager</a> 和 alert sink；Portal 只保留默认链路说明。</p>',
+              'snapshot.blackbox': '<h2>Blackbox 探测</h2><div class="status-value status-ok">查看 Grafana</div><p>面向人的入口页仍由 Prometheus blackbox 探测，真实状态以 Prometheus、Grafana 和 Alertmanager 为准，而不是这张静态页。</p>',
               'cred.defaultAccountsTitle': '默认账号',
               'cred.quickNotesTitle': '快速说明',
               'quickNotes.argocd': '自签 HTTPS，浏览器首次出现证书警告属于预期。',
@@ -654,7 +787,21 @@ data:
 
           const langButtons = Array.from(document.querySelectorAll('.lang-btn'));
           const copyButtons = Array.from(document.querySelectorAll('.copy'));
+          const loadtestStatus = document.getElementById('loadtest-status');
+          const loadtestSummary = document.getElementById('loadtest-summary');
+          const loadtestPrimaryLink = document.getElementById('loadtest-primary-link');
+          const loadtestSecondaryLink = document.getElementById('loadtest-secondary-link');
           let currentLocale = 'en';
+          let loadtestCardState = {
+            statusKey: 'loadtest.state.loading',
+            statusClass: 'status-loading',
+            bodyKey: 'loadtest.body.loading',
+            bodyText: '',
+            primaryHref: LOADTEST_PIPELINES_URL,
+            primaryLabelKey: 'loadtest.action.openPipelines',
+            secondaryHref: LOADTEST_RUN_URL,
+            secondaryLabelKey: 'loadtest.action.run',
+          };
 
           const getMessage = (locale, key) => {
             return translations[locale][key] || translations.en[key] || '';
@@ -670,6 +817,19 @@ data:
             langButtons.forEach((button) => {
               button.setAttribute('aria-pressed', button.getAttribute('data-lang') === locale ? 'true' : 'false');
             });
+          };
+
+          const setActionLink = (link, href, labelKey) => {
+            link.setAttribute('href', href);
+            link.textContent = getMessage(currentLocale, labelKey);
+          };
+
+          const renderLoadtestCard = () => {
+            loadtestStatus.className = `status-value ${loadtestCardState.statusClass}`;
+            loadtestStatus.textContent = getMessage(currentLocale, loadtestCardState.statusKey);
+            loadtestSummary.textContent = loadtestCardState.bodyText || getMessage(currentLocale, loadtestCardState.bodyKey);
+            setActionLink(loadtestPrimaryLink, loadtestCardState.primaryHref, loadtestCardState.primaryLabelKey);
+            setActionLink(loadtestSecondaryLink, loadtestCardState.secondaryHref, loadtestCardState.secondaryLabelKey);
           };
 
           const applyTranslations = (locale) => {
@@ -695,6 +855,7 @@ data:
             copyButtons.forEach((button) => {
               renderCopyButton(button);
             });
+            renderLoadtestCard();
             setActiveLanguage(locale);
           };
 
@@ -716,6 +877,213 @@ data:
               window.localStorage.setItem(PORTAL_LANGUAGE_STORAGE_KEY, locale);
             } catch (_err) {
               // 语言切换仍然生效，只是不记忆下次访问偏好。
+            }
+          };
+
+          const normalizeLoadtestStatus = (status) => {
+            switch (status) {
+              case 'success':
+                return 'success';
+              case 'failed':
+              case 'canceled':
+                return 'failed';
+              case 'running':
+                return 'running';
+              case 'created':
+              case 'pending':
+              case 'waiting_for_resource':
+                return 'pending';
+              default:
+                return 'unavailable';
+            }
+          };
+
+          const getLoadtestStatusClass = (status) => {
+            switch (status) {
+              case 'success':
+                return 'status-ok';
+              case 'failed':
+                return 'status-fail';
+              case 'running':
+                return 'status-loading';
+              case 'pending':
+                return 'status-warn';
+              case 'login':
+                return 'status-warn';
+              default:
+                return 'status-loading';
+            }
+          };
+
+          const formatPercent = (value) => {
+            if (typeof value !== 'number' || Number.isNaN(value)) {
+              return 'n/a';
+            }
+            return `${(value * 100).toFixed(value === 0 ? 0 : 2)}%`;
+          };
+
+          const formatDuration = (valueMs) => {
+            if (typeof valueMs !== 'number' || Number.isNaN(valueMs)) {
+              return 'n/a';
+            }
+            if (valueMs >= 1000) {
+              return `${(valueMs / 1000).toFixed(2)}s`;
+            }
+            return `${Math.round(valueMs)}ms`;
+          };
+
+          const formatDateTime = (value) => {
+            if (!value) {
+              return '';
+            }
+            const parsed = new Date(value);
+            if (Number.isNaN(parsed.getTime())) {
+              return value;
+            }
+            return new Intl.DateTimeFormat(currentLocale === 'zh' ? 'zh-CN' : 'en-US', {
+              month: '2-digit',
+              day: '2-digit',
+              hour: '2-digit',
+              minute: '2-digit',
+              hour12: false,
+            }).format(parsed);
+          };
+
+          const getMetricValue = (summary, metricName, fieldName) => {
+            if (!summary || !summary.metrics || !summary.metrics[metricName]) {
+              return null;
+            }
+            const value = summary.metrics[metricName][fieldName];
+            return typeof value === 'number' && !Number.isNaN(value) ? value : null;
+          };
+
+          const buildLoadtestSummaryText = (meta, summary, job) => {
+            const parts = [];
+            if (meta && meta.scenario) {
+              parts.push(meta.scenario);
+            }
+            const p95 = getMetricValue(summary, 'http_req_duration', 'p(95)');
+            if (p95 !== null) {
+              parts.push(`p95 ${formatDuration(p95)}`);
+            }
+            const failRate = getMetricValue(summary, 'http_req_failed', 'rate');
+            if (failRate !== null) {
+              parts.push(`fail ${formatPercent(failRate)}`);
+            }
+            const finishedAt = (meta && meta.finished_at) || job.finished_at || job.started_at || job.created_at;
+            if (finishedAt) {
+              parts.push(formatDateTime(finishedAt));
+            }
+            return parts.join(' · ');
+          };
+
+          const buildLoadtestFallbackText = (job) => {
+            const parts = [];
+            if (job && job.ref) {
+              parts.push(job.ref);
+            }
+            const at = (job && (job.started_at || job.created_at || job.finished_at)) || '';
+            if (at) {
+              parts.push(formatDateTime(at));
+            }
+            return parts.join(' · ');
+          };
+
+          const fetchGitLabJson = async (path) => {
+            // 通过 Portal 的同源代理复用 GitLab 登录态，避免前端直接跨域请求 8929。
+            const response = await fetch(path, {
+              credentials: 'same-origin',
+              headers: { Accept: 'application/json' },
+              redirect: 'manual',
+            });
+            if (response.type === 'opaqueredirect' || response.status === 401 || response.status === 302) {
+              const error = new Error('login required');
+              error.code = 'login';
+              throw error;
+            }
+            if (!response.ok) {
+              const error = new Error(`GitLab proxy request failed: ${response.status}`);
+              error.code = 'http';
+              error.status = response.status;
+              throw error;
+            }
+            return response.json();
+          };
+
+          const loadLatestLoadtest = async () => {
+            try {
+              const jobs = await fetchGitLabJson(LOADTEST_JOBS_API_PATH);
+              const job = Array.isArray(jobs) ? jobs.find((item) => item.name === 'loadtest_lab') : null;
+              if (!job) {
+                loadtestCardState = {
+                  statusKey: 'loadtest.state.notRun',
+                  statusClass: 'status-warn',
+                  bodyKey: 'loadtest.body.notRun',
+                  bodyText: '',
+                  primaryHref: LOADTEST_PIPELINES_URL,
+                  primaryLabelKey: 'loadtest.action.openPipelines',
+                  secondaryHref: LOADTEST_RUN_URL,
+                  secondaryLabelKey: 'loadtest.action.run',
+                };
+                renderLoadtestCard();
+                return;
+              }
+
+              const normalizedStatus = normalizeLoadtestStatus(job.status);
+              loadtestCardState = {
+                statusKey: `loadtest.state.${normalizedStatus}`,
+                statusClass: getLoadtestStatusClass(normalizedStatus),
+                bodyKey: 'loadtest.body.unavailable',
+                bodyText: buildLoadtestFallbackText(job),
+                primaryHref: job.pipeline && job.pipeline.id ? LOADTEST_PIPELINE_URL(job.pipeline.id) : LOADTEST_PIPELINES_URL,
+                primaryLabelKey: 'loadtest.action.openPipeline',
+                secondaryHref: LOADTEST_RUN_URL,
+                secondaryLabelKey: 'loadtest.action.run',
+              };
+
+              if (normalizedStatus === 'success' || normalizedStatus === 'failed') {
+                const [metaResult, summaryResult] = await Promise.allSettled([
+                  fetchGitLabJson(LOADTEST_PORTAL_SUMMARY_PATH(job.id)),
+                  fetchGitLabJson(LOADTEST_SUMMARY_PATH(job.id)),
+                ]);
+                const meta = metaResult.status === 'fulfilled' ? metaResult.value : null;
+                const summary = summaryResult.status === 'fulfilled' ? summaryResult.value : null;
+                const summaryText = buildLoadtestSummaryText(meta, summary, job);
+                if (summaryText) {
+                  loadtestCardState.bodyText = summaryText;
+                }
+                if (normalizedStatus === 'success' && meta && meta.has_report) {
+                  loadtestCardState.secondaryHref = LOADTEST_REPORT_URL(job.id);
+                  loadtestCardState.secondaryLabelKey = 'loadtest.action.openReport';
+                }
+              }
+
+              renderLoadtestCard();
+            } catch (error) {
+              if (error && error.code === 'login') {
+                loadtestCardState = {
+                  statusKey: 'loadtest.state.login',
+                  statusClass: 'status-warn',
+                  bodyKey: 'loadtest.body.login',
+                  bodyText: '',
+                  primaryHref: GITLAB_LOGIN_URL,
+                  primaryLabelKey: 'loadtest.action.login',
+                  secondaryHref: LOADTEST_RUN_URL,
+                  secondaryLabelKey: 'loadtest.action.run',
+                };
+              } else {
+                loadtestCardState = {
+                  statusKey: 'loadtest.state.unavailable',
+                  statusClass: 'status-loading',
+                  bodyKey: 'loadtest.body.unavailable',
+                  bodyText: '',
+                  primaryHref: LOADTEST_PIPELINES_URL,
+                  primaryLabelKey: 'loadtest.action.openPipelines',
+                  secondaryHref: LOADTEST_RUN_URL,
+                  secondaryLabelKey: 'loadtest.action.run',
+                };
+              }
+              renderLoadtestCard();
             }
           };
 
@@ -755,9 +1123,49 @@ data:
           });
 
           applyTranslations(loadPreferredLocale());
+          loadLatestLoadtest();
         </script>
       </body>
     </html>
+  default.conf: |
+    server {
+      listen 80;
+      server_name _;
+      root /usr/share/nginx/html;
+      index index.html;
+
+      location /gitlab-api/ {
+        proxy_pass http://192.168.0.108:8929/api/v4/;
+        proxy_http_version 1.1;
+        proxy_set_header Host 192.168.0.108:8929;
+        proxy_set_header Cookie $http_cookie;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Host $host;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_intercept_errors on;
+        error_page 301 302 307 308 = @gitlab_login_required;
+      }
+
+      location /gitlab/ {
+        proxy_pass http://192.168.0.108:8929/;
+        proxy_http_version 1.1;
+        proxy_set_header Host 192.168.0.108:8929;
+        proxy_set_header Cookie $http_cookie;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Host $host;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_intercept_errors on;
+        error_page 301 302 307 308 = @gitlab_login_required;
+      }
+
+      location @gitlab_login_required {
+        return 401;
+      }
+
+      location / {
+        try_files $uri $uri/ /index.html;
+      }
+    }
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -791,10 +1199,21 @@ spec:
             # 避免 subPath 导致 ConfigMap 更新后页面内容不热刷新。
             - name: html
               mountPath: /usr/share/nginx/html
+            - name: nginx-config
+              mountPath: /etc/nginx/conf.d
       volumes:
         - name: html
           configMap:
             name: lab-portal-site
+            items:
+              - key: index.html
+                path: index.html
+        - name: nginx-config
+          configMap:
+            name: lab-portal-site
+            items:
+              - key: default.conf
+                path: default.conf
 ---
 apiVersion: v1
 kind: Service
