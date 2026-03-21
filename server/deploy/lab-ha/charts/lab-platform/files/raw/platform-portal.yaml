@@ -634,7 +634,7 @@ data:
           const LOADTEST_JOBS_API_PATH = `/gitlab-api/projects/${GITLAB_PROJECT_ID}/jobs?per_page=40&scope[]=created&scope[]=pending&scope[]=running&scope[]=failed&scope[]=success`;
           const LOADTEST_PORTAL_SUMMARY_PATH = (jobId) => `/gitlab/root/webapp-template-lab/-/jobs/${jobId}/artifacts/raw/server/deploy/lab-ha/artifacts/loadtest/job/portal-summary.json`;
           const LOADTEST_SUMMARY_PATH = (jobId) => `/gitlab/root/webapp-template-lab/-/jobs/${jobId}/artifacts/raw/server/deploy/lab-ha/artifacts/loadtest/job/summary.json`;
-          const LOADTEST_REPORT_URL = (jobId) => `http://192.168.0.108:8929/root/webapp-template-lab/-/jobs/${jobId}/artifacts/file/server/deploy/lab-ha/artifacts/loadtest/job/report.html`;
+          const LOADTEST_REPORT_URL = (jobId) => `/loadtest-report.html?job_id=${jobId}`;
           const LOADTEST_PIPELINE_URL = (pipelineId) => `http://192.168.0.108:8929/root/webapp-template-lab/-/pipelines/${pipelineId}`;
           const translations = {
             en: {
@@ -1127,6 +1127,179 @@ data:
         </script>
       </body>
     </html>
+  loadtest-report.html: |
+    <!doctype html>
+    <html lang="zh-CN">
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>Load Test Report Viewer</title>
+        <style>
+          :root {
+            --bg: #07111f;
+            --panel: #0e1c2f;
+            --line: #1f3654;
+            --text: #eaf3ff;
+            --muted: #9bb4d1;
+            --accent: #66d9ef;
+            --danger: #ff7b72;
+          }
+          * { box-sizing: border-box; }
+          body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: "Avenir Next", "Segoe UI", "Helvetica Neue", sans-serif;
+            background:
+              radial-gradient(circle at top left, rgba(102,217,239,0.18), transparent 32%),
+              linear-gradient(180deg, #07111f 0%, #081521 100%);
+            color: var(--text);
+          }
+          .shell {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 24px 20px 28px;
+          }
+          .toolbar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 18px;
+          }
+          .title {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+          }
+          .title h1 {
+            margin: 0;
+            font-size: 28px;
+          }
+          .title p {
+            margin: 0;
+            color: var(--muted);
+          }
+          .actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+          }
+          .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 42px;
+            padding: 0 16px;
+            border-radius: 999px;
+            border: 1px solid rgba(255,255,255,0.10);
+            background: rgba(255,255,255,0.04);
+            color: var(--text);
+            text-decoration: none;
+            font-weight: 600;
+          }
+          .btn.primary {
+            border-color: rgba(102,217,239,0.28);
+            background: linear-gradient(180deg, rgba(102,217,239,0.26), rgba(102,217,239,0.12));
+          }
+          .status {
+            padding: 18px;
+            border-radius: 18px;
+            border: 1px solid rgba(255,255,255,0.08);
+            background: rgba(14,28,47,0.84);
+            color: var(--muted);
+            line-height: 1.7;
+            margin-bottom: 16px;
+          }
+          .status.error {
+            border-color: rgba(255,123,114,0.28);
+            color: #ffd6d1;
+          }
+          .report-frame {
+            width: 100%;
+            min-height: calc(100vh - 170px);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 18px;
+            background: #fff;
+          }
+          .hidden { display: none; }
+        </style>
+      </head>
+      <body>
+        <div class="shell">
+          <div class="toolbar">
+            <div class="title">
+              <h1>Load Test Report</h1>
+              <p id="subtitle">正在从 GitLab artifact 拉取报告内容。</p>
+            </div>
+            <div class="actions">
+              <a class="btn" href="http://192.168.0.108:30088">返回 Portal</a>
+              <a class="btn" id="open-job" href="http://192.168.0.108:8929/root/webapp-template-lab/-/jobs" target="_blank" rel="noreferrer">打开 Job</a>
+              <a class="btn primary hidden" id="login-link" href="http://192.168.0.108:8929/users/sign_in" target="_blank" rel="noreferrer">登录 GitLab</a>
+            </div>
+          </div>
+          <div class="status" id="status">加载中，请稍候...</div>
+          <iframe class="report-frame hidden" id="report-frame" title="Load Test Report Preview"></iframe>
+        </div>
+        <script>
+          const params = new URLSearchParams(window.location.search);
+          const jobId = (params.get('job_id') || '').trim();
+          const statusNode = document.getElementById('status');
+          const subtitleNode = document.getElementById('subtitle');
+          const frameNode = document.getElementById('report-frame');
+          const loginLink = document.getElementById('login-link');
+          const openJobLink = document.getElementById('open-job');
+          const reportPath = (id) => `/gitlab/root/webapp-template-lab/-/jobs/${id}/artifacts/raw/server/deploy/lab-ha/artifacts/loadtest/job/report.html`;
+          const jobUrl = (id) => `http://192.168.0.108:8929/root/webapp-template-lab/-/jobs/${id}`;
+
+          if (jobId) {
+            openJobLink.href = jobUrl(jobId);
+            subtitleNode.textContent = `Job #${jobId} 的在线报告预览`;
+          }
+
+          const showStatus = (text, isError = false) => {
+            statusNode.textContent = text;
+            statusNode.classList.toggle('error', isError);
+            statusNode.classList.remove('hidden');
+          };
+
+          const renderReport = async () => {
+            if (!jobId) {
+              showStatus('缺少 job_id，无法定位要预览的压测报告。', true);
+              return;
+            }
+
+            try {
+              // 通过 Portal 同源代理拉取 artifact 内容，再写入 iframe，避免 GitLab 产物页强制下载。
+              const response = await fetch(reportPath(jobId), {
+                credentials: 'same-origin',
+                redirect: 'follow',
+              });
+              if (response.status === 401) {
+                showStatus('当前浏览器还没有 GitLab 登录态，请先登录后再回来查看。', true);
+                loginLink.classList.remove('hidden');
+                return;
+              }
+              if (!response.ok) {
+                throw new Error(`GitLab report fetch failed: ${response.status}`);
+              }
+
+              const html = await response.text();
+              const iframeDoc = frameNode.contentWindow.document;
+              iframeDoc.open();
+              iframeDoc.write(html);
+              iframeDoc.close();
+              frameNode.classList.remove('hidden');
+              statusNode.classList.add('hidden');
+            } catch (error) {
+              showStatus(`报告加载失败：${error.message || 'unknown error'}`, true);
+            }
+          };
+
+          renderReport();
+        </script>
+      </body>
+    </html>
   default.conf: |
     server {
       listen 80;
@@ -1208,6 +1381,8 @@ spec:
             items:
               - key: index.html
                 path: index.html
+              - key: loadtest-report.html
+                path: loadtest-report.html
         - name: nginx-config
           configMap:
             name: lab-portal-site

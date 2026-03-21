@@ -1,4 +1,10 @@
 ## 2026-03-21
+- 完成：把压测报告入口从“GitLab artifact 明细页”改成“Portal 在线预览页”。更新 `/Users/simon/projects/webapp-template/server/deploy/lab-ha/manifests/platform-portal.yaml`，新增 `loadtest-report.html` 页面；该页面会通过 Portal 现有的同源 GitLab 代理拉取 `report.html` artifact 内容，并直接写入 iframe 在线渲染，避免 GitLab 对 HTML artifact 的强制下载/不预览行为。同时把首页 `Latest Load Test` 卡片里的 `打开报告` 链接改成 `/loadtest-report.html?job_id=<id>`，并同步到 `/Users/simon/projects/webapp-template/server/deploy/lab-ha/charts/lab-platform/files/raw/platform-portal.yaml`；随后已 live apply 到 `lab-portal` 并完成 rollout。
+- 验证：`kubectl --kubeconfig /Users/simon/.kube/ha-lab.conf apply --dry-run=client -f /Users/simon/projects/webapp-template/server/deploy/lab-ha/manifests/platform-portal.yaml` 通过，live apply 与 `rollout restart/status` 已完成；`curl --noproxy '*' -fsS 'http://192.168.0.108:30088/loadtest-report.html?job_id=58'` 已能返回新的 `Load Test Report Viewer` 页面；Playwright 已实际打开 `http://192.168.0.108:30088/loadtest-report.html?job_id=62`，确认 `Job #62` 的报告在 Portal 内在线渲染，且首页 `打开报告` 的实际 href 已变成 `http://192.168.0.108:30088/loadtest-report.html?job_id=62`，不再落到 GitLab artifact 明细页。
+- 下一步：如果还要继续提升体验，可以把这个预览页再补“打开流水线 / 打开 Job / 返回最近一次压测”的更多上下文导航，或者再加一个“直接看最新报告”的固定 URL。
+- 阻塞/风险：在线预览依旧依赖当前浏览器具备 GitLab 登录态；如果未登录 GitLab，Portal 只能提示先登录，不能绕过 GitLab 权限直接暴露 artifact 内容。
+
+## 2026-03-21
 - 完成：完成 shell runner 一键压测链路的 live 收口。提交 `f8d0c18 fix(loadtest): 为 shell runner 增加 curl 兜底` 已推送到 `origin`、`gitlab`；随后在 GitLab 手动触发 `Pipeline #34`，使用 `LOADTEST_SCENARIO=system`、`LOADTEST_DURATION=5s`、`LOADTEST_VUS=1`，并额外设置 `LOADTEST_K6_VERSION=v0.0.0` 强制命中新加的 fallback 路径，验证 shell runner 在下载 `k6` 超时后会自动切换到仓库内置 `curl fallback`，同时仍把固定 artifacts 写到 `server/deploy/lab-ha/artifacts/loadtest/job/`。
 - 验证：`Pipeline #34 / Job #58` 已在 live GitLab 成功通过；trace 已确认顺序为“下载版 `k6` 在 15s 超时 -> 切换 `curl-fallback` -> 产出 `summary.json` / `report.html` -> 上传 artifacts”；随后在 `http://192.168.0.108:30088` 验证 `Latest Load Test` 卡片已更新为 `通过`，摘要显示 `system · p95 20ms · fail 0% · 03/21 11:42`，并且 `打开当前流水线` 指向 `Pipeline #34`、`打开报告` 指向 `Job #58` 的固定报告地址。
 - 下一步：如果要继续提升集中可视化，下一轮优先把 `Latest Load Test` 从“最近一次 job 摘要”扩展成带更多关键指标或 Grafana Dashboard 直达入口，但执行真源仍保持在 GitLab 和 artifacts，不把 Portal 做成新的任务执行器。
