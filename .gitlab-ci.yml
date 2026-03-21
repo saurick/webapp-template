@@ -59,27 +59,41 @@ loadtest_lab:
     - 'export LOADTEST_RUN_DIR="server/deploy/lab-ha/artifacts/loadtest/${LOADTEST_RUN_ID}"'
     - 'export LOADTEST_JOB_DIR="server/deploy/lab-ha/artifacts/loadtest/job"'
     - 'echo "loadtest pipeline_mode=${PIPELINE_MODE} scenario=${LOADTEST_SCENARIO} target=${LOADTEST_BASE_URL} run_id=${LOADTEST_RUN_ID}"'
-    - >
+    - |
       LOADTEST_EXIT=0
-      BASE_URL="${LOADTEST_BASE_URL}"
-      LOADTEST_RUN_ID="${LOADTEST_RUN_ID}"
-      LOADTEST_HOST_HEADER="${LOADTEST_HOST_HEADER}"
-      LOADTEST_AUTH_MODE="${LOADTEST_AUTH_MODE}"
-      LOADTEST_USERNAME="${LOADTEST_USERNAME:-}"
-      LOADTEST_PASSWORD="${LOADTEST_PASSWORD:-}"
-      LOADTEST_DURATION="${LOADTEST_DURATION}"
-      LOADTEST_VUS="${LOADTEST_VUS}"
-      LOADTEST_AUTH_ITERATIONS="${LOADTEST_AUTH_ITERATIONS}"
-      K6_WEB_DASHBOARD="${K6_WEB_DASHBOARD}"
+      BASE_URL="${LOADTEST_BASE_URL}" \
+      LOADTEST_RUN_ID="${LOADTEST_RUN_ID}" \
+      LOADTEST_HOST_HEADER="${LOADTEST_HOST_HEADER}" \
+      LOADTEST_AUTH_MODE="${LOADTEST_AUTH_MODE}" \
+      LOADTEST_USERNAME="${LOADTEST_USERNAME:-}" \
+      LOADTEST_PASSWORD="${LOADTEST_PASSWORD:-}" \
+      LOADTEST_DURATION="${LOADTEST_DURATION}" \
+      LOADTEST_VUS="${LOADTEST_VUS}" \
+      LOADTEST_AUTH_ITERATIONS="${LOADTEST_AUTH_ITERATIONS}" \
+      K6_WEB_DASHBOARD="${K6_WEB_DASHBOARD}" \
       bash scripts/loadtest/run.sh "${LOADTEST_SCENARIO}" || LOADTEST_EXIT=$?
+
       mkdir -p "${LOADTEST_JOB_DIR}"
-      if [ -f "${LOADTEST_RUN_DIR}/meta.env" ]; then cp "${LOADTEST_RUN_DIR}/meta.env" "${LOADTEST_JOB_DIR}/meta.env"; fi
+      if [ -f "${LOADTEST_RUN_DIR}/meta.env" ]; then
+        cp "${LOADTEST_RUN_DIR}/meta.env" "${LOADTEST_JOB_DIR}/meta.env"
+      fi
+
       LOADTEST_HAS_SUMMARY=false
       LOADTEST_HAS_REPORT=false
-      if [ -f "${LOADTEST_RUN_DIR}/summary.json" ]; then cp "${LOADTEST_RUN_DIR}/summary.json" "${LOADTEST_JOB_DIR}/summary.json"; LOADTEST_HAS_SUMMARY=true; fi
-      if [ -f "${LOADTEST_RUN_DIR}/report.html" ]; then cp "${LOADTEST_RUN_DIR}/report.html" "${LOADTEST_JOB_DIR}/report.html"; LOADTEST_HAS_REPORT=true; fi
+      if [ -f "${LOADTEST_RUN_DIR}/summary.json" ]; then
+        cp "${LOADTEST_RUN_DIR}/summary.json" "${LOADTEST_JOB_DIR}/summary.json"
+        LOADTEST_HAS_SUMMARY=true
+      fi
+      if [ -f "${LOADTEST_RUN_DIR}/report.html" ]; then
+        cp "${LOADTEST_RUN_DIR}/report.html" "${LOADTEST_JOB_DIR}/report.html"
+        LOADTEST_HAS_REPORT=true
+      fi
+
       LOADTEST_STATUS=success
-      if [ "${LOADTEST_EXIT}" -ne 0 ]; then LOADTEST_STATUS=failed; fi
+      if [ "${LOADTEST_EXIT}" -ne 0 ]; then
+        LOADTEST_STATUS=failed
+      fi
+
       cat > "${LOADTEST_JOB_DIR}/portal-summary.json" <<EOF
       {
         "run_id": "${LOADTEST_RUN_ID}",
@@ -97,6 +111,7 @@ loadtest_lab:
         "has_report": ${LOADTEST_HAS_REPORT}
       }
       EOF
+
       echo "loadtest artifacts: ${CI_JOB_URL}/artifacts/browse/server/deploy/lab-ha/artifacts/loadtest/${LOADTEST_RUN_ID}/"
       echo "loadtest fixed report: ${CI_PROJECT_URL}/-/jobs/${CI_JOB_ID}/artifacts/file/server/deploy/lab-ha/artifacts/loadtest/job/report.html"
       echo "loadtest fixed summary: ${CI_PROJECT_URL}/-/jobs/${CI_JOB_ID}/artifacts/file/server/deploy/lab-ha/artifacts/loadtest/job/summary.json"
