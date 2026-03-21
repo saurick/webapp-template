@@ -12,7 +12,7 @@
 
 - 统一入口：`/Users/simon/projects/webapp-template/scripts/loadtest/run.sh`
 - 通用说明：`/Users/simon/projects/webapp-template/scripts/loadtest/README.md`
-- `run.sh` 优先用本机 `k6`；没有本机 `k6` 时，会先尝试 `go install go.k6.io/k6@v0.49.0`，再回退到 `docker run grafana/k6`
+- `run.sh` 优先用本机 `k6`；没有本机 `k6` 时，会先尝试下载固定版本 `k6` 二进制，再尝试 `go install go.k6.io/k6@v0.49.0`，最后才回退到 `docker run grafana/k6`
 
 ## GitLab 一键入口
 

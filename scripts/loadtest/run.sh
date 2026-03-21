@@ -49,6 +49,60 @@ ensure_go_k6_binary() {
 	printf '%s' "${go_k6_bin}"
 }
 
+ensure_downloaded_k6_binary() {
+	local download_dir="${LOADTEST_K6_BIN_DIR:-${REPO_ROOT}/.cache/loadtest/bin}"
+	local download_version="${LOADTEST_K6_VERSION:-v0.49.0}"
+	local os_name arch_name archive_name archive_url archive_path extract_root extracted_k6
+
+	if ! command -v curl >/dev/null 2>&1 || ! command -v tar >/dev/null 2>&1; then
+		return 1
+	fi
+
+	os_name="${LOADTEST_K6_OS:-$(uname -s | tr '[:upper:]' '[:lower:]')}"
+	case "${LOADTEST_K6_ARCH:-$(uname -m)}" in
+	x86_64 | amd64) arch_name="amd64" ;;
+	arm64 | aarch64) arch_name="arm64" ;;
+	*) return 1 ;;
+	esac
+	case "${os_name}" in
+	linux | darwin) ;;
+	*) return 1 ;;
+	esac
+
+	mkdir -p "${download_dir}"
+	if [[ -x "${download_dir}/k6" ]]; then
+		printf '%s' "${download_dir}/k6"
+		return 0
+	fi
+
+	archive_name="k6-${download_version}-${os_name}-${arch_name}.tar.gz"
+	archive_url="https://github.com/grafana/k6/releases/download/${download_version}/${archive_name}"
+	archive_path="${download_dir}/${archive_name}"
+	extract_root="${download_dir}/extract-${download_version}-${os_name}-${arch_name}"
+
+	# shell runner 没有 k6 / go / docker 时，先尝试拉固定版本二进制，失败再继续回退。
+	printf 'download k6 binary: %s\n' "${archive_url}" >&2
+	rm -rf "${extract_root}"
+	if ! curl -fsSL "${archive_url}" -o "${archive_path}"; then
+		rm -rf "${extract_root}" "${archive_path}"
+		return 1
+	fi
+	mkdir -p "${extract_root}"
+	if ! tar -xzf "${archive_path}" -C "${extract_root}"; then
+		rm -rf "${extract_root}" "${archive_path}"
+		return 1
+	fi
+	extracted_k6="$(find "${extract_root}" -type f -name k6 | head -n1)"
+	if [[ -z "${extracted_k6}" ]]; then
+		rm -rf "${extract_root}" "${archive_path}"
+		return 1
+	fi
+	mv "${extracted_k6}" "${download_dir}/k6"
+	chmod +x "${download_dir}/k6"
+	rm -rf "${extract_root}" "${archive_path}"
+	printf '%s' "${download_dir}/k6"
+}
+
 scenario="${1:-mixed}"
 case "${scenario}" in
 health | system | auth | mixed) ;;
@@ -103,6 +157,8 @@ printf 'loadtest output=%s\n' "${output_dir}"
 local_k6_bin=""
 if command -v k6 >/dev/null 2>&1; then
 	local_k6_bin="$(command -v k6)"
+elif local_k6_bin="$(ensure_downloaded_k6_binary)"; then
+	:
 elif local_k6_bin="$(ensure_go_k6_binary)"; then
 	:
 fi

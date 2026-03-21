@@ -55,8 +55,9 @@ http://192.168.0.108:8929/root/webapp-template-lab/-/pipelines/new?ref=master&va
 ## 运行方式
 
 - `run.sh` 优先使用本机 `k6`
-- 本机未安装 `k6`、但存在 `go` 工具链时，自动 fallback 到 `go install go.k6.io/k6@v0.49.0`
-- 本机未安装 `k6` 且没有可用 `go` 时，自动 fallback 到 `docker run grafana/k6`
+- 本机未安装 `k6`、但存在 `curl + tar` 时，优先下载固定版本 `k6` 二进制到本地缓存目录
+- 本机未安装 `k6`、也无法下载二进制，但存在 `go` 工具链时，自动 fallback 到 `go install go.k6.io/k6@v0.49.0`
+- 本机既没有本机 `k6`、也没有可用下载/`go` 兜底时，才 fallback 到 `docker run grafana/k6`
 - fallback 到 Docker 时，如果 `BASE_URL` 是 `localhost/127.0.0.1`，脚本会自动改写成 `host.docker.internal`
 
 ## 结果输出
