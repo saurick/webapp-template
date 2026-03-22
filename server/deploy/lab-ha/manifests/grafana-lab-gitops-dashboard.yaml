@@ -12,10 +12,10 @@ data:
       "id": null,
       "uid": "lab-ha-gitops",
       "title": "HA Lab / GitOps & Delivery",
-      "tags": ["lab-ha", "gitops", "delivery"],
+      "tags": ["lab-ha", "gitops", "delivery", "bluegreen"],
       "timezone": "browser",
       "schemaVersion": 39,
-      "version": 1,
+      "version": 2,
       "refresh": "30s",
       "time": {
         "from": "now-6h",
@@ -25,9 +25,9 @@ data:
         {
           "id": 1,
           "type": "stat",
-          "title": "App Synced",
+          "title": "Lab Synced",
           "datasource": {"type": "prometheus", "uid": "prometheus"},
-          "gridPos": {"h": 5, "w": 4, "x": 0, "y": 0},
+          "gridPos": {"h": 5, "w": 3, "x": 0, "y": 0},
           "targets": [{"expr": "sum(argocd_app_info{name=\"webapp-template-lab\",sync_status=\"Synced\"})", "instant": true, "refId": "A"}],
           "options": {"colorMode": "value", "graphMode": "none", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}},
           "fieldConfig": {"defaults": {"unit": "none", "thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": null}, {"color": "green", "value": 1}]}}}
@@ -35,9 +35,9 @@ data:
         {
           "id": 2,
           "type": "stat",
-          "title": "App Healthy",
+          "title": "Lab Healthy",
           "datasource": {"type": "prometheus", "uid": "prometheus"},
-          "gridPos": {"h": 5, "w": 4, "x": 4, "y": 0},
+          "gridPos": {"h": 5, "w": 3, "x": 3, "y": 0},
           "targets": [{"expr": "sum(argocd_app_info{name=\"webapp-template-lab\",health_status=\"Healthy\"})", "instant": true, "refId": "A"}],
           "options": {"colorMode": "value", "graphMode": "none", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}},
           "fieldConfig": {"defaults": {"unit": "none", "thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": null}, {"color": "green", "value": 1}]}}}
@@ -45,81 +45,111 @@ data:
         {
           "id": 3,
           "type": "stat",
-          "title": "Sync Success (24h)",
+          "title": "Prod-Trial Synced",
           "datasource": {"type": "prometheus", "uid": "prometheus"},
-          "gridPos": {"h": 5, "w": 4, "x": 8, "y": 0},
-          "targets": [{"expr": "sum(argocd_app_sync_total{name=\"webapp-template-lab\",phase=\"Succeeded\"})", "instant": true, "refId": "A"}],
+          "gridPos": {"h": 5, "w": 3, "x": 6, "y": 0},
+          "targets": [{"expr": "sum(argocd_app_info{name=\"webapp-template-prod-trial\",sync_status=\"Synced\"})", "instant": true, "refId": "A"}],
           "options": {"colorMode": "value", "graphMode": "none", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}},
           "fieldConfig": {"defaults": {"unit": "none", "thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": null}, {"color": "green", "value": 1}]}}}
         },
         {
           "id": 4,
           "type": "stat",
-          "title": "Cluster Connected",
+          "title": "Prod-Trial Healthy",
           "datasource": {"type": "prometheus", "uid": "prometheus"},
-          "gridPos": {"h": 5, "w": 4, "x": 12, "y": 0},
-          "targets": [{"expr": "max(argocd_cluster_connection_status{server=\"https://kubernetes.default.svc\"})", "instant": true, "refId": "A"}],
+          "gridPos": {"h": 5, "w": 3, "x": 9, "y": 0},
+          "targets": [{"expr": "sum(argocd_app_info{name=\"webapp-template-prod-trial\",health_status=\"Healthy\"})", "instant": true, "refId": "A"}],
           "options": {"colorMode": "value", "graphMode": "none", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}},
           "fieldConfig": {"defaults": {"unit": "none", "thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": null}, {"color": "green", "value": 1}]}}}
         },
         {
           "id": 5,
           "type": "stat",
-          "title": "Rollouts Controller",
+          "title": "Active Probe",
           "datasource": {"type": "prometheus", "uid": "prometheus"},
-          "gridPos": {"h": 5, "w": 4, "x": 16, "y": 0},
-          "targets": [{"expr": "max(argo_rollouts_controller_info)", "instant": true, "refId": "A"}],
+          "gridPos": {"h": 5, "w": 3, "x": 12, "y": 0},
+          "targets": [{"expr": "probe_success{job=\"blackbox-exporter-prometheus-blackbox-exporter\",target=\"webapp-prod-trial-active\"}", "instant": true, "refId": "A"}],
           "options": {"colorMode": "value", "graphMode": "none", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}},
           "fieldConfig": {"defaults": {"unit": "none", "thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": null}, {"color": "green", "value": 1}]}}}
         },
         {
           "id": 6,
           "type": "stat",
-          "title": "GitLab Probe",
+          "title": "Preview Probe",
           "datasource": {"type": "prometheus", "uid": "prometheus"},
-          "gridPos": {"h": 5, "w": 4, "x": 20, "y": 0},
-          "targets": [{"expr": "probe_success{job=\"blackbox-exporter-prometheus-blackbox-exporter\",target=\"gitlab\"}", "instant": true, "refId": "A"}],
+          "gridPos": {"h": 5, "w": 3, "x": 15, "y": 0},
+          "targets": [{"expr": "probe_success{job=\"blackbox-exporter-prometheus-blackbox-exporter\",target=\"webapp-prod-trial-preview\"}", "instant": true, "refId": "A"}],
           "options": {"colorMode": "value", "graphMode": "none", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}},
           "fieldConfig": {"defaults": {"unit": "none", "thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": null}, {"color": "green", "value": 1}]}}}
         },
         {
           "id": 7,
-          "type": "timeseries",
-          "title": "App Reconcile Count",
+          "type": "stat",
+          "title": "Rollouts Controller",
           "datasource": {"type": "prometheus", "uid": "prometheus"},
-          "gridPos": {"h": 8, "w": 12, "x": 0, "y": 5},
-          "targets": [{"expr": "argocd_app_reconcile_count{namespace=\"argocd\"}", "legendFormat": "{{dest_server}}", "refId": "A"}],
-          "fieldConfig": {"defaults": {"unit": "none"}},
-          "options": {"legend": {"displayMode": "table", "placement": "bottom"}, "tooltip": {"mode": "multi"}}
+          "gridPos": {"h": 5, "w": 3, "x": 18, "y": 0},
+          "targets": [{"expr": "max(argo_rollouts_controller_info)", "instant": true, "refId": "A"}],
+          "options": {"colorMode": "value", "graphMode": "none", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}},
+          "fieldConfig": {"defaults": {"unit": "none", "thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": null}, {"color": "green", "value": 1}]}}}
         },
         {
           "id": 8,
+          "type": "stat",
+          "title": "GitLab Probe",
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "gridPos": {"h": 5, "w": 3, "x": 21, "y": 0},
+          "targets": [{"expr": "probe_success{job=\"blackbox-exporter-prometheus-blackbox-exporter\",target=\"gitlab\"}", "instant": true, "refId": "A"}],
+          "options": {"colorMode": "value", "graphMode": "none", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}},
+          "fieldConfig": {"defaults": {"unit": "none", "thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": null}, {"color": "green", "value": 1}]}}}
+        },
+        {
+          "id": 9,
           "type": "timeseries",
           "title": "Successful Syncs",
           "datasource": {"type": "prometheus", "uid": "prometheus"},
-          "gridPos": {"h": 8, "w": 12, "x": 12, "y": 5},
-          "targets": [{"expr": "argocd_app_sync_total{name=\"webapp-template-lab\",phase=\"Succeeded\"}", "legendFormat": "{{name}}", "refId": "A"}],
+          "gridPos": {"h": 8, "w": 8, "x": 0, "y": 5},
+          "targets": [{"expr": "argocd_app_sync_total{name=~\"webapp-template-(lab|prod-trial)\",phase=\"Succeeded\"}", "legendFormat": "{{name}}", "refId": "A"}],
           "fieldConfig": {"defaults": {"unit": "none"}},
           "options": {"legend": {"displayMode": "table", "placement": "bottom"}, "tooltip": {"mode": "multi"}}
         },
         {
-          "id": 9,
+          "id": 10,
+          "type": "stat",
+          "title": "Prod-Trial Ready Pods",
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "gridPos": {"h": 8, "w": 4, "x": 8, "y": 5},
+          "targets": [{"expr": "sum(kube_pod_status_ready{namespace=\"webapp-prod-trial\",condition=\"true\",pod=~\"webapp-template-prod-trial-.*\"})", "instant": true, "refId": "A"}],
+          "options": {"colorMode": "value", "graphMode": "none", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}},
+          "fieldConfig": {"defaults": {"unit": "none", "thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": null}, {"color": "green", "value": 2}]}}}
+        },
+        {
+          "id": 11,
+          "type": "timeseries",
+          "title": "Prod-Trial Release Probes",
+          "datasource": {"type": "prometheus", "uid": "prometheus"},
+          "gridPos": {"h": 8, "w": 12, "x": 12, "y": 5},
+          "targets": [{"expr": "probe_success{job=\"blackbox-exporter-prometheus-blackbox-exporter\",target=~\"webapp-prod-trial-(active|preview)\"}", "legendFormat": "{{target}}", "refId": "A"}],
+          "fieldConfig": {"defaults": {"unit": "none"}},
+          "options": {"legend": {"displayMode": "table", "placement": "bottom"}, "tooltip": {"mode": "multi"}}
+        },
+        {
+          "id": 12,
           "type": "table",
           "title": "Application Status",
           "datasource": {"type": "prometheus", "uid": "prometheus"},
           "gridPos": {"h": 8, "w": 12, "x": 0, "y": 13},
-          "targets": [{"expr": "argocd_app_info{name=\"webapp-template-lab\"}", "format": "table", "instant": true, "refId": "A"}],
+          "targets": [{"expr": "argocd_app_info{name=~\"webapp-template-(lab|prod-trial)\"}", "format": "table", "instant": true, "refId": "A"}],
           "transformations": [{"id": "organize", "options": {"excludeByName": {"Time": true, "Value": true}, "indexByName": {"name": 0, "project": 1, "sync_status": 2, "health_status": 3, "dest_namespace": 4, "repo": 5}}}],
           "options": {"showHeader": true}
         },
         {
-          "id": 10,
+          "id": 13,
           "type": "text",
           "title": "GitOps Notes",
           "gridPos": {"h": 8, "w": 12, "x": 12, "y": 13},
           "options": {
             "mode": "markdown",
-            "content": "### GitOps & Delivery Notes\n\n- GitLab is the lab delivery remote; GitHub remains upstream template origin.\n- Argo CD now watches the GitLab repo chart path `server/deploy/lab-ha/charts/webapp-template` with environment-specific Helm values.\n- Rollouts controller is installed and exposed in metrics, ready for future rollout strategy expansion.\n- Primary day-to-day release signals are: GitLab probe, Argo app sync, app health, and successful sync count."
+            "content": "### GitOps & Delivery Notes\n\n- `webapp-template-lab` stays on the fast auto-sync lab path.\n- `webapp-template-prod-trial` now uses blue-green release verification on top of Argo Rollouts.\n- Preview host: `webapp-trial-preview.192.168.0.108.nip.io`\n- Active host: `webapp-trial.192.168.0.108.nip.io`\n- Rollouts waits for the preview checks, then keeps a 180-second observation window before promotion.\n- Primary release signals are: Argo CD app health, prod-trial active/preview probes, ready pod count, and GitLab availability."
           }
         }
       ]

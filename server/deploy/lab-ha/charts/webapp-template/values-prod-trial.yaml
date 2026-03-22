@@ -131,6 +131,32 @@ deployment:
       secret:
         secretName: webapp-template-prod-trial-config
 
+rollout:
+  enabled: true
+  name: webapp-template-prod-trial
+  previewService:
+    enabled: true
+    name: webapp-template-prod-trial-preview
+  blueGreen:
+    autoPromotionEnabled: true
+    autoPromotionSeconds: 180
+    scaleDownDelaySeconds: 30
+    scaleDownDelayRevisionLimit: 1
+  analysis:
+    enabled: true
+    count: 3
+    interval: 15s
+    initialDelay: 10s
+    failureLimit: 1
+    timeoutSeconds: 5
+    expectedReadyBody: ready
+    active:
+      url: http://192.168.0.108:32668/readyz
+      hostHeader: webapp-trial.192.168.0.108.nip.io
+    preview:
+      url: http://192.168.0.108:32668/readyz
+      hostHeader: webapp-trial-preview.192.168.0.108.nip.io
+
 service:
   name: webapp-template-prod-trial
   ports:
@@ -155,6 +181,13 @@ ingress:
       paths:
         - path: /
           pathType: Prefix
+          servicePort: 80
+    # preview host 固定指向 preview Service，便于蓝绿发布时先验新版本入口，再决定是否切主流量。
+    - host: webapp-trial-preview.192.168.0.108.nip.io
+      paths:
+        - path: /
+          pathType: Prefix
+          serviceName: webapp-template-prod-trial-preview
           servicePort: 80
 
 networkPolicy:

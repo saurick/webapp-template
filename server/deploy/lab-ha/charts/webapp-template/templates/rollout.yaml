@@ -1,0 +1,117 @@
+# yamllint disable-file
+{{- $rollout := .Values.rollout | default (dict) }}
+{{- $previewService := $rollout.previewService | default (dict) }}
+{{- $blueGreen := $rollout.blueGreen | default (dict) }}
+{{- $analysis := $rollout.analysis | default (dict) }}
+{{- $analysisActive := $analysis.active | default (dict) }}
+{{- $analysisPreview := $analysis.preview | default (dict) }}
+{{- if (default false $rollout.enabled) }}
+{{- $rolloutName := default .Values.deployment.name $rollout.name }}
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata:
+  name: {{ required "rollout.name or deployment.name is required" $rolloutName }}
+  namespace: {{ required "namespace.name is required" .Values.namespace.name }}
+  labels:
+{{ include "webapp-template.selectorLabels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.deployment.replicas }}
+  revisionHistoryLimit: {{ .Values.deployment.revisionHistoryLimit }}
+{{- if gt (int .Values.deployment.minReadySeconds) 0 }}
+  minReadySeconds: {{ .Values.deployment.minReadySeconds }}
+{{- end }}
+{{- if .Values.deployment.progressDeadlineSeconds }}
+  progressDeadlineSeconds: {{ .Values.deployment.progressDeadlineSeconds }}
+{{- end }}
+  selector:
+    matchLabels:
+{{ include "webapp-template.selectorLabels" . | nindent 6 }}
+  strategy:
+    blueGreen:
+      activeService: {{ required "service.name is required when rollout.enabled=true" .Values.service.name }}
+{{- if (default false $previewService.enabled) }}
+      previewService: {{ required "rollout.previewService.name is required when previewService.enabled=true" $previewService.name }}
+{{- end }}
+      autoPromotionEnabled: {{ default true $blueGreen.autoPromotionEnabled }}
+{{- if $blueGreen.autoPromotionSeconds }}
+      autoPromotionSeconds: {{ $blueGreen.autoPromotionSeconds }}
+{{- end }}
+{{- if $blueGreen.previewReplicaCount }}
+      previewReplicaCount: {{ $blueGreen.previewReplicaCount }}
+{{- end }}
+{{- if $blueGreen.scaleDownDelaySeconds }}
+      scaleDownDelaySeconds: {{ $blueGreen.scaleDownDelaySeconds }}
+{{- end }}
+{{- if $blueGreen.scaleDownDelayRevisionLimit }}
+      scaleDownDelayRevisionLimit: {{ $blueGreen.scaleDownDelayRevisionLimit }}
+{{- end }}
+{{- if (default false $analysis.enabled) }}
+      # 发布验证统一走 active/preview 实际入口，避免只看 Pod Ready 却漏掉 Host 路由与 Service 切换。
+      prePromotionAnalysis:
+        templates:
+          - templateName: {{ printf "%s-readyz-check" $rolloutName }}
+        args:
+          - name: readyUrl
+            value: {{ required "rollout.analysis.preview.url is required when rollout.analysis.enabled=true" $analysisPreview.url | quote }}
+          - name: hostHeader
+            value: {{ required "rollout.analysis.preview.hostHeader is required when rollout.analysis.enabled=true" $analysisPreview.hostHeader | quote }}
+      postPromotionAnalysis:
+        templates:
+          - templateName: {{ printf "%s-readyz-check" $rolloutName }}
+        args:
+          - name: readyUrl
+            value: {{ required "rollout.analysis.active.url is required when rollout.analysis.enabled=true" $analysisActive.url | quote }}
+          - name: hostHeader
+            value: {{ required "rollout.analysis.active.hostHeader is required when rollout.analysis.enabled=true" $analysisActive.hostHeader | quote }}
+{{- end }}
+  template:
+    metadata:
+      annotations:
+        # 配置 Secret 变化后主动滚动 Pod，避免 tracing / DSN 等运行时配置更新仍卡在旧进程里。
+        checksum/config-secret: {{ .Values.configSecret.content | sha256sum }}
+      labels:
+{{ include "webapp-template.selectorLabels" . | nindent 8 }}
+    spec:
+{{- if .Values.deployment.terminationGracePeriodSeconds }}
+      terminationGracePeriodSeconds: {{ .Values.deployment.terminationGracePeriodSeconds }}
+{{- end }}
+{{- with .Values.deployment.topologySpreadConstraints }}
+      topologySpreadConstraints:
+        {{- range . }}
+        - maxSkew: {{ .maxSkew }}
+          topologyKey: {{ .topologyKey }}
+          whenUnsatisfiable: {{ .whenUnsatisfiable }}
+          labelSelector:
+            matchLabels:
+{{ include "webapp-template.selectorLabels" $ | nindent 14 }}
+        {{- end }}
+{{- end }}
+      containers:
+        - name: server
+          image: {{ required "deployment.image is required" .Values.deployment.image }}
+          imagePullPolicy: {{ .Values.deployment.imagePullPolicy }}
+{{- with .Values.deployment.command }}
+          command:
+{{ toYaml . | nindent 12 }}
+{{- end }}
+{{- with .Values.deployment.env }}
+          env:
+{{ toYaml . | nindent 12 }}
+{{- end }}
+          ports:
+{{ toYaml .Values.deployment.ports | nindent 12 }}
+          resources:
+{{ toYaml .Values.deployment.resources | nindent 12 }}
+{{- with .Values.deployment.startupProbe }}
+          startupProbe:
+{{ toYaml . | nindent 12 }}
+{{- end }}
+          readinessProbe:
+{{ toYaml .Values.deployment.readinessProbe | nindent 12 }}
+          livenessProbe:
+{{ toYaml .Values.deployment.livenessProbe | nindent 12 }}
+          volumeMounts:
+{{ toYaml .Values.deployment.volumeMounts | nindent 12 }}
+      volumes:
+{{ toYaml .Values.deployment.volumes | nindent 8 }}
+{{- end }}

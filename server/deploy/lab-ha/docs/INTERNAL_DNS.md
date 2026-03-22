@@ -21,6 +21,7 @@
 默认命名：
 
 - `webapp-trial.lab.home.arpa`
+- `webapp-trial-preview.lab.home.arpa`
 - `argocd.lab.home.arpa`
 - `grafana.lab.home.arpa`
 - `harbor.lab.home.arpa`
@@ -52,13 +53,15 @@
 对当前这套实验室环境，推荐把下面这套方式视为“内部生产试验正式入口”：
 
 1. 业务域名固定为 `webapp-trial.lab.home.arpa`
-2. 内网 DNS 为同一个域名配置多条 A 记录：
+2. 蓝绿预览域名固定为 `webapp-trial-preview.lab.home.arpa`
+3. 内网 DNS 为同一个域名配置多条 A 记录：
    - `192.168.0.7`
    - `192.168.0.108`
    - `192.168.0.128`
-3. 业务访问暂时统一使用 `http://webapp-trial.lab.home.arpa:32668`
-4. 若后续补内部 TLS，再对应切到 `https://webapp-trial.lab.home.arpa:30943`
-5. `ingress-nginx-controller` 保持 `externalTrafficPolicy=Cluster`，确保 NodePort 不依赖“当前访问的那个节点本地必须正好有 ingress pod”
+4. 业务访问暂时统一使用 `http://webapp-trial.lab.home.arpa:32668`
+5. 蓝绿预览访问使用 `http://webapp-trial-preview.lab.home.arpa:32668`
+6. 若后续补内部 TLS，再对应切到 `https://webapp-trial.lab.home.arpa:30943`
+7. `ingress-nginx-controller` 保持 `externalTrafficPolicy=Cluster`，确保 NodePort 不依赖“当前访问的那个节点本地必须正好有 ingress pod”
 
 这套口径的目标不是追求“看起来像标准 80/443”，而是在你当前 VPN / 路由访问现实下，先把真实可用的高可用链路固定下来。
 
@@ -68,7 +71,7 @@
 - 内部域名 overlay：`charts/webapp-template/values-prod-trial-internal.yaml`
 - Argo CD 切换清单：`manifests/argocd-webapp-prod-trial-app-internal.yaml`
 
-内部域名 overlay 会在保留当前 `nip.io` 试验 Host 的前提下，额外增加一个内部域名 Host，避免切换时直接打断现有验证链路。
+内部域名 overlay 会在保留当前 `nip.io` active/preview 试验 Host 的前提下，额外增加内部域名 Host，避免切换时直接打断现有验证链路。
 
 ## 切换步骤
 
@@ -86,6 +89,7 @@ helm template webapp-template-prod-trial /Users/simon/projects/webapp-template/s
 
 ```text
 192.168.0.120 webapp-trial.lab.home.arpa
+192.168.0.120 webapp-trial-preview.lab.home.arpa
 ```
 
 5. 如果是 Argo CD 接管模式，再把现有应用切到 internal overlay：
@@ -102,6 +106,9 @@ kubectl --kubeconfig /Users/simon/.kube/ha-lab.conf apply \
 ```bash
 curl --noproxy '*' --resolve 'webapp-trial.lab.home.arpa:80:192.168.0.120' \
   http://webapp-trial.lab.home.arpa/readyz
+
+curl --noproxy '*' --resolve 'webapp-trial-preview.lab.home.arpa:80:192.168.0.120' \
+  http://webapp-trial-preview.lab.home.arpa/readyz
 ```
 
 跨 VPN / 子网路由场景的保守验证方式：
@@ -115,12 +122,19 @@ curl --noproxy '*' -H 'Host: webapp-trial.lab.home.arpa' \
 
 curl --noproxy '*' -H 'Host: webapp-trial.lab.home.arpa' \
   http://192.168.0.128:32668/readyz
+
+curl --noproxy '*' -H 'Host: webapp-trial-preview.lab.home.arpa' \
+  http://192.168.0.108:32668/readyz
 ```
 
 也可以直接使用脚本：
 
 ```bash
 bash /Users/simon/projects/webapp-template/server/deploy/lab-ha/scripts/check-webapp-prod-trial-internal.sh
+
+HOST_HEADER_ACTIVE=webapp-trial.lab.home.arpa \
+HOST_HEADER_PREVIEW=webapp-trial-preview.lab.home.arpa \
+  bash /Users/simon/projects/webapp-template/server/deploy/lab-ha/scripts/check-webapp-prod-trial-bluegreen.sh
 ```
 
 ## Argo CD 使用方式
@@ -138,7 +152,7 @@ bash /Users/simon/projects/webapp-template/server/deploy/lab-ha/scripts/check-we
 
 - 当前仍共享 `webapp_template` 数据库，只适合生产试验
 - 当前内部域名方案默认还是 HTTP；正式长期使用时再补内部 TLS
-- 当前内部域名 values overlay 默认同时保留现有 `webapp-trial.192.168.0.108.nip.io`，等内部域名验证稳定后，再决定是否移除旧 Host
+- 当前内部域名 values overlay 默认同时保留现有 `webapp-trial.192.168.0.108.nip.io` 与 `webapp-trial-preview.192.168.0.108.nip.io`，等内部域名验证稳定后，再决定是否移除旧 Host
 - 当前 `192.168.0.120` 这条入口依赖 `MetalLB L2`，是否能从客户端直达，取决于客户端是否真正位于可学习该 VIP 的二层网络
-- 当前阶段正式推荐入口已经收口为 `webapp-trial.lab.home.arpa + NodePort 32668/30943 + 多节点 A 记录`，不是单一节点 IP
-- 当前阶段优先验证“域名访问 + 恢复 + 滚动更新”，不是公网暴露
+- 当前阶段正式推荐入口已经收口为 `webapp-trial.lab.home.arpa + NodePort 32668/30943 + 多节点 A 记录`，preview 验证入口为 `webapp-trial-preview.lab.home.arpa + NodePort 32668`
+- 当前阶段优先验证“域名访问 + 恢复 + 蓝绿发布”，不是公网暴露

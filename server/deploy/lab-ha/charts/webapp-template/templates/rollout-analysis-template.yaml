@@ -1,0 +1,32 @@
+# yamllint disable-file
+{{- $rollout := .Values.rollout | default (dict) }}
+{{- $analysis := $rollout.analysis | default (dict) }}
+{{- if and (default false $rollout.enabled) (default false $analysis.enabled) }}
+{{- $rolloutName := default .Values.deployment.name $rollout.name }}
+apiVersion: argoproj.io/v1alpha1
+kind: AnalysisTemplate
+metadata:
+  name: {{ printf "%s-readyz-check" $rolloutName }}
+  namespace: {{ required "namespace.name is required" .Values.namespace.name }}
+  labels:
+{{ include "webapp-template.selectorLabels" . | nindent 4 }}
+spec:
+  args:
+    - name: readyUrl
+    - name: hostHeader
+  metrics:
+    - name: readyz
+      count: {{ $analysis.count }}
+      interval: {{ $analysis.interval }}
+      initialDelay: {{ $analysis.initialDelay | quote }}
+      failureLimit: {{ $analysis.failureLimit }}
+      successCondition: result == {{ $analysis.expectedReadyBody | quote }}
+      provider:
+        web:
+          # 这里故意走 NodePort + Host 头，确保蓝绿切换验证的是最终入口，而不是只验证 ClusterIP。
+          url: '{{ "{{args.readyUrl}}" }}'
+          timeoutSeconds: {{ $analysis.timeoutSeconds }}
+          headers:
+            - key: Host
+              value: '{{ "{{args.hostHeader}}" }}'
+{{- end }}

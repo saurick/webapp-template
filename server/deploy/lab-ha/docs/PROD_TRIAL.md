@@ -31,7 +31,7 @@
 3. 确认当前集群至少还有约 `1 CPU / 2Gi memory` 的可用余量
 4. 确认 `webapp-prod-trial` 命名空间里没有历史失败 Pod 残留
 
-说明：试验清单保留 `2` 副本，并使用 `maxSurge: 1` 做滚动发布；这个余量不是调度硬门槛，而是为了给发布瞬时、探针抖动和控制面波动留缓冲。
+说明：当前生产试验保留 `2` 副本，并通过 `Argo Rollouts` 做蓝绿发布；发布窗口里会短时同时保留 `active 2 + preview 2` 共 `4` 个 Pod，这个余量不是调度硬门槛，而是为了给蓝绿切换、探针抖动和控制面波动留缓冲。
 
 ## Secret 准备
 
@@ -62,7 +62,27 @@ kubectl --kubeconfig /Users/simon/.kube/ha-lab.conf apply \
 ```
 
 3. 在 Argo CD 中手动同步 `webapp-template-prod-trial`
-4. 当前仓库默认试验 host 为 `webapp-trial.192.168.0.108.nip.io`；若后续切到正式域名，再按运维口径替换
+4. 当前仓库默认 active host 为 `webapp-trial.192.168.0.108.nip.io`
+5. 当前仓库默认 preview host 为 `webapp-trial-preview.192.168.0.108.nip.io`
+
+## 蓝绿发布口径
+
+- `webapp-template-prod-trial` 现在默认走 `Argo Rollouts` 蓝绿发布，不再是普通 `Deployment`
+- 正式流量继续走 active Service：`webapp-template-prod-trial`
+- 新版本先挂到 preview Service：`webapp-template-prod-trial-preview`
+- 发布前置检查会直接打 active/preview 最终入口，而不是只看集群内 `ClusterIP`
+- 当前默认观察窗口是 `180s`：preview 检查通过后，Rollout 仍会保留 3 分钟窗口供人工查看 Grafana、Portal 和预览入口
+- 如本机已安装 `kubectl-argo-rollouts` 插件，可用下面命令实时观察：
+
+```bash
+kubectl argo rollouts -n webapp-prod-trial get rollout webapp-template-prod-trial --watch
+```
+
+- 如确认 preview 已通过，且不想等满 `180s`，可提前 promote：
+
+```bash
+kubectl argo rollouts -n webapp-prod-trial promote webapp-template-prod-trial
+```
 
 ## 内部域名优先建议
 
@@ -77,8 +97,9 @@ kubectl --kubeconfig /Users/simon/.kube/ha-lab.conf apply \
 3. 如果访问端是通过 VPN / 子网路由去访问 `192.168.0.0/24`，先不要把“内部域名可达”建立在 `192.168.0.120` 上，而是先继续用节点 IP + NodePort 验证 Host 路由
 4. `192.168.0.120` 是 `MetalLB` 分配给 `ingress-nginx` 的 VIP，不是 `node1/node2/node3` 任意一台机器的固定 IP
 5. 当前阶段正式推荐入口是：`webapp-trial.lab.home.arpa` 指向 `192.168.0.7 / 108 / 128` 三条 A 记录，并统一走 `:32668`
-6. 为了让 NodePort 不依赖“本机正好有 ingress pod”，当前 `ingress-nginx-controller` 已切到 `externalTrafficPolicy=Cluster`
-7. 再执行：
+6. 若要在内网继续做蓝绿演练，preview 入口对应 `webapp-trial-preview.lab.home.arpa`
+7. 为了让 NodePort 不依赖“本机正好有 ingress pod”，当前 `ingress-nginx-controller` 已切到 `externalTrafficPolicy=Cluster`
+8. 再执行：
 
 ```bash
 kubectl --kubeconfig /Users/simon/.kube/ha-lab.conf apply \
@@ -91,13 +112,15 @@ kubectl --kubeconfig /Users/simon/.kube/ha-lab.conf apply \
 
 至少通过下面几项再开放给真实用户：
 
-1. `kubectl --kubeconfig /Users/simon/.kube/ha-lab.conf -n webapp-prod-trial rollout status deployment/webapp-template-prod-trial`
-2. `kubectl --kubeconfig /Users/simon/.kube/ha-lab.conf -n webapp-prod-trial get pods`
-3. `curl --noproxy '*' -H 'Host: webapp-trial.192.168.0.108.nip.io' http://192.168.0.108:32668/healthz`
-4. `curl --noproxy '*' -H 'Host: webapp-trial.192.168.0.108.nip.io' http://192.168.0.108:32668/readyz`
-5. 管理员登录、普通登录、核心接口最少走一遍
-6. `bash /Users/simon/projects/webapp-template/server/deploy/lab-ha/scripts/check-webapp-prod-trial-tracing.sh`
-7. 删除一个 Pod，确认流量可继续通过
+1. `kubectl --kubeconfig /Users/simon/.kube/ha-lab.conf -n webapp-prod-trial get rollout webapp-template-prod-trial`
+2. `kubectl --kubeconfig /Users/simon/.kube/ha-lab.conf -n webapp-prod-trial get svc webapp-template-prod-trial webapp-template-prod-trial-preview`
+3. `bash /Users/simon/projects/webapp-template/server/deploy/lab-ha/scripts/check-webapp-prod-trial-bluegreen.sh`
+4. `curl --noproxy '*' -H 'Host: webapp-trial.192.168.0.108.nip.io' http://192.168.0.108:32668/healthz`
+5. `curl --noproxy '*' -H 'Host: webapp-trial-preview.192.168.0.108.nip.io' http://192.168.0.108:32668/readyz`
+6. 管理员登录、普通登录、核心接口最少走一遍
+7. `bash /Users/simon/projects/webapp-template/server/deploy/lab-ha/scripts/check-webapp-prod-trial-tracing.sh`
+8. 打开 `Grafana -> HA Lab / GitOps & Delivery`，确认 active/preview 探测和 prod-trial 健康状态一致
+9. 删除一个 Pod，确认流量可继续通过
 
 如果已经切内部域名，验证命令应同步替换成真实内部 FQDN。
 
@@ -105,6 +128,11 @@ kubectl --kubeconfig /Users/simon/.kube/ha-lab.conf apply \
 
 ```bash
 bash /Users/simon/projects/webapp-template/server/deploy/lab-ha/scripts/check-webapp-prod-trial-internal.sh
+
+HOST_HEADER_ACTIVE=webapp-trial.lab.home.arpa \
+HOST_HEADER_PREVIEW=webapp-trial-preview.lab.home.arpa \
+  bash /Users/simon/projects/webapp-template/server/deploy/lab-ha/scripts/check-webapp-prod-trial-bluegreen.sh \
+    192.168.0.7 192.168.0.108 192.168.0.128
 
 curl --noproxy '*' -H 'Host: webapp-trial.lab.home.arpa' \
   http://192.168.0.7:32668/readyz
@@ -114,6 +142,9 @@ curl --noproxy '*' -H 'Host: webapp-trial.lab.home.arpa' \
 
 curl --noproxy '*' -H 'Host: webapp-trial.lab.home.arpa' \
   http://192.168.0.128:32668/readyz
+
+curl --noproxy '*' -H 'Host: webapp-trial-preview.lab.home.arpa' \
+  http://192.168.0.108:32668/readyz
 ```
 
 ## 回滚
@@ -121,10 +152,10 @@ curl --noproxy '*' -H 'Host: webapp-trial.lab.home.arpa' \
 回滚顺序保持简单：
 
 1. Argo CD 回滚到上一个稳定 revision
-2. 如需强制撤回，执行：
+2. 若本机已装 `kubectl-argo-rollouts` 插件，且当前还在观察窗口或 post-promotion 校验期，可先执行：
 
 ```bash
-kubectl --kubeconfig /Users/simon/.kube/ha-lab.conf -n webapp-prod-trial rollout undo deployment/webapp-template-prod-trial
+kubectl argo rollouts -n webapp-prod-trial abort webapp-template-prod-trial
 ```
 
 3. 如仍异常，直接删除生产试验应用，不动现有 `webapp` 命名空间的 `lab` 应用
@@ -133,6 +164,7 @@ kubectl --kubeconfig /Users/simon/.kube/ha-lab.conf -n webapp-prod-trial rollout
 
 - 生产试验和现有实验环境隔离，避免一次提交直接影响已有演示链路
 - Argo CD 默认不启用自动同步，减少误发布风险
+- `prod-trial` 通过蓝绿 active/preview 把“发布验证”与“日常测试联调”分开，避免直接在 `lab` 链路上试切流量
 - 敏感配置走环境变量 Secret 注入，不继续把生产试验凭据写进 Git 清单
 - 资源配额只允许这套试验最多吃掉一小块固定预算，避免把整台 VM 拖死
 - `prod-trial` 默认 NetworkPolicy 只放行 PostgreSQL、DNS 和 Jaeger OTLP HTTP；后续若继续收紧 egress，不要漏掉 `monitoring` 命名空间 `4318/TCP`，否则 Jaeger UI 虽然正常，应用 trace 仍会超时

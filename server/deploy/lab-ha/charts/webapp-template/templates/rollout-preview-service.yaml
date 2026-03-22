@@ -1,0 +1,15 @@
+# yamllint disable-file
+{{- $rollout := .Values.rollout | default (dict) }}
+{{- $previewService := $rollout.previewService | default (dict) }}
+{{- if and (default false $rollout.enabled) (default false $previewService.enabled) }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ required "rollout.previewService.name is required when previewService.enabled=true" $previewService.name }}
+  namespace: {{ required "namespace.name is required" .Values.namespace.name }}
+spec:
+  selector:
+{{ include "webapp-template.selectorLabels" . | nindent 4 }}
+  ports:
+{{ toYaml .Values.service.ports | nindent 4 }}
+{{- end }}

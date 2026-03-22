@@ -1,4 +1,6 @@
 # yamllint disable-file
+{{- $rollout := .Values.rollout | default (dict) }}
+{{- if not (default false $rollout.enabled) }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -72,3 +74,4 @@ spec:
 {{ toYaml .Values.deployment.volumeMounts | nindent 12 }}
       volumes:
 {{ toYaml .Values.deployment.volumes | nindent 8 }}
+{{- end }}

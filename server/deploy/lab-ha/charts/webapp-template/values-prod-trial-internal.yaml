@@ -6,9 +6,22 @@ ingress:
         - path: /
           pathType: Prefix
           servicePort: 80
+    # 保留 preview 的旧域名，方便内部切换前先演练蓝绿发布链路。
+    - host: webapp-trial-preview.192.168.0.108.nip.io
+      paths:
+        - path: /
+          pathType: Prefix
+          serviceName: webapp-template-prod-trial-preview
+          servicePort: 80
     # 内部域名统一采用 home.arpa，避免依赖公网域名或与 .local/mDNS 冲突。
     - host: webapp-trial.lab.home.arpa
       paths:
         - path: /
           pathType: Prefix
+          servicePort: 80
+    - host: webapp-trial-preview.lab.home.arpa
+      paths:
+        - path: /
+          pathType: Prefix
+          serviceName: webapp-template-prod-trial-preview
           servicePort: 80
