@@ -26,16 +26,20 @@ serviceMonitor:
       labels:
         component: webapp
         access: direct
-    # prod-trial 走 Host 路由，active/preview 都单独探测，便于蓝绿发布前后直接看入口是否切对。
+    # blackbox exporter 在集群里直接探 NodePort，并分别带 active/preview Host 头，避免依赖 nip.io DNS。
     - name: webapp-prod-trial-active
-      url: http://webapp-trial.192.168.0.108.nip.io/readyz
+      url: http://192.168.0.108:32668/readyz
+      module: http_2xx_webapp_prod_trial_active
       labels:
+        release: kube-prometheus-stack
         component: webapp-prod-trial
         access: ingress
         release_slot: active
     - name: webapp-prod-trial-preview
-      url: http://webapp-trial-preview.192.168.0.108.nip.io/readyz
+      url: http://192.168.0.108:32668/readyz
+      module: http_2xx_webapp_prod_trial_preview
       labels:
+        release: kube-prometheus-stack
         component: webapp-prod-trial
         access: ingress
         release_slot: preview
@@ -98,6 +102,26 @@ config:
         valid_http_versions: ["HTTP/1.1", "HTTP/2.0"]
         follow_redirects: true
         preferred_ip_protocol: ip4
+        valid_status_codes: [200, 302, 401, 405]
+    http_2xx_webapp_prod_trial_active:
+      prober: http
+      timeout: 5s
+      http:
+        valid_http_versions: ["HTTP/1.1", "HTTP/2.0"]
+        follow_redirects: true
+        preferred_ip_protocol: ip4
+        headers:
+          Host: webapp-trial.192.168.0.108.nip.io
+        valid_status_codes: [200, 302, 401, 405]
+    http_2xx_webapp_prod_trial_preview:
+      prober: http
+      timeout: 5s
+      http:
+        valid_http_versions: ["HTTP/1.1", "HTTP/2.0"]
+        follow_redirects: true
+        preferred_ip_protocol: ip4
+        headers:
+          Host: webapp-trial-preview.192.168.0.108.nip.io
         valid_status_codes: [200, 302, 401, 405]
     https_2xx_insecure:
       prober: http
