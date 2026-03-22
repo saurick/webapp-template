@@ -12,34 +12,44 @@
 
 - 统一入口：`/Users/simon/projects/webapp-template/scripts/loadtest/run.sh`
 - 通用说明：`/Users/simon/projects/webapp-template/scripts/loadtest/README.md`
-- `run.sh` 优先用本机 `k6`；没有本机 `k6` 时，会先尝试下载固定版本 `k6` 二进制，再尝试 `go install go.k6.io/k6@v0.49.0`，最后才回退到 `docker run grafana/k6`
+- `run.sh` 优先用本机 `k6`；本地临时机若没有本机 `k6`，才会继续尝试下载固定版本 `k6` 二进制、`go install go.k6.io/k6@v0.49.0` 或 `docker run grafana/k6`
 - 如果现场 runner 无法下载外部二进制、也没有 `go/docker`，`health/system` 会自动退化到仓库内置 `curl` fallback，继续产出 GitLab 可消费的 `summary.json` 与 `report.html`
 
-## GitLab 一键入口
+## 推荐基线
 
-如果你不想在本地输入命令，当前推荐入口是 GitLab 手动流水线：
+- 对当前 `GitLab shell runner`，推荐基线不是“每轮在线下载 k6”，而是把固定版本 `k6` 预装到 runner 宿主机
+- 仓库已提供安装脚本：`bash /Users/simon/projects/webapp-template/server/deploy/lab-ha/scripts/install-runner-k6.sh`
+- 默认会把 `k6` 安装到 `192.168.0.108` 的 `/opt/lab-tools/k6/<version>/k6`，并把 `/usr/local/bin/k6` 链接到该版本
+- 这样做的目的，是去掉 GitLab 一键压测对 `github.com / release-assets.githubusercontent.com` 的运行时依赖；在线下载与 `curl fallback` 只保留给临时机或应急兜底
 
-- 新建入口：`http://192.168.0.108:8929/root/webapp-template-lab/-/pipelines/new?ref=master&var[PIPELINE_MODE]=loadtest&var[LOADTEST_SCENARIO]=system`
+## Portal 一键入口
+
+如果你不想在本地输入命令，当前推荐入口已经收口到 Portal：
+
+- Portal：`http://192.168.0.108:30088`
+- 兜底 GitLab 新建页：`http://192.168.0.108:8929/root/webapp-template-lab/-/pipelines/new?ref=master&var[PIPELINE_MODE]=loadtest&var[LOADTEST_SCENARIO]=system`
 
 使用方式：
 
-1. 打开上面的地址
-2. 保持默认 `system` 场景，直接点 `Run pipeline`
-3. 等待 `validate_lab -> loadtest_lab` 执行完成
-4. 在当前 job 的 artifacts 里打开 `report.html`
+1. 打开 `http://192.168.0.108:30088`
+2. 点击首页卡片里的 `运行压测`，或 `最近一次压测` 卡片里的 `运行压测`
+3. Portal 会直接用当前浏览器里的 GitLab 登录态触发安全默认的 `system` 场景，不再先跳 GitLab 新建页
+4. 卡片会先切到当前流水线的 `排队中/运行中` 状态，随后自动刷新成 `打开看板 / 打开报告`
 
 说明：
 
-- 这条入口默认预填 `PIPELINE_MODE=loadtest` 与 `LOADTEST_SCENARIO=system`
+- Portal 直触发默认写入 `PIPELINE_MODE=loadtest`、`LOADTEST_SCENARIO=system`、`LOADTEST_BASE_URL=http://192.168.0.108:32668` 和 `LOADTEST_PROMETHEUS_RW_URL=http://192.168.0.108:30090/api/v1/write`
 - `system` 是当前最安全的一键场景：会打到真实业务入口，但不会创建用户
+- Portal 的一键触发依赖当前浏览器已经登录过 GitLab；若未登录，卡片会退回 `登录 GitLab / 运行压测` 引导
 - 如果要切换到 `health`、`auth` 或 `mixed`，可在 GitLab 新建流水线页改变量
 - `auth` / `mixed` 默认仍是 `register` 模式，会创建真实用户；如需改成 `login`，请在 GitLab 页面额外提供 `LOADTEST_USERNAME` 和 `LOADTEST_PASSWORD`
-- 如果当前浏览器已经登录过 GitLab，`http://192.168.0.108:30088` 的 Portal 会自动展示“最近一次压测”摘要卡片，并给出 `Open pipeline / Open report` 入口
+- `http://192.168.0.108:30088` 的 Portal 会自动展示“最近一次压测”摘要卡片，并给出 `打开当前流水线 / 打开看板 / 打开报告`
+- Portal 的“最近一次压测”卡片还会直接显示本轮引擎是 `k6` 还是 `curl-fallback`；若本轮使用 `k6` 且已写入 Prometheus，会直接出现 Grafana 看板入口
 - Grafana 统一压测看板：`http://192.168.0.108:30081/d/lab-ha-loadtest/ha-lab-load-test`
 - Grafana 官方 k6 看板：`http://192.168.0.108:30081/d/lab-ha-loadtest-official/ha-lab-load-test-official-k6`
 - `loadtest_lab` 会在每个 job artifact 里额外写一份固定路径副本：`server/deploy/lab-ha/artifacts/loadtest/job/{portal-summary.json,summary.json,report.html}`，方便 Portal 直接读取最近一次结果
 - 很短的压测（例如几秒级 smoke）可能会被 `k6` 跳过 HTML 报告导出，这种情况下 Portal 仍会展示状态和 `summary.json` 指标，但不会给 `Open report`
-- 当前 GitLab shell runner 已验证存在 `curl`，因此默认一键入口至少应保证 `system` 可跑，即使 `k6` 下载源暂时不可达
+- 当前 GitLab shell runner 已验证存在 `curl`，因此默认一键入口至少应保证 `system` 可跑；但若希望一键压测稳定写入 Grafana，仍应优先保证 runner 宿主机已有可用 `k6`
 
 ## 推荐执行顺序
 
@@ -104,6 +114,6 @@ bash /Users/simon/projects/webapp-template/scripts/loadtest/run.sh auth \
 
 - `auth` / `mixed` 默认使用 `register` 模式，会创建真实用户
 - Grafana 压测看板当前只覆盖 `k6` engine；如果任务退化到 `curl fallback`，仍需回看 GitLab artifacts
-- `curl fallback` 目前只覆盖 `health/system` 两个安全场景；如果你在 GitLab 页手动切到 `auth/mixed`，仍应优先保证 runner 上有可用 `k6`
+- `curl fallback` 目前只覆盖 `health/system` 两个安全场景；如果你在 GitLab 页手动切到 `auth/mixed`，或希望 GitLab 一键压测稳定写入 Grafana，仍应优先保证 runner 宿主机上有可用 `k6`
 - 当前脚本是“最小能力”，不是分布式压测平台，不负责历史趋势归档、多人协作和长期调度
 - 在 `3 x 4C/8G` 实验资源下，不建议一开始就把 `vus` 拉得很高；优先用保守并发观察拐点

@@ -155,6 +155,12 @@ data:
             border-color: rgba(102,217,239,0.45);
             box-shadow: 0 14px 36px rgba(0,0,0,0.22);
           }
+          .card.is-busy,
+          .status-link.is-busy {
+            pointer-events: none;
+            opacity: 0.68;
+            transform: none !important;
+          }
           .card small {
             display: block;
             color: var(--accent);
@@ -309,6 +315,11 @@ data:
             line-height: 1.7;
             font-size: 14px;
           }
+          .status-detail {
+            margin-top: 8px !important;
+            color: var(--muted);
+            font-size: 13px !important;
+          }
           .status-card a {
             color: var(--accent);
           }
@@ -344,6 +355,9 @@ data:
           .status-link-secondary:hover {
             background: rgba(255,209,102,0.18);
             border-color: rgba(255,209,102,0.28);
+          }
+          .hidden {
+            display: none;
           }
           @media (max-width: 720px) {
             .hero-head {
@@ -410,7 +424,7 @@ data:
               <a class="card" href="http://192.168.0.108:30081/d/lab-ha-gitops/ha-lab-gitops-and-delivery" target="_blank" rel="noreferrer" data-i18n-html="cards.delivery">
                 <small>Delivery</small><strong>GitOps &amp; Delivery</strong><span>Argo CD sync, GitLab probe, rollout controller, and release signals.</span>
               </a>
-              <a class="card" href="http://192.168.0.108:8929/root/webapp-template-lab/-/pipelines/new?ref=master&amp;var[PIPELINE_MODE]=loadtest&amp;var[LOADTEST_SCENARIO]=system" target="_blank" rel="noreferrer" data-i18n-html="cards.runLoadtest">
+              <a id="run-loadtest-card" class="card" href="http://192.168.0.108:8929/root/webapp-template-lab/-/pipelines/new?ref=master&amp;var[PIPELINE_MODE]=loadtest&amp;var[LOADTEST_SCENARIO]=system" target="_blank" rel="noreferrer" data-i18n-html="cards.runLoadtest">
                 <small>Testing</small><strong>Run Load Test</strong><span>GitLab one-click entry with a safe default system scenario and 192-address artifacts.</span>
               </a>
               <a class="card" href="http://192.168.0.108:30081/d/lab-ha-loadtest/ha-lab-load-test" target="_blank" rel="noreferrer" data-i18n-html="cards.loadtestDashboard">
@@ -455,6 +469,7 @@ data:
               <h2 data-i18n="snapshot.loadtestTitle">Latest Load Test</h2>
               <div id="loadtest-status" class="status-value status-loading" data-i18n="loadtest.state.loading">Loading</div>
               <p id="loadtest-summary" data-i18n="loadtest.body.loading">Checking GitLab for the latest load test result.</p>
+              <p id="loadtest-detail" class="status-detail hidden"></p>
               <div class="status-actions">
                 <a
                   id="loadtest-primary-link"
@@ -472,6 +487,14 @@ data:
                   rel="noreferrer"
                   data-i18n="loadtest.action.run"
                 >Run load test</a>
+                <a
+                  id="loadtest-tertiary-link"
+                  class="status-link hidden"
+                  href="http://192.168.0.108:30081/d/lab-ha-loadtest/ha-lab-load-test"
+                  target="_blank"
+                  rel="noreferrer"
+                  data-i18n="loadtest.action.openDashboard"
+                >Open dashboard</a>
               </div>
             </div>
             <div class="status-card" data-i18n-html="snapshot.pipeline">
@@ -633,15 +656,44 @@ data:
         </div>
         <script>
           const PORTAL_LANGUAGE_STORAGE_KEY = 'labPortalLanguage';
+          const LOADTEST_PROJECT_PATH = 'root/webapp-template-lab';
           const LOADTEST_RUN_URL = 'http://192.168.0.108:8929/root/webapp-template-lab/-/pipelines/new?ref=master&var[PIPELINE_MODE]=loadtest&var[LOADTEST_SCENARIO]=system';
           const LOADTEST_PIPELINES_URL = 'http://192.168.0.108:8929/root/webapp-template-lab/-/pipelines';
           const GITLAB_LOGIN_URL = 'http://192.168.0.108:8929/users/sign_in';
           const GITLAB_PROJECT_ID = '1';
+          const LOADTEST_TRIGGER_FORM_PATH = `/gitlab/${LOADTEST_PROJECT_PATH}/-/pipelines/new?ref=master`;
+          const LOADTEST_GRAPHQL_PATH = '/gitlab/api/graphql';
           const LOADTEST_JOBS_API_PATH = `/gitlab-api/projects/${GITLAB_PROJECT_ID}/jobs?per_page=40&scope[]=created&scope[]=pending&scope[]=running&scope[]=failed&scope[]=success`;
           const LOADTEST_PORTAL_SUMMARY_PATH = (jobId) => `/gitlab/root/webapp-template-lab/-/jobs/${jobId}/artifacts/raw/server/deploy/lab-ha/artifacts/loadtest/job/portal-summary.json`;
           const LOADTEST_SUMMARY_PATH = (jobId) => `/gitlab/root/webapp-template-lab/-/jobs/${jobId}/artifacts/raw/server/deploy/lab-ha/artifacts/loadtest/job/summary.json`;
+          const LOADTEST_META_PATH = (jobId) => `/gitlab/root/webapp-template-lab/-/jobs/${jobId}/artifacts/raw/server/deploy/lab-ha/artifacts/loadtest/job/meta.env`;
           const LOADTEST_REPORT_URL = (jobId) => `/loadtest-report.html?job_id=${jobId}`;
           const LOADTEST_PIPELINE_URL = (pipelineId) => `http://192.168.0.108:8929/root/webapp-template-lab/-/pipelines/${pipelineId}`;
+          const LOADTEST_DASHBOARD_URL = (runId) => `http://192.168.0.108:30081/d/lab-ha-loadtest/ha-lab-load-test?orgId=1&var-testid=${encodeURIComponent(runId)}`;
+          const LOADTEST_TRIGGER_MUTATION = `mutation internalPipelineCreate($input: PipelineCreateInput!) {
+            pipelineCreate(input: $input) {
+              clientMutationId
+              errors
+              pipeline {
+                id
+                path
+                errorMessages {
+                  nodes {
+                    id
+                    content
+                  }
+                }
+                warningMessages {
+                  nodes {
+                    id
+                    content
+                  }
+                }
+              }
+            }
+          }`;
+          const LOADTEST_POLL_INTERVAL_MS = 5000;
+          const LOADTEST_POLL_TIMEOUT_MS = 180000;
           const translations = {
             en: {
               'document.title': 'HA Lab Portal',
@@ -662,7 +714,7 @@ data:
               'cards.data': '<small>Data</small><strong>Data &amp; Storage</strong><span>Database, Harbor, Longhorn, SeaweedFS, and PVC health view.</span>',
               'cards.database': '<small>Database</small><strong>PostgreSQL &amp; Backup</strong><span>Primary/replica roles, lag, DB size, and Velero backup signals.</span>',
               'cards.delivery': '<small>Delivery</small><strong>GitOps &amp; Delivery</strong><span>Argo CD sync, GitLab probe, rollout controller, and release signals.</span>',
-              'cards.runLoadtest': '<small>Testing</small><strong>Run Load Test</strong><span>GitLab one-click entry with a safe default system scenario and 192-address artifacts.</span>',
+              'cards.runLoadtest': '<small>Testing</small><strong>Run Load Test</strong><span>Portal directly triggers the safe default system scenario. Results stay on 192-address pages.</span>',
               'cards.loadtestDashboard': '<small>Testing</small><strong>Load Test Dashboard</strong><span>Grafana view for k6 remote-write trends, latency, failures, and per-step breakdown.</span>',
               'cards.loadtestDashboardOfficial': '<small>Testing</small><strong>Official k6 Dashboard</strong><span>Official Grafana k6 Prometheus dashboard, adapted to the lab Prometheus datasource.</span>',
               'cards.loadtest': '<small>Testing</small><strong>Load Test Guide</strong><span>k6 entry commands, safe scenarios, and observability flow for HA drills.</span>',
@@ -681,17 +733,27 @@ data:
               'loadtest.state.failed': 'Failed',
               'loadtest.state.running': 'Running',
               'loadtest.state.pending': 'Pending',
+              'loadtest.state.triggering': 'Starting',
               'loadtest.state.notRun': 'Not run yet',
               'loadtest.state.login': 'Login GitLab',
               'loadtest.state.unavailable': 'Unavailable',
               'loadtest.body.loading': 'Checking GitLab for the latest load test result.',
+              'loadtest.body.triggering': 'Portal is creating the safe default system pipeline in GitLab.',
               'loadtest.body.notRun': 'No loadtest_lab job has completed yet. Use the one-click entry to create the first run.',
               'loadtest.body.login': 'Open GitLab once in this browser, then the portal can reuse that login state to show the latest result.',
               'loadtest.body.unavailable': 'GitLab summary is temporarily unavailable. Use the pipeline history or rerun the scenario.',
+              'loadtest.detail.triggering': 'Please wait a few seconds. The card will switch to the current pipeline as soon as GitLab creates the loadtest job.',
+              'loadtest.detail.triggered': 'Triggered directly from Portal with the safe system scenario. The card will auto-refresh to report and dashboard links.',
+              'loadtest.detail.k6': 'Engine k6. This run wrote timeseries to Grafana.',
+              'loadtest.detail.fallback': 'Engine curl-fallback. This run kept report artifacts only and did not write Grafana timeseries.',
+              'loadtest.detail.unknown': 'Engine information is unavailable. Use the pipeline log as source of truth.',
+              'loadtest.detail.triggerFailed': 'Portal could not start the pipeline directly. Use the pipeline history page or retry.',
               'loadtest.action.openPipelines': 'Open pipelines',
               'loadtest.action.openPipeline': 'Open pipeline',
               'loadtest.action.openReport': 'Open report',
+              'loadtest.action.openDashboard': 'Open dashboard',
               'loadtest.action.run': 'Run load test',
+              'loadtest.action.running': 'Starting...',
               'loadtest.action.login': 'Login GitLab',
               'snapshot.pipeline': '<h2>CI Pipeline</h2><div class="status-value status-ok">Open live</div><p>Use <a href="http://192.168.0.108:8929/root/webapp-template-lab/-/pipelines" target="_blank" rel="noreferrer">GitLab pipeline history</a> for the current build truth. This page intentionally no longer pins a single pipeline number.</p>',
               'snapshot.gitops': '<h2>GitOps Sync</h2><div class="status-value status-ok">Check Argo</div><p>Current sync status, live revision, and drift should be checked in <a href="https://192.168.0.108:30443" target="_blank" rel="noreferrer">Argo CD</a> or the delivery dashboard, not inferred from this static page.</p>',
@@ -737,7 +799,7 @@ data:
               'cards.data': '<small>数据</small><strong>数据与存储</strong><span>数据库、Harbor、Longhorn、SeaweedFS 与 PVC 健康视图。</span>',
               'cards.database': '<small>数据库</small><strong>PostgreSQL 与备份</strong><span>主从角色、复制延迟、库大小与 Velero 备份信号。</span>',
               'cards.delivery': '<small>交付</small><strong>GitOps 与交付</strong><span>Argo CD 同步、GitLab 探活、Rollout 控制器与发布信号。</span>',
-              'cards.runLoadtest': '<small>测试</small><strong>运行压测</strong><span>GitLab 一键入口，默认走安全的 system 场景，产物也落在 192 地址。</span>',
+              'cards.runLoadtest': '<small>测试</small><strong>运行压测</strong><span>直接由 Portal 触发安全的 system 场景，结果仍落在 192 地址页面。</span>',
               'cards.loadtestDashboard': '<small>测试</small><strong>压测看板</strong><span>Grafana 统一查看 k6 remote write 时序、延迟、失败率和分步骤拆解。</span>',
               'cards.loadtestDashboardOfficial': '<small>测试</small><strong>官方 k6 看板</strong><span>官方 Grafana k6 Prometheus dashboard，已适配实验室 Prometheus 数据源。</span>',
               'cards.loadtest': '<small>测试</small><strong>压测指南</strong><span>k6 入口命令、安全场景与高可用演练时的观测路径。</span>',
@@ -756,17 +818,27 @@ data:
               'loadtest.state.failed': '失败',
               'loadtest.state.running': '运行中',
               'loadtest.state.pending': '排队中',
+              'loadtest.state.triggering': '启动中',
               'loadtest.state.notRun': '尚未运行',
               'loadtest.state.login': '先登录 GitLab',
               'loadtest.state.unavailable': '暂不可用',
               'loadtest.body.loading': '正在读取 GitLab 最近一次压测结果。',
+              'loadtest.body.triggering': 'Portal 正在直接创建安全默认的 system 压测流水线。',
               'loadtest.body.notRun': '当前还没有完成过的 loadtest_lab 任务，先用一键入口跑第一轮。',
               'loadtest.body.login': '请先在当前浏览器里登录一次 GitLab，Portal 才能复用登录态展示最近结果。',
               'loadtest.body.unavailable': 'GitLab 摘要暂时不可用，请直接看流水线历史或重新触发一轮。',
+              'loadtest.detail.triggering': '请等待几秒，GitLab 创建出 loadtest 任务后，这张卡片会自动切到当前流水线。',
+              'loadtest.detail.triggered': '已由 Portal 直接触发安全的 system 场景，卡片会自动刷新成报告和看板入口。',
+              'loadtest.detail.k6': '引擎 k6，当前这轮已写入 Grafana 时序。',
+              'loadtest.detail.fallback': '引擎 curl-fallback，当前这轮只有报告产物，没有写入 Grafana 时序。',
+              'loadtest.detail.unknown': '当前拿不到引擎信息，请以流水线日志为准。',
+              'loadtest.detail.triggerFailed': 'Portal 直接触发失败，请打开流水线历史页或稍后重试。',
               'loadtest.action.openPipelines': '打开流水线',
               'loadtest.action.openPipeline': '打开当前流水线',
               'loadtest.action.openReport': '打开报告',
+              'loadtest.action.openDashboard': '打开看板',
               'loadtest.action.run': '运行压测',
+              'loadtest.action.running': '启动中...',
               'loadtest.action.login': '登录 GitLab',
               'snapshot.pipeline': '<h2>CI 流水线</h2><div class="status-value status-ok">去看 live</div><p>当前构建真相请直接看 <a href="http://192.168.0.108:8929/root/webapp-template-lab/-/pipelines" target="_blank" rel="noreferrer">GitLab 流水线历史</a>。这张页面不再写死某一个流水线编号。</p>',
               'snapshot.gitops': '<h2>GitOps 同步</h2><div class="status-value status-ok">查看 Argo</div><p>当前同步状态、live revision 和漂移情况，应直接在 <a href="https://192.168.0.108:30443" target="_blank" rel="noreferrer">Argo CD</a> 或交付看板里确认，而不是根据静态页推断。</p>',
@@ -797,20 +869,31 @@ data:
 
           const langButtons = Array.from(document.querySelectorAll('.lang-btn'));
           const copyButtons = Array.from(document.querySelectorAll('.copy'));
+          const runLoadtestCard = document.getElementById('run-loadtest-card');
           const loadtestStatus = document.getElementById('loadtest-status');
           const loadtestSummary = document.getElementById('loadtest-summary');
+          const loadtestDetail = document.getElementById('loadtest-detail');
           const loadtestPrimaryLink = document.getElementById('loadtest-primary-link');
           const loadtestSecondaryLink = document.getElementById('loadtest-secondary-link');
+          const loadtestTertiaryLink = document.getElementById('loadtest-tertiary-link');
           let currentLocale = 'en';
+          let loadtestTriggerInFlight = false;
+          let loadtestPendingPipelineId = 0;
+          let loadtestPollTimer = null;
+          let loadtestPollDeadline = 0;
           let loadtestCardState = {
             statusKey: 'loadtest.state.loading',
             statusClass: 'status-loading',
             bodyKey: 'loadtest.body.loading',
             bodyText: '',
+            detailKey: '',
+            detailText: '',
             primaryHref: LOADTEST_PIPELINES_URL,
             primaryLabelKey: 'loadtest.action.openPipelines',
             secondaryHref: LOADTEST_RUN_URL,
             secondaryLabelKey: 'loadtest.action.run',
+            tertiaryHref: '',
+            tertiaryLabelKey: '',
           };
 
           const getMessage = (locale, key) => {
@@ -829,7 +912,23 @@ data:
             });
           };
 
+          const setBusyState = (busy) => {
+            [runLoadtestCard, loadtestSecondaryLink].forEach((node) => {
+              if (!node) {
+                return;
+              }
+              node.classList.toggle('is-busy', busy);
+            });
+          };
+
           const setActionLink = (link, href, labelKey) => {
+            if (!href || !labelKey) {
+              link.classList.add('hidden');
+              link.removeAttribute('href');
+              link.textContent = '';
+              return;
+            }
+            link.classList.remove('hidden');
             link.setAttribute('href', href);
             link.textContent = getMessage(currentLocale, labelKey);
           };
@@ -838,8 +937,17 @@ data:
             loadtestStatus.className = `status-value ${loadtestCardState.statusClass}`;
             loadtestStatus.textContent = getMessage(currentLocale, loadtestCardState.statusKey);
             loadtestSummary.textContent = loadtestCardState.bodyText || getMessage(currentLocale, loadtestCardState.bodyKey);
+            const detailText = loadtestCardState.detailText || (loadtestCardState.detailKey ? getMessage(currentLocale, loadtestCardState.detailKey) : '');
+            if (detailText) {
+              loadtestDetail.textContent = detailText;
+              loadtestDetail.classList.remove('hidden');
+            } else {
+              loadtestDetail.textContent = '';
+              loadtestDetail.classList.add('hidden');
+            }
             setActionLink(loadtestPrimaryLink, loadtestCardState.primaryHref, loadtestCardState.primaryLabelKey);
             setActionLink(loadtestSecondaryLink, loadtestCardState.secondaryHref, loadtestCardState.secondaryLabelKey);
+            setActionLink(loadtestTertiaryLink, loadtestCardState.tertiaryHref, loadtestCardState.tertiaryLabelKey);
           };
 
           const applyTranslations = (locale) => {
@@ -1020,49 +1128,346 @@ data:
             return response.json();
           };
 
+          const fetchGitLabText = async (path) => {
+            const response = await fetch(path, {
+              credentials: 'same-origin',
+              headers: { Accept: 'text/plain' },
+              redirect: 'manual',
+            });
+            if (response.type === 'opaqueredirect' || response.status === 401 || response.status === 302) {
+              const error = new Error('login required');
+              error.code = 'login';
+              throw error;
+            }
+            if (!response.ok) {
+              const error = new Error(`GitLab proxy request failed: ${response.status}`);
+              error.code = 'http';
+              error.status = response.status;
+              throw error;
+            }
+            return response.text();
+          };
+
+          const fetchGitLabHtml = async (path) => {
+            const response = await fetch(path, {
+              credentials: 'same-origin',
+              headers: { Accept: 'text/html,application/xhtml+xml' },
+              redirect: 'manual',
+            });
+            if (response.type === 'opaqueredirect' || response.status === 401 || response.status === 302) {
+              const error = new Error('login required');
+              error.code = 'login';
+              throw error;
+            }
+            if (!response.ok) {
+              const error = new Error(`GitLab html request failed: ${response.status}`);
+              error.code = 'http';
+              error.status = response.status;
+              throw error;
+            }
+            return response.text();
+          };
+
+          const parseCsrfToken = (html) => {
+            const match = typeof html === 'string' ? html.match(/<meta name="csrf-token" content="([^"]+)"/) : null;
+            return match ? match[1] : '';
+          };
+
+          const buildLoadtestVariables = () => {
+            return [
+              { key: 'PIPELINE_MODE', value: 'loadtest', variableType: 'ENV_VAR' },
+              { key: 'LOADTEST_SCENARIO', value: 'system', variableType: 'ENV_VAR' },
+              { key: 'LOADTEST_BASE_URL', value: 'http://192.168.0.108:32668', variableType: 'ENV_VAR' },
+              { key: 'LOADTEST_PROMETHEUS_RW_URL', value: 'http://192.168.0.108:30090/api/v1/write', variableType: 'ENV_VAR' },
+            ];
+          };
+
+          const extractPipelineId = (path) => {
+            const match = typeof path === 'string' ? path.match(/\/pipelines\/(\d+)/) : null;
+            return match ? Number(match[1]) : 0;
+          };
+
+          const clearLoadtestPolling = () => {
+            if (loadtestPollTimer) {
+              clearTimeout(loadtestPollTimer);
+              loadtestPollTimer = null;
+            }
+            loadtestPollDeadline = 0;
+          };
+
+          const scheduleLoadtestPolling = () => {
+            clearLoadtestPolling();
+            loadtestPollDeadline = Date.now() + LOADTEST_POLL_TIMEOUT_MS;
+            const tick = async () => {
+              await loadLatestLoadtest();
+              if (!loadtestPendingPipelineId || Date.now() >= loadtestPollDeadline) {
+                clearLoadtestPolling();
+                return;
+              }
+              loadtestPollTimer = setTimeout(tick, LOADTEST_POLL_INTERVAL_MS);
+            };
+            loadtestPollTimer = setTimeout(tick, LOADTEST_POLL_INTERVAL_MS);
+          };
+
+          const createLoadtestPipeline = async () => {
+            // 先取 GitLab 新建页里的 csrf token，再通过同源代理发 GraphQL mutation，避免在 Portal 暴露额外 token。
+            const pipelinePageHtml = await fetchGitLabHtml(LOADTEST_TRIGGER_FORM_PATH);
+            const csrfToken = parseCsrfToken(pipelinePageHtml);
+            if (!csrfToken) {
+              const error = new Error('missing csrf token');
+              error.code = 'csrf';
+              throw error;
+            }
+            const response = await fetch(LOADTEST_GRAPHQL_PATH, {
+              method: 'POST',
+              credentials: 'same-origin',
+              headers: {
+                Accept: 'application/json',
+                'Content-Type': 'application/json',
+                'X-CSRF-Token': csrfToken,
+                'X-Requested-With': 'XMLHttpRequest',
+              },
+              body: JSON.stringify({
+                operationName: 'internalPipelineCreate',
+                query: LOADTEST_TRIGGER_MUTATION,
+                variables: {
+                  input: {
+                    projectPath: LOADTEST_PROJECT_PATH,
+                    ref: 'master',
+                    variables: buildLoadtestVariables(),
+                    inputs: [],
+                  },
+                },
+              }),
+            });
+            if (response.type === 'opaqueredirect' || response.status === 401 || response.status === 302) {
+              const error = new Error('login required');
+              error.code = 'login';
+              throw error;
+            }
+            if (!response.ok) {
+              const error = new Error(`GitLab graphql request failed: ${response.status}`);
+              error.code = 'http';
+              error.status = response.status;
+              throw error;
+            }
+            const result = await response.json();
+            const payload = result && result.data && result.data.pipelineCreate ? result.data.pipelineCreate : null;
+            const pipeline = payload && payload.pipeline ? payload.pipeline : null;
+            const errors = payload && Array.isArray(payload.errors) ? payload.errors : [];
+            const backendErrors = pipeline && pipeline.errorMessages && Array.isArray(pipeline.errorMessages.nodes)
+              ? pipeline.errorMessages.nodes.map((node) => node && node.content).filter(Boolean)
+              : [];
+            if (!pipeline || !pipeline.path || errors.length > 0 || backendErrors.length > 0) {
+              const error = new Error('pipeline create failed');
+              error.code = 'create_failed';
+              throw error;
+            }
+            return pipeline;
+          };
+
+          const parseMetaEnv = (text) => {
+            if (!text) {
+              return {};
+            }
+            return text.split('\n').reduce((acc, line) => {
+              const trimmed = line.trim();
+              if (!trimmed || trimmed.startsWith('#')) {
+                return acc;
+              }
+              const eqIndex = trimmed.indexOf('=');
+              if (eqIndex <= 0) {
+                return acc;
+              }
+              const key = trimmed.slice(0, eqIndex);
+              const value = trimmed.slice(eqIndex + 1);
+              acc[key] = value;
+              return acc;
+            }, {});
+          };
+
+          const buildLoadtestDetail = (metaEnv) => {
+            if (!metaEnv || !metaEnv.LOADTEST_ENGINE) {
+              return { detailKey: 'loadtest.detail.unknown', dashboardHref: '', reportPreferred: false };
+            }
+            const engine = metaEnv.LOADTEST_ENGINE;
+            const remoteWriteEnabled = metaEnv.LOADTEST_PROMETHEUS_RW_ENABLED === 'true';
+            const runId = metaEnv.LOADTEST_RUN_ID || '';
+            if (engine === 'k6' && remoteWriteEnabled && runId) {
+              return {
+                detailKey: 'loadtest.detail.k6',
+                dashboardHref: LOADTEST_DASHBOARD_URL(runId),
+                reportPreferred: true,
+              };
+            }
+            if (engine === 'curl-fallback') {
+              return { detailKey: 'loadtest.detail.fallback', dashboardHref: '', reportPreferred: true };
+            }
+            return { detailKey: 'loadtest.detail.unknown', dashboardHref: '', reportPreferred: true };
+          };
+
+          const triggerLoadtestFromPortal = async () => {
+            if (loadtestTriggerInFlight) {
+              return;
+            }
+            loadtestTriggerInFlight = true;
+            setBusyState(true);
+            clearLoadtestPolling();
+            loadtestCardState = {
+              statusKey: 'loadtest.state.triggering',
+              statusClass: 'status-loading',
+              bodyKey: 'loadtest.body.triggering',
+              bodyText: '',
+              detailKey: 'loadtest.detail.triggering',
+              detailText: '',
+              primaryHref: LOADTEST_PIPELINES_URL,
+              primaryLabelKey: 'loadtest.action.openPipelines',
+              secondaryHref: '',
+              secondaryLabelKey: '',
+              tertiaryHref: '',
+              tertiaryLabelKey: '',
+            };
+            renderLoadtestCard();
+            try {
+              const pipeline = await createLoadtestPipeline();
+              const pipelineId = extractPipelineId(pipeline.path);
+              loadtestPendingPipelineId = pipelineId;
+              loadtestCardState = {
+                statusKey: 'loadtest.state.pending',
+                statusClass: getLoadtestStatusClass('pending'),
+                bodyKey: '',
+                bodyText: `system · Pipeline #${pipelineId || '?'} · ${formatDateTime(new Date().toISOString())}`,
+                detailKey: 'loadtest.detail.triggered',
+                detailText: '',
+                primaryHref: pipelineId ? LOADTEST_PIPELINE_URL(pipelineId) : LOADTEST_PIPELINES_URL,
+                primaryLabelKey: 'loadtest.action.openPipeline',
+                secondaryHref: LOADTEST_PIPELINES_URL,
+                secondaryLabelKey: 'loadtest.action.openPipelines',
+                tertiaryHref: '',
+                tertiaryLabelKey: '',
+              };
+              renderLoadtestCard();
+              scheduleLoadtestPolling();
+            } catch (error) {
+              if (error && error.code === 'login') {
+                loadtestCardState = {
+                  statusKey: 'loadtest.state.login',
+                  statusClass: 'status-warn',
+                  bodyKey: 'loadtest.body.login',
+                  bodyText: '',
+                  detailKey: '',
+                  detailText: '',
+                  primaryHref: GITLAB_LOGIN_URL,
+                  primaryLabelKey: 'loadtest.action.login',
+                  secondaryHref: LOADTEST_RUN_URL,
+                  secondaryLabelKey: 'loadtest.action.run',
+                  tertiaryHref: '',
+                  tertiaryLabelKey: '',
+                };
+              } else {
+                loadtestCardState = {
+                  statusKey: 'loadtest.state.unavailable',
+                  statusClass: 'status-loading',
+                  bodyKey: 'loadtest.body.unavailable',
+                  bodyText: '',
+                  detailKey: 'loadtest.detail.triggerFailed',
+                  detailText: '',
+                  primaryHref: LOADTEST_PIPELINES_URL,
+                  primaryLabelKey: 'loadtest.action.openPipelines',
+                  secondaryHref: LOADTEST_RUN_URL,
+                  secondaryLabelKey: 'loadtest.action.run',
+                  tertiaryHref: '',
+                  tertiaryLabelKey: '',
+                };
+              }
+              renderLoadtestCard();
+              console.error('portal loadtest trigger failed', error);
+            } finally {
+              loadtestTriggerInFlight = false;
+              setBusyState(false);
+            }
+          };
+
           const loadLatestLoadtest = async () => {
             try {
               const jobs = await fetchGitLabJson(LOADTEST_JOBS_API_PATH);
               const job = Array.isArray(jobs) ? jobs.find((item) => item.name === 'loadtest_lab') : null;
               if (!job) {
+                if (loadtestPendingPipelineId) {
+                  renderLoadtestCard();
+                  return;
+                }
                 loadtestCardState = {
                   statusKey: 'loadtest.state.notRun',
                   statusClass: 'status-warn',
                   bodyKey: 'loadtest.body.notRun',
                   bodyText: '',
+                  detailKey: '',
+                  detailText: '',
                   primaryHref: LOADTEST_PIPELINES_URL,
                   primaryLabelKey: 'loadtest.action.openPipelines',
                   secondaryHref: LOADTEST_RUN_URL,
                   secondaryLabelKey: 'loadtest.action.run',
+                  tertiaryHref: '',
+                  tertiaryLabelKey: '',
                 };
                 renderLoadtestCard();
                 return;
               }
 
               const normalizedStatus = normalizeLoadtestStatus(job.status);
+              const currentPipelineId = Number(job && job.pipeline ? job.pipeline.id : 0);
+              // 刚触发的新流水线如果还没出现在 jobs 列表里，保持 Portal 本地“已触发”状态，避免闪回上一轮结果。
+              if (loadtestPendingPipelineId && currentPipelineId && currentPipelineId < loadtestPendingPipelineId) {
+                renderLoadtestCard();
+                return;
+              }
+              // 只有当当前这轮已经进入终态时才停止轮询；否则需要继续等 Portal 从 pending/running 刷到最终报告/看板入口。
+              if (
+                loadtestPendingPipelineId &&
+                currentPipelineId >= loadtestPendingPipelineId &&
+                (normalizedStatus === 'success' || normalizedStatus === 'failed')
+              ) {
+                loadtestPendingPipelineId = 0;
+              }
               loadtestCardState = {
                 statusKey: `loadtest.state.${normalizedStatus}`,
                 statusClass: getLoadtestStatusClass(normalizedStatus),
                 bodyKey: 'loadtest.body.unavailable',
                 bodyText: buildLoadtestFallbackText(job),
+                detailKey: '',
+                detailText: '',
                 primaryHref: job.pipeline && job.pipeline.id ? LOADTEST_PIPELINE_URL(job.pipeline.id) : LOADTEST_PIPELINES_URL,
                 primaryLabelKey: 'loadtest.action.openPipeline',
                 secondaryHref: LOADTEST_RUN_URL,
                 secondaryLabelKey: 'loadtest.action.run',
+                tertiaryHref: '',
+                tertiaryLabelKey: '',
               };
 
               if (normalizedStatus === 'success' || normalizedStatus === 'failed') {
-                const [metaResult, summaryResult] = await Promise.allSettled([
+                const [metaResult, summaryResult, envResult] = await Promise.allSettled([
                   fetchGitLabJson(LOADTEST_PORTAL_SUMMARY_PATH(job.id)),
                   fetchGitLabJson(LOADTEST_SUMMARY_PATH(job.id)),
+                  fetchGitLabText(LOADTEST_META_PATH(job.id)),
                 ]);
                 const meta = metaResult.status === 'fulfilled' ? metaResult.value : null;
                 const summary = summaryResult.status === 'fulfilled' ? summaryResult.value : null;
+                const metaEnv = envResult.status === 'fulfilled' ? parseMetaEnv(envResult.value) : {};
                 const summaryText = buildLoadtestSummaryText(meta, summary, job);
                 if (summaryText) {
                   loadtestCardState.bodyText = summaryText;
                 }
-                if (normalizedStatus === 'success' && meta && meta.has_report) {
+                const detail = buildLoadtestDetail(metaEnv);
+                loadtestCardState.detailKey = detail.detailKey;
+                if (detail.dashboardHref) {
+                  loadtestCardState.secondaryHref = detail.dashboardHref;
+                  loadtestCardState.secondaryLabelKey = 'loadtest.action.openDashboard';
+                }
+                if (meta && meta.has_report) {
+                  loadtestCardState.tertiaryHref = LOADTEST_REPORT_URL(job.id);
+                  loadtestCardState.tertiaryLabelKey = 'loadtest.action.openReport';
+                } else if (!detail.dashboardHref) {
                   loadtestCardState.secondaryHref = LOADTEST_REPORT_URL(job.id);
                   loadtestCardState.secondaryLabelKey = 'loadtest.action.openReport';
                 }
@@ -1076,10 +1481,14 @@ data:
                   statusClass: 'status-warn',
                   bodyKey: 'loadtest.body.login',
                   bodyText: '',
+                  detailKey: '',
+                  detailText: '',
                   primaryHref: GITLAB_LOGIN_URL,
                   primaryLabelKey: 'loadtest.action.login',
                   secondaryHref: LOADTEST_RUN_URL,
                   secondaryLabelKey: 'loadtest.action.run',
+                  tertiaryHref: '',
+                  tertiaryLabelKey: '',
                 };
               } else {
                 loadtestCardState = {
@@ -1087,10 +1496,14 @@ data:
                   statusClass: 'status-loading',
                   bodyKey: 'loadtest.body.unavailable',
                   bodyText: '',
+                  detailKey: '',
+                  detailText: '',
                   primaryHref: LOADTEST_PIPELINES_URL,
                   primaryLabelKey: 'loadtest.action.openPipelines',
                   secondaryHref: LOADTEST_RUN_URL,
                   secondaryLabelKey: 'loadtest.action.run',
+                  tertiaryHref: '',
+                  tertiaryLabelKey: '',
                 };
               }
               renderLoadtestCard();
@@ -1098,6 +1511,26 @@ data:
           };
 
           // Portal 只做静态导航、轻量双语与复制反馈，实时状态仍以 Prometheus / GitLab 为准。
+          if (runLoadtestCard) {
+            runLoadtestCard.addEventListener('click', (event) => {
+              if (event.defaultPrevented || event.metaKey || event.ctrlKey || event.shiftKey || event.button !== 0) {
+                return;
+              }
+              event.preventDefault();
+              triggerLoadtestFromPortal();
+            });
+          }
+          loadtestSecondaryLink.addEventListener('click', (event) => {
+            if (loadtestCardState.secondaryLabelKey !== 'loadtest.action.run') {
+              return;
+            }
+            if (event.defaultPrevented || event.metaKey || event.ctrlKey || event.shiftKey || event.button !== 0) {
+              return;
+            }
+            event.preventDefault();
+            triggerLoadtestFromPortal();
+          });
+
           langButtons.forEach((button) => {
             button.addEventListener('click', () => {
               const locale = button.getAttribute('data-lang') || 'en';

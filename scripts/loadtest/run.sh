@@ -17,6 +17,7 @@ usage() {
   LOADTEST_PASSWORD=Passw0rd!123
   LOADTEST_RUN_ID=lt-20260321-demo
   LOADTEST_PROMETHEUS_RW_URL=http://192.168.0.108:30090/api/v1/write
+  LOADTEST_K6_DOWNLOAD_URL=https://github.com/grafana/k6/releases/download/v0.49.0/k6-v0.49.0-linux-amd64.tar.gz
   K6_WEB_DASHBOARD=true
 EOF
 }
@@ -123,7 +124,8 @@ ensure_downloaded_k6_binary() {
 	fi
 
 	archive_name="k6-${download_version}-${os_name}-${arch_name}.tar.gz"
-	archive_url="https://github.com/grafana/k6/releases/download/${download_version}/${archive_name}"
+	# 允许后续切到内网镜像源；默认仍走官方 release，保持本地手工执行体验不变。
+	archive_url="${LOADTEST_K6_DOWNLOAD_URL:-https://github.com/grafana/k6/releases/download/${download_version}/${archive_name}}"
 	archive_path="${download_dir}/${archive_name}"
 	extract_root="${download_dir}/extract-${download_version}-${os_name}-${arch_name}"
 
@@ -221,6 +223,7 @@ printf 'loadtest output=%s\n' "${output_dir}"
 
 local_k6_bin=""
 if command -v k6 >/dev/null 2>&1; then
+	# GitLab shell runner 的推荐路径是宿主机固定安装 k6，避免每轮压测都依赖外网下载。
 	local_k6_bin="$(command -v k6)"
 elif local_k6_bin="$(ensure_downloaded_k6_binary)"; then
 	:
