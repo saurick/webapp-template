@@ -23,7 +23,7 @@ export class JsonRpc {
     let response
     let json
 
-    // ✅ 自动带 token
+    // 自动附带 token。
     const token = getToken(this.authScope)
     const headers = {
       Accept: 'application/json',

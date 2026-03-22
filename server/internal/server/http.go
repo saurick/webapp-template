@@ -24,7 +24,7 @@ func NewHTTPServer(
 	tp *sdktrace.TracerProvider,
 	data *data.Data,
 
-	// ✅ 新增：Data 配置（用于 JWT secret）
+	// Data 配置提供 JWT secret 等运行时依赖。
 	dc *conf.Data,
 ) *httpx.Server {
 	var opts = []httpx.ServerOption{
@@ -35,7 +35,7 @@ func NewHTTPServer(
 			logging.Server(log.With(logger, "logger.name", "server.http")),
 			// 默认 bbr limiter
 			ratelimit.Server(),
-			// ✅ 加上这个middleware，用于从请求头中获取 JWT token，并解析成 AuthClaims，然后存储到 context 中
+			// 统一从请求头解析 JWT，并把 AuthClaims 写入请求上下文。
 			AuthClaimsMiddleware(dc, logger),
 		),
 	}

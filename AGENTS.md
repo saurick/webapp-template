@@ -3,7 +3,12 @@
 - 每次完成代码改动后，Codex 必须更新 `/Users/simon/projects/webapp-template/progress.md`。
 - 更新最少包含：完成、下一步、阻塞/风险（可空）。
 - 若本次仅讨论或无文件改动，可跳过更新。
+- 注释遵循“最小必要”原则：能用命名、拆函数、测试、类型或正式文档表达清楚的内容，不额外堆进源码注释。
 - 代码改动必须补充“简明且关键”的注释（简体中文）：仅说明设计意图、兼容性兜底、边界条件；禁止无意义注释。优先放在关键逻辑入口与 fallback 分支。
+- 若当前任务触达的文件中存在明显过期、误导或与当前代码/模板正式规则冲突的注释，应在同一轮顺手修正；不要让后续 AI 继续根据错误注释扩散误判。
+- 大段注释掉的旧实现、现场补丁历史和临时兜底分支若已不再代表当前模板基线，应优先删除、改写成简洁说明或收口到正式 runbook，不要继续留在代码/脚本里充当隐藏真源。
+- 提交到仓库的注释应直接描述当前模板行为、边界和依赖关系；不要写成“新增 / 修复 / 关键修复 / 保持原有代码”或带 `⭐✅⚠️` 的补丁历史口吻，这类过程信息应写进提交说明、runbook 或 `progress.md`。
+- 模板行为、初始化规则、部署路径、runbook、页面文案、接口或配置发生变化时，必须在同一轮同步检查并更新相关注释与正式文档，避免模板代码先变、文档和脚本说明滞后。
 
 ## Git 推送约定
 
@@ -14,6 +19,26 @@
 - 若 `gitlab` 因本地服务离线、网络不通、SSH 拒绝等原因失败，但 `origin` 已成功，不视为需要回滚的失败场景；按“部分成功”汇报，并提示后续补推 `gitlab`。
 - 若仓库存在其他 remote，默认不推送，除非用户明确要求，或本文件已将其列入发布 remote。
 - 若用户明确要求“只推 GitLab”“只推 GitHub”或指定 remote/分支，严格按用户要求执行，不自动补推其他 remote。
+
+## 模板文档阅读优先级
+
+- 涉及“如何把模板收口成当前项目”、哪些默认模块该保留/删除、哪些模板语义必须替换时，必须先阅读：
+  - `/Users/simon/projects/webapp-template/docs/project-init.md`
+  - `/Users/simon/projects/webapp-template/docs/README.md`
+  - `/Users/simon/projects/webapp-template/README.md`
+- 涉及部署路径、Compose 与 `lab-ha` 边界、`Helm / Kustomize / Argo CD` 真源时，必须继续阅读：
+  - `/Users/simon/projects/webapp-template/docs/deployment-conventions.md`
+  - `/Users/simon/projects/webapp-template/server/deploy/README.md`
+  - `/Users/simon/projects/webapp-template/server/docs/README.md`
+- 涉及服务端运行、配置、接口、可观测性、数据库迁移时，应以 `/Users/simon/projects/webapp-template/server/docs/README.md` 为索引，继续阅读对应专题文档，而不是直接凭印象修改。
+- 文档优先级固定为：
+  - 当前模板初始化与裁剪规则：`docs/project-init.md`
+  - 当前部署真源与边界：`docs/deployment-conventions.md`
+  - 子系统专题说明：`server/docs/README.md`、`server/deploy/README.md`、`scripts/README.md`
+  - 逐日过程记录与现场收口：`progress.md`
+- 禁止把 `progress.md` 单独当成模板当前规则真源；它只能补充演进原因、现场操作和未完全回收的历史痕迹。
+- 当 `README / docs / progress.md` 之间出现冲突时，默认先以 `docs/project-init.md` 和 `docs/deployment-conventions.md` 为准；只有用户明确要求按历史现场口径复盘时，才回到 `progress.md` 或 live 现状逐条核对。
+- 涉及模板逻辑或部署规则复查时，局部脚本注释、单份 runbook 或某次现场记录只能作为线索，不能覆盖这里定义的文档优先级；发现冲突时应同步修正文档或注释。
 
 ## 服务端可观测性约束
 

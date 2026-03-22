@@ -1,4 +1,17 @@
 ## 2026-03-22
+- 完成：继续补强全局 `/Users/simon/.codex/AGENTS.md` 与项目级 `/Users/simon/projects/webapp-template/AGENTS.md`，显式加入“注释遵循最小必要原则”与“模板行为/初始化规则/部署路径/runbook/页面文案/接口/配置变化时，必须同轮同步更新相关注释和正式文档”的约束，避免后续 AI 因注释膨胀或说明滞后把现场过程误认成当前模板基线。
+- 验证：本次仅调整协作约定文档，未执行自动化测试。
+- 下一步：继续按这套约束扫 `lab-ha`、部署脚本和关键 runbook，把仍残留的历史过程性注释逐步收口。
+- 阻塞/风险：规则能约束后续新增漂移，但仓库里已存在的现场说明和 raw 文件仍需要后续触达时继续清理。
+
+## 2026-03-22
+- 完成：继续补强 `/Users/simon/projects/webapp-template/AGENTS.md` 与全局 `/Users/simon/.codex/AGENTS.md` 的注释治理规则，明确提交到仓库的注释必须直接描述当前模板行为、边界和依赖关系，不能长期保留“新增 / 修复 / 关键修复 / 保持原有代码”或 `⭐✅⚠️` 这类补丁历史口吻，避免后续 AI 把现场过程信息误认成模板正式基线。
+- 完成：同步清理 `server/internal/server/http.go` 与 `web/src/common/utils/jsonRpc.js` 的高风险注释，把“新增 Data 配置”“自动带 token”这类补丁历史式写法改成当前行为说明，和新约束保持一致。
+- 验证：本次仅调整 AGENTS 与注释文本，未执行自动化测试。
+- 下一步：继续优先扫 `lab-ha`、部署脚本和关键服务端入口，找仍可能把现场过程写成当前规则的注释。
+- 阻塞/风险：模板仓库仍保留不少现场 runbook 与 manifests，后续扫描还可能继续发现需要收口的历史注释或说明。
+
+## 2026-03-22
 - 完成：把 Portal 的“运行压测”从“跳 GitLab 新建页”收口成真正的站内直触发。更新 `/Users/simon/projects/webapp-template/server/deploy/lab-ha/manifests/platform-portal.yaml` 与 `/Users/simon/projects/webapp-template/server/deploy/lab-ha/charts/lab-platform/files/raw/platform-portal.yaml`，为首页 `运行压测` 卡片和“最近一次压测”按钮增加同源直触发逻辑：Portal 先通过 `/gitlab/.../-/pipelines/new?ref=master` 代理页读取 GitLab `csrf-token`，再通过 `/gitlab/api/graphql` 复用当前浏览器登录态调用 `internalPipelineCreate` mutation，默认创建安全的 `system` 场景，并固定携带 `LOADTEST_BASE_URL` 与 `LOADTEST_PROMETHEUS_RW_URL`。同时补了 Portal 内的触发中/已触发/失败状态文案、busy 态样式和轮询逻辑；轮询现在会一直等到当前这轮 `loadtest_lab` 进入 `success/failed` 终态，再把卡片切到 `打开看板 / 打开报告`，避免过早停在 `pending/running`。
 - 验证：已三次 live 发布 `lab-portal` 并完成 `rollout restart`；浏览器实际打开 `http://192.168.0.108:30088/?v=portal-direct-trigger-live-3` 后，点击首页 `运行压测` 卡片不会离开 Portal，而是直接把卡片切成 `排队中`，展示 `system · Pipeline #45 · 03/22 12:39` 与 `打开当前流水线`；随后等待轮询完成，卡片已自动刷新为 `通过`、`system · p95 14ms · 03/22 12:41`、`引擎 k6，当前这轮已写入 Grafana 时序。`，并给出 `打开当前流水线 -> Pipeline #45`、`打开看板 -> var-testid=gitlab-45-80-system`、`打开报告 -> /loadtest-report.html?job_id=80` 三个入口。Prometheus 也已查到 `sum(k6_http_reqs_total{testid=\"gitlab-45-80-system\"})=200`，说明这轮 Portal 直触发确实写入了 Grafana 链路。
 - 下一步：如果后续还想继续提高 Portal 完整度，可再把 `system` 之外的场景选择做成 Portal 内小面板，而不是要求去 GitLab 页改变量；当前这不是阻塞项，因为“默认安全场景一键触发 + 自动出图/出报告”的主路径已经完整。
@@ -9,6 +22,18 @@
 - 验证：已重新渲染 `lab-platform` 原始文件并 `kubectl apply` 到 live，随后重启 `lab-portal` Deployment；浏览器实际打开 `http://192.168.0.108:30088/?v=visual-loadtest-card` 后，`最近一次压测` 卡片已显示 `通过`、`system · p95 15ms · 03/22 12:01`、`引擎 k6，当前这轮已写入 Grafana 时序。`，并同时出现 `打开当前流水线 -> Pipeline #41`、`打开看板 -> Grafana var-testid=gitlab-41-72-system`、`打开报告 -> /loadtest-report.html?job_id=72` 三个入口，说明“Portal 看状态 -> 点看板 / 点报告”的主路径已经可直接使用。
 - 下一步：如果后续还要继续弱化 GitLab 原始页面的存在感，可再把 Portal 上的 `打开看板` 默认指向官方 k6 看板或补一个更聚合的压测详情页；当前这不是阻塞项，因为用户已经可以只通过 `30088` 发现入口并跳到可视化结果。
 - 阻塞/风险：Portal 当前仍是轻量聚合层，不是执行器；“运行压测”按钮依旧会跳到 GitLab 预填变量页，而不是在 Portal 内直接触发流水线。现有 Portal 逻辑依赖浏览器里已有 GitLab 登录态；若未登录，卡片会退回到“登录 GitLab / 运行压测”引导。Grafana 看板本身仍带既有前端控制台报错，但目前不影响出图。
+
+## 2026-03-22
+- 完成：继续补强 `/Users/simon/projects/webapp-template/AGENTS.md` 的注释治理规则，明确“大段注释掉的旧实现、现场补丁历史和临时兜底分支若已不再代表当前模板基线，应优先删除、改写成简洁说明或收口到正式 runbook”，避免后续 AI 把注释掉的应急路径或现场痕迹继续当成模板主路径。
+- 验证：本次仅调整协作约定文档，未执行自动化测试。
+- 下一步：继续优先清理 `lab-ha` 相关脚本、runbook 和 raw manifests 里的历史痕迹型注释，保持 AGENTS 规则与实际仓库状态一致。
+- 阻塞/风险：当前最明显的 load test 基线漂移已收口，但 `lab-ha` 下仍存在现场 runbook 和 raw 文件并存的客观复杂度，后续扫描还可能继续发现需要精简的历史说明。
+
+## 2026-03-22
+- 完成：在高风险注释专项扫描中，继续修正 `/Users/simon/projects/webapp-template/scripts/loadtest/run.sh` 的误导性注释。`ensure_go_k6_binary()` 旁的注释现已明确：`go install k6` 只适用于“本地临时机/一次性环境”的兜底，不是 `GitLab shell runner` 的推荐基线，避免后续 AI 根据代码注释又把 runner 主路径写回“现场 go install / 在线补下载”。
+- 验证：本次仅调整脚本注释，未执行自动化测试。
+- 下一步：继续优先扫描 load test、部署和值班脚本中的注释与 runbook，找出仍可能把“fallback / 应急路径”误写成“正式基线”的位置。
+- 阻塞/风险：当前 load test 文档与关键脚本注释已基本收口到同一口径，但 `lab-ha` 目录仍存在较多现场 runbook 与 raw manifests；后续若继续演进部署主路径，仍需持续同步文档和脚本注释。
 
 ## 2026-03-22
 - 完成：在高风险注释/文档专项扫描中，先修正压测文档里最容易误导 AI 的 `k6` 基线表述。`scripts/loadtest/README.md` 与 `server/deploy/lab-ha/docs/LOAD_TEST.md` 现已明确：自动下载 `k6`、`go install`、`docker run grafana/k6` 只适用于“本地临时机/一次性环境”，当前 `GitLab shell runner` 的正式推荐基线仍然是宿主机预装固定版本 `k6`，避免后续 AI 看到 fallback 描述后又把在线下载写回 runner 主路径。

@@ -84,7 +84,7 @@ ensure_go_k6_binary() {
 		return 0
 	fi
 
-	# Shell runner 现场既没有本机 k6 也没有 Docker 时，退化到 go install 兜底。
+	# go-install 仅作为本地临时机/一次性环境的兜底，不是 GitLab shell runner 的推荐基线。
 	mkdir -p "${go_bin_dir}"
 	printf 'install k6 via go: %s -> %s\n' "${go_k6_version}" "${go_k6_bin}" >&2
 	GOBIN="${go_bin_dir}" go install "go.k6.io/k6@${go_k6_version}"
