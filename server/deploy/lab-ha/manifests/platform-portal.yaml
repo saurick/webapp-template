@@ -155,6 +155,18 @@ data:
             border-color: rgba(102,217,239,0.45);
             box-shadow: 0 14px 36px rgba(0,0,0,0.22);
           }
+          .card-accent {
+            border-color: rgba(102,217,239,0.28);
+            background:
+              linear-gradient(180deg, rgba(15,28,44,0.96), rgba(11,20,34,0.92)),
+              radial-gradient(circle at top right, rgba(102,217,239,0.12), transparent 46%);
+          }
+          .card-accent:hover {
+            border-color: rgba(255,209,102,0.55);
+          }
+          .card-accent small {
+            color: var(--accent-2);
+          }
           .card.is-busy,
           .status-link.is-busy {
             pointer-events: none;
@@ -423,6 +435,12 @@ data:
               </a>
               <a class="card" href="http://192.168.0.108:30081/d/lab-ha-gitops/ha-lab-gitops-and-delivery" target="_blank" rel="noreferrer" data-i18n-html="cards.delivery">
                 <small>Delivery</small><strong>GitOps &amp; Delivery</strong><span>Argo CD sync plus prod-trial blue-green active/preview release signals.</span>
+              </a>
+              <a class="card card-accent" href="http://webapp-trial.192.168.0.108.nip.io/" target="_blank" rel="noreferrer" data-i18n-html="cards.prodTrialActive">
+                <small>Release</small><strong>Prod-Trial Active</strong><span>Blue-green live entry routed to the current active Service.</span>
+              </a>
+              <a class="card card-accent" href="http://webapp-trial-preview.192.168.0.108.nip.io/" target="_blank" rel="noreferrer" data-i18n-html="cards.prodTrialPreview">
+                <small>Release</small><strong>Prod-Trial Preview</strong><span>Blue-green preview entry for validating the next version before promotion.</span>
               </a>
               <a id="run-loadtest-card" class="card" href="http://192.168.0.108:8929/root/webapp-template-lab/-/pipelines/new?ref=master&amp;var[PIPELINE_MODE]=loadtest&amp;var[LOADTEST_SCENARIO]=system" target="_blank" rel="noreferrer" data-i18n-html="cards.runLoadtest">
                 <small>Testing</small><strong>Run Load Test</strong><span>GitLab one-click entry with a safe default system scenario and 192-address artifacts.</span>
@@ -714,6 +732,8 @@ data:
               'cards.data': '<small>Data</small><strong>Data &amp; Storage</strong><span>Database, Harbor, Longhorn, SeaweedFS, and PVC health view.</span>',
               'cards.database': '<small>Database</small><strong>PostgreSQL &amp; Backup</strong><span>Primary/replica roles, lag, DB size, and Velero backup signals.</span>',
               'cards.delivery': '<small>Delivery</small><strong>GitOps &amp; Delivery</strong><span>Argo CD sync plus prod-trial blue-green active/preview release signals.</span>',
+              'cards.prodTrialActive': '<small>Release</small><strong>Prod-Trial Active</strong><span>Blue-green live entry routed to the current active Service.</span>',
+              'cards.prodTrialPreview': '<small>Release</small><strong>Prod-Trial Preview</strong><span>Blue-green preview entry for validating the next version before promotion.</span>',
               'cards.runLoadtest': '<small>Testing</small><strong>Run Load Test</strong><span>Portal directly triggers the safe default system scenario. Results stay on 192-address pages.</span>',
               'cards.loadtestDashboard': '<small>Testing</small><strong>Load Test Dashboard</strong><span>Grafana view for k6 remote-write trends, latency, failures, and per-step breakdown.</span>',
               'cards.loadtestDashboardOfficial': '<small>Testing</small><strong>Official k6 Dashboard</strong><span>Official Grafana k6 Prometheus dashboard, adapted to the lab Prometheus datasource.</span>',
@@ -799,6 +819,8 @@ data:
               'cards.data': '<small>数据</small><strong>数据与存储</strong><span>数据库、Harbor、Longhorn、SeaweedFS 与 PVC 健康视图。</span>',
               'cards.database': '<small>数据库</small><strong>PostgreSQL 与备份</strong><span>主从角色、复制延迟、库大小与 Velero 备份信号。</span>',
               'cards.delivery': '<small>交付</small><strong>GitOps 与交付</strong><span>Argo CD 同步，以及 prod-trial 蓝绿发布的 active/preview 发布信号。</span>',
+              'cards.prodTrialActive': '<small>发布验证</small><strong>Prod-Trial Active</strong><span>蓝绿发布当前对外生效的 active 入口。</span>',
+              'cards.prodTrialPreview': '<small>发布验证</small><strong>Prod-Trial Preview</strong><span>蓝绿发布用于上线前验新的 preview 入口。</span>',
               'cards.runLoadtest': '<small>测试</small><strong>运行压测</strong><span>直接由 Portal 触发安全的 system 场景，结果仍落在 192 地址页面。</span>',
               'cards.loadtestDashboard': '<small>测试</small><strong>压测看板</strong><span>Grafana 统一查看 k6 remote write 时序、延迟、失败率和分步骤拆解。</span>',
               'cards.loadtestDashboardOfficial': '<small>测试</small><strong>官方 k6 看板</strong><span>官方 Grafana k6 Prometheus dashboard，已适配实验室 Prometheus 数据源。</span>',
