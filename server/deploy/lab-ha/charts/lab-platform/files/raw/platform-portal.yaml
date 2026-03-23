@@ -397,7 +397,7 @@ data:
               <div class="pill" data-i18n-html="pill.nodes"><b>Nodes</b> 3 VM / single stable host</div>
               <div class="pill" data-i18n-html="pill.status"><b>Status</b> <span class="status-ok">Healthy</span></div>
               <div class="pill" data-i18n-html="pill.bestEntry"><b>Best Entry</b> IP:Port direct</div>
-              <div class="pill" data-i18n-html="pill.curated"><b>Portal Curated</b> 2026-03-21</div>
+              <div class="pill" data-i18n-html="pill.curated"><b>Portal Curated</b> 2026-03-22</div>
             </div>
             <div class="grid">
               <a class="card" href="http://192.168.0.108:32668" target="_blank" rel="noreferrer" data-i18n-html="cards.app">
@@ -422,7 +422,7 @@ data:
                 <small>Database</small><strong>PostgreSQL &amp; Backup</strong><span>Primary/replica roles, lag, DB size, and Velero backup signals.</span>
               </a>
               <a class="card" href="http://192.168.0.108:30081/d/lab-ha-gitops/ha-lab-gitops-and-delivery" target="_blank" rel="noreferrer" data-i18n-html="cards.delivery">
-                <small>Delivery</small><strong>GitOps &amp; Delivery</strong><span>Argo CD sync, GitLab probe, rollout controller, and release signals.</span>
+                <small>Delivery</small><strong>GitOps &amp; Delivery</strong><span>Argo CD sync plus prod-trial blue-green active/preview release signals.</span>
               </a>
               <a id="run-loadtest-card" class="card" href="http://192.168.0.108:8929/root/webapp-template-lab/-/pipelines/new?ref=master&amp;var[PIPELINE_MODE]=loadtest&amp;var[LOADTEST_SCENARIO]=system" target="_blank" rel="noreferrer" data-i18n-html="cards.runLoadtest">
                 <small>Testing</small><strong>Run Load Test</strong><span>GitLab one-click entry with a safe default system scenario and 192-address artifacts.</span>
@@ -612,7 +612,7 @@ data:
               <div class="cred-line">
                 <div>
                   <div class="cred-label">GitOps</div>
-                  <div class="cred-value" data-i18n="quickNotes.gitops">GitLab CI + Argo CD already drive the lab deployment path.</div>
+                  <div class="cred-value" data-i18n="quickNotes.gitops">GitLab CI + Argo CD drive delivery; prod-trial blue-green status lives in the delivery dashboard.</div>
                 </div>
               </div>
             </div>
@@ -705,7 +705,7 @@ data:
               'pill.nodes': '<b>Nodes</b> 3 VM / single stable host',
               'pill.status': '<b>Status</b> <span class="status-ok">Healthy</span>',
               'pill.bestEntry': '<b>Best Entry</b> IP:Port direct',
-              'pill.curated': '<b>Portal Curated</b> 2026-03-21',
+              'pill.curated': '<b>Portal Curated</b> 2026-03-22',
               'cards.app': '<small>App</small><strong>WebApp</strong><span>Main product site.</span>',
               'cards.portal': '<small>Portal</small><strong>Lab Portal</strong><span>This navigation page itself.</span>',
               'cards.registry': '<small>Registry</small><strong>Harbor</strong><span>Container registry UI.</span>',
@@ -713,7 +713,7 @@ data:
               'cards.ops': '<small>Ops</small><strong>Ops Overview</strong><span>Daily on-call dashboard for cluster, app, backup, and alerts.</span>',
               'cards.data': '<small>Data</small><strong>Data &amp; Storage</strong><span>Database, Harbor, Longhorn, SeaweedFS, and PVC health view.</span>',
               'cards.database': '<small>Database</small><strong>PostgreSQL &amp; Backup</strong><span>Primary/replica roles, lag, DB size, and Velero backup signals.</span>',
-              'cards.delivery': '<small>Delivery</small><strong>GitOps &amp; Delivery</strong><span>Argo CD sync, GitLab probe, rollout controller, and release signals.</span>',
+              'cards.delivery': '<small>Delivery</small><strong>GitOps &amp; Delivery</strong><span>Argo CD sync plus prod-trial blue-green active/preview release signals.</span>',
               'cards.runLoadtest': '<small>Testing</small><strong>Run Load Test</strong><span>Portal directly triggers the safe default system scenario. Results stay on 192-address pages.</span>',
               'cards.loadtestDashboard': '<small>Testing</small><strong>Load Test Dashboard</strong><span>Grafana view for k6 remote-write trends, latency, failures, and per-step breakdown.</span>',
               'cards.loadtestDashboardOfficial': '<small>Testing</small><strong>Official k6 Dashboard</strong><span>Official Grafana k6 Prometheus dashboard, adapted to the lab Prometheus datasource.</span>',
@@ -766,7 +766,7 @@ data:
               'quickNotes.argocd': 'Self-signed HTTPS. Browser warning once is expected.',
               'quickNotes.seaweedfsS3': '30333 is API-only. Browser AccessDenied is expected.',
               'quickNotes.filerUi': 'Use 30888 for human browsing and basic object checks.',
-              'quickNotes.gitops': 'GitLab CI + Argo CD already drive the lab deployment path.',
+              'quickNotes.gitops': 'GitLab CI + Argo CD drive delivery; prod-trial blue-green status lives in the delivery dashboard.',
               'notes.purposeTitle': 'What Portal is for',
               'notes.purpose1': 'Central landing page for every lab system.',
               'notes.purpose2': 'Reduces the need to remember many ports.',
@@ -790,7 +790,7 @@ data:
               'pill.nodes': '<b>节点</b> 3 台 VM / 单稳定入口主机',
               'pill.status': '<b>状态</b> <span class="status-ok">健康</span>',
               'pill.bestEntry': '<b>最佳入口</b> 直连 IP:Port',
-              'pill.curated': '<b>Portal 收口时间</b> 2026-03-21',
+              'pill.curated': '<b>Portal 收口时间</b> 2026-03-22',
               'cards.app': '<small>应用</small><strong>WebApp</strong><span>主业务站点。</span>',
               'cards.portal': '<small>门户</small><strong>实验室导航页</strong><span>就是当前这张导航页。</span>',
               'cards.registry': '<small>镜像仓库</small><strong>Harbor</strong><span>容器镜像仓库界面。</span>',
@@ -798,7 +798,7 @@ data:
               'cards.ops': '<small>运维</small><strong>运维总览</strong><span>集群、应用、备份与告警的日常值班看板。</span>',
               'cards.data': '<small>数据</small><strong>数据与存储</strong><span>数据库、Harbor、Longhorn、SeaweedFS 与 PVC 健康视图。</span>',
               'cards.database': '<small>数据库</small><strong>PostgreSQL 与备份</strong><span>主从角色、复制延迟、库大小与 Velero 备份信号。</span>',
-              'cards.delivery': '<small>交付</small><strong>GitOps 与交付</strong><span>Argo CD 同步、GitLab 探活、Rollout 控制器与发布信号。</span>',
+              'cards.delivery': '<small>交付</small><strong>GitOps 与交付</strong><span>Argo CD 同步，以及 prod-trial 蓝绿发布的 active/preview 发布信号。</span>',
               'cards.runLoadtest': '<small>测试</small><strong>运行压测</strong><span>直接由 Portal 触发安全的 system 场景，结果仍落在 192 地址页面。</span>',
               'cards.loadtestDashboard': '<small>测试</small><strong>压测看板</strong><span>Grafana 统一查看 k6 remote write 时序、延迟、失败率和分步骤拆解。</span>',
               'cards.loadtestDashboardOfficial': '<small>测试</small><strong>官方 k6 看板</strong><span>官方 Grafana k6 Prometheus dashboard，已适配实验室 Prometheus 数据源。</span>',
@@ -851,7 +851,7 @@ data:
               'quickNotes.argocd': '自签 HTTPS，浏览器首次出现证书警告属于预期。',
               'quickNotes.seaweedfsS3': '30333 仅提供 API，浏览器看到 AccessDenied 属于预期。',
               'quickNotes.filerUi': '人工访问与基础对象检查请使用 30888。',
-              'quickNotes.gitops': '当前实验部署路径已由 GitLab CI + Argo CD 驱动。',
+              'quickNotes.gitops': '当前实验部署路径已由 GitLab CI + Argo CD 驱动；prod-trial 蓝绿发布状态统一看交付看板。',
               'notes.purposeTitle': 'Portal 的用途',
               'notes.purpose1': '作为实验室所有系统的统一落地页。',
               'notes.purpose2': '减少记忆大量端口的成本。',
