@@ -1,0 +1,45 @@
+# yamllint disable-file
+{{- if .Values.autoscaling.enabled }}
+{{- $scaleTargetName := required "deployment.name is required" .Values.deployment.name }}
+{{- $scaleTargetApiVersion := "apps/v1" }}
+{{- $scaleTargetKind := "Deployment" }}
+{{- if .Values.rollout.enabled }}
+{{- $scaleTargetName = default .Values.deployment.name .Values.rollout.name }}
+{{- $scaleTargetApiVersion = "argoproj.io/v1alpha1" }}
+{{- $scaleTargetKind = "Rollout" }}
+{{- end }}
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ $scaleTargetName }}
+  namespace: {{ required "namespace.name is required" .Values.namespace.name }}
+spec:
+  scaleTargetRef:
+    # prod-trial 已切到 Rollout；这里跟随真实工作负载类型，避免 HPA 挂在一个不存在的 Deployment 上。
+    apiVersion: {{ $scaleTargetApiVersion }}
+    kind: {{ $scaleTargetKind }}
+    name: {{ $scaleTargetName }}
+  minReplicas: {{ .Values.autoscaling.minReplicas }}
+  maxReplicas: {{ .Values.autoscaling.maxReplicas }}
+{{- with .Values.autoscaling.behavior }}
+  behavior:
+{{ toYaml . | nindent 4 }}
+{{- end }}
+  metrics:
+    {{- if .Values.autoscaling.targetCPUUtilizationPercentage }}
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.autoscaling.targetCPUUtilizationPercentage }}
+    {{- end }}
+    {{- if .Values.autoscaling.targetMemoryUtilizationPercentage }}
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.autoscaling.targetMemoryUtilizationPercentage }}
+    {{- end }}
+{{- end }}

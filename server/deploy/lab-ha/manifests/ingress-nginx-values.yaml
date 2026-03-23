@@ -1,4 +1,8 @@
 controller:
+  config:
+    # 显式把限流命中收口为 429，避免默认 503 让治理看板和告警口径失真。
+    limit-req-status-code: "429"
+    limit-conn-status-code: "429"
   image:
     registry: registry.aliyuncs.com
     image: google_containers/nginx-ingress-controller
@@ -13,6 +17,10 @@ controller:
         digest: ""
   metrics:
     enabled: true
+    serviceMonitor:
+      enabled: true
+      additionalLabels:
+        release: kube-prometheus-stack
   replicaCount: 2
   service:
     type: LoadBalancer

@@ -387,9 +387,10 @@ data:
             <div class="hero-head">
               <div class="hero-copy">
                 <div class="eyebrow" data-i18n="hero.eyebrow">3-node HA Lab</div>
-                <h1 data-i18n="hero.title">WebApp Platform Portal</h1>
+                <h1 data-i18n="hero.title">WebApp Lab Portal</h1>
                 <p class="sub" data-i18n-html="hero.sub">
-                  Direct browser entrypoints for the current lab cluster. These links are mapped to
+                  Direct browser entrypoints for <code>WebApp Lab</code> and
+                  <code>WebApp Prod-Trial</code> on the current cluster. These links are mapped to
                   stable <code>192.168.0.108:port</code> endpoints so they keep working even when
                   <code>nip.io</code> or Host-header based routes are unreliable on the client side.
                 </p>
@@ -413,7 +414,7 @@ data:
             </div>
             <div class="grid">
               <a class="card" href="http://192.168.0.108:32668" target="_blank" rel="noreferrer" data-i18n-html="cards.app">
-                <small>App</small><strong>WebApp</strong><span>Main product site.</span>
+                <small>App</small><strong>WebApp Lab</strong><span>Current lab entry via the shared ingress.</span>
               </a>
               <a class="card" href="http://192.168.0.108:30088" target="_blank" rel="noreferrer" data-i18n-html="cards.portal">
                 <small>Portal</small><strong>Lab Portal</strong><span>This navigation page itself.</span>
@@ -434,13 +435,13 @@ data:
                 <small>Database</small><strong>PostgreSQL &amp; Backup</strong><span>Primary/replica roles, lag, DB size, and Velero backup signals.</span>
               </a>
               <a class="card" href="http://192.168.0.108:30081/d/lab-ha-gitops/ha-lab-gitops-and-delivery" target="_blank" rel="noreferrer" data-i18n-html="cards.delivery">
-                <small>Delivery</small><strong>GitOps &amp; Delivery</strong><span>Argo CD sync plus prod-trial blue-green active/preview release signals.</span>
+                <small>Delivery</small><strong>WebApp GitOps &amp; Release</strong><span>WebApp Lab sync plus WebApp Prod-Trial active/preview release signals.</span>
               </a>
-              <a class="card card-accent" href="http://webapp-trial.192.168.0.108.nip.io/" target="_blank" rel="noreferrer" data-i18n-html="cards.prodTrialActive">
-                <small>Release</small><strong>Prod-Trial Active</strong><span>Blue-green live entry routed to the current active Service.</span>
+              <a class="card card-accent" href="http://192.168.0.108:30089/" target="_blank" rel="noreferrer" data-i18n-html="cards.prodTrialActive">
+                <small>Release</small><strong>WebApp Prod-Trial Active</strong><span>Current live release entry routed to the active Service.</span>
               </a>
-              <a class="card card-accent" href="http://webapp-trial-preview.192.168.0.108.nip.io/" target="_blank" rel="noreferrer" data-i18n-html="cards.prodTrialPreview">
-                <small>Release</small><strong>Prod-Trial Preview</strong><span>Blue-green preview entry for validating the next version before promotion.</span>
+              <a class="card card-accent" href="http://192.168.0.108:30091/" target="_blank" rel="noreferrer" data-i18n-html="cards.prodTrialPreview">
+                <small>Release</small><strong>WebApp Prod-Trial Preview</strong><span>Pre-release validation entry routed to the preview Service.</span>
               </a>
               <a id="run-loadtest-card" class="card" href="http://192.168.0.108:8929/root/webapp-template-lab/-/pipelines/new?ref=master&amp;var[PIPELINE_MODE]=loadtest&amp;var[LOADTEST_SCENARIO]=system" target="_blank" rel="noreferrer" data-i18n-html="cards.runLoadtest">
                 <small>Testing</small><strong>Run Load Test</strong><span>GitLab one-click entry with a safe default system scenario and 192-address artifacts.</span>
@@ -473,7 +474,7 @@ data:
                 <small>Object Store</small><strong>SeaweedFS Filer</strong><span>Human-friendly browser UI.</span>
               </a>
               <a class="card" href="http://192.168.0.108:30086" target="_blank" rel="noreferrer" data-i18n-html="cards.alertSink">
-                <small>Alerts</small><strong>Alert Sink</strong><span>Webhook receiver used for smoke tests.</span>
+                <small>Alerts</small><strong>Alert Sink</strong><span>Recent webhook payloads for quick routing checks and triage.</span>
               </a>
               <a class="card" href="http://192.168.0.108:8929/users/sign_in" target="_blank" rel="noreferrer" data-i18n-html="cards.gitlab">
                 <small>Source Code</small><strong>GitLab</strong><span>CI/CD and experiment repo.</span>
@@ -513,6 +514,102 @@ data:
                   rel="noreferrer"
                   data-i18n="loadtest.action.openDashboard"
                 >Open dashboard</a>
+              </div>
+            </div>
+            <div class="status-card">
+              <h2 data-i18n="snapshot.alertSinkLatestTitle">Latest Real Alert</h2>
+              <div id="alertsink-status" class="status-value status-loading" data-i18n="alertsink.state.loading">Loading</div>
+              <p id="alertsink-summary" data-i18n="alertsink.body.loading">Checking Alert Sink for the latest Alertmanager payload.</p>
+              <p id="alertsink-detail" class="status-detail hidden"></p>
+              <div class="status-actions">
+                <a
+                  id="alertsink-primary-link"
+                  class="status-link"
+                  href="http://192.168.0.108:30086"
+                  target="_blank"
+                  rel="noreferrer"
+                  data-i18n="alertsink.action.openSink"
+                >Open alert sink</a>
+                <a
+                  id="alertsink-secondary-link"
+                  class="status-link status-link-secondary"
+                  href="http://192.168.0.108:30093"
+                  target="_blank"
+                  rel="noreferrer"
+                  data-i18n="alertsink.action.openAlertmanager"
+                >Open Alertmanager</a>
+              </div>
+            </div>
+            <div class="status-card">
+              <h2 data-i18n="snapshot.coldStartTitle">Latest Cold-Start Check</h2>
+              <div id="ops-cold-start-status" class="status-value status-loading" data-i18n="ops.state.loading">Loading</div>
+              <p id="ops-cold-start-summary" data-i18n="ops.body.loading">Loading latest ops summary.</p>
+              <p id="ops-cold-start-detail" class="status-detail hidden"></p>
+              <div class="status-actions">
+                <a
+                  id="ops-cold-start-primary-link"
+                  class="status-link"
+                  href="http://192.168.0.108:8929/root/webapp-template-lab/-/blob/master/server/deploy/lab-ha/docs/RECOVERY_RUNBOOK.md"
+                  target="_blank"
+                  rel="noreferrer"
+                  data-i18n="ops.action.openRunbook"
+                >Open runbook</a>
+                <a
+                  id="ops-cold-start-secondary-link"
+                  class="status-link status-link-secondary"
+                  href="http://192.168.0.108:8929/root/webapp-template-lab/-/blob/master/server/deploy/lab-ha/docs/OPS_CHECKLIST.md"
+                  target="_blank"
+                  rel="noreferrer"
+                  data-i18n="ops.action.openChecklist"
+                >Open checklist</a>
+              </div>
+            </div>
+            <div class="status-card">
+              <h2 data-i18n="snapshot.backupCheckTitle">Latest Backup Check</h2>
+              <div id="ops-backup-status" class="status-value status-loading" data-i18n="ops.state.loading">Loading</div>
+              <p id="ops-backup-summary" data-i18n="ops.body.loading">Loading latest ops summary.</p>
+              <p id="ops-backup-detail" class="status-detail hidden"></p>
+              <div class="status-actions">
+                <a
+                  id="ops-backup-primary-link"
+                  class="status-link"
+                  href="http://192.168.0.108:30081/d/lab-ha-postgres/ha-lab-postgresql-and-backup"
+                  target="_blank"
+                  rel="noreferrer"
+                  data-i18n="ops.action.openBackupDashboard"
+                >Open backup dashboard</a>
+                <a
+                  id="ops-backup-secondary-link"
+                  class="status-link status-link-secondary"
+                  href="http://192.168.0.108:8929/root/webapp-template-lab/-/blob/master/server/deploy/lab-ha/docs/OPS_CHECKLIST.md"
+                  target="_blank"
+                  rel="noreferrer"
+                  data-i18n="ops.action.openChecklist"
+                >Open checklist</a>
+              </div>
+            </div>
+            <div class="status-card">
+              <h2 data-i18n="snapshot.smokeTitle">Latest Smoke Check</h2>
+              <div id="ops-smoke-status" class="status-value status-loading" data-i18n="ops.state.loading">Loading</div>
+              <p id="ops-smoke-summary" data-i18n="ops.body.loading">Loading latest ops summary.</p>
+              <p id="ops-smoke-detail" class="status-detail hidden"></p>
+              <div class="status-actions">
+                <a
+                  id="ops-smoke-primary-link"
+                  class="status-link"
+                  href="http://192.168.0.108:30089/"
+                  target="_blank"
+                  rel="noreferrer"
+                  data-i18n="ops.action.openActive"
+                >Open active</a>
+                <a
+                  id="ops-smoke-secondary-link"
+                  class="status-link status-link-secondary"
+                  href="http://192.168.0.108:30091/"
+                  target="_blank"
+                  rel="noreferrer"
+                  data-i18n="ops.action.openPreview"
+                >Open preview</a>
               </div>
             </div>
             <div class="status-card" data-i18n-html="snapshot.pipeline">
@@ -572,7 +669,7 @@ data:
               <h2 data-i18n="cred.defaultAccountsTitle">Default Accounts</h2>
               <div class="cred-line">
                 <div>
-                  <div class="cred-label">WebApp</div>
+                  <div class="cred-label">WebApp Lab</div>
                   <div class="cred-value">admin / AdminLab123!</div>
                 </div>
                 <button type="button" class="copy" data-copy="AdminLab123!" data-copy-state="default">Copy password</button>
@@ -630,7 +727,7 @@ data:
               <div class="cred-line">
                 <div>
                   <div class="cred-label">GitOps</div>
-                  <div class="cred-value" data-i18n="quickNotes.gitops">GitLab CI + Argo CD drive delivery; prod-trial blue-green status lives in the delivery dashboard.</div>
+                  <div class="cred-value" data-i18n="quickNotes.gitops">GitLab CI + Argo CD drive WebApp Lab delivery; WebApp Prod-Trial blue-green status lives in the release dashboard.</div>
                 </div>
               </div>
             </div>
@@ -679,6 +776,17 @@ data:
           const LOADTEST_PIPELINES_URL = 'http://192.168.0.108:8929/root/webapp-template-lab/-/pipelines';
           const GITLAB_LOGIN_URL = 'http://192.168.0.108:8929/users/sign_in';
           const GITLAB_PROJECT_ID = '1';
+          const ALERT_SINK_URL = 'http://192.168.0.108:30086';
+          const ALERTMANAGER_URL = 'http://192.168.0.108:30093';
+          const ALERT_SINK_REAL_EVENTS_PATH = '/alert-sink-api/alerts?source=alertmanager';
+          const ALERT_SINK_REFRESH_MS = 15000;
+          const OPS_SUMMARIES_PATH = '/alert-sink-api/ops/summaries';
+          const OPS_SUMMARY_REFRESH_MS = 30000;
+          const OPS_COLD_START_RUNBOOK_URL = 'http://192.168.0.108:8929/root/webapp-template-lab/-/blob/master/server/deploy/lab-ha/docs/RECOVERY_RUNBOOK.md';
+          const OPS_CHECKLIST_URL = 'http://192.168.0.108:8929/root/webapp-template-lab/-/blob/master/server/deploy/lab-ha/docs/OPS_CHECKLIST.md';
+          const OPS_BACKUP_DASHBOARD_URL = 'http://192.168.0.108:30081/d/lab-ha-postgres/ha-lab-postgresql-and-backup';
+          const OPS_ACTIVE_URL = 'http://192.168.0.108:30089/';
+          const OPS_PREVIEW_URL = 'http://192.168.0.108:30091/';
           const LOADTEST_TRIGGER_FORM_PATH = `/gitlab/${LOADTEST_PROJECT_PATH}/-/pipelines/new?ref=master`;
           const LOADTEST_GRAPHQL_PATH = '/gitlab/api/graphql';
           const LOADTEST_JOBS_API_PATH = `/gitlab-api/projects/${GITLAB_PROJECT_ID}/jobs?per_page=40&scope[]=created&scope[]=pending&scope[]=running&scope[]=failed&scope[]=success`;
@@ -714,26 +822,26 @@ data:
           const LOADTEST_POLL_TIMEOUT_MS = 180000;
           const translations = {
             en: {
-              'document.title': 'HA Lab Portal',
+              'document.title': 'WebApp Lab Portal',
               'language.switch': 'Switch language',
               'hero.eyebrow': '3-node HA Lab',
-              'hero.title': 'WebApp Platform Portal',
-              'hero.sub': 'Direct browser entrypoints for the current lab cluster. These links are mapped to stable <code>192.168.0.108:port</code> endpoints so they keep working even when <code>nip.io</code> or Host-header based routes are unreliable on the client side.',
+              'hero.title': 'WebApp Lab Portal',
+              'hero.sub': 'Direct browser entrypoints for <code>WebApp Lab</code> and <code>WebApp Prod-Trial</code> on the current cluster. These links are mapped to stable <code>192.168.0.108:port</code> endpoints so they keep working even when <code>nip.io</code> or Host-header based routes are unreliable on the client side.',
               'pill.mode': '<b>Mode</b> Experiment HA',
               'pill.nodes': '<b>Nodes</b> 3 VM / single stable host',
               'pill.status': '<b>Status</b> <span class="status-ok">Healthy</span>',
               'pill.bestEntry': '<b>Best Entry</b> IP:Port direct',
               'pill.curated': '<b>Portal Curated</b> 2026-03-22',
-              'cards.app': '<small>App</small><strong>WebApp</strong><span>Main product site.</span>',
+              'cards.app': '<small>App</small><strong>WebApp Lab</strong><span>Current lab entry via the shared ingress.</span>',
               'cards.portal': '<small>Portal</small><strong>Lab Portal</strong><span>This navigation page itself.</span>',
               'cards.registry': '<small>Registry</small><strong>Harbor</strong><span>Container registry UI.</span>',
               'cards.grafana': '<small>Metrics</small><strong>Grafana</strong><span>Dashboards and observability.</span>',
               'cards.ops': '<small>Ops</small><strong>Ops Overview</strong><span>Daily on-call dashboard for cluster, app, backup, and alerts.</span>',
               'cards.data': '<small>Data</small><strong>Data &amp; Storage</strong><span>Database, Harbor, Longhorn, SeaweedFS, and PVC health view.</span>',
               'cards.database': '<small>Database</small><strong>PostgreSQL &amp; Backup</strong><span>Primary/replica roles, lag, DB size, and Velero backup signals.</span>',
-              'cards.delivery': '<small>Delivery</small><strong>GitOps &amp; Delivery</strong><span>Argo CD sync plus prod-trial blue-green active/preview release signals.</span>',
-              'cards.prodTrialActive': '<small>Release</small><strong>Prod-Trial Active</strong><span>Blue-green live entry routed to the current active Service.</span>',
-              'cards.prodTrialPreview': '<small>Release</small><strong>Prod-Trial Preview</strong><span>Blue-green preview entry for validating the next version before promotion.</span>',
+              'cards.delivery': '<small>Delivery</small><strong>WebApp GitOps &amp; Release</strong><span>WebApp Lab sync plus WebApp Prod-Trial active/preview release signals.</span>',
+              'cards.prodTrialActive': '<small>Release</small><strong>WebApp Prod-Trial Active</strong><span>Current live release entry routed to the active Service.</span>',
+              'cards.prodTrialPreview': '<small>Release</small><strong>WebApp Prod-Trial Preview</strong><span>Pre-release validation entry routed to the preview Service.</span>',
               'cards.runLoadtest': '<small>Testing</small><strong>Run Load Test</strong><span>Portal directly triggers the safe default system scenario. Results stay on 192-address pages.</span>',
               'cards.loadtestDashboard': '<small>Testing</small><strong>Load Test Dashboard</strong><span>Grafana view for k6 remote-write trends, latency, failures, and per-step breakdown.</span>',
               'cards.loadtestDashboardOfficial': '<small>Testing</small><strong>Official k6 Dashboard</strong><span>Official Grafana k6 Prometheus dashboard, adapted to the lab Prometheus datasource.</span>',
@@ -744,10 +852,28 @@ data:
               'cards.longhorn': '<small>Storage</small><strong>Longhorn</strong><span>Persistent volume UI.</span>',
               'cards.hubble': '<small>Network</small><strong>Hubble</strong><span>Cilium flow visibility UI.</span>',
               'cards.seaweedfs': '<small>Object Store</small><strong>SeaweedFS Filer</strong><span>Human-friendly browser UI.</span>',
-              'cards.alertSink': '<small>Alerts</small><strong>Alert Sink</strong><span>Webhook receiver used for smoke tests.</span>',
+              'cards.alertSink': '<small>Alerts</small><strong>Alert Sink</strong><span>Recent webhook payloads for quick routing checks and triage.</span>',
               'cards.gitlab': '<small>Source Code</small><strong>GitLab</strong><span>CI/CD and experiment repo.</span>',
               'tag.stableEndpoints': 'Stable direct browser endpoints',
               'snapshot.loadtestTitle': 'Latest Load Test',
+              'snapshot.alertSinkLatestTitle': 'Latest Real Alert',
+              'snapshot.coldStartTitle': 'Latest Cold-Start Check',
+              'snapshot.backupCheckTitle': 'Latest Backup Check',
+              'snapshot.smokeTitle': 'Latest Smoke Check',
+              'ops.state.loading': 'Loading',
+              'ops.state.ok': 'Healthy',
+              'ops.state.fail': 'Failed',
+              'ops.state.warn': 'Needs attention',
+              'ops.state.none': 'Not recorded yet',
+              'ops.state.unavailable': 'Unavailable',
+              'ops.body.loading': 'Loading latest ops summary.',
+              'ops.body.none': 'No recent result has been written yet. Run the matching check once to seed this card.',
+              'ops.body.unavailable': 'Ops summary is temporarily unavailable. Run the matching check again or open the linked live page.',
+              'ops.action.openRunbook': 'Open runbook',
+              'ops.action.openChecklist': 'Open checklist',
+              'ops.action.openBackupDashboard': 'Open backup dashboard',
+              'ops.action.openActive': 'Open active',
+              'ops.action.openPreview': 'Open preview',
               'loadtest.state.loading': 'Loading',
               'loadtest.state.success': 'Passed',
               'loadtest.state.failed': 'Failed',
@@ -775,6 +901,16 @@ data:
               'loadtest.action.run': 'Run load test',
               'loadtest.action.running': 'Starting...',
               'loadtest.action.login': 'Login GitLab',
+              'alertsink.state.loading': 'Loading',
+              'alertsink.state.firing': 'Firing',
+              'alertsink.state.resolved': 'Resolved',
+              'alertsink.state.none': 'No real alert',
+              'alertsink.state.unavailable': 'Unavailable',
+              'alertsink.body.loading': 'Checking Alert Sink for the latest Alertmanager payload.',
+              'alertsink.body.none': 'No Alertmanager webhook payload is cached right now. Open Alertmanager or Alert Sink for live truth.',
+              'alertsink.body.unavailable': 'Alert Sink summary is temporarily unavailable. Open Alertmanager or Alert Sink directly.',
+              'alertsink.action.openSink': 'Open alert sink',
+              'alertsink.action.openAlertmanager': 'Open Alertmanager',
               'snapshot.pipeline': '<h2>CI Pipeline</h2><div class="status-value status-ok">Open live</div><p>Use <a href="http://192.168.0.108:8929/root/webapp-template-lab/-/pipelines" target="_blank" rel="noreferrer">GitLab pipeline history</a> for the current build truth. This page intentionally no longer pins a single pipeline number.</p>',
               'snapshot.gitops': '<h2>GitOps Sync</h2><div class="status-value status-ok">Check Argo</div><p>Current sync status, live revision, and drift should be checked in <a href="https://192.168.0.108:30443" target="_blank" rel="noreferrer">Argo CD</a> or the delivery dashboard, not inferred from this static page.</p>',
               'snapshot.drills': '<h2>HA Drills</h2><div class="status-value status-ok">Use runbook</div><p>Latest verified failover and recovery conclusions are kept in <a href="http://192.168.0.108:8929/root/webapp-template-lab/-/blob/master/server/deploy/lab-ha/docs/TEST_REPORT.md" target="_blank" rel="noreferrer">TEST_REPORT.md</a> and <a href="http://192.168.0.108:8929/root/webapp-template-lab/-/blob/master/server/deploy/lab-ha/docs/RECOVERY_RUNBOOK.md" target="_blank" rel="noreferrer">RECOVERY_RUNBOOK.md</a>.</p>',
@@ -786,7 +922,7 @@ data:
               'quickNotes.argocd': 'Self-signed HTTPS. Browser warning once is expected.',
               'quickNotes.seaweedfsS3': '30333 is API-only. Browser AccessDenied is expected.',
               'quickNotes.filerUi': 'Use 30888 for human browsing and basic object checks.',
-              'quickNotes.gitops': 'GitLab CI + Argo CD drive delivery; prod-trial blue-green status lives in the delivery dashboard.',
+              'quickNotes.gitops': 'GitLab CI + Argo CD drive WebApp Lab delivery; WebApp Prod-Trial blue-green status lives in the release dashboard.',
               'notes.purposeTitle': 'What Portal is for',
               'notes.purpose1': 'Central landing page for every lab system.',
               'notes.purpose2': 'Reduces the need to remember many ports.',
@@ -801,26 +937,26 @@ data:
               'copy.fallback': 'Manual copy',
             },
             zh: {
-              'document.title': '高可用实验室门户',
+              'document.title': 'WebApp Lab 门户',
               'language.switch': '切换语言',
               'hero.eyebrow': '3 节点高可用实验室',
-              'hero.title': 'WebApp 平台导航门户',
-              'hero.sub': '当前实验集群的人类可直接访问入口页。这些链接统一映射到稳定的 <code>192.168.0.108:port</code> 端口，因此即使客户端侧的 <code>nip.io</code> 或基于 Host 头的路由不稳定，也仍可直接打开。',
+              'hero.title': 'WebApp Lab 导航门户',
+              'hero.sub': '当前集群里 <code>WebApp Lab</code> 与 <code>WebApp Prod-Trial</code> 的人类可直接访问入口页。这些链接统一映射到稳定的 <code>192.168.0.108:port</code> 端口，因此即使客户端侧的 <code>nip.io</code> 或基于 Host 头的路由不稳定，也仍可直接打开。',
               'pill.mode': '<b>模式</b> 实验高可用',
               'pill.nodes': '<b>节点</b> 3 台 VM / 单稳定入口主机',
               'pill.status': '<b>状态</b> <span class="status-ok">健康</span>',
               'pill.bestEntry': '<b>最佳入口</b> 直连 IP:Port',
               'pill.curated': '<b>Portal 收口时间</b> 2026-03-22',
-              'cards.app': '<small>应用</small><strong>WebApp</strong><span>主业务站点。</span>',
+              'cards.app': '<small>应用</small><strong>WebApp Lab</strong><span>当前 lab 入口，走共享 ingress。</span>',
               'cards.portal': '<small>门户</small><strong>实验室导航页</strong><span>就是当前这张导航页。</span>',
               'cards.registry': '<small>镜像仓库</small><strong>Harbor</strong><span>容器镜像仓库界面。</span>',
               'cards.grafana': '<small>监控</small><strong>Grafana</strong><span>仪表盘与可观测性入口。</span>',
               'cards.ops': '<small>运维</small><strong>运维总览</strong><span>集群、应用、备份与告警的日常值班看板。</span>',
               'cards.data': '<small>数据</small><strong>数据与存储</strong><span>数据库、Harbor、Longhorn、SeaweedFS 与 PVC 健康视图。</span>',
               'cards.database': '<small>数据库</small><strong>PostgreSQL 与备份</strong><span>主从角色、复制延迟、库大小与 Velero 备份信号。</span>',
-              'cards.delivery': '<small>交付</small><strong>GitOps 与交付</strong><span>Argo CD 同步，以及 prod-trial 蓝绿发布的 active/preview 发布信号。</span>',
-              'cards.prodTrialActive': '<small>发布验证</small><strong>Prod-Trial Active</strong><span>蓝绿发布当前对外生效的 active 入口。</span>',
-              'cards.prodTrialPreview': '<small>发布验证</small><strong>Prod-Trial Preview</strong><span>蓝绿发布用于上线前验新的 preview 入口。</span>',
+              'cards.delivery': '<small>交付</small><strong>WebApp GitOps 与发布</strong><span>WebApp Lab 同步，以及 WebApp Prod-Trial active/preview 发布信号。</span>',
+              'cards.prodTrialActive': '<small>发布验证</small><strong>WebApp Prod-Trial Active</strong><span>当前对外生效的正式侧入口。</span>',
+              'cards.prodTrialPreview': '<small>发布验证</small><strong>WebApp Prod-Trial Preview</strong><span>上线前验新的预发布入口。</span>',
               'cards.runLoadtest': '<small>测试</small><strong>运行压测</strong><span>直接由 Portal 触发安全的 system 场景，结果仍落在 192 地址页面。</span>',
               'cards.loadtestDashboard': '<small>测试</small><strong>压测看板</strong><span>Grafana 统一查看 k6 remote write 时序、延迟、失败率和分步骤拆解。</span>',
               'cards.loadtestDashboardOfficial': '<small>测试</small><strong>官方 k6 看板</strong><span>官方 Grafana k6 Prometheus dashboard，已适配实验室 Prometheus 数据源。</span>',
@@ -831,10 +967,28 @@ data:
               'cards.longhorn': '<small>存储</small><strong>Longhorn</strong><span>持久卷管理界面。</span>',
               'cards.hubble': '<small>网络</small><strong>Hubble</strong><span>Cilium 流量可视化界面。</span>',
               'cards.seaweedfs': '<small>对象存储</small><strong>SeaweedFS Filer</strong><span>适合人工查看的文件浏览界面。</span>',
-              'cards.alertSink': '<small>告警</small><strong>Alert Sink</strong><span>用于 smoke test 的 Webhook 接收器。</span>',
+              'cards.alertSink': '<small>告警</small><strong>Alert Sink</strong><span>最近 webhook payload 收件页，方便快速确认路由和排障。</span>',
               'cards.gitlab': '<small>源码</small><strong>GitLab</strong><span>CI/CD 与实验仓库入口。</span>',
               'tag.stableEndpoints': '稳定的浏览器直连入口',
               'snapshot.loadtestTitle': '最近一次压测',
+              'snapshot.alertSinkLatestTitle': '最近真实告警',
+              'snapshot.coldStartTitle': '最近冷启动验收',
+              'snapshot.backupCheckTitle': '最近备份检查',
+              'snapshot.smokeTitle': '最近烟雾检查',
+              'ops.state.loading': '加载中',
+              'ops.state.ok': '健康',
+              'ops.state.fail': '失败',
+              'ops.state.warn': '需要关注',
+              'ops.state.none': '还没有记录',
+              'ops.state.unavailable': '暂不可用',
+              'ops.body.loading': '正在读取最近一次运维摘要。',
+              'ops.body.none': '当前还没有写入最近结果。先执行对应检查脚本一次，这张卡片就会有内容。',
+              'ops.body.unavailable': '运维摘要暂时不可用，请重跑对应检查或直接打开链接查看 live。',
+              'ops.action.openRunbook': '打开 runbook',
+              'ops.action.openChecklist': '打开巡检清单',
+              'ops.action.openBackupDashboard': '打开备份看板',
+              'ops.action.openActive': '打开 active',
+              'ops.action.openPreview': '打开 preview',
               'loadtest.state.loading': '加载中',
               'loadtest.state.success': '通过',
               'loadtest.state.failed': '失败',
@@ -862,6 +1016,16 @@ data:
               'loadtest.action.run': '运行压测',
               'loadtest.action.running': '启动中...',
               'loadtest.action.login': '登录 GitLab',
+              'alertsink.state.loading': '加载中',
+              'alertsink.state.firing': '告警中',
+              'alertsink.state.resolved': '已恢复',
+              'alertsink.state.none': '暂无真实告警',
+              'alertsink.state.unavailable': '暂不可用',
+              'alertsink.body.loading': '正在读取 Alert Sink 最近一条 Alertmanager payload。',
+              'alertsink.body.none': '当前没有缓存到真实 Alertmanager webhook payload。请直接打开 Alertmanager 或 Alert Sink 查看 live 真相。',
+              'alertsink.body.unavailable': 'Alert Sink 摘要暂时不可用，请直接打开 Alertmanager 或 Alert Sink。',
+              'alertsink.action.openSink': '打开 Alert Sink',
+              'alertsink.action.openAlertmanager': '打开 Alertmanager',
               'snapshot.pipeline': '<h2>CI 流水线</h2><div class="status-value status-ok">去看 live</div><p>当前构建真相请直接看 <a href="http://192.168.0.108:8929/root/webapp-template-lab/-/pipelines" target="_blank" rel="noreferrer">GitLab 流水线历史</a>。这张页面不再写死某一个流水线编号。</p>',
               'snapshot.gitops': '<h2>GitOps 同步</h2><div class="status-value status-ok">查看 Argo</div><p>当前同步状态、live revision 和漂移情况，应直接在 <a href="https://192.168.0.108:30443" target="_blank" rel="noreferrer">Argo CD</a> 或交付看板里确认，而不是根据静态页推断。</p>',
               'snapshot.drills': '<h2>高可用演练</h2><div class="status-value status-ok">看 runbook</div><p>最近一次确认通过的故障切换与恢复结论，统一以 <a href="http://192.168.0.108:8929/root/webapp-template-lab/-/blob/master/server/deploy/lab-ha/docs/TEST_REPORT.md" target="_blank" rel="noreferrer">TEST_REPORT.md</a> 和 <a href="http://192.168.0.108:8929/root/webapp-template-lab/-/blob/master/server/deploy/lab-ha/docs/RECOVERY_RUNBOOK.md" target="_blank" rel="noreferrer">RECOVERY_RUNBOOK.md</a> 为准。</p>',
@@ -873,7 +1037,7 @@ data:
               'quickNotes.argocd': '自签 HTTPS，浏览器首次出现证书警告属于预期。',
               'quickNotes.seaweedfsS3': '30333 仅提供 API，浏览器看到 AccessDenied 属于预期。',
               'quickNotes.filerUi': '人工访问与基础对象检查请使用 30888。',
-              'quickNotes.gitops': '当前实验部署路径已由 GitLab CI + Argo CD 驱动；prod-trial 蓝绿发布状态统一看交付看板。',
+              'quickNotes.gitops': '当前实验部署路径已由 GitLab CI + Argo CD 驱动；WebApp Lab 走日常同步，WebApp Prod-Trial 蓝绿发布状态统一看发布看板。',
               'notes.purposeTitle': 'Portal 的用途',
               'notes.purpose1': '作为实验室所有系统的统一落地页。',
               'notes.purpose2': '减少记忆大量端口的成本。',
@@ -892,6 +1056,26 @@ data:
           const langButtons = Array.from(document.querySelectorAll('.lang-btn'));
           const copyButtons = Array.from(document.querySelectorAll('.copy'));
           const runLoadtestCard = document.getElementById('run-loadtest-card');
+          const alertsinkStatus = document.getElementById('alertsink-status');
+          const alertsinkSummary = document.getElementById('alertsink-summary');
+          const alertsinkDetail = document.getElementById('alertsink-detail');
+          const alertsinkPrimaryLink = document.getElementById('alertsink-primary-link');
+          const alertsinkSecondaryLink = document.getElementById('alertsink-secondary-link');
+          const opsColdStartStatus = document.getElementById('ops-cold-start-status');
+          const opsColdStartSummary = document.getElementById('ops-cold-start-summary');
+          const opsColdStartDetail = document.getElementById('ops-cold-start-detail');
+          const opsColdStartPrimaryLink = document.getElementById('ops-cold-start-primary-link');
+          const opsColdStartSecondaryLink = document.getElementById('ops-cold-start-secondary-link');
+          const opsBackupStatus = document.getElementById('ops-backup-status');
+          const opsBackupSummary = document.getElementById('ops-backup-summary');
+          const opsBackupDetail = document.getElementById('ops-backup-detail');
+          const opsBackupPrimaryLink = document.getElementById('ops-backup-primary-link');
+          const opsBackupSecondaryLink = document.getElementById('ops-backup-secondary-link');
+          const opsSmokeStatus = document.getElementById('ops-smoke-status');
+          const opsSmokeSummary = document.getElementById('ops-smoke-summary');
+          const opsSmokeDetail = document.getElementById('ops-smoke-detail');
+          const opsSmokePrimaryLink = document.getElementById('ops-smoke-primary-link');
+          const opsSmokeSecondaryLink = document.getElementById('ops-smoke-secondary-link');
           const loadtestStatus = document.getElementById('loadtest-status');
           const loadtestSummary = document.getElementById('loadtest-summary');
           const loadtestDetail = document.getElementById('loadtest-detail');
@@ -916,6 +1100,58 @@ data:
             secondaryLabelKey: 'loadtest.action.run',
             tertiaryHref: '',
             tertiaryLabelKey: '',
+          };
+          let alertSinkCardState = {
+            statusKey: 'alertsink.state.loading',
+            statusClass: 'status-loading',
+            bodyKey: 'alertsink.body.loading',
+            bodyText: '',
+            detailText: '',
+            item: null,
+            primaryHref: ALERT_SINK_URL,
+            primaryLabelKey: 'alertsink.action.openSink',
+            secondaryHref: ALERTMANAGER_URL,
+            secondaryLabelKey: 'alertsink.action.openAlertmanager',
+          };
+          const buildOpsDefaultState = (primaryHref, primaryLabelKey, secondaryHref, secondaryLabelKey) => ({
+            statusKey: 'ops.state.loading',
+            statusClass: 'status-loading',
+            bodyKey: 'ops.body.loading',
+            bodyText: '',
+            detailText: '',
+            item: null,
+            primaryHref,
+            primaryLabelKey,
+            secondaryHref,
+            secondaryLabelKey,
+          });
+          const opsSummaryBindings = {
+            'cold-start': {
+              statusNode: opsColdStartStatus,
+              summaryNode: opsColdStartSummary,
+              detailNode: opsColdStartDetail,
+              primaryLink: opsColdStartPrimaryLink,
+              secondaryLink: opsColdStartSecondaryLink,
+            },
+            backup: {
+              statusNode: opsBackupStatus,
+              summaryNode: opsBackupSummary,
+              detailNode: opsBackupDetail,
+              primaryLink: opsBackupPrimaryLink,
+              secondaryLink: opsBackupSecondaryLink,
+            },
+            smoke: {
+              statusNode: opsSmokeStatus,
+              summaryNode: opsSmokeSummary,
+              detailNode: opsSmokeDetail,
+              primaryLink: opsSmokePrimaryLink,
+              secondaryLink: opsSmokeSecondaryLink,
+            },
+          };
+          let opsSummaryCardState = {
+            'cold-start': buildOpsDefaultState(OPS_COLD_START_RUNBOOK_URL, 'ops.action.openRunbook', OPS_CHECKLIST_URL, 'ops.action.openChecklist'),
+            backup: buildOpsDefaultState(OPS_BACKUP_DASHBOARD_URL, 'ops.action.openBackupDashboard', OPS_CHECKLIST_URL, 'ops.action.openChecklist'),
+            smoke: buildOpsDefaultState(OPS_ACTIVE_URL, 'ops.action.openActive', OPS_PREVIEW_URL, 'ops.action.openPreview'),
           };
 
           const getMessage = (locale, key) => {
@@ -995,6 +1231,8 @@ data:
             copyButtons.forEach((button) => {
               renderCopyButton(button);
             });
+            renderAlertSinkCard();
+            renderOpsSummaryCards();
             renderLoadtestCard();
             setActiveLanguage(locale);
           };
@@ -1089,6 +1327,26 @@ data:
             }).format(parsed);
           };
 
+          const fetchPortalJson = async (path) => {
+            const response = await fetch(path, {
+              cache: 'no-store',
+              credentials: 'same-origin',
+              headers: { Accept: 'application/json' },
+            });
+            if (response.status === 404) {
+              const error = new Error('not found');
+              error.code = 'not_found';
+              throw error;
+            }
+            if (!response.ok) {
+              const error = new Error(`Portal proxy request failed: ${response.status}`);
+              error.code = 'http';
+              error.status = response.status;
+              throw error;
+            }
+            return response.json();
+          };
+
           const getMetricValue = (summary, metricName, fieldName) => {
             if (!summary || !summary.metrics || !summary.metrics[metricName]) {
               return null;
@@ -1129,6 +1387,187 @@ data:
             return parts.join(' · ');
           };
 
+          const getAlertSinkStatusClass = (status) => {
+            switch (status) {
+              case 'firing':
+                return 'status-fail';
+              case 'resolved':
+                return 'status-ok';
+              case 'none':
+                return 'status-warn';
+              default:
+                return 'status-loading';
+            }
+          };
+
+          const buildAlertSinkSummaryText = (item) => {
+            if (!item || !item.summary) {
+              return '';
+            }
+            const parts = [];
+            const names = Array.isArray(item.summary.alert_names) ? item.summary.alert_names.filter(Boolean) : [];
+            if (names.length > 0) {
+              parts.push(names.join(', '));
+            }
+            if (item.summary.receiver) {
+              parts.push(item.summary.receiver);
+            }
+            if (item.received_at) {
+              parts.push(formatDateTime(item.received_at));
+            }
+            return parts.join(' · ');
+          };
+
+          const buildAlertSinkDetailText = (item) => {
+            if (!item || !item.summary) {
+              return '';
+            }
+            const sourceLabel = item.summary.source_label || (currentLocale === 'zh' ? '真实告警' : 'Real alert');
+            const receiver = item.summary.receiver || 'unknown';
+            const alertCount = typeof item.summary.alert_count === 'number' ? item.summary.alert_count : 0;
+            if (currentLocale === 'zh') {
+              return `${sourceLabel} · ${alertCount} 条告警 · receiver ${receiver}`;
+            }
+            return `${sourceLabel} · ${alertCount} alert(s) · receiver ${receiver}`;
+          };
+
+          const renderAlertSinkCard = () => {
+            alertsinkStatus.className = `status-value ${alertSinkCardState.statusClass}`;
+            alertsinkStatus.textContent = getMessage(currentLocale, alertSinkCardState.statusKey);
+            if (alertSinkCardState.item) {
+              alertsinkSummary.textContent = buildAlertSinkSummaryText(alertSinkCardState.item);
+              const detailText = buildAlertSinkDetailText(alertSinkCardState.item);
+              if (detailText) {
+                alertsinkDetail.textContent = detailText;
+                alertsinkDetail.classList.remove('hidden');
+              } else {
+                alertsinkDetail.textContent = '';
+                alertsinkDetail.classList.add('hidden');
+              }
+            } else {
+              alertsinkSummary.textContent = alertSinkCardState.bodyText || getMessage(currentLocale, alertSinkCardState.bodyKey);
+              if (alertSinkCardState.detailText) {
+                alertsinkDetail.textContent = alertSinkCardState.detailText;
+                alertsinkDetail.classList.remove('hidden');
+              } else {
+                alertsinkDetail.textContent = '';
+                alertsinkDetail.classList.add('hidden');
+              }
+            }
+            setActionLink(alertsinkPrimaryLink, alertSinkCardState.primaryHref, alertSinkCardState.primaryLabelKey);
+            setActionLink(alertsinkSecondaryLink, alertSinkCardState.secondaryHref, alertSinkCardState.secondaryLabelKey);
+          };
+
+          const getOpsSummaryStatusClass = (status) => {
+            switch (status) {
+              case 'ok':
+                return 'status-ok';
+              case 'fail':
+                return 'status-fail';
+              case 'warn':
+              case 'none':
+                return 'status-warn';
+              default:
+                return 'status-loading';
+            }
+          };
+
+          const buildOpsSummaryDetailText = (item) => {
+            if (!item) {
+              return '';
+            }
+            const parts = [];
+            if (item.checked_at) {
+              parts.push(formatDateTime(item.checked_at));
+            }
+            if (item.detail) {
+              parts.push(item.detail);
+            }
+            return parts.join(' · ');
+          };
+
+          const renderOpsSummaryCard = (key) => {
+            const bindings = opsSummaryBindings[key];
+            const state = opsSummaryCardState[key];
+            if (!bindings || !state) {
+              return;
+            }
+            bindings.statusNode.className = `status-value ${state.statusClass}`;
+            bindings.statusNode.textContent = getMessage(currentLocale, state.statusKey);
+            if (state.item && state.item.summary) {
+              bindings.summaryNode.textContent = state.item.summary;
+            } else {
+              bindings.summaryNode.textContent = state.bodyText || getMessage(currentLocale, state.bodyKey);
+            }
+            const detailText = state.item ? buildOpsSummaryDetailText(state.item) : state.detailText;
+            if (detailText) {
+              bindings.detailNode.textContent = detailText;
+              bindings.detailNode.classList.remove('hidden');
+            } else {
+              bindings.detailNode.textContent = '';
+              bindings.detailNode.classList.add('hidden');
+            }
+            setActionLink(bindings.primaryLink, state.primaryHref, state.primaryLabelKey);
+            setActionLink(bindings.secondaryLink, state.secondaryHref, state.secondaryLabelKey);
+          };
+
+          const renderOpsSummaryCards = () => {
+            Object.keys(opsSummaryBindings).forEach((key) => {
+              renderOpsSummaryCard(key);
+            });
+          };
+
+          const loadOpsSummaries = async () => {
+            const defaults = {
+              'cold-start': buildOpsDefaultState(OPS_COLD_START_RUNBOOK_URL, 'ops.action.openRunbook', OPS_CHECKLIST_URL, 'ops.action.openChecklist'),
+              backup: buildOpsDefaultState(OPS_BACKUP_DASHBOARD_URL, 'ops.action.openBackupDashboard', OPS_CHECKLIST_URL, 'ops.action.openChecklist'),
+              smoke: buildOpsDefaultState(OPS_ACTIVE_URL, 'ops.action.openActive', OPS_PREVIEW_URL, 'ops.action.openPreview'),
+            };
+
+            try {
+              const data = await fetchPortalJson(OPS_SUMMARIES_PATH);
+              const summaries = data && data.summaries ? data.summaries : {};
+              Object.keys(defaults).forEach((key) => {
+                const item = summaries[key] || null;
+                if (item) {
+                  const status = item.status || 'unavailable';
+                  opsSummaryCardState[key] = {
+                    ...defaults[key],
+                    statusKey: `ops.state.${status}`,
+                    statusClass: getOpsSummaryStatusClass(status),
+                    bodyKey: '',
+                    bodyText: '',
+                    detailText: '',
+                    item,
+                  };
+                } else {
+                  opsSummaryCardState[key] = {
+                    ...defaults[key],
+                    statusKey: 'ops.state.none',
+                    statusClass: getOpsSummaryStatusClass('none'),
+                    bodyKey: 'ops.body.none',
+                    bodyText: '',
+                    detailText: '',
+                    item: null,
+                  };
+                }
+              });
+            } catch (_error) {
+              Object.keys(defaults).forEach((key) => {
+                opsSummaryCardState[key] = {
+                  ...defaults[key],
+                  statusKey: 'ops.state.unavailable',
+                  statusClass: getOpsSummaryStatusClass('unavailable'),
+                  bodyKey: 'ops.body.unavailable',
+                  bodyText: '',
+                  detailText: '',
+                  item: null,
+                };
+              });
+            }
+            renderOpsSummaryCards();
+          };
+
           const fetchGitLabJson = async (path) => {
             // 通过 Portal 的同源代理复用 GitLab 登录态，避免前端直接跨域请求 8929。
             const response = await fetch(path, {
@@ -1148,6 +1587,55 @@ data:
               throw error;
             }
             return response.json();
+          };
+
+          const loadLatestAlertSink = async () => {
+            try {
+              const data = await fetchPortalJson(ALERT_SINK_REAL_EVENTS_PATH);
+              const item = data && Array.isArray(data.events) ? data.events[0] : null;
+              if (item) {
+                const summaryStatus = item.summary && item.summary.status ? item.summary.status : 'unavailable';
+                alertSinkCardState = {
+                  statusKey: `alertsink.state.${summaryStatus}`,
+                  statusClass: getAlertSinkStatusClass(summaryStatus),
+                  bodyKey: '',
+                  bodyText: '',
+                  detailText: '',
+                  item,
+                  primaryHref: ALERT_SINK_URL,
+                  primaryLabelKey: 'alertsink.action.openSink',
+                  secondaryHref: ALERTMANAGER_URL,
+                  secondaryLabelKey: 'alertsink.action.openAlertmanager',
+                };
+              } else {
+                alertSinkCardState = {
+                  statusKey: 'alertsink.state.none',
+                  statusClass: getAlertSinkStatusClass('none'),
+                  bodyKey: 'alertsink.body.none',
+                  bodyText: '',
+                  detailText: '',
+                  item: null,
+                  primaryHref: ALERT_SINK_URL,
+                  primaryLabelKey: 'alertsink.action.openSink',
+                  secondaryHref: ALERTMANAGER_URL,
+                  secondaryLabelKey: 'alertsink.action.openAlertmanager',
+                };
+              }
+            } catch (error) {
+              alertSinkCardState = {
+                statusKey: 'alertsink.state.unavailable',
+                statusClass: getAlertSinkStatusClass('unavailable'),
+                bodyKey: 'alertsink.body.unavailable',
+                bodyText: '',
+                detailText: '',
+                item: null,
+                primaryHref: ALERT_SINK_URL,
+                primaryLabelKey: 'alertsink.action.openSink',
+                secondaryHref: ALERTMANAGER_URL,
+                secondaryLabelKey: 'alertsink.action.openAlertmanager',
+              };
+            }
+            renderAlertSinkCard();
           };
 
           const fetchGitLabText = async (path) => {
@@ -1588,6 +2076,10 @@ data:
           });
 
           applyTranslations(loadPreferredLocale());
+          loadLatestAlertSink();
+          setInterval(loadLatestAlertSink, ALERT_SINK_REFRESH_MS);
+          loadOpsSummaries();
+          setInterval(loadOpsSummaries, OPS_SUMMARY_REFRESH_MS);
           loadLatestLoadtest();
         </script>
       </body>
@@ -1796,6 +2288,15 @@ data:
         error_page 301 302 307 308 = @gitlab_login_required;
       }
 
+      location /alert-sink-api/ {
+        proxy_pass http://alert-webhook-receiver.monitoring.svc.cluster.local:8080/api/;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Host $host;
+        proxy_set_header X-Forwarded-Proto $scheme;
+      }
+
       location @gitlab_login_required {
         return 401;
       }
@@ -1806,6 +2307,36 @@ data:
         add_header Pragma "no-cache" always;
         expires -1;
         try_files $uri $uri/ /index.html;
+      }
+    }
+
+    server {
+      listen 8080;
+      server_name _;
+
+      location / {
+        # active / preview 前端是根路径 SPA，必须用独立端口整站代理，不能简单挂到子路径。
+        proxy_pass http://192.168.0.108:32668;
+        proxy_http_version 1.1;
+        proxy_set_header Host webapp-trial.192.168.0.108.nip.io;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Host $host;
+        proxy_set_header X-Forwarded-Proto $scheme;
+      }
+    }
+
+    server {
+      listen 8081;
+      server_name _;
+
+      location / {
+        # preview 复用同一条 NodePort + Host 线路，保持和 blackbox / runbook 的验证口径一致。
+        proxy_pass http://192.168.0.108:32668;
+        proxy_http_version 1.1;
+        proxy_set_header Host webapp-trial-preview.192.168.0.108.nip.io;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Host $host;
+        proxy_set_header X-Forwarded-Proto $scheme;
       }
     }
 ---
@@ -1830,6 +2361,10 @@ spec:
           ports:
             - containerPort: 80
               name: http
+            - containerPort: 8080
+              name: trial-active
+            - containerPort: 8081
+              name: trial-preview
           resources:
             requests:
               cpu: 30m
@@ -1873,3 +2408,11 @@ spec:
       port: 80
       targetPort: http
       nodePort: 30088
+    - name: trial-active
+      port: 8080
+      targetPort: trial-active
+      nodePort: 30089
+    - name: trial-preview
+      port: 8081
+      targetPort: trial-preview
+      nodePort: 30091

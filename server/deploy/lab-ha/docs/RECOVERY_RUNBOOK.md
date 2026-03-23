@@ -6,12 +6,30 @@
 
 ## 演练前统一检查
 
+先看 live 页面，不要一上来只跑脚本：
+
+- `http://192.168.0.108:30088`
+- `http://192.168.0.108:30081/d/lab-ha-overview/ha-lab-ops-overview`
+- `http://192.168.0.108:30081/d/lab-ha-data/ha-lab-data-and-storage`
+- `http://192.168.0.108:30086`
+- `http://192.168.0.108:30093`
+- `https://192.168.0.108:30443`
+
 ```bash
 kubectl --kubeconfig /Users/simon/.kube/ha-lab.conf get nodes -o wide
 kubectl --kubeconfig /Users/simon/.kube/ha-lab.conf get pods -A | egrep 'CrashLoopBackOff|ImagePullBackOff|Error|Pending' || true
 curl -fsS http://192.168.0.108:32668/readyz
 kubectl --kubeconfig /Users/simon/.kube/ha-lab.conf get backupstoragelocation -n velero
 ```
+
+如果刚做过节点重启、宿主机维护或全量冷启动，优先执行：
+
+```bash
+bash /Users/simon/projects/webapp-template/server/deploy/lab-ha/scripts/check-ha-lab-cold-start.sh
+```
+
+说明：该脚本会先核对每台节点的 `swap / kubelet / containerd / 模块 / sysctl`，再检查 K8s、GitOps、备份与外部入口，避免只看到业务 `503` 却漏掉“swap 回挂导致 kubelet 全挂”这类根因。
+补充说明：脚本执行完成后，也会同步刷新 Portal 里的“最近冷启动验收”摘要卡，方便值班人员先在页面上看到最近一次结果。
 
 ## 1. API VIP 漂移演练
 
@@ -159,6 +177,38 @@ kubectl --kubeconfig /Users/simon/.kube/ha-lab.conf get pods -A | egrep 'CrashLo
 curl -fsS http://192.168.0.108:32668/readyz
 kubectl --kubeconfig /Users/simon/.kube/ha-lab.conf get application -n argocd webapp-template-lab
 ```
+
+如果这轮演练涉及节点重启、节点关机再启动、宿主机维护恢复或整集群冷启动，再补一次：
+
+```bash
+bash /Users/simon/projects/webapp-template/server/deploy/lab-ha/scripts/check-ha-lab-cold-start.sh
+```
+
+补充说明：若这轮还顺手做了 prod-trial active / preview 验收，可再执行 `check-webapp-prod-trial-bluegreen.sh`，把“最近烟雾检查”卡片也刷新到 Portal。
+
+## 8. 节点重启 / 冷启动验收
+
+适用场景：
+
+- 单节点 reboot 后回到集群
+- 三节点顺序重启
+- 宿主机维护后整套 VM 冷启动
+
+统一验收命令：
+
+```bash
+bash /Users/simon/projects/webapp-template/server/deploy/lab-ha/scripts/check-ha-lab-cold-start.sh
+```
+
+期望：
+
+- 每台节点 `swap=off`
+- 每台节点 `kubelet/containerd=active`
+- `overlay / br_netfilter / iscsi_tcp` 已加载
+- `Alert Sink` 仍能回看最近 webhook payload，`Jaeger` 不会因 Pod/节点重启把最近 traces 全清掉
+- 入口 `Portal / WebApp / Grafana / Prometheus / Alertmanager / Argo CD` 返回 `200`
+- `webapp-template-lab` 维持 `Synced / Healthy`
+- `Velero BackupStorageLocation` 仍为 `Available`
 
 ## 当前边界
 

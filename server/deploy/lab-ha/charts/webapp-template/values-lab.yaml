@@ -99,6 +99,34 @@ service:
       port: 9000
       targetPort: grpc
 
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 6
+  targetCPUUtilizationPercentage: 70
+  targetMemoryUtilizationPercentage: 80
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 0
+      policies:
+        - type: Percent
+          value: 100
+          periodSeconds: 60
+        - type: Pods
+          value: 2
+          periodSeconds: 60
+      selectPolicy: Max
+    scaleDown:
+      stabilizationWindowSeconds: 300
+      policies:
+        - type: Percent
+          value: 50
+          periodSeconds: 60
+        - type: Pods
+          value: 1
+          periodSeconds: 60
+      selectPolicy: Max
+
 pdb:
   name: webapp-template
   minAvailable: 1
@@ -106,7 +134,13 @@ pdb:
 ingress:
   name: webapp-template
   annotations:
+    # 保留足够余量，避免日常巡检和默认压测被误伤，同时先对单 IP 突发流量做基础兜底。
+    nginx.ingress.kubernetes.io/limit-connections: "40"
+    nginx.ingress.kubernetes.io/limit-rps: "60"
+    nginx.ingress.kubernetes.io/limit-burst-multiplier: "5"
     nginx.ingress.kubernetes.io/proxy-body-size: "8m"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "30"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "30"
   ingressClassName: nginx
   rules:
     - paths:
@@ -122,7 +156,18 @@ ingress:
 networkPolicy:
   name: webapp-template
   ingress:
-    - ports:
+    # 只允许 ingress controller 和节点侧健康检查来源直接进 Pod，避免同集群其它业务 Pod 横向直连。
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: ingress-nginx
+      ports:
+        - protocol: TCP
+          port: 8000
+    - from:
+        - ipBlock:
+            cidr: 192.168.0.0/24
+      ports:
         - protocol: TCP
           port: 8000
   egress:

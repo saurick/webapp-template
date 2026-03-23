@@ -69,6 +69,20 @@ bash /Users/simon/projects/webapp-template/server/deploy/lab-ha/scripts/helm-rel
 7. 安装基础依赖：`curl wget vim jq socat conntrack ebtables ethtool nfs-common open-iscsi`
 8. 时间同步正常
 
+建议直接执行：
+
+```bash
+bash /Users/simon/projects/webapp-template/server/deploy/lab-ha/scripts/ha-node-bootstrap.sh <new-hostname>
+```
+
+说明：该脚本现在会把节点层最容易在 reboot 后漂移的基线一起固化，包括：
+
+- 持久关闭 swap，并同步改 `/etc/fstab`
+- 写入 `overlay / br_netfilter / iscsi_tcp` 模块加载配置
+- 写入 K8s/存储所需的最小 `sysctl` 基线
+- 安装 `open-iscsi / nfs-common / conntrack / ebtables / ethtool` 等基础依赖
+- 启用 `iscsid` / `open-iscsi`
+
 验收：
 
 - 三台节点 `hostnamectl` 正确
@@ -206,6 +220,8 @@ bash /Users/simon/projects/webapp-template/server/deploy/lab-ha/scripts/helm-rel
 - 封锁或关掉一个节点
 - 观察应用 Pod 是否重调度
 - 预期：业务通过 Ingress 仍可访问
+
+补充说明：这一步不要只验证“节点掉线时工作负载能漂移”，还要单独验证“节点重启回来后 kubelet / Longhorn / 入口能自动恢复”；对应统一收口到 `check-ha-lab-cold-start.sh`。
 
 ## 4.3 PostgreSQL 演练
 

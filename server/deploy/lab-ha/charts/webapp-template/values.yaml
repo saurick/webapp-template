@@ -34,9 +34,44 @@ deployment:
   volumeMounts: []
   volumes: []
 
+rollout:
+  enabled: false
+  name: ""
+  previewService:
+    enabled: false
+    name: ""
+  blueGreen:
+    autoPromotionEnabled: true
+    autoPromotionSeconds: null
+    previewReplicaCount: null
+    scaleDownDelaySeconds: 30
+    scaleDownDelayRevisionLimit: 1
+  analysis:
+    enabled: false
+    count: 3
+    interval: 15s
+    initialDelay: 10s
+    failureLimit: 1
+    timeoutSeconds: 5
+    expectedReadyBody: ready
+    active:
+      url: ""
+      hostHeader: ""
+    preview:
+      url: ""
+      hostHeader: ""
+
 service:
   name: ""
   ports: []
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 1
+  targetCPUUtilizationPercentage: null
+  targetMemoryUtilizationPercentage: null
+  behavior: {}
 
 pdb:
   enabled: true

@@ -7,6 +7,8 @@ OUTPUT_DIR="${ROOT_DIR}/artifacts/helm-rendered"
 MODE="${1:-template}"
 ONLY="${ONLY:-}"
 SKIP_REPO_UPDATE="${SKIP_REPO_UPDATE:-0}"
+HELM_TAKE_OWNERSHIP="${HELM_TAKE_OWNERSHIP:-0}"
+HELM_FORCE_CONFLICTS="${HELM_FORCE_CONFLICTS:-0}"
 
 usage() {
   cat <<'EOF'
@@ -19,6 +21,8 @@ usage() {
 可选环境变量:
   ONLY=<release-name>       只处理单个 release
   KUBECONFIG_PATH=<path>    指定 kubeconfig，默认 /Users/simon/.kube/ha-lab.conf
+  HELM_TAKE_OWNERSHIP=1     仅用于一次性接管历史手工资源，给 Helm 加 --take-ownership
+  HELM_FORCE_CONFLICTS=1    仅用于迁移旧 field manager，给 Helm 加 --force-conflicts
 EOF
 }
 
@@ -44,11 +48,15 @@ add_repos() {
   helm repo add seaweedfs https://seaweedfs.github.io/seaweedfs/helm >/dev/null
   helm repo add grafana https://grafana.github.io/helm-charts >/dev/null
   helm repo add prometheus-community https://prometheus-community.github.io/helm-charts >/dev/null
+  helm repo add metrics-server https://kubernetes-sigs.github.io/metrics-server/ >/dev/null
   helm repo add bitnami-labs https://bitnami-labs.github.io/sealed-secrets >/dev/null
   helm repo add vmware-tanzu https://vmware-tanzu.github.io/helm-charts >/dev/null
   helm repo add argo https://argoproj.github.io/argo-helm >/dev/null
   helm repo add harbor https://helm.goharbor.io >/dev/null
-  helm repo update >/dev/null
+  # 只更新 lab-ha 实际依赖的仓库，避免本机残留的无关 repo 让整套发布链路被环境噪音拖死。
+  helm repo update \
+    cilium metallb ingress-nginx jetstack longhorn cnpg seaweedfs grafana \
+    prometheus-community metrics-server bitnami-labs vmware-tanzu argo harbor >/dev/null
 }
 
 need_repos() {
@@ -82,6 +90,7 @@ sync_platform_raw() {
     grafana-lab-loadtest-official-dashboard.yaml
     grafana-lab-overview-dashboard.yaml
     grafana-lab-postgres-backup-dashboard.yaml
+    grafana-lab-service-governance-dashboard.yaml
     grafana-loki-datasource.yaml
     harbor-ui-proxy.yaml
     jaeger.yaml
@@ -89,6 +98,7 @@ sync_platform_raw() {
     platform-ingresses.yaml
     platform-nodeports.yaml
     platform-portal.yaml
+    prometheus-rule-service-governance.yaml
   )
 
   local file=""
@@ -124,6 +134,14 @@ run_release() {
       ;;
     apply)
       cmd=(helm upgrade --install "$name" "$chart" --namespace "$namespace" --create-namespace --kubeconfig "$KUBECONFIG_PATH")
+      # 只在一次性迁移历史手工对象时开启，避免把日常发布默默放宽成“无条件接管”。
+      if [ "$HELM_TAKE_OWNERSHIP" = "1" ]; then
+        cmd+=(--take-ownership)
+      fi
+      # 历史 client-side apply 与 Helm v4 server-side apply 首次交接时，允许一次性强制改写冲突字段。
+      if [ "$HELM_FORCE_CONFLICTS" = "1" ]; then
+        cmd+=(--force-conflicts)
+      fi
       if [ -n "$version" ]; then
         cmd+=(--version "$version")
       fi
@@ -140,6 +158,18 @@ run_release() {
       exit 1
       ;;
   esac
+}
+
+restart_lab_platform_runtime_deployments() {
+  [ "$MODE" = "apply" ] || return 0
+  match_release lab-platform || return 0
+  require_tool kubectl
+
+  # receiver.py 来自 ConfigMap 挂载；只更新 ConfigMap 不会让已运行的 Python 进程自动重载新路由。
+  if kubectl --kubeconfig "$KUBECONFIG_PATH" get deployment alert-webhook-receiver -n monitoring >/dev/null 2>&1; then
+    kubectl --kubeconfig "$KUBECONFIG_PATH" rollout restart deployment/alert-webhook-receiver -n monitoring >/dev/null
+    kubectl --kubeconfig "$KUBECONFIG_PATH" rollout status deployment/alert-webhook-receiver -n monitoring --timeout=180s
+  fi
 }
 
 main() {
@@ -173,6 +203,8 @@ main() {
     -f "${ROOT_DIR}/manifests/ingress-nginx-values.yaml"
   run_release cert-manager cert-manager jetstack/cert-manager v1.17.1 \
     -f "${ROOT_DIR}/manifests/cert-manager-values.yaml"
+  run_release metrics-server kube-system metrics-server/metrics-server 3.13.0 \
+    -f "${ROOT_DIR}/manifests/metrics-server-values.yaml"
   run_release longhorn longhorn-system longhorn/longhorn 1.8.1 \
     -f "${ROOT_DIR}/manifests/longhorn-values.yaml"
   run_release cnpg cnpg-system cnpg/cloudnative-pg 0.23.2
@@ -195,6 +227,7 @@ main() {
   run_release harbor harbor harbor/harbor 1.16.2 \
     -f "${ROOT_DIR}/manifests/harbor-values.yaml"
   run_release lab-platform lab-system "${ROOT_DIR}/charts/lab-platform" ""
+  restart_lab_platform_runtime_deployments
 }
 
 main "$@"

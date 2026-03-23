@@ -1,3 +1,563 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: alert-webhook-receiver-app
+  namespace: monitoring
+data:
+  receiver.py: |
+    #!/usr/bin/env python3
+    import json
+    import logging
+    import os
+    import threading
+    import uuid
+    from collections import deque
+    from datetime import datetime, timezone
+    from http import HTTPStatus
+    from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+    from pathlib import Path
+    from urllib.parse import parse_qs, urlparse
+
+    DATA_PATH = Path(os.getenv("DATA_PATH", "/data/alerts.jsonl"))
+    OPS_STATE_DIR = DATA_PATH.parent / "ops-state"
+    MAX_EVENTS = int(os.getenv("MAX_EVENTS", "200"))
+    MAX_BODY_BYTES = int(os.getenv("MAX_BODY_BYTES", str(2 * 1024 * 1024)))
+    STORE_LOCK = threading.Lock()
+    EVENTS = deque(maxlen=MAX_EVENTS)
+
+    logging.basicConfig(
+        level=os.getenv("LOG_LEVEL", "INFO").upper(),
+        format="%(asctime)s %(levelname)s %(message)s",
+    )
+    LOGGER = logging.getLogger("alert-webhook-receiver")
+
+    INDEX_HTML = """<!doctype html>
+    <html lang="zh-CN">
+    <head>
+      <meta charset="utf-8" />
+      <meta name="viewport" content="width=device-width, initial-scale=1" />
+      <title>Alert Sink</title>
+      <style>
+        :root {
+          color-scheme: light;
+          --bg: #f5f7fb;
+          --card: #ffffff;
+          --text: #162033;
+          --muted: #60708a;
+          --border: #d7deea;
+          --ok: #1f7a43;
+          --warn: #b26b00;
+          --danger: #b42318;
+        }
+        * { box-sizing: border-box; }
+        body {
+          margin: 0;
+          font-family: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+          background: linear-gradient(180deg, #eef3fb 0%, var(--bg) 100%);
+          color: var(--text);
+        }
+        .wrap {
+          max-width: 1100px;
+          margin: 0 auto;
+          padding: 24px;
+        }
+        .hero, .summary, .event {
+          background: var(--card);
+          border: 1px solid var(--border);
+          border-radius: 16px;
+          box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+        }
+        .hero {
+          padding: 20px 24px;
+          margin-bottom: 20px;
+        }
+        .hero h1 {
+          margin: 0 0 8px;
+          font-size: 28px;
+        }
+        .hero p {
+          margin: 0;
+          color: var(--muted);
+          line-height: 1.6;
+        }
+        .hero .links {
+          margin-top: 12px;
+          display: flex;
+          gap: 12px;
+          flex-wrap: wrap;
+        }
+        .hero a {
+          color: #175cd3;
+          text-decoration: none;
+          font-weight: 600;
+        }
+        .summaries {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+          gap: 14px;
+          margin-bottom: 20px;
+        }
+        .summary {
+          padding: 16px;
+        }
+        .summary small {
+          display: block;
+          color: var(--muted);
+          margin-bottom: 8px;
+        }
+        .summary strong {
+          font-size: 24px;
+          display: block;
+        }
+        .summary .ok { color: var(--ok); }
+        .summary .warn { color: var(--warn); }
+        .summary .danger { color: var(--danger); }
+        .toolbar {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 12px;
+          gap: 12px;
+          flex-wrap: wrap;
+        }
+        .toolbar button {
+          border: 1px solid var(--border);
+          background: var(--card);
+          border-radius: 999px;
+          padding: 8px 14px;
+          cursor: pointer;
+        }
+        .toolbar .muted {
+          color: var(--muted);
+          font-size: 14px;
+        }
+        .events {
+          display: grid;
+          gap: 14px;
+        }
+        .event {
+          padding: 16px;
+        }
+        .event header {
+          display: flex;
+          justify-content: space-between;
+          gap: 12px;
+          flex-wrap: wrap;
+          margin-bottom: 10px;
+        }
+        .event h2 {
+          margin: 0;
+          font-size: 18px;
+        }
+        .meta {
+          color: var(--muted);
+          font-size: 14px;
+          line-height: 1.6;
+        }
+        .chips {
+          display: flex;
+          gap: 8px;
+          flex-wrap: wrap;
+          margin: 10px 0 12px;
+        }
+        .chip {
+          border-radius: 999px;
+          padding: 4px 10px;
+          background: #eef2f8;
+          color: var(--text);
+          font-size: 13px;
+        }
+        .chip.firing { background: #fee4e2; color: var(--danger); }
+        .chip.resolved { background: #dcfae6; color: var(--ok); }
+        .chip.alertmanager { background: #dff7e6; color: var(--ok); }
+        .chip.smoke { background: #fff2d7; color: var(--warn); }
+        .chip.manual { background: #e7ecf5; color: var(--muted); }
+        details {
+          border-top: 1px solid var(--border);
+          padding-top: 12px;
+        }
+        pre {
+          white-space: pre-wrap;
+          word-break: break-word;
+          background: #0f172a;
+          color: #e2e8f0;
+          padding: 12px;
+          border-radius: 12px;
+          overflow: auto;
+        }
+        .empty {
+          padding: 20px;
+          background: var(--card);
+          border: 1px dashed var(--border);
+          border-radius: 16px;
+          color: var(--muted);
+        }
+      </style>
+    </head>
+    <body>
+      <div class="wrap">
+        <section class="hero">
+          <h1>Alert Sink</h1>
+          <p>当前页面会保留最近收到的 Alertmanager webhook payload，并把这份轻量留痕落到小容量磁盘，方便值班时在 Pod 重启后继续确认“哪条告警、何时开始、发给了哪个 receiver”。这不是长期告警真源；正式历史仍以 Alertmanager 和 Prometheus 为准。</p>
+          <div class="links">
+            <a href="http://192.168.0.108:30093" target="_blank" rel="noreferrer">打开 Alertmanager</a>
+            <a href="http://192.168.0.108:30081/d/lab-ha-service-governance/ha-lab-service-governance" target="_blank" rel="noreferrer">打开服务治理看板</a>
+          </div>
+        </section>
+        <section class="summaries">
+          <div class="summary"><small>已缓存事件</small><strong id="summary-count">0</strong></div>
+          <div class="summary"><small>真实告警</small><strong id="summary-real">0</strong></div>
+          <div class="summary"><small>手工样本</small><strong id="summary-sample">0</strong></div>
+          <div class="summary"><small>最近状态</small><strong id="summary-status">无</strong></div>
+          <div class="summary"><small>最近 receiver</small><strong id="summary-receiver">无</strong></div>
+          <div class="summary"><small>最近时间</small><strong id="summary-time">无</strong></div>
+        </section>
+        <div class="toolbar">
+          <div class="muted" id="updated-at">等待首个 payload...</div>
+          <button id="refresh-btn" type="button">刷新</button>
+        </div>
+        <section class="events" id="events"></section>
+      </div>
+      <script>
+        const countEl = document.getElementById('summary-count');
+        const realCountEl = document.getElementById('summary-real');
+        const sampleCountEl = document.getElementById('summary-sample');
+        const statusEl = document.getElementById('summary-status');
+        const receiverEl = document.getElementById('summary-receiver');
+        const timeEl = document.getElementById('summary-time');
+        const updatedAtEl = document.getElementById('updated-at');
+        const eventsEl = document.getElementById('events');
+        const refreshBtn = document.getElementById('refresh-btn');
+
+        const fmtTime = (value) => {
+          if (!value) return '无';
+          try {
+            return new Date(value).toLocaleString();
+          } catch (err) {
+            return value;
+          }
+        };
+
+        const renderEvents = (items) => {
+          if (!Array.isArray(items) || items.length === 0) {
+            eventsEl.innerHTML = '<div class="empty">最近还没有收到 webhook payload。若 Alertmanager 当前无新告警，可先看 Alertmanager 自身页面确认是否有 active alert。</div>';
+            countEl.textContent = '0';
+            realCountEl.textContent = '0';
+            sampleCountEl.textContent = '0';
+            statusEl.textContent = '无';
+            receiverEl.textContent = '无';
+            timeEl.textContent = '无';
+            updatedAtEl.textContent = '尚未收到 payload';
+            return;
+          }
+
+          const latest = items[0];
+          const stats = items.reduce((acc, item) => {
+            const source = item.summary && item.summary.source_type ? item.summary.source_type : 'manual';
+            acc[source] = (acc[source] || 0) + 1;
+            return acc;
+          }, { alertmanager: 0, smoke: 0, manual: 0 });
+          countEl.textContent = String(items.length);
+          realCountEl.textContent = String(stats.alertmanager || 0);
+          sampleCountEl.textContent = String((stats.smoke || 0) + (stats.manual || 0));
+          statusEl.textContent = latest.summary.status || 'unknown';
+          receiverEl.textContent = latest.summary.receiver || 'unknown';
+          timeEl.textContent = fmtTime(latest.received_at);
+          updatedAtEl.textContent = `最后刷新：${new Date().toLocaleString()}`;
+
+          eventsEl.innerHTML = items.map((item) => {
+            const alertNames = (item.summary.alert_names || []).map((name) => `<span class="chip">${name}</span>`).join('');
+            const statusClass = item.summary.status === 'firing' ? 'firing' : (item.summary.status === 'resolved' ? 'resolved' : '');
+            const sourceClass = item.summary.source_type || 'manual';
+            const sourceLabel = item.summary.source_label || '手工投递';
+            return `
+              <article class="event">
+                <header>
+                  <div>
+                    <h2>${item.summary.receiver || 'unknown'} / ${item.summary.status || 'unknown'}</h2>
+                    <div class="meta">
+                      接收时间：${fmtTime(item.received_at)}<br />
+                      告警数量：${item.summary.alert_count}<br />
+                      来源：${item.remote_addr || '-'}
+                    </div>
+                  </div>
+                  <div class="chips">
+                    <span class="chip ${sourceClass}">${sourceLabel}</span>
+                    <span class="chip ${statusClass}">${item.summary.status || 'unknown'}</span>
+                    <span class="chip">group ${item.summary.group_key || '-'}</span>
+                  </div>
+                </header>
+                <div class="chips">${alertNames || '<span class="chip">无 alertname</span>'}</div>
+                <details>
+                  <summary>查看完整 payload</summary>
+                  <pre>${JSON.stringify(item.payload, null, 2).replace(/[&<>]/g, (ch) => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[ch]))}</pre>
+                </details>
+              </article>
+            `;
+          }).join('');
+        };
+
+        const fetchAlerts = async () => {
+          refreshBtn.disabled = true;
+          try {
+            const res = await fetch('/api/alerts', { cache: 'no-store' });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const data = await res.json();
+            renderEvents(data.events || []);
+          } catch (err) {
+            updatedAtEl.textContent = `刷新失败：${err.message}`;
+          } finally {
+            refreshBtn.disabled = false;
+          }
+        };
+
+        refreshBtn.addEventListener('click', fetchAlerts);
+        fetchAlerts();
+        setInterval(fetchAlerts, 15000);
+      </script>
+    </body>
+    </html>
+    """
+
+    def utc_now_iso():
+        return datetime.now(timezone.utc).isoformat()
+
+
+    def persist_events():
+        DATA_PATH.parent.mkdir(parents=True, exist_ok=True)
+        with DATA_PATH.open("w", encoding="utf-8") as handle:
+            for event in EVENTS:
+                handle.write(json.dumps(event, ensure_ascii=False) + "\n")
+
+
+    def classify_source(payload, user_agent, alert_names):
+        receiver = str(payload.get("receiver", "") or "").lower()
+        agent = str(user_agent or "")
+        agent_lower = agent.lower()
+        alert_names_lower = [name.lower() for name in alert_names]
+        if agent.startswith("Alertmanager/"):
+            return {"type": "alertmanager", "label": "真实告警"}
+        if "smoke" in receiver or any("smoke" in name for name in alert_names_lower) or agent_lower.startswith("curl/"):
+            return {"type": "smoke", "label": "手工样本"}
+        return {"type": "manual", "label": "手工投递"}
+
+
+    def summarize_payload(payload, user_agent):
+        alerts = payload.get("alerts") or []
+        alert_names = sorted(
+            {
+                alert.get("labels", {}).get("alertname", "unknown")
+                for alert in alerts
+            }
+        )
+        source = classify_source(payload, user_agent, alert_names)
+        return {
+            "status": payload.get("status", "unknown"),
+            "receiver": payload.get("receiver", "unknown"),
+            "group_key": payload.get("groupKey", ""),
+            "alert_count": len(alerts),
+            "alert_names": alert_names,
+            "source_type": source["type"],
+            "source_label": source["label"],
+        }
+
+
+    def load_events():
+        if not DATA_PATH.exists():
+            return
+        try:
+            for line in DATA_PATH.read_text(encoding="utf-8").splitlines():
+                if not line.strip():
+                    continue
+                event = json.loads(line)
+                summary = event.get("summary") or {}
+                if "source_type" not in summary or "source_label" not in summary:
+                    event["summary"] = summarize_payload(event.get("payload") or {}, event.get("user_agent", ""))
+                EVENTS.append(event)
+        except Exception as exc:
+            LOGGER.warning("load events failed: %s", exc)
+
+
+    def store_event(payload, remote_addr, user_agent):
+        event = {
+            "id": str(uuid.uuid4()),
+            "received_at": utc_now_iso(),
+            "remote_addr": remote_addr,
+            "user_agent": user_agent,
+            "summary": summarize_payload(payload, user_agent),
+            "payload": payload,
+        }
+        with STORE_LOCK:
+            EVENTS.appendleft(event)
+            while len(EVENTS) > MAX_EVENTS:
+                EVENTS.pop()
+            persist_events()
+        LOGGER.info(
+            "stored webhook receiver=%s status=%s alerts=%s names=%s remote=%s",
+            event["summary"]["receiver"],
+            event["summary"]["status"],
+            event["summary"]["alert_count"],
+            ",".join(event["summary"]["alert_names"]),
+            remote_addr,
+        )
+        return event
+
+
+    def filtered_events(source_filter):
+        items = list(EVENTS)
+        if not source_filter:
+            return items
+        return [
+            item for item in items
+            if (item.get("summary") or {}).get("source_type") == source_filter
+        ]
+
+
+    def read_ops_summary(summary_name):
+        if not summary_name or "/" in summary_name or ".." in summary_name:
+            return None
+        path = OPS_STATE_DIR / f"{summary_name}.json"
+        if not path.exists():
+            return None
+        try:
+            data = json.loads(path.read_text(encoding="utf-8"))
+            return data if isinstance(data, dict) else None
+        except Exception as exc:
+            LOGGER.warning("load ops summary %s failed: %s", summary_name, exc)
+            return None
+
+
+    def read_all_ops_summaries():
+        if not OPS_STATE_DIR.exists():
+            return {}
+        items = {}
+        for path in sorted(OPS_STATE_DIR.glob("*.json")):
+            data = read_ops_summary(path.stem)
+            if data is not None:
+                items[path.stem] = data
+        return items
+
+
+    class Handler(BaseHTTPRequestHandler):
+        server_version = "AlertSink/1.0"
+
+        def log_message(self, fmt, *args):
+            LOGGER.info("%s - %s", self.address_string(), fmt % args)
+
+        def _send_json(self, payload, status=HTTPStatus.OK):
+            body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
+            self.send_response(status)
+            self.send_header("Content-Type", "application/json; charset=utf-8")
+            self.send_header("Cache-Control", "no-store")
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+
+        def _send_text(self, body, status=HTTPStatus.OK, content_type="text/plain; charset=utf-8"):
+            data = body.encode("utf-8")
+            self.send_response(status)
+            self.send_header("Content-Type", content_type)
+            self.send_header("Cache-Control", "no-store")
+            self.send_header("Content-Length", str(len(data)))
+            self.end_headers()
+            self.wfile.write(data)
+
+        def do_GET(self):
+            parsed = urlparse(self.path)
+            path = parsed.path
+            query = parse_qs(parsed.query)
+            source_filter = (query.get("source", [""])[0] or "").strip().lower()
+            if path in ("/healthz", "/readyz"):
+                self._send_text("ok\n")
+                return
+            if path == "/api/alerts":
+                with STORE_LOCK:
+                    items = filtered_events(source_filter)
+                self._send_json({"events": items})
+                return
+            if path == "/api/alerts/latest":
+                with STORE_LOCK:
+                    items = filtered_events(source_filter)
+                    item = items[0] if items else None
+                if item is None:
+                    self._send_json({"error": "no alerts yet"}, status=HTTPStatus.NOT_FOUND)
+                    return
+                self._send_json(item)
+                return
+            if path == "/api/ops/summaries":
+                self._send_json({"summaries": read_all_ops_summaries()})
+                return
+            if path.startswith("/api/ops/summaries/"):
+                summary_name = path.rsplit("/", 1)[-1].strip().lower()
+                item = read_ops_summary(summary_name)
+                if item is None:
+                    self._send_json({"error": "summary not found"}, status=HTTPStatus.NOT_FOUND)
+                    return
+                self._send_json(item)
+                return
+            if path == "/":
+                self._send_text(INDEX_HTML, content_type="text/html; charset=utf-8")
+                return
+            self._send_json({"error": "not found"}, status=HTTPStatus.NOT_FOUND)
+
+        def do_POST(self):
+            path = urlparse(self.path).path
+            if path not in ("/", "/api/alerts"):
+                self._send_json({"error": "not found"}, status=HTTPStatus.NOT_FOUND)
+                return
+            content_length = int(self.headers.get("Content-Length", "0") or "0")
+            if content_length <= 0:
+                self._send_json({"error": "empty body"}, status=HTTPStatus.BAD_REQUEST)
+                return
+            if content_length > MAX_BODY_BYTES:
+                self._send_json({"error": "payload too large"}, status=HTTPStatus.REQUEST_ENTITY_TOO_LARGE)
+                return
+            body = self.rfile.read(content_length)
+            try:
+                payload = json.loads(body)
+            except json.JSONDecodeError as exc:
+                self._send_json({"error": f"invalid json: {exc.msg}"}, status=HTTPStatus.BAD_REQUEST)
+                return
+            event = store_event(
+                payload=payload,
+                remote_addr=self.headers.get("X-Forwarded-For", self.client_address[0]),
+                user_agent=self.headers.get("User-Agent", ""),
+            )
+            self._send_json(
+                {
+                    "ok": True,
+                    "event_id": event["id"],
+                    "stored_events": len(EVENTS),
+                    "summary": event["summary"],
+                },
+                status=HTTPStatus.OK,
+            )
+
+
+    def main():
+        load_events()
+        port = int(os.getenv("PORT", "8080"))
+        server = ThreadingHTTPServer(("0.0.0.0", port), Handler)
+        LOGGER.info("alert sink listening on :%s", port)
+        server.serve_forever()
+
+
+    if __name__ == "__main__":
+        main()
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: alert-webhook-receiver-data
+  namespace: monitoring
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: longhorn
+  resources:
+    requests:
+      storage: 1Gi
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -5,6 +565,10 @@ metadata:
   namespace: monitoring
 spec:
   replicas: 1
+  strategy:
+    # 单副本 + RWO PVC 用 Recreate，避免滚动更新时新旧 Pod 因卷互斥互相卡住。
+    type: Recreate
+    rollingUpdate: null
   selector:
     matchLabels:
       app: alert-webhook-receiver
@@ -15,17 +579,54 @@ spec:
     spec:
       containers:
         - name: receiver
-          image: registry.aliyuncs.com/google_containers/echoserver:1.10
+          image: docker.m.daocloud.io/library/python:3.12-alpine
+          command:
+            - python3
+            - /app/receiver.py
+          env:
+            - name: PORT
+              value: "8080"
+            - name: DATA_PATH
+              value: /data/alerts.jsonl
+            - name: MAX_EVENTS
+              value: "200"
           ports:
             - name: http
               containerPort: 8080
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: http
+            initialDelaySeconds: 3
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 20
           resources:
             requests:
               cpu: 30m
-              memory: 32Mi
+              memory: 48Mi
             limits:
-              cpu: 100m
-              memory: 128Mi
+              cpu: 150m
+              memory: 192Mi
+          volumeMounts:
+            - name: app
+              mountPath: /app
+              readOnly: true
+            - name: data
+              mountPath: /data
+      volumes:
+        - name: app
+          configMap:
+            name: alert-webhook-receiver-app
+            defaultMode: 0555
+        - name: data
+          # 最近 webhook payload 对值班排障有直接价值，但体量很小，给一个小 PVC 避免 Pod 重启就清空。
+          persistentVolumeClaim:
+            claimName: alert-webhook-receiver-data
 ---
 apiVersion: v1
 kind: Service

@@ -4,6 +4,12 @@
 
 用最少命令确认这套 3 节点实验室 HA 环境仍处于“可访问、可发布、可恢复”的状态。
 
+如果刚做过节点重启、宿主机维护或整集群冷启动，先执行：
+
+```bash
+bash /Users/simon/projects/webapp-template/server/deploy/lab-ha/scripts/check-ha-lab-cold-start.sh
+```
+
 ## 每日 5 分钟巡检
 
 ### 1. 先看门户与值班看板
@@ -13,12 +19,17 @@
 - 打开 `http://192.168.0.108:30081/d/lab-ha-data/ha-lab-data-and-storage`
 - 打开 `http://192.168.0.108:30081/d/lab-ha-postgres/ha-lab-postgresql-and-backup`
 - 打开 `http://192.168.0.108:30081/d/lab-ha-gitops/ha-lab-gitops-and-delivery`
+- 打开 `http://192.168.0.108:30086`
+- 打开 `http://192.168.0.108:30686`
 
 正常标准：
 
 - 页面都能打开
 - Portal 摘要没有明显异常
+- Portal 里的“最近冷启动验收 / 最近备份检查 / 最近烟雾检查”不是空白或长期过期
 - Grafana 看板里的关键 stat 卡片大多为绿色
+- `Alert Sink` 能看到最近 webhook payload
+- `Jaeger` 页面可打开，且重启后不再因为内存存储被清空最近 traces
 
 ### 2. 看 K8s 基线状态
 
@@ -87,8 +98,7 @@ ssh root@192.168.0.108 'gitlab-runner verify'
 ### 6. 看备份和告警出口
 
 ```bash
-kubectl --kubeconfig /Users/simon/.kube/ha-lab.conf get backups.velero.io,schedules.velero.io -n velero
-kubectl --kubeconfig /Users/simon/.kube/ha-lab.conf get backupstoragelocation -n velero
+bash /Users/simon/projects/webapp-template/server/deploy/lab-ha/scripts/check-velero-backup-status.sh
 kubectl --kubeconfig /Users/simon/.kube/ha-lab.conf logs -n monitoring deploy/alert-webhook-receiver --tail=10
 ```
 
@@ -96,12 +106,14 @@ kubectl --kubeconfig /Users/simon/.kube/ha-lab.conf logs -n monitoring deploy/al
 
 - `BackupStorageLocation default` 为 `Available`
 - `webapp-daily` 计划仍存在
+- 最近一次备份检查会自动刷新到 Portal 摘要卡
 - webhook sink 最近仍有 Alertmanager 请求记录
 
 补充说明：
 
 - 打开 `http://192.168.0.108:30093/#/alerts` 查看活跃告警
 - `LabEndpointDown` 现在会直接带 `dashboard_url` 与 `runbook_url`
+- `TargetDown / KubeProxyDown / KubeSchedulerDown / KubeControllerManagerDown` 也已补本地 `dashboard_url` 与 `runbook_url`
 - 值班时优先按“告警 -> Grafana 总览 -> Runbook”顺序处理
 
 ## 每周巡检

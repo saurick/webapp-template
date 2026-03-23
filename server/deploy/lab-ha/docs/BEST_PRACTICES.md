@@ -5,6 +5,8 @@
 - 优先稳定，其次可观测，再考虑“组件够不够全”
 - 在 `3 x 4C/8G` 下避免重型默认值
 - 能用轻量但成熟的方案，就不为“名词完整”强上重组件
+- 面向人操作的复杂系统，优先补 `Portal / Dashboard / 状态摘要 / 深链`，不要只留下脚本入口
+- 对值班直接有帮助且体量可控的数据，优先做轻量持久化，不默认只放内存
 
 ## 为什么当前这样选
 
@@ -47,7 +49,15 @@
 - 监控层：
   - `node-exporter`、`alertmanager`、`kube-state-metrics`
   - `blackbox-exporter` 探测所有关键入口
-  - Alertmanager 默认把非 Watchdog 告警发送到实验室 webhook sink，后续拿到飞书/钉钉/Telegram webhook 后可平滑替换
+  - Alertmanager 默认把非 Watchdog 告警发送到实验室 webhook sink，最近 payload 持久化到小 PVC，方便 Pod 重启后继续回看
+  - Jaeger 保持单实例，但把最近 traces 落到 `Badger + PVC + TTL`，避免值班线索随重启直接清空
+
+## 值班体验与留痕
+
+- 人工巡检、恢复和发布优先从 `Portal / Grafana / Alert Sink / Alertmanager / Argo CD` 进入，命令行主要负责确认根因和批量校验。
+- 对“最近告警”“最近 traces”“最近一次 smoke/巡检摘要”这类高频值班线索，默认采用“小容量持久化 + 上限/TTL”策略，不为了留痕而引入重型外部组件。
+- `emptyDir` 更适合临时日志、可重建缓存和一次性工作目录；如果一重启就让排障上下文消失，就说明放错层了。
+- 单副本且挂 `RWO PVC` 的轻量工具服务（例如当前 `Alert Sink`、`Jaeger`）默认用 `Recreate` 更新策略，不要继续沿用 `RollingUpdate` 去制造卷互斥死锁。
 
 ## 资源预算建议
 

@@ -26,12 +26,18 @@ data:
     extensions:
       jaeger_query:
         storage:
-          traces: memstore
+          traces: badger_store
       jaeger_storage:
         backends:
-          memstore:
-            memory:
-              max_traces: 20000
+          badger_store:
+            badger:
+              directories:
+                keys: /var/lib/jaeger/badger/keys
+                values: /var/lib/jaeger/badger/values
+              ephemeral: false
+              ttl:
+                spans: 168h
+              metrics_update_interval: 10s
     receivers:
       otlp:
         protocols:
@@ -49,7 +55,23 @@ data:
         timeout: 2s
     exporters:
       jaeger_storage_exporter:
-        trace_storage: memstore
+        trace_storage: badger_store
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: jaeger-data
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/name: jaeger
+    app.kubernetes.io/component: tracing
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: longhorn
+  resources:
+    requests:
+      storage: 5Gi
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -62,6 +84,10 @@ metadata:
 spec:
   replicas: 1
   revisionHistoryLimit: 2
+  strategy:
+    # 单副本 + 本地 Badger PVC 不适合默认 RollingUpdate，否则会卡在同一卷的多 Pod 竞争上。
+    type: Recreate
+    rollingUpdate: null
   selector:
     matchLabels:
       app.kubernetes.io/name: jaeger
@@ -71,9 +97,22 @@ spec:
         app.kubernetes.io/name: jaeger
         app.kubernetes.io/component: tracing
     spec:
+      initContainers:
+        - name: prepare-data-dir
+          image: jaegertracing/jaeger:2.14.1
+          command:
+            - sh
+            - -c
+            - mkdir -p /var/lib/jaeger/badger/keys /var/lib/jaeger/badger/values && chown -R 10001:0 /var/lib/jaeger
+          securityContext:
+            runAsUser: 0
+            runAsGroup: 0
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/jaeger
       containers:
         - name: jaeger
-          # 当前实验室只做轻量 tracing 基线，不引入 operator 和外部存储，避免把资源与维护复杂度抬高。
+          # 当前仍保持单副本轻量 tracing，但把最近 traces 落到本地 PVC，避免节点/Pod 重启后排障线索直接清空。
           image: jaegertracing/jaeger:2.14.1
           imagePullPolicy: IfNotPresent
           args:
@@ -104,14 +143,24 @@ spec:
               port: query
             initialDelaySeconds: 20
             periodSeconds: 20
+          securityContext:
+            # 官方镜像默认以 uid=10001 运行，这里显式写明，避免 PVC 权限回退时又变成“配置对了但进程起不来”。
+            runAsNonRoot: true
+            runAsUser: 10001
+            runAsGroup: 0
           volumeMounts:
             - name: config
               mountPath: /etc/jaeger
               readOnly: true
+            - name: data
+              mountPath: /var/lib/jaeger
       volumes:
         - name: config
           configMap:
             name: jaeger-config
+        - name: data
+          persistentVolumeClaim:
+            claimName: jaeger-data
 ---
 apiVersion: v1
 kind: Service

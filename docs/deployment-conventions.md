@@ -107,6 +107,7 @@
 - `cloudnative-pg`
 - `seaweedfs`
 - `kube-prometheus-stack`
+- `metrics-server`
 - `blackbox-exporter`
 - `sealed-secrets`
 - `velero`

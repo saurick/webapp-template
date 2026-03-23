@@ -122,6 +122,8 @@ kubectl --kubeconfig /Users/simon/.kube/ha-lab.conf apply \
 8. 打开 `Grafana -> HA Lab / GitOps & Delivery`，确认 active/preview 探测和 prod-trial 健康状态一致
 9. 删除一个 Pod，确认流量可继续通过
 
+补充说明：`check-webapp-prod-trial-bluegreen.sh` 执行完成后，会把最近一次 active / preview 烟雾检查结果同步到 Portal 摘要卡，方便值班时先看页面再决定是否重跑脚本。
+
 如果已经切内部域名，验证命令应同步替换成真实内部 FQDN。
 
 如果访问端不是同二层网络，先用下面这种保守验证方式：

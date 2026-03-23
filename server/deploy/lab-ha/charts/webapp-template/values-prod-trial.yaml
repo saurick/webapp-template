@@ -167,6 +167,34 @@ service:
       port: 9000
       targetPort: grpc
 
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 4
+  targetCPUUtilizationPercentage: 70
+  targetMemoryUtilizationPercentage: 80
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 0
+      policies:
+        - type: Percent
+          value: 100
+          periodSeconds: 60
+        - type: Pods
+          value: 2
+          periodSeconds: 60
+      selectPolicy: Max
+    scaleDown:
+      stabilizationWindowSeconds: 300
+      policies:
+        - type: Percent
+          value: 50
+          periodSeconds: 60
+        - type: Pods
+          value: 1
+          periodSeconds: 60
+      selectPolicy: Max
+
 pdb:
   name: webapp-template-prod-trial
   minAvailable: 1
@@ -174,7 +202,13 @@ pdb:
 ingress:
   name: webapp-template-prod-trial
   annotations:
+    # 生产试验命名空间先保持和 lab 一致的基础限流，降低单 IP 异常流量把小规格节点打满的风险。
+    nginx.ingress.kubernetes.io/limit-connections: "40"
+    nginx.ingress.kubernetes.io/limit-rps: "60"
+    nginx.ingress.kubernetes.io/limit-burst-multiplier: "5"
     nginx.ingress.kubernetes.io/proxy-body-size: "8m"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "30"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "30"
   ingressClassName: nginx
   rules:
     - host: webapp-trial.192.168.0.108.nip.io
@@ -193,7 +227,18 @@ ingress:
 networkPolicy:
   name: webapp-template-prod-trial
   ingress:
-    - ports:
+    # 生产试验入口只允许 ingress controller 和节点探针直接进 Pod，避免 namespace 间随意横向访问。
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: ingress-nginx
+      ports:
+        - protocol: TCP
+          port: 8000
+    - from:
+        - ipBlock:
+            cidr: 192.168.0.0/24
+      ports:
         - protocol: TCP
           port: 8000
   egress:

@@ -4,12 +4,15 @@
 
 说明：当前用户侧浏览器/代理环境对 `*.nip.io` 这类主机名不稳定，因此实验室对外访问已统一切到 `192.168.0.108` 的直连 `IP:Port` 方案；这是目前最稳、最直接、最少踩坑的入口口径。
 
-- WebApp: `http://192.168.0.108:32668`
+- WebApp Lab: `http://192.168.0.108:32668`
+- WebApp Prod-Trial Active: `http://192.168.0.108:30089`
+- WebApp Prod-Trial Preview: `http://192.168.0.108:30091`
 - Portal: `http://192.168.0.108:30088`
 - Harbor: `http://192.168.0.108:30002`
 - Grafana: `http://192.168.0.108:30081`
 - Jaeger: `http://192.168.0.108:30686`
 - Grafana Ops Dashboard: `http://192.168.0.108:30081/d/lab-ha-overview/ha-lab-ops-overview`
+- Grafana Service Governance Dashboard: `http://192.168.0.108:30081/d/lab-ha-service-governance/ha-lab-service-governance`
 - Grafana Data Dashboard: `http://192.168.0.108:30081/d/lab-ha-data/ha-lab-data-and-storage`
 - Grafana PostgreSQL Dashboard: `http://192.168.0.108:30081/d/lab-ha-postgres/ha-lab-postgresql-and-backup`
 - Grafana GitOps Dashboard: `http://192.168.0.108:30081/d/lab-ha-gitops/ha-lab-gitops-and-delivery`
@@ -19,7 +22,7 @@
 - Hubble UI: `http://192.168.0.108:30085`
 - Longhorn UI: `http://192.168.0.108:30084`
 - SeaweedFS Filer UI: `http://192.168.0.108:30888`
-- Alert Sink: `http://192.168.0.108:30086`
+- Alert Sink: `http://192.168.0.108:30086`（最近 webhook payload 收件页）
 - SeaweedFS S3: `http://192.168.0.108:30333`
 - GitLab: `http://192.168.0.108:8929`
 
@@ -46,8 +49,8 @@
 
 ## 当前实验室默认凭据
 
-- WebApp admin: `admin / AdminLab123!`
-- WebApp test user: `labuser1 / LabUser123!`
+- WebApp Lab admin: `admin / AdminLab123!`
+- WebApp Lab test user: `labuser1 / LabUser123!`
 - Harbor admin: `admin / HarborAdmin123!`
 - Grafana admin: `admin / Grafana123!`
 - Argo CD admin: `admin / aLgJjYwPdezuEzSw`
@@ -81,5 +84,8 @@
 ## 历史入口说明
 
 - `*.192.168.0.108.nip.io:32668` 这组基于 Host 头的入口仍保留在集群内配置里
+- 其中 `app.192.168.0.108.nip.io` 对应 `WebApp Lab`
+- `webapp-trial.192.168.0.108.nip.io` 对应 `WebApp Prod-Trial Active`
+- `webapp-trial-preview.192.168.0.108.nip.io` 对应 `WebApp Prod-Trial Preview`
 - 但对当前浏览器环境不再作为主推荐入口
 - 后续若本机代理绕过规则已修好，可再切回主机名入口

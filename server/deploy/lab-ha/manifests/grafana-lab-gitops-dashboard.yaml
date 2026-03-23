@@ -11,7 +11,7 @@ data:
     {
       "id": null,
       "uid": "lab-ha-gitops",
-      "title": "HA Lab / GitOps & Delivery",
+      "title": "WebApp Lab / GitOps & Release",
       "tags": ["lab-ha", "gitops", "delivery", "bluegreen"],
       "timezone": "browser",
       "schemaVersion": 39,
@@ -25,7 +25,7 @@ data:
         {
           "id": 1,
           "type": "stat",
-          "title": "Lab Synced",
+          "title": "WebApp Lab Synced",
           "datasource": {"type": "prometheus", "uid": "prometheus"},
           "gridPos": {"h": 5, "w": 3, "x": 0, "y": 0},
           "targets": [{"expr": "sum(argocd_app_info{name=\"webapp-template-lab\",sync_status=\"Synced\"})", "instant": true, "refId": "A"}],
@@ -35,7 +35,7 @@ data:
         {
           "id": 2,
           "type": "stat",
-          "title": "Lab Healthy",
+          "title": "WebApp Lab Healthy",
           "datasource": {"type": "prometheus", "uid": "prometheus"},
           "gridPos": {"h": 5, "w": 3, "x": 3, "y": 0},
           "targets": [{"expr": "sum(argocd_app_info{name=\"webapp-template-lab\",health_status=\"Healthy\"})", "instant": true, "refId": "A"}],
@@ -45,7 +45,7 @@ data:
         {
           "id": 3,
           "type": "stat",
-          "title": "Prod-Trial Synced",
+          "title": "WebApp Prod-Trial Synced",
           "datasource": {"type": "prometheus", "uid": "prometheus"},
           "gridPos": {"h": 5, "w": 3, "x": 6, "y": 0},
           "targets": [{"expr": "sum(argocd_app_info{name=\"webapp-template-prod-trial\",sync_status=\"Synced\"})", "instant": true, "refId": "A"}],
@@ -55,7 +55,7 @@ data:
         {
           "id": 4,
           "type": "stat",
-          "title": "Prod-Trial Healthy",
+          "title": "WebApp Prod-Trial Healthy",
           "datasource": {"type": "prometheus", "uid": "prometheus"},
           "gridPos": {"h": 5, "w": 3, "x": 9, "y": 0},
           "targets": [{"expr": "sum(argocd_app_info{name=\"webapp-template-prod-trial\",health_status=\"Healthy\"})", "instant": true, "refId": "A"}],
@@ -65,7 +65,7 @@ data:
         {
           "id": 5,
           "type": "stat",
-          "title": "Active Probe",
+          "title": "Prod-Trial Active Probe",
           "datasource": {"type": "prometheus", "uid": "prometheus"},
           "gridPos": {"h": 5, "w": 3, "x": 12, "y": 0},
           "targets": [{"expr": "probe_success{job=\"blackbox-exporter-prometheus-blackbox-exporter\",target=\"webapp-prod-trial-active\"}", "instant": true, "refId": "A"}],
@@ -75,7 +75,7 @@ data:
         {
           "id": 6,
           "type": "stat",
-          "title": "Preview Probe",
+          "title": "Prod-Trial Preview Probe",
           "datasource": {"type": "prometheus", "uid": "prometheus"},
           "gridPos": {"h": 5, "w": 3, "x": 15, "y": 0},
           "targets": [{"expr": "probe_success{job=\"blackbox-exporter-prometheus-blackbox-exporter\",target=\"webapp-prod-trial-preview\"}", "instant": true, "refId": "A"}],
@@ -115,7 +115,7 @@ data:
         {
           "id": 10,
           "type": "stat",
-          "title": "Prod-Trial Ready Pods",
+          "title": "WebApp Prod-Trial Ready Pods",
           "datasource": {"type": "prometheus", "uid": "prometheus"},
           "gridPos": {"h": 8, "w": 4, "x": 8, "y": 5},
           "targets": [{"expr": "sum(kube_pod_status_ready{namespace=\"webapp-prod-trial\",condition=\"true\",pod=~\"webapp-template-prod-trial-.*\"})", "instant": true, "refId": "A"}],
@@ -125,7 +125,7 @@ data:
         {
           "id": 11,
           "type": "timeseries",
-          "title": "Prod-Trial Release Probes",
+          "title": "WebApp Prod-Trial Release Probes",
           "datasource": {"type": "prometheus", "uid": "prometheus"},
           "gridPos": {"h": 8, "w": 12, "x": 12, "y": 5},
           "targets": [{"expr": "probe_success{job=\"blackbox-exporter-prometheus-blackbox-exporter\",target=~\"webapp-prod-trial-(active|preview)\"}", "legendFormat": "{{target}}", "refId": "A"}],
@@ -135,7 +135,7 @@ data:
         {
           "id": 12,
           "type": "table",
-          "title": "Application Status",
+          "title": "WebApp Application Status",
           "datasource": {"type": "prometheus", "uid": "prometheus"},
           "gridPos": {"h": 8, "w": 12, "x": 0, "y": 13},
           "targets": [{"expr": "argocd_app_info{name=~\"webapp-template-(lab|prod-trial)\"}", "format": "table", "instant": true, "refId": "A"}],
@@ -145,11 +145,11 @@ data:
         {
           "id": 13,
           "type": "text",
-          "title": "GitOps Notes",
+          "title": "Naming Notes",
           "gridPos": {"h": 8, "w": 12, "x": 12, "y": 13},
           "options": {
             "mode": "markdown",
-            "content": "### GitOps & Delivery Notes\n\n- `webapp-template-lab` stays on the fast auto-sync lab path.\n- `webapp-template-prod-trial` now uses blue-green release verification on top of Argo Rollouts.\n- Preview host: `webapp-trial-preview.192.168.0.108.nip.io`\n- Active host: `webapp-trial.192.168.0.108.nip.io`\n- Rollouts waits for the preview checks, then keeps a 180-second observation window before promotion.\n- Primary release signals are: Argo CD app health, prod-trial active/preview probes, ready pod count, and GitLab availability."
+            "content": "### Naming Notes\n\n- Display names are `WebApp Lab`, `WebApp Prod-Trial Active`, and `WebApp Prod-Trial Preview`.\n- Technical Argo app names stay as `webapp-template-lab` and `webapp-template-prod-trial`.\n- `WebApp Lab` stays on the fast auto-sync lab path.\n- `WebApp Prod-Trial` uses blue-green release verification on top of Argo Rollouts.\n- Preview host: `webapp-trial-preview.192.168.0.108.nip.io`\n- Active host: `webapp-trial.192.168.0.108.nip.io`\n- Rollouts waits for the preview checks, then keeps a 180-second observation window before promotion.\n- Primary release signals are: Argo CD app health, prod-trial active/preview probes, ready pod count, and GitLab availability."
           }
         }
       ]

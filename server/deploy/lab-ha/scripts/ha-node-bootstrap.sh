@@ -8,11 +8,106 @@ fi
 
 NEW_HOSTNAME="$1"
 ROOT_PASSWORD="${ROOT_PASSWORD:-123456}"
+SKIP_APT="${SKIP_APT:-0}"
 PUBKEY='ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAINvGvKbsg+kIQcpQNey1+O18hi11Bl5ZDb/+0HI5xr14 simon@simons-MacBook-Air.local'
+BASELINE_PACKAGES=(
+	curl
+	wget
+	vim
+	jq
+	socat
+	conntrack
+	ebtables
+	ethtool
+	nfs-common
+	open-iscsi
+)
+BASELINE_MODULES=(overlay br_netfilter iscsi_tcp)
 
 if [[ $EUID -ne 0 ]]; then
 	exec sudo -E bash "$0" "$@"
 fi
+
+install_baseline_packages() {
+	if [[ "$SKIP_APT" == "1" ]]; then
+		printf '==> skip apt package install because SKIP_APT=1\n'
+		return
+	fi
+
+	printf '==> install baseline packages\n'
+	export DEBIAN_FRONTEND=noninteractive
+	apt-get update
+	apt-get install -y --no-install-recommends "${BASELINE_PACKAGES[@]}"
+}
+
+disable_swap_persistently() {
+	printf '==> disable swap now and persist across reboot\n'
+	swapoff -a || true
+
+	# 保证 kubelet 在节点重启后仍满足 kubeadm 基线，避免 swap 恢复导致整集群起不来。
+	local tmp_fstab
+	tmp_fstab="$(mktemp)"
+	awk '
+		/^[[:space:]]*#/ { print; next }
+		$3 == "swap" { print "# " $0; next }
+		{ print }
+	' /etc/fstab >"$tmp_fstab"
+	cat "$tmp_fstab" >/etc/fstab
+	rm -f "$tmp_fstab"
+}
+
+configure_kernel_modules() {
+	printf '==> configure kernel modules for k8s + storage baseline\n'
+	mkdir -p /etc/modules-load.d
+	printf '%s\n' "${BASELINE_MODULES[@]}" >/etc/modules-load.d/k8s-ha-lab.conf
+	for module in "${BASELINE_MODULES[@]}"; do
+		modprobe "$module"
+	done
+}
+
+configure_sysctl_baseline() {
+	printf '==> configure sysctl baseline\n'
+	cat >/etc/sysctl.d/99-k8s-ha-lab.conf <<'EOF'
+net.bridge.bridge-nf-call-iptables = 1
+net.bridge.bridge-nf-call-ip6tables = 1
+net.ipv4.ip_forward = 1
+vm.max_map_count = 262144
+fs.inotify.max_user_instances = 8192
+fs.inotify.max_user_watches = 1048576
+EOF
+	sysctl --system >/dev/null
+}
+
+enable_storage_services() {
+	printf '==> ensure storage prerequisites enabled\n'
+	if systemctl list-unit-files | grep -q '^iscsid\.service'; then
+		systemctl enable --now iscsid
+	fi
+	if systemctl list-unit-files | grep -q '^open-iscsi\.service'; then
+		systemctl enable --now open-iscsi
+	fi
+}
+
+print_baseline_summary() {
+	printf '==> baseline summary\n'
+	printf 'hostname=%s\n' "$(hostnamectl --static)"
+	printf 'swap:\n'
+	swapon --show || true
+	printf 'modules:\n'
+	lsmod | egrep '^(overlay|br_netfilter|iscsi_tcp)' || true
+	printf 'sysctl:\n'
+	sysctl -n \
+		net.bridge.bridge-nf-call-iptables \
+		net.bridge.bridge-nf-call-ip6tables \
+		net.ipv4.ip_forward \
+		vm.max_map_count \
+		fs.inotify.max_user_instances \
+		fs.inotify.max_user_watches
+	printf 'services:\n'
+	printf 'kubelet=%s\n' "$(systemctl is-active kubelet 2>/dev/null || echo inactive)"
+	printf 'containerd=%s\n' "$(systemctl is-active containerd 2>/dev/null || echo inactive)"
+	printf 'iscsid=%s\n' "$(systemctl is-active iscsid 2>/dev/null || echo inactive)"
+}
 
 printf '==> set hostname to %s\n' "$NEW_HOSTNAME"
 hostnamectl set-hostname "$NEW_HOSTNAME"
@@ -27,6 +122,12 @@ rm -f /var/lib/dbus/machine-id
 truncate -s 0 /etc/machine-id
 systemd-machine-id-setup
 cp /etc/machine-id /var/lib/dbus/machine-id
+
+install_baseline_packages
+disable_swap_persistently
+configure_kernel_modules
+configure_sysctl_baseline
+enable_storage_services
 
 printf '==> install SSH public key for root\n'
 mkdir -p /root/.ssh
@@ -63,5 +164,6 @@ fi
 
 printf '==> current addresses\n'
 ip -brief addr
+print_baseline_summary
 
 printf '\nDone. Now tell Codex this node hostname is %s and provide the reachable IP shown above.\n' "$NEW_HOSTNAME"

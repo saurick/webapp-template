@@ -8,6 +8,15 @@
 
 ### 先做这些
 
+先看 live 页面，确认这是“入口层异常”还是“只有脚本没跑”：
+
+- `http://192.168.0.108:30088`
+- `http://192.168.0.108:30081/d/lab-ha-overview/ha-lab-ops-overview`
+- `http://192.168.0.108:30081/d/lab-ha-data/ha-lab-data-and-storage`
+- `http://192.168.0.108:30086`
+- `http://192.168.0.108:30093`
+- `https://192.168.0.108:30443`
+
 ```bash
 kubectl --kubeconfig /Users/simon/.kube/ha-lab.conf get nodes -o wide
 kubectl --kubeconfig /Users/simon/.kube/ha-lab.conf get pods -A | egrep 'CrashLoopBackOff|ImagePullBackOff|Error|Pending' || true
@@ -32,6 +41,19 @@ bash /Users/simon/projects/webapp-template/server/deploy/lab-ha/scripts/check-we
 
 - 只有一个站点挂：优先看该命名空间 Pod 和 Service
 - 全部挂：先看节点、`ingress-nginx`、当前访问端是否通过 VPN / 子网路由进入实验室网段
+
+如果故障发生在“刚重启 VM / 宿主机维护恢复”之后，第一反应不要先猜业务配置，直接跑：
+
+```bash
+bash /Users/simon/projects/webapp-template/server/deploy/lab-ha/scripts/check-ha-lab-cold-start.sh
+```
+
+这一步会优先暴露：
+
+- 节点 swap 又被系统挂回，导致 `kubelet` 起不来
+- `containerd` 或存储基线没恢复
+- 关键 NodePort / 管理入口还没回到 `200`
+- `Alert Sink / Jaeger` 这类值班留痕页是不是还在，避免误把“历史被清空”当成“系统没恢复”
 
 ## 2. WebApp 返回 500 / `readyz` 失败
 
@@ -190,6 +212,7 @@ kubectl --kubeconfig /Users/simon/.kube/ha-lab.conf get pods -n kube-system -o w
 ```bash
 ssh root@192.168.0.7 'systemctl status kubelet --no-pager -l'
 ssh root@192.168.0.7 'grep kubelet /var/log/syslog | tail -n 80'
+ssh root@192.168.0.7 'swapon --show'
 ```
 
 ### 针对 `NetworkPluginNotReady`
@@ -198,6 +221,30 @@ ssh root@192.168.0.7 'grep kubelet /var/log/syslog | tail -n 80'
 
 ```bash
 ssh root@192.168.0.7 'systemctl restart containerd && systemctl restart kubelet'
+```
+
+### 如果是重启后 `kubelet` 直接退出
+
+优先看日志里是否出现：
+
+- `running with swap on is not supported`
+
+快速修复：
+
+```bash
+ssh root@192.168.0.7 'swapoff -a && systemctl restart kubelet'
+```
+
+如果临时修复有效，说明节点基线没有持久关闭 swap；应回到：
+
+```bash
+bash /Users/simon/projects/webapp-template/server/deploy/lab-ha/scripts/ha-node-bootstrap.sh node1
+```
+
+或至少把 `/etc/fstab` 里的 swap 挂载改掉，再重新执行：
+
+```bash
+bash /Users/simon/projects/webapp-template/server/deploy/lab-ha/scripts/check-ha-lab-cold-start.sh
 ```
 
 ## 9. 想确认是不是“环境整体不稳”
@@ -233,3 +280,24 @@ kubectl --kubeconfig /Users/simon/.kube/ha-lab.conf get backupstoragelocation -n
 - 只有 `jaeger` 失败：优先看 tracing 与 blackbox，不要先怀疑业务主链路
 - `grafana/prometheus/alertmanager` 一起失败：先看监控栈整体
 - `webapp` 单独失败：优先看应用与数据库
+
+## 11. 收到 `TargetDown / Kube*Down` 告警
+
+### 去哪里看
+
+- Alertmanager：`http://192.168.0.108:30093/#/alerts`
+- Grafana 总览：`http://192.168.0.108:30081/d/lab-ha-overview/ha-lab-ops-overview`
+- 本地 Runbook：`http://192.168.0.108:8929/root/webapp-template-lab/-/blob/master/server/deploy/lab-ha/docs/TROUBLESHOOTING.md`
+- 官方 Runbook：看告警里的 `upstream_runbook_url`
+
+### 处理顺序
+
+1. 先展开告警详情，确认 `annotations.dashboard_url` 和 `annotations.runbook_url`
+2. 如果是 `TargetDown`，先看是不是单个 job/service 抖动，还是整段监控链路一起掉
+3. 如果是 `KubeProxyDown / KubeSchedulerDown / KubeControllerManagerDown`，优先视为控制面或 kube-system 组件异常
+4. 再回到本手册第 1 节和第 8 节，看节点、系统组件和网络层
+
+### 备注
+
+- 这几条高频告警现在优先跳本地实验室 runbook，便于按当前拓扑值班
+- 官方 Prometheus Operator 文档仍然保留在 `upstream_runbook_url`

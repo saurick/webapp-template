@@ -1,0 +1,106 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: lab-service-governance
+  namespace: monitoring
+  labels:
+    release: kube-prometheus-stack
+spec:
+  groups:
+    - name: lab.service-governance
+      rules:
+        # 先覆盖当前已经稳定采集的治理信号，避免因为实验性指标把值班告警做成噪音源。
+        - alert: LabWebappHpaAtMax
+          expr: |
+            max by (namespace, horizontalpodautoscaler) (
+              kube_horizontalpodautoscaler_status_desired_replicas{
+                namespace=~"webapp.*",
+                horizontalpodautoscaler=~"webapp-template.*"
+              }
+            )
+            >=
+            max by (namespace, horizontalpodautoscaler) (
+              kube_horizontalpodautoscaler_spec_max_replicas{
+                namespace=~"webapp.*",
+                horizontalpodautoscaler=~"webapp-template.*"
+              }
+            )
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            summary: "实验室 HPA 已顶满（{{ $labels.namespace }}/{{ $labels.horizontalpodautoscaler }}）"
+            description: "HPA 在 {{ $labels.namespace }} / {{ $labels.horizontalpodautoscaler }} 连续 15 分钟达到 maxReplicas。先打开服务治理看板确认副本、CPU/内存和入口流量，再按 runbook_url 排查扩容瓶颈。"
+            dashboard_url: "http://192.168.0.108:30081/d/lab-ha-service-governance/ha-lab-service-governance"
+            runbook_url: "http://192.168.0.108:8929/root/webapp-template-lab/-/blob/master/server/deploy/lab-ha/docs/OPS_CHECKLIST.md"
+            alertmanager_url: "http://192.168.0.108:30093/#/alerts"
+        - alert: LabWebappPdbBudgetExhausted
+          expr: |
+            kube_poddisruptionbudget_status_pod_disruptions_allowed{
+              namespace=~"webapp.*",
+              poddisruptionbudget=~"webapp-template.*"
+            } < 1
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: "实验室 PDB 可驱逐预算耗尽（{{ $labels.namespace }}/{{ $labels.poddisruptionbudget }}）"
+            description: "{{ $labels.namespace }} / {{ $labels.poddisruptionbudget }} 连续 10 分钟无可用驱逐预算，节点维护或发布时可能被卡住。先看当前可用副本和 Pod 状态，再按 runbook_url 处理。"
+            dashboard_url: "http://192.168.0.108:30081/d/lab-ha-service-governance/ha-lab-service-governance"
+            runbook_url: "http://192.168.0.108:8929/root/webapp-template-lab/-/blob/master/server/deploy/lab-ha/docs/TROUBLESHOOTING.md"
+            alertmanager_url: "http://192.168.0.108:30093/#/alerts"
+        - alert: LabIngress429High
+          expr: |
+            sum by (exported_namespace, ingress) (
+              rate(
+                nginx_ingress_controller_requests{
+                  exported_namespace=~"webapp.*",
+                  ingress=~"webapp-template.*",
+                  status="429"
+                }[5m]
+              )
+            ) > 0.05
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: "实验室入口限流持续命中（{{ $labels.exported_namespace }}/{{ $labels.ingress }}）"
+            description: "{{ $labels.exported_namespace }} / {{ $labels.ingress }} 连续 10 分钟出现较高 429 速率，说明入口限流或客户端重试策略可能需要调整。先看 dashboard_url 里的 429、RPS 与副本变化。"
+            dashboard_url: "http://192.168.0.108:30081/d/lab-ha-service-governance/ha-lab-service-governance"
+            runbook_url: "http://192.168.0.108:8929/root/webapp-template-lab/-/blob/master/server/deploy/lab-ha/docs/OPS_CHECKLIST.md"
+            alertmanager_url: "http://192.168.0.108:30093/#/alerts"
+        - alert: LabIngressP95LatencyHigh
+          expr: |
+            (
+              histogram_quantile(
+                0.95,
+                sum by (le, exported_namespace, ingress) (
+                  rate(
+                    nginx_ingress_controller_request_duration_seconds_bucket{
+                      exported_namespace=~"webapp.*",
+                      ingress=~"webapp-template.*"
+                    }[5m]
+                  )
+                )
+              ) > 0.8
+            )
+            and
+            (
+              sum by (exported_namespace, ingress) (
+                rate(
+                  nginx_ingress_controller_requests{
+                    exported_namespace=~"webapp.*",
+                    ingress=~"webapp-template.*"
+                  }[5m]
+                )
+              ) > 0.2
+            )
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: "实验室入口 p95 延迟升高（{{ $labels.exported_namespace }}/{{ $labels.ingress }}）"
+            description: "{{ $labels.exported_namespace }} / {{ $labels.ingress }} 在有持续流量时连续 10 分钟 p95 延迟高于 800ms。先看 dashboard_url 里的入口延迟、HPA 与 Pod 健康，再按 runbook_url 排查。"
+            dashboard_url: "http://192.168.0.108:30081/d/lab-ha-service-governance/ha-lab-service-governance"
+            runbook_url: "http://192.168.0.108:8929/root/webapp-template-lab/-/blob/master/server/deploy/lab-ha/docs/TROUBLESHOOTING.md"
+            alertmanager_url: "http://192.168.0.108:30093/#/alerts"
