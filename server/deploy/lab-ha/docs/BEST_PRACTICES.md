@@ -38,6 +38,8 @@
 - 存储层：
   - `Longhorn` 默认 2 副本，兼顾数据冗余和容量
   - 显式开启 `autoSalvage`、`autoDeletePodWhenVolumeDetachedUnexpectedly` 与 `nodeDownPodDeletionPolicy=delete-both-statefulset-and-deployment-pod`，避免整集群 reboot 后 `RWO PVC` 长时间卡在 `faulted/detached`
+  - `Longhorn` 不只要“卷能挂起来”，还要保证至少 `2` 个存储节点仍是 `Schedulable=True`；否则 2 副本卷在恢复后会长期停在 `degraded`
+  - 当前 200Gi VM 根盘场景下，把默认盘保留比例从 `30%` 下调到 `20%` 更符合实验性生产试验的容量档位；先动默认盘保留比例，不先动 `storage-minimal-available-percentage=25`
   - `SeaweedFS` 的 `idx` 改成持久卷，避免 volume pod 重建时丢索引
 - 数据库层：
   - `CloudNativePG` 3 实例 + rw pooler

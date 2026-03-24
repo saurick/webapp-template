@@ -8,6 +8,10 @@ ACCESS_HOST="${ACCESS_HOST:-192.168.0.108}"
 LAB_NODE_IPS_DEFAULT="192.168.0.7 192.168.0.108 192.168.0.128"
 SSH_OPTS=(-o BatchMode=yes -o StrictHostKeyChecking=no -o ConnectTimeout=5)
 SUMMARY_HELPER="${SCRIPT_DIR}/write-lab-ops-summary.sh"
+STALE_POD_HELPER="${SCRIPT_DIR}/cleanup-stale-controlled-pods.sh"
+AUTO_CLEANUP_STALE_PODS="${AUTO_CLEANUP_STALE_PODS:-true}"
+STALE_POD_MIN_AGE_SECONDS="${STALE_POD_MIN_AGE_SECONDS:-300}"
+STALE_POD_WAIT_SECONDS="${STALE_POD_WAIT_SECONDS:-25}"
 
 if [[ $# -gt 0 ]]; then
 	NODE_IPS=("$@")
@@ -242,8 +246,23 @@ check_kubernetes() {
 		record_failure 'not all nodes are Ready'
 	fi
 
-	local bad_pods
+	local bad_pods cleanup_output cleanup_deleted
 	bad_pods="$(kubectl --request-timeout=20s --kubeconfig "$KUBECONFIG" get pods -A | egrep 'CrashLoopBackOff|ImagePullBackOff|CreateContainerError|Error|Pending|Unknown|Terminating' || true)"
+	if [[ "$AUTO_CLEANUP_STALE_PODS" == "true" ]] && [[ -n "$bad_pods" ]] && printf '%s\n' "$bad_pods" | egrep -q 'Unknown|Terminating'; then
+		printf 'stale_pod_cleanup=auto\n'
+		if cleanup_output="$(MIN_AGE_SECONDS="$STALE_POD_MIN_AGE_SECONDS" KUBECONFIG="$KUBECONFIG" bash "$STALE_POD_HELPER" 2>&1)"; then
+			printf '%s\n' "$cleanup_output"
+			cleanup_deleted="$(printf '%s\n' "$cleanup_output" | awk -F= '/^deleted_count=/{print $2; exit}')"
+			if [[ "${cleanup_deleted:-0}" -gt 0 ]]; then
+				# 等 controller 把旧 Pod 对象清走并重建，避免把冷启动收敛尾巴误判成永久故障。
+				sleep "$STALE_POD_WAIT_SECONDS"
+				bad_pods="$(kubectl --request-timeout=20s --kubeconfig "$KUBECONFIG" get pods -A | egrep 'CrashLoopBackOff|ImagePullBackOff|CreateContainerError|Error|Pending|Unknown|Terminating' || true)"
+			fi
+		else
+			printf '%s\n' "$cleanup_output" >&2
+			record_failure 'stale controlled pod cleanup helper failed'
+		fi
+	fi
 	if [[ -n "$bad_pods" ]]; then
 		printf '%s\n' "$bad_pods"
 		record_failure 'cluster still has unhealthy pods'
@@ -256,24 +275,39 @@ check_storage_ha_baseline() {
 	printf '== storage ha baseline ==\n'
 
 	local auto_salvage auto_delete node_down_policy
-	local multipath_nodes faulted_volumes
+	local multipath_nodes faulted_volumes degraded_volumes schedulable_nodes
 	auto_salvage="$(kubectl --request-timeout=20s --kubeconfig "$KUBECONFIG" get settings.longhorn.io -n longhorn-system auto-salvage -o jsonpath='{.value}' 2>/dev/null || true)"
 	auto_delete="$(kubectl --request-timeout=20s --kubeconfig "$KUBECONFIG" get settings.longhorn.io -n longhorn-system auto-delete-pod-when-volume-detached-unexpectedly -o jsonpath='{.value}' 2>/dev/null || true)"
 	node_down_policy="$(kubectl --request-timeout=20s --kubeconfig "$KUBECONFIG" get settings.longhorn.io -n longhorn-system node-down-pod-deletion-policy -o jsonpath='{.value}' 2>/dev/null || true)"
 	multipath_nodes="$(kubectl --request-timeout=20s --kubeconfig "$KUBECONFIG" get nodes.longhorn.io -n longhorn-system -o jsonpath='{range .items[*]}{.metadata.name}{"\t"}{range .status.conditions[?(@.type=="Multipathd")]}{.status}{"\n"}{end}{end}' 2>/dev/null | awk '$2 == "False" {print $1}' | paste -sd',' -)"
 	faulted_volumes="$(kubectl --request-timeout=20s --kubeconfig "$KUBECONFIG" get volumes.longhorn.io -n longhorn-system -o jsonpath='{range .items[*]}{.metadata.name}{"\t"}{.status.robustness}{"\n"}{end}' 2>/dev/null | awk '$2 == "faulted" {print $1}' | paste -sd',' -)"
+	degraded_volumes="$(kubectl --request-timeout=20s --kubeconfig "$KUBECONFIG" get volumes.longhorn.io -n longhorn-system -o jsonpath='{range .items[*]}{.metadata.name}{"\t"}{.status.robustness}{"\n"}{end}' 2>/dev/null | awk '$2 == "degraded" {print $1}' | paste -sd',' -)"
+	if command -v jq >/dev/null 2>&1; then
+		# Longhorn diskStatus 是 map 结构，直接用 jsonpath 很容易在不同版本下误判；这里统一走 jq 统计真实可调度磁盘数。
+		schedulable_nodes="$(kubectl --request-timeout=20s --kubeconfig "$KUBECONFIG" get nodes.longhorn.io -n longhorn-system -o json 2>/dev/null | jq -r '[.items[] | (.status.diskStatus // {} | to_entries[]) | (.value.conditions // [])[] | select(.type == "Schedulable" and .status == "True")] | length' 2>/dev/null || true)"
+	else
+		record_failure 'jq not found; cannot verify longhorn schedulable storage nodes'
+		schedulable_nodes="0"
+	fi
 
 	printf 'longhorn_auto_salvage=%s\n' "${auto_salvage:-unknown}"
 	printf 'longhorn_auto_delete_detached_pod=%s\n' "${auto_delete:-unknown}"
 	printf 'longhorn_node_down_pod_deletion_policy=%s\n' "${node_down_policy:-unknown}"
 	printf 'longhorn_multipath_nodes=%s\n' "${multipath_nodes:-none}"
 	printf 'longhorn_faulted_volumes=%s\n' "${faulted_volumes:-none}"
+	printf 'longhorn_degraded_volumes=%s\n' "${degraded_volumes:-none}"
+	printf 'longhorn_schedulable_nodes=%s\n' "${schedulable_nodes:-0}"
 
 	[[ "$auto_salvage" == "true" ]] || record_failure 'longhorn auto-salvage is not enabled'
 	[[ "$auto_delete" == "true" ]] || record_failure 'longhorn auto-delete-pod-when-volume-detached-unexpectedly is not enabled'
 	[[ "$node_down_policy" == "delete-both-statefulset-and-deployment-pod" ]] || record_failure 'longhorn node-down-pod-deletion-policy is not production-ha baseline'
 	[[ -z "$multipath_nodes" ]] || record_failure "longhorn nodes still report Multipathd issue: ${multipath_nodes}"
 	[[ -z "$faulted_volumes" ]] || record_failure "longhorn still has faulted volumes: ${faulted_volumes}"
+	# 当前默认卷副本数为 2；若少于 2 个 Longhorn 节点还能继续调度新副本，恢复后很容易长期停在 degraded。
+	[[ "${schedulable_nodes:-0}" -ge 2 ]] || record_failure "longhorn only has ${schedulable_nodes:-0} schedulable storage nodes"
+	if [[ -n "$degraded_volumes" ]]; then
+		printf 'WARN: longhorn degraded volumes still present: %s\n' "$degraded_volumes" >&2
+	fi
 }
 
 check_gitops_and_backup() {

@@ -53,6 +53,11 @@ serviceMonitor:
       labels:
         component: grafana
         access: direct
+    - name: headlamp
+      url: http://192.168.0.108:30087/
+      labels:
+        component: headlamp
+        access: direct
     - name: argocd
       url: https://192.168.0.108:30443/
       module: https_2xx_insecure

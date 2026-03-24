@@ -10,6 +10,7 @@
 
 - `http://192.168.0.108:30088`
 - `http://192.168.0.108:30081/d/lab-ha-overview/ha-lab-ops-overview`
+- `http://192.168.0.108:30081/d/lab-ha-service-governance/ha-lab-service-governance`
 - `http://192.168.0.108:30081/d/lab-ha-data/ha-lab-data-and-storage`
 - `http://192.168.0.108:30086`
 - `http://192.168.0.108:30093`
@@ -29,8 +30,10 @@ bash /Users/simon/projects/webapp-template/server/deploy/lab-ha/scripts/check-ha
 ```
 
 说明：该脚本会先核对每台节点的 `swap / fstab / kubelet / containerd / 模块 / sysctl / 主机防火墙 / multipathd`，再检查 K8s、GitOps、备份与外部入口，避免只看到业务 `503` 却漏掉“swap 回挂导致 kubelet 全挂”“节点防火墙在 reboot 后把 NodePort/存储端口重新拦住”或“multipathd 抢占块设备导致 Longhorn 卷恢复失败”这类根因。
-补充说明：脚本现在也会核对 `Longhorn auto-salvage / auto-delete-pod-when-volume-detached-unexpectedly / node-down-pod-deletion-policy`，并直接检查 Longhorn 节点是否还报 `Multipathd` 已知问题，以及现场是否仍残留 `faulted` 卷。
+补充说明：脚本现在也会核对 `Longhorn auto-salvage / auto-delete-pod-when-volume-detached-unexpectedly / node-down-pod-deletion-policy`，并直接检查 Longhorn 节点是否还报 `Multipathd` 已知问题、现场是否仍残留 `faulted` 卷，以及当前是否至少还有 `2` 个 `Schedulable` 的存储节点可补副本。
 补充说明：脚本执行完成后，也会同步刷新 Portal 里的“最近冷启动验收”摘要卡，方便值班人员先在页面上看到最近一次结果。
+补充说明：脚本现在会在 `3/3 Ready` 之后，带边界地清理全量冷启动后残留的 `Unknown/Terminating` controller Pod，减少控制器已经恢复但旧 Pod 对象还挂在 API 里的误报。
+补充说明：如果这是一次正式 HA 演练而不是普通巡检，后续再执行 `verify-ha-lab-drill.sh`，把“最近 HA 演练”卡片一起刷新到 Portal。
 
 ## 1. API VIP 漂移演练
 
@@ -185,7 +188,13 @@ kubectl --kubeconfig /Users/simon/.kube/ha-lab.conf get application -n argocd we
 bash /Users/simon/projects/webapp-template/server/deploy/lab-ha/scripts/check-ha-lab-cold-start.sh
 ```
 
-补充说明：若这轮还顺手做了 prod-trial active / preview 验收，可再执行 `check-webapp-prod-trial-bluegreen.sh`，把“最近烟雾检查”卡片也刷新到 Portal。
+如果这轮要作为正式 HA 演练留档，再继续执行：
+
+```bash
+bash /Users/simon/projects/webapp-template/server/deploy/lab-ha/scripts/verify-ha-lab-drill.sh simultaneous-reboot
+```
+
+补充说明：该脚本会先复跑 `check-ha-lab-cold-start.sh`，通过后再把“最近 HA 演练”摘要写入 Portal，避免值班页面还停在旧结论。若这轮还顺手做了 prod-trial active / preview 验收，可再执行 `check-webapp-prod-trial-bluegreen.sh`，把“最近烟雾检查”卡片也刷新到 Portal。
 
 ## 8. 节点重启 / 冷启动验收
 
@@ -211,11 +220,14 @@ bash /Users/simon/projects/webapp-template/server/deploy/lab-ha/scripts/check-ha
 - `Longhorn` 的 `auto-salvage=true`
 - `Longhorn` 的 `auto-delete-pod-when-volume-detached-unexpectedly=true`
 - `Longhorn` 的 `node-down-pod-deletion-policy=delete-both-statefulset-and-deployment-pod`
+- 当前至少还有 `2` 个 Longhorn 节点的磁盘 `Schedulable=True`
 - `overlay / br_netfilter / iscsi_tcp` 已加载
 - `Alert Sink` 仍能回看最近 webhook payload，`Jaeger` 不会因 Pod/节点重启把最近 traces 全清掉
 - 入口 `Portal / WebApp / Grafana / Prometheus / Alertmanager / Argo CD` 返回 `200`
 - `webapp-template-lab` 维持 `Synced / Healthy`
 - `Velero BackupStorageLocation` 仍为 `Available`
+- 若全量冷启动后残留旧的 `Unknown/Terminating` controller Pod，脚本会自动清理并等待一次收敛
+- 若这是正式 HA 演练，随后执行 `verify-ha-lab-drill.sh simultaneous-reboot` 后，Portal 的“最近 HA 演练”卡片也会更新为本次结果
 
 ## 9. Longhorn 卷在全量冷启动后卡在 `faulted/detached`
 
@@ -262,6 +274,21 @@ kubectl --kubeconfig /Users/simon/.kube/ha-lab.conf scale statefulset -n monitor
 ```bash
 bash /Users/simon/projects/webapp-template/server/deploy/lab-ha/scripts/check-ha-lab-cold-start.sh
 ```
+
+如果卷已经从 `faulted` 回到 `degraded`，但长期补不回第二副本，再继续确认 Longhorn 是否还有足够的可调度节点：
+
+```bash
+kubectl --kubeconfig /Users/simon/.kube/ha-lab.conf get nodes.longhorn.io -n longhorn-system -o json | jq -r '
+  .items[] |
+  .metadata.name as $node |
+  .status.diskStatus[] |
+  [$node, .storageAvailable, .storageScheduled, (.conditions[] | select(.type=="Schedulable") | .status), (.conditions[] | select(.type=="Schedulable") | .message)] |
+  @tsv'
+```
+
+如果只剩 `1` 个 `Schedulable=True` 节点，就算业务先起来，也只是“勉强运行、没有冗余”；此时要么补容量，要么调整 Longhorn 的保留/最小可用策略，不能把它当成真正恢复完成。
+
+当前这套 `200Gi` VM 根盘实验环境，优先建议先下调 `storageReservedPercentageForDefaultDisk`，不要先动 `storage-minimal-available-percentage=25`。原因是前者主要是在收回过度保守的默认盘预留，后者则是在压缩根盘给系统和容器运行时留下的最后缓冲。
 
 ## 当前边界
 

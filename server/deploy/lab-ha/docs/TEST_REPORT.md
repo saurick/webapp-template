@@ -103,14 +103,16 @@
 ### 13. 三节点同时重启 / 全量冷启动演练
 
 - 操作：三台 VM 同时 reboot，再用统一冷启动脚本验收
-- 结果：节点基线、GitOps、备份和大多数入口均可恢复；但 `Prometheus` 的 Longhorn 卷曾停在 `faulted/detached`
-- 修复：补齐 `Longhorn` 冷启动策略基线，把 `node-down-pod-deletion-policy` 收口为 `delete-both-statefulset-and-deployment-pod`；随后继续排查发现三台节点都运行着 `multipathd`，Longhorn 节点条件明确报 `Multipathd=False`，因此又把 `multipathd` 纳入节点基线并在现场关闭，最后再对残留 `faulted` 卷做最小人工 salvage
-- 复验：再次执行真实三节点同时重启后，`Longhorn Multipathd` 条件已经恢复为 `True`，说明 `multipathd` 这条已知问题已被消除；但 `Longhorn` 仍会把一批卷打成 `faulted`，最终还是要靠最小人工 salvage 才能把 `Portal / WebApp / Grafana / Prometheus / Alertmanager / Argo CD` 全部拉回 `200`
-- 结论：通过，但也证明“整集群同时冷启动”目前仍存在存储恢复尾巴；`multipathd` 是必须收口的节点基线，不是让冷启动自动恢复的最终答案，不能只拿运行中故障演练替代冷启动验收
+- 历史问题：早期复验里，`Prometheus` 等 Longhorn 卷会在全量冷启动后停在 `faulted/detached`，还叠加过 `swap` 回挂、`multipathd` 抢占块设备、可调度存储节点不足、以及陈旧 `Unknown/Terminating` Pod 尾巴
+- 修复收口：已把 `swap` 持久关闭、主机防火墙关闭、`multipathd` 关闭、Longhorn 冷启动策略、默认盘保留比例、陈旧 Pod 清理 helper 和历史旧卷回收全部纳入当前基线
+- 最新复验：`2026-03-24` 再次执行真实三节点同时重启后，`check-ha-lab-cold-start.sh` 无需人工 salvage 卷、无需人工删除旧 Pod 即直接通过；随后 `verify-ha-lab-drill.sh simultaneous-reboot` 也通过，并把“最近 HA 演练”摘要写入 Portal
+- 最新结果：`kubectl get pods -A` 无 `CrashLoopBackOff / Pending / Unknown / Terminating`，Longhorn 无 `faulted / degraded / unknown` 卷残留，`Portal / WebApp / Grafana / Prometheus / Alertmanager / Argo CD` 六个入口均返回 `200`
+- 结论：通过。当前这套环境已经可以作为“虚拟机级 HA”的同时冷启动验收基线；但边界仍然是同宿主机三台 VM，不应对外宣称成硬件级 HA
 
 ## 当前结论
 
 - 在三台实验室 VM 上，顺序重启与全量冷启动都已经做过真实演练
+- 当前全量冷启动的最新正式结论，已经能通过统一验收并刷新到 Portal 的“最近 HA 演练”卡片，不再只停留在 runbook 或现场终端里
 - 当前用户侧主访问口径已经切换为 `192.168.0.108:port`，避免 `nip.io` 域名在浏览器/代理环境下失效
 - 这套结果适合作为“虚拟机级 HA 基线”与后续扩展起点
 - 但仍不应宣称为“硬件级高可用”

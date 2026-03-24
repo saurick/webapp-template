@@ -49,6 +49,7 @@
   - `kubernetes-dashboard-ingress.yaml`
 
 说明：详细用法见 `/Users/simon/projects/webapp-template/server/deploy/dashboard/README.md`。
+补充说明：`dashboard/` 仍是通用辅助模板；当前 `lab-ha` 目录内的默认 K8s 可视化入口已经收口为 `Headlamp` 与 Grafana `K8s Workloads`。
 
 ### 实验室高可用目录
 

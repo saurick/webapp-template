@@ -11,7 +11,7 @@ data:
     {
       "id": null,
       "uid": "lab-ha-service-governance",
-      "title": "HA Lab / Service Governance",
+      "title": "HA Lab / K8s Workloads",
       "tags": ["lab-ha", "governance", "hpa", "ingress"],
       "timezone": "browser",
       "schemaVersion": 39,
@@ -206,7 +206,7 @@ data:
           "gridPos": {"h": 8, "w": 24, "x": 0, "y": 42},
           "options": {
             "mode": "markdown",
-            "content": "### Service Governance Notes\n\n- This board focuses on the first-step governance baseline: `HPA`, ingress rate limiting, `PDB`, pod health, and rollout controller readiness.\n- The alert row shows current `pending` / `firing` governance alerts directly from Prometheus `ALERTS`, so on-call can decide whether Alertmanager deserves a deeper look.\n- Network allow / drop truth still lives in [Hubble](http://192.168.0.108:30085), not in Grafana.\n- GitOps drift, sync status, and rollout operations still belong to [Argo CD](https://192.168.0.108:30443) and the delivery board.\n- If ingress panels stay empty, check whether `ingress-nginx` ServiceMonitor is present and scraped.\n- This dashboard intentionally stays small enough for on-call triage instead of replacing every detailed view."
+            "content": "### K8s Workloads Notes\n\n- This board focuses on the first-step workload governance baseline: `nodes`, deployments, `HPA`, ingress rate limiting, `PDB`, pod health, and rollout controller readiness.\n- The alert row shows current `pending` / `firing` governance alerts directly from Prometheus `ALERTS`, so on-call can decide whether Alertmanager deserves a deeper look.\n- Network allow / drop truth still lives in [Hubble](http://192.168.0.108:30085), not in Grafana.\n- GitOps drift, sync status, and rollout operations still belong to [Argo CD](https://192.168.0.108:30443) and the delivery board.\n- If ingress panels stay empty, check whether `ingress-nginx` ServiceMonitor is present and scraped.\n- This dashboard intentionally stays small enough for on-call triage instead of replacing every detailed view."
           }
         }
       ]

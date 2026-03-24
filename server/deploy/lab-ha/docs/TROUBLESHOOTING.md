@@ -12,6 +12,7 @@
 
 - `http://192.168.0.108:30088`
 - `http://192.168.0.108:30081/d/lab-ha-overview/ha-lab-ops-overview`
+- `http://192.168.0.108:30081/d/lab-ha-service-governance/ha-lab-service-governance`
 - `http://192.168.0.108:30081/d/lab-ha-data/ha-lab-data-and-storage`
 - `http://192.168.0.108:30086`
 - `http://192.168.0.108:30093`
@@ -56,6 +57,27 @@ bash /Users/simon/projects/webapp-template/server/deploy/lab-ha/scripts/check-ha
 - `containerd` 或存储基线没恢复
 - 关键 NodePort / 管理入口还没回到 `200`
 - `Alert Sink / Jaeger` 这类值班留痕页是不是还在，避免误把“历史被清空”当成“系统没恢复”
+- 三节点都 `Ready` 之后，是否只是残留了一批 `Unknown/Terminating` 的旧 controller Pod，导致控制器没继续收敛
+
+如果现象不是“节点没起来”，而是：
+
+- `kubectl get ...` 偶发 `context deadline exceeded`
+- `helm-release.sh apply` 偶发 `UPGRADE FAILED: ... context deadline exceeded`
+- `Portal / Prometheus / Argo CD` 这类入口偶尔一起抖一下，但 Pod 面还是 `Running`
+
+优先再补一条节点压力检查：
+
+```bash
+bash /Users/simon/projects/webapp-template/server/deploy/lab-ha/scripts/check-ha-lab-node-pressure.sh
+```
+
+重点看：
+
+- `vmstat_st`：如果多节点 `cpu steal` 持续高于 `5%`，优先怀疑宿主机 CPU 争用
+- `vmstat_wa`：如果多节点 `iowait` 持续高于 `5%`，优先怀疑宿主机或底层存储抖动
+- `etcd_warn_count`：如果 `apply request took too long` 或 `leader failed to send out heartbeat` 又开始出现，说明控制面写路径正在受压
+
+这类现象不是 chart 真源错误，更像同宿主机 VM 之间的资源争用；在底层压力没降下来前，继续反复撞 Helm 发布通常只会重复超时。
 
 ## 2. WebApp 返回 500 / `readyz` 失败
 
@@ -279,6 +301,21 @@ kubectl --kubeconfig /Users/simon/.kube/ha-lab.conf get volumeattachments.longho
 3. 同时确认三台 Longhorn 节点没有再报 `Multipathd=False`；若命中，先停掉节点侧 `multipathd.service` 与 `multipathd.socket`
 4. 如果 `attachment ticket` 已存在但长期 `satisfied=false`，按 `RECOVERY_RUNBOOK.md` 第 9 节做最小人工 salvage
 5. 卷恢复后，再回跑 `check-ha-lab-cold-start.sh`
+
+### 如果卷恢复了，但一直停在 `degraded`
+
+```bash
+kubectl --kubeconfig /Users/simon/.kube/ha-lab.conf get nodes.longhorn.io -n longhorn-system -o json | jq -r '
+  .items[] |
+  .metadata.name as $node |
+  .status.diskStatus[] |
+  [$node, .storageAvailable, .storageScheduled, (.conditions[] | select(.type=="Schedulable") | .status), (.conditions[] | select(.type=="Schedulable") | .message)] |
+  @tsv'
+```
+
+如果只有 `1` 个 Longhorn 节点还是 `Schedulable=True`，说明当前不是“自动恢复慢一点”，而是“已经没有足够的可调度存储节点补回第二副本”。这时要优先处理容量/调度策略，不要误判成业务还没热起来。
+
+对当前 `200Gi` 根盘实验节点，第一优先级通常是下调 `storageReservedPercentageForDefaultDisk`，而不是先砍 `storage-minimal-available-percentage=25`。前者更像是在纠正默认盘预留过高，后者则会直接压缩根盘安全余量。
 
 ## 10. 想确认是不是“环境整体不稳”
 

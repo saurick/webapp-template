@@ -20,6 +20,7 @@
 - `docs/LOAD_TEST.md`: 实验室最小压测能力与观测口径
 - `docs/INTERNAL_DNS.md`: 内部域名与内网 DNS 说明
 - `docs/OPS_CHECKLIST.md`: 日常巡检清单
+- `docs/HIGH_PERFORMANCE_SERVER_BASELINE.md`: 未来迁移到更强宿主机前的采购/验收基线清单
 - `docs/CILIUM_HUBBLE_RUNBOOK.md`: Cilium eBPF 与 Hubble 运行/排障手册
 - `docs/TROUBLESHOOTING.md`: 常见故障排查手册
 - `docs/RECOVERY_RUNBOOK.md`: 恢复与故障演练手册
@@ -36,7 +37,7 @@
 - `manifests/cilium-values.yaml`: Cilium 与 Hubble 值文件
 - `manifests/argo-cd-values.yaml`: Argo CD 值文件
 - `manifests/harbor-values.yaml`: Harbor 值文件
-- `manifests/longhorn-values.yaml`: Longhorn 值文件，含 `autoSalvage`、`autoDeletePodWhenVolumeDetachedUnexpectedly` 与 `nodeDownPodDeletionPolicy`
+- `manifests/longhorn-values.yaml`: Longhorn 值文件，含 `autoSalvage`、`autoDeletePodWhenVolumeDetachedUnexpectedly`、`nodeDownPodDeletionPolicy` 与默认盘保留比例
 - `manifests/app-pg-cluster.yaml`: CloudNativePG `app-pg` 集群真源，含 `switchoverDelay=30`、`stopDelay=60`
 - `manifests/promtail-values.yaml`: Promtail 值文件
 - `manifests/jaeger.yaml`: Jaeger v2 轻量 tracing 基线
@@ -45,7 +46,7 @@
 - `manifests/platform-portal.yaml`: 实验室门户页
 - `manifests/prometheus-rule-service-governance.yaml`: 服务治理告警规则（HPA、PDB、Ingress 429、Ingress p95）
 - `manifests/grafana-lab-overview-dashboard.yaml`: Grafana 值班总览看板
-- `manifests/grafana-lab-service-governance-dashboard.yaml`: Grafana 服务治理看板（HPA、Ingress 限流、PDB、Pod 健康）
+- `manifests/grafana-lab-service-governance-dashboard.yaml`: Grafana K8s 工作负载 / 服务治理看板（节点、工作负载、HPA、Ingress 限流、PDB、Pod 健康）
 - `manifests/grafana-lab-loadtest-dashboard.yaml`: Grafana 压测趋势看板
 - `manifests/grafana-lab-loadtest-official-dashboard.yaml`: 官方 k6 Prometheus 看板（已适配实验室数据源）
 - `manifests/grafana-lab-data-services-dashboard.yaml`: Grafana 数据与存储看板
@@ -56,6 +57,7 @@
 - `manifests/argocd-rollouts-metrics.yaml`: Argo CD / Argo Rollouts 指标采集清单
 - `manifests/blackbox-values.yaml`: Blackbox Exporter 探测配置
 - `manifests/metrics-server-values.yaml`: Metrics Server 值文件，给 HPA 提供资源指标
+- `manifests/headlamp-values.yaml`: Headlamp 值文件，固定当前实验室 K8s UI 入口
 - `manifests/alert-webhook-receiver.yaml`: 实验室默认 webhook 告警接收页，可查看最近 payload
 - `manifests/webapp-governance.yaml`: webapp 命名空间治理基线
 - `manifests/webapp-template-lab.yaml`: 集群内实验室应用清单副本
@@ -68,9 +70,12 @@
 - `manifests/argocd-repo-secret-sealed.yaml`: Argo CD 仓库凭据的 SealedSecret
 - `scripts/ha-node-bootstrap.sh`: 节点初始化脚本
 - `scripts/check-ha-lab-cold-start.sh`: 节点重启 / 整集群冷启动后的统一验收脚本，同时刷新 Portal 里的最近冷启动摘要
+- `scripts/verify-ha-lab-drill.sh`: 在真实故障演练后复跑统一验收，并把“最近 HA 演练”摘要写到 Portal
+- `scripts/cleanup-stale-controlled-pods.sh`: 带边界地清理全量冷启动后残留的 `Unknown/Terminating` controller Pod
 - `scripts/check-velero-backup-status.sh`: Velero 备份状态统一检查脚本，同时刷新 Portal 里的最近备份摘要
 - `scripts/check-webapp-prod-trial-tracing.sh`: 触发 WebApp 请求并确认 Jaeger 中出现服务名
 - `scripts/check-webapp-prod-trial-bluegreen.sh`: 同时校验 prod-trial active / preview 两条入口，并刷新 Portal 里的最近烟雾检查摘要
+- `scripts/get-headlamp-token.sh`: 生成 `headlamp-admin` 的临时登录 token
 - `scripts/write-lab-ops-summary.sh`: 将最近一次冷启动 / 备份 / 烟雾检查摘要写入 Alert Sink 持久化存储
 - `scripts/patch-alert-link-overrides.sh`: 给高频值班告警补本地 dashboard/runbook 链接
 - `/Users/simon/projects/webapp-template/scripts/loadtest/`: 仓库内最小 `k6` 压测脚本与统一入口
@@ -83,8 +88,9 @@
 - 当前外部访问主入口统一收口为 `192.168.0.108` 的直连 `IP:Port`
 - 这是对当前虚拟化网络和用户本机代理环境最稳定、最易维护的口径
 - `Portal` 已作为默认起始页，包含入口导航、默认账号、快照摘要、最近一次压测摘要与文档直达链接
-- `Portal` 当前还会展示最近一次冷启动验收、最近一次备份检查、最近一次烟雾检查；这些摘要会复用 Alert Sink 已持久化的轻量存储，避免重启后整块上下文直接清空
-- 面向人操作的日常巡检、值班和恢复，默认先看 `Portal + Grafana + Alert Sink + Alertmanager + Argo CD` 这些 live 页面，再决定是否执行脚本
+- `Portal` 当前还会展示最近一次冷启动验收、最近一次 HA 演练、最近一次备份检查、最近一次烟雾检查；这些摘要会复用 Alert Sink 已持久化的轻量存储，避免重启后整块上下文直接清空
+- `Portal` 现在也会显式给出 `K8s Workloads` 与 `Headlamp` 两类 K8s 入口，避免值班人员在“看趋势”与“看对象细节”之间来回猜测
+- 面向人操作的日常巡检、值班和恢复，默认先看 `Portal + Grafana Ops + K8s Workloads + Headlamp + Alert Sink + Alertmanager + Argo CD` 这些 live 页面，再决定是否执行脚本
 - 当前对人展示统一口径：`WebApp Lab`、`WebApp Prod-Trial Active`、`WebApp Prod-Trial Preview`
 - 技术命名暂保持不变：`webapp` / `webapp-prod-trial` 命名空间与对应 Argo app 名仍作为底层真名
 - 当前对外可承诺的最低基线，应至少包含“节点重启后 swap 不会回挂 + `/etc/fstab` 不再保留生效中的 swap 挂载 + 主机防火墙保持关闭态 + `multipathd` 保持关闭 + kubelet 能自动恢复 + Longhorn 冷启动策略已经收口 + `check-ha-lab-cold-start.sh` 全量通过”
@@ -95,6 +101,10 @@
 - 这套 Helm 约定只覆盖 `server/deploy/lab-ha`，不覆盖 `/Users/simon/projects/webapp-template/server/deploy/compose/prod` 的单机 Compose 路径。
 - 当前 `lab-ha` 的第三方组件 chart 版本已固定到 live 集群现状，统一入口是 `bash /Users/simon/projects/webapp-template/server/deploy/lab-ha/scripts/helm-release.sh <repos|template|apply|list>`
 - `lab-platform` 发布后，`helm-release.sh` 会自动重启 `alert-webhook-receiver`，确保 ConfigMap 里的 `receiver.py` 路由与 Portal 摘要 API 立即生效，而不是停留在旧进程代码
+- `helm-release.sh apply` 现在会先做一轮短 API 稳定性预检：只有 `readyz` 和 `kubectl get nodes` 都能在当前运维机侧稳定返回，才会继续执行 Helm。这样能把“控制面/API 链路临时抖动”尽早暴露成明确错误，而不是表现成 Helm 长时间无输出
+- `helm-release.sh apply` 现在会在每个 release 开始前打印 `Applying release ...`，并默认给 `helm upgrade` 加 `--timeout 120s`；若现场需要更长观察窗口，可临时设置 `HELM_TIMEOUT=<duration>`
+- 如果 `kubectl get ...` 或 `helm-release.sh apply` 仍偶发 `context deadline exceeded`，先执行 `bash /Users/simon/projects/webapp-template/server/deploy/lab-ha/scripts/check-ha-lab-node-pressure.sh`；当前已知更像同宿主机 VM 的 CPU steal / I/O 抖动，而不是 `lab-platform` chart 真源持续损坏
+- Headlamp 当前通过官方 Helm chart 安装，固定版本 `0.40.1`，内网直连入口为 `http://192.168.0.108:30087`；当前值班口径仍要求使用 Kubernetes token 登录，而不是在仓库里固化长期静态口令
 - 若历史手工 `kubectl apply` 资源导致 Helm 首次接管失败，可仅在迁移那一次追加 `HELM_TAKE_OWNERSHIP=1`；若进一步遇到旧 `kubectl-client-side-apply` field manager 与 Helm v4 server-side apply 的字段冲突，可再临时叠加 `HELM_FORCE_CONFLICTS=1`。release 进入稳态后，应恢复为默认命令，避免把日常发布放宽成“无条件接管”或“无条件强改冲突字段”。
 - 平台自定义资源仍保留在 `manifests/` 目录，但 `helm-release.sh` 会在渲染前同步到 `charts/lab-platform/files/raw/`，由 Helm 接管实际安装；这样既不丢现有文档落点，也避免 dashboard JSON 里的 `{{...}}` 被 Helm 误解析
 - `webapp-template-lab`、`webapp-template-prod-trial` 与 internal 变体已统一改为同一个 Helm chart，由 Argo CD 按不同 values 文件渲染
@@ -104,6 +114,7 @@
 ## 当前已落地组件
 
 - K8s: `kubeadm + kube-vip + Cilium + Hubble + MetalLB + ingress-nginx + cert-manager + metrics-server`
+- K8s UI: `Headlamp`
 - 存储: `Longhorn + SeaweedFS`
 - 数据库: `CloudNativePG`
 - 监控: `Prometheus + Alertmanager + Grafana + node-exporter + kube-state-metrics + blackbox-exporter`

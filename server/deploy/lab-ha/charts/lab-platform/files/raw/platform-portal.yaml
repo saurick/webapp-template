@@ -425,6 +425,12 @@ data:
               <a class="card" href="http://192.168.0.108:30081" target="_blank" rel="noreferrer" data-i18n-html="cards.grafana">
                 <small>Metrics</small><strong>Grafana</strong><span>Dashboards and observability.</span>
               </a>
+              <a class="card" href="http://192.168.0.108:30081/d/lab-ha-service-governance/ha-lab-service-governance" target="_blank" rel="noreferrer" data-i18n-html="cards.k8s">
+                <small>K8s</small><strong>K8s Workloads</strong><span>Nodes, workloads, HPA, pod restarts, and ingress error signals.</span>
+              </a>
+              <a class="card" href="http://192.168.0.108:30087" target="_blank" rel="noreferrer" data-i18n-html="cards.headlamp">
+                <small>K8s</small><strong>Headlamp</strong><span>Interactive cluster explorer with resource tree, YAML, logs, and map view.</span>
+              </a>
               <a class="card" href="http://192.168.0.108:30081/d/lab-ha-overview/ha-lab-ops-overview" target="_blank" rel="noreferrer" data-i18n-html="cards.ops">
                 <small>Ops</small><strong>Ops Overview</strong><span>Daily on-call dashboard for cluster, app, backup, and alerts.</span>
               </a>
@@ -562,6 +568,30 @@ data:
                   rel="noreferrer"
                   data-i18n="ops.action.openChecklist"
                 >Open checklist</a>
+              </div>
+            </div>
+            <div class="status-card">
+              <h2 data-i18n="snapshot.haDrillTitle">Latest HA Drill</h2>
+              <div id="ops-ha-drill-status" class="status-value status-loading" data-i18n="ops.state.loading">Loading</div>
+              <p id="ops-ha-drill-summary" data-i18n="ops.body.loading">Loading latest ops summary.</p>
+              <p id="ops-ha-drill-detail" class="status-detail hidden"></p>
+              <div class="status-actions">
+                <a
+                  id="ops-ha-drill-primary-link"
+                  class="status-link"
+                  href="http://192.168.0.108:8929/root/webapp-template-lab/-/blob/master/server/deploy/lab-ha/docs/TEST_REPORT.md"
+                  target="_blank"
+                  rel="noreferrer"
+                  data-i18n="ops.action.openTestReport"
+                >Open test report</a>
+                <a
+                  id="ops-ha-drill-secondary-link"
+                  class="status-link status-link-secondary"
+                  href="http://192.168.0.108:8929/root/webapp-template-lab/-/blob/master/server/deploy/lab-ha/docs/RECOVERY_RUNBOOK.md"
+                  target="_blank"
+                  rel="noreferrer"
+                  data-i18n="ops.action.openRunbook"
+                >Open runbook</a>
               </div>
             </div>
             <div class="status-card">
@@ -783,6 +813,7 @@ data:
           const OPS_SUMMARIES_PATH = '/alert-sink-api/ops/summaries';
           const OPS_SUMMARY_REFRESH_MS = 30000;
           const OPS_COLD_START_RUNBOOK_URL = 'http://192.168.0.108:8929/root/webapp-template-lab/-/blob/master/server/deploy/lab-ha/docs/RECOVERY_RUNBOOK.md';
+          const OPS_TEST_REPORT_URL = 'http://192.168.0.108:8929/root/webapp-template-lab/-/blob/master/server/deploy/lab-ha/docs/TEST_REPORT.md';
           const OPS_CHECKLIST_URL = 'http://192.168.0.108:8929/root/webapp-template-lab/-/blob/master/server/deploy/lab-ha/docs/OPS_CHECKLIST.md';
           const OPS_BACKUP_DASHBOARD_URL = 'http://192.168.0.108:30081/d/lab-ha-postgres/ha-lab-postgresql-and-backup';
           const OPS_ACTIVE_URL = 'http://192.168.0.108:30089/';
@@ -836,6 +867,8 @@ data:
               'cards.portal': '<small>Portal</small><strong>Lab Portal</strong><span>This navigation page itself.</span>',
               'cards.registry': '<small>Registry</small><strong>Harbor</strong><span>Container registry UI.</span>',
               'cards.grafana': '<small>Metrics</small><strong>Grafana</strong><span>Dashboards and observability.</span>',
+              'cards.k8s': '<small>K8s</small><strong>K8s Workloads</strong><span>Nodes, workloads, HPA, pod restarts, and ingress error signals.</span>',
+              'cards.headlamp': '<small>K8s</small><strong>Headlamp</strong><span>Interactive cluster explorer with resource tree, YAML, logs, and map view.</span>',
               'cards.ops': '<small>Ops</small><strong>Ops Overview</strong><span>Daily on-call dashboard for cluster, app, backup, and alerts.</span>',
               'cards.data': '<small>Data</small><strong>Data &amp; Storage</strong><span>Database, Harbor, Longhorn, SeaweedFS, and PVC health view.</span>',
               'cards.database': '<small>Database</small><strong>PostgreSQL &amp; Backup</strong><span>Primary/replica roles, lag, DB size, and Velero backup signals.</span>',
@@ -858,6 +891,7 @@ data:
               'snapshot.loadtestTitle': 'Latest Load Test',
               'snapshot.alertSinkLatestTitle': 'Latest Real Alert',
               'snapshot.coldStartTitle': 'Latest Cold-Start Check',
+              'snapshot.haDrillTitle': 'Latest HA Drill',
               'snapshot.backupCheckTitle': 'Latest Backup Check',
               'snapshot.smokeTitle': 'Latest Smoke Check',
               'ops.state.loading': 'Loading',
@@ -870,6 +904,7 @@ data:
               'ops.body.none': 'No recent result has been written yet. Run the matching check once to seed this card.',
               'ops.body.unavailable': 'Ops summary is temporarily unavailable. Run the matching check again or open the linked live page.',
               'ops.action.openRunbook': 'Open runbook',
+              'ops.action.openTestReport': 'Open test report',
               'ops.action.openChecklist': 'Open checklist',
               'ops.action.openBackupDashboard': 'Open backup dashboard',
               'ops.action.openActive': 'Open active',
@@ -913,7 +948,7 @@ data:
               'alertsink.action.openAlertmanager': 'Open Alertmanager',
               'snapshot.pipeline': '<h2>CI Pipeline</h2><div class="status-value status-ok">Open live</div><p>Use <a href="http://192.168.0.108:8929/root/webapp-template-lab/-/pipelines" target="_blank" rel="noreferrer">GitLab pipeline history</a> for the current build truth. This page intentionally no longer pins a single pipeline number.</p>',
               'snapshot.gitops': '<h2>GitOps Sync</h2><div class="status-value status-ok">Check Argo</div><p>Current sync status, live revision, and drift should be checked in <a href="https://192.168.0.108:30443" target="_blank" rel="noreferrer">Argo CD</a> or the delivery dashboard, not inferred from this static page.</p>',
-              'snapshot.drills': '<h2>HA Drills</h2><div class="status-value status-ok">Use runbook</div><p>Latest verified failover and recovery conclusions are kept in <a href="http://192.168.0.108:8929/root/webapp-template-lab/-/blob/master/server/deploy/lab-ha/docs/TEST_REPORT.md" target="_blank" rel="noreferrer">TEST_REPORT.md</a> and <a href="http://192.168.0.108:8929/root/webapp-template-lab/-/blob/master/server/deploy/lab-ha/docs/RECOVERY_RUNBOOK.md" target="_blank" rel="noreferrer">RECOVERY_RUNBOOK.md</a>.</p>',
+              'snapshot.drills': '<h2>HA Drills</h2><div class="status-value status-ok">Use latest card</div><p>The latest formal drill result is shown in the <strong>Latest HA Drill</strong> card above. Detailed steps and conclusions remain in <a href="http://192.168.0.108:8929/root/webapp-template-lab/-/blob/master/server/deploy/lab-ha/docs/TEST_REPORT.md" target="_blank" rel="noreferrer">TEST_REPORT.md</a> and <a href="http://192.168.0.108:8929/root/webapp-template-lab/-/blob/master/server/deploy/lab-ha/docs/RECOVERY_RUNBOOK.md" target="_blank" rel="noreferrer">RECOVERY_RUNBOOK.md</a>.</p>',
               'snapshot.backup': '<h2>Velero Backup</h2><div class="status-value status-ok">Check dashboard</div><p>Current backup recency and recovery signals should be read from the PostgreSQL / backup dashboard and live Velero objects instead of a frozen timestamp on this page.</p>',
               'snapshot.alerts': '<h2>Alert Delivery</h2><div class="status-value status-ok">Check live</div><p>Use <a href="http://192.168.0.108:30093" target="_blank" rel="noreferrer">Alertmanager</a> and the alert sink to confirm current routing. The portal only records the default path.</p>',
               'snapshot.blackbox': '<h2>Blackbox Probes</h2><div class="status-value status-ok">Check Grafana</div><p>Human-facing entrypoints are under Prometheus blackbox probing. Direct truth remains in Prometheus, Grafana, and Alertmanager, not in the static page itself.</p>',
@@ -951,6 +986,8 @@ data:
               'cards.portal': '<small>门户</small><strong>实验室导航页</strong><span>就是当前这张导航页。</span>',
               'cards.registry': '<small>镜像仓库</small><strong>Harbor</strong><span>容器镜像仓库界面。</span>',
               'cards.grafana': '<small>监控</small><strong>Grafana</strong><span>仪表盘与可观测性入口。</span>',
+              'cards.k8s': '<small>K8s</small><strong>K8s 工作负载</strong><span>节点、工作负载、HPA、Pod 重启与 ingress 错误信号。</span>',
+              'cards.headlamp': '<small>K8s</small><strong>Headlamp</strong><span>交互式集群界面，可直接查看资源树、YAML、日志和拓扑关系。</span>',
               'cards.ops': '<small>运维</small><strong>运维总览</strong><span>集群、应用、备份与告警的日常值班看板。</span>',
               'cards.data': '<small>数据</small><strong>数据与存储</strong><span>数据库、Harbor、Longhorn、SeaweedFS 与 PVC 健康视图。</span>',
               'cards.database': '<small>数据库</small><strong>PostgreSQL 与备份</strong><span>主从角色、复制延迟、库大小与 Velero 备份信号。</span>',
@@ -973,6 +1010,7 @@ data:
               'snapshot.loadtestTitle': '最近一次压测',
               'snapshot.alertSinkLatestTitle': '最近真实告警',
               'snapshot.coldStartTitle': '最近冷启动验收',
+              'snapshot.haDrillTitle': '最近 HA 演练',
               'snapshot.backupCheckTitle': '最近备份检查',
               'snapshot.smokeTitle': '最近烟雾检查',
               'ops.state.loading': '加载中',
@@ -985,6 +1023,7 @@ data:
               'ops.body.none': '当前还没有写入最近结果。先执行对应检查脚本一次，这张卡片就会有内容。',
               'ops.body.unavailable': '运维摘要暂时不可用，请重跑对应检查或直接打开链接查看 live。',
               'ops.action.openRunbook': '打开 runbook',
+              'ops.action.openTestReport': '打开测试报告',
               'ops.action.openChecklist': '打开巡检清单',
               'ops.action.openBackupDashboard': '打开备份看板',
               'ops.action.openActive': '打开 active',
@@ -1028,7 +1067,7 @@ data:
               'alertsink.action.openAlertmanager': '打开 Alertmanager',
               'snapshot.pipeline': '<h2>CI 流水线</h2><div class="status-value status-ok">去看 live</div><p>当前构建真相请直接看 <a href="http://192.168.0.108:8929/root/webapp-template-lab/-/pipelines" target="_blank" rel="noreferrer">GitLab 流水线历史</a>。这张页面不再写死某一个流水线编号。</p>',
               'snapshot.gitops': '<h2>GitOps 同步</h2><div class="status-value status-ok">查看 Argo</div><p>当前同步状态、live revision 和漂移情况，应直接在 <a href="https://192.168.0.108:30443" target="_blank" rel="noreferrer">Argo CD</a> 或交付看板里确认，而不是根据静态页推断。</p>',
-              'snapshot.drills': '<h2>高可用演练</h2><div class="status-value status-ok">看 runbook</div><p>最近一次确认通过的故障切换与恢复结论，统一以 <a href="http://192.168.0.108:8929/root/webapp-template-lab/-/blob/master/server/deploy/lab-ha/docs/TEST_REPORT.md" target="_blank" rel="noreferrer">TEST_REPORT.md</a> 和 <a href="http://192.168.0.108:8929/root/webapp-template-lab/-/blob/master/server/deploy/lab-ha/docs/RECOVERY_RUNBOOK.md" target="_blank" rel="noreferrer">RECOVERY_RUNBOOK.md</a> 为准。</p>',
+              'snapshot.drills': '<h2>高可用演练</h2><div class="status-value status-ok">先看上方卡片</div><p>最近一次正式 HA 演练结果，请先看上方 <strong>最近 HA 演练</strong> 卡片；详细步骤与结论仍以 <a href="http://192.168.0.108:8929/root/webapp-template-lab/-/blob/master/server/deploy/lab-ha/docs/TEST_REPORT.md" target="_blank" rel="noreferrer">TEST_REPORT.md</a> 和 <a href="http://192.168.0.108:8929/root/webapp-template-lab/-/blob/master/server/deploy/lab-ha/docs/RECOVERY_RUNBOOK.md" target="_blank" rel="noreferrer">RECOVERY_RUNBOOK.md</a> 为准。</p>',
               'snapshot.backup': '<h2>Velero 备份</h2><div class="status-value status-ok">查看看板</div><p>当前备份新鲜度与恢复信号，请看 PostgreSQL / 备份看板和 live Velero 对象，不再在这里冻结某个时间戳。</p>',
               'snapshot.alerts': '<h2>告警投递</h2><div class="status-value status-ok">查看 live</div><p>当前告警路由是否正常，请直接看 <a href="http://192.168.0.108:30093" target="_blank" rel="noreferrer">Alertmanager</a> 和 alert sink；Portal 只保留默认链路说明。</p>',
               'snapshot.blackbox': '<h2>Blackbox 探测</h2><div class="status-value status-ok">查看 Grafana</div><p>面向人的入口页仍由 Prometheus blackbox 探测，真实状态以 Prometheus、Grafana 和 Alertmanager 为准，而不是这张静态页。</p>',
@@ -1066,6 +1105,11 @@ data:
           const opsColdStartDetail = document.getElementById('ops-cold-start-detail');
           const opsColdStartPrimaryLink = document.getElementById('ops-cold-start-primary-link');
           const opsColdStartSecondaryLink = document.getElementById('ops-cold-start-secondary-link');
+          const opsHaDrillStatus = document.getElementById('ops-ha-drill-status');
+          const opsHaDrillSummary = document.getElementById('ops-ha-drill-summary');
+          const opsHaDrillDetail = document.getElementById('ops-ha-drill-detail');
+          const opsHaDrillPrimaryLink = document.getElementById('ops-ha-drill-primary-link');
+          const opsHaDrillSecondaryLink = document.getElementById('ops-ha-drill-secondary-link');
           const opsBackupStatus = document.getElementById('ops-backup-status');
           const opsBackupSummary = document.getElementById('ops-backup-summary');
           const opsBackupDetail = document.getElementById('ops-backup-detail');
@@ -1133,6 +1177,13 @@ data:
               primaryLink: opsColdStartPrimaryLink,
               secondaryLink: opsColdStartSecondaryLink,
             },
+            'ha-drill': {
+              statusNode: opsHaDrillStatus,
+              summaryNode: opsHaDrillSummary,
+              detailNode: opsHaDrillDetail,
+              primaryLink: opsHaDrillPrimaryLink,
+              secondaryLink: opsHaDrillSecondaryLink,
+            },
             backup: {
               statusNode: opsBackupStatus,
               summaryNode: opsBackupSummary,
@@ -1150,6 +1201,7 @@ data:
           };
           let opsSummaryCardState = {
             'cold-start': buildOpsDefaultState(OPS_COLD_START_RUNBOOK_URL, 'ops.action.openRunbook', OPS_CHECKLIST_URL, 'ops.action.openChecklist'),
+            'ha-drill': buildOpsDefaultState(OPS_TEST_REPORT_URL, 'ops.action.openTestReport', OPS_COLD_START_RUNBOOK_URL, 'ops.action.openRunbook'),
             backup: buildOpsDefaultState(OPS_BACKUP_DASHBOARD_URL, 'ops.action.openBackupDashboard', OPS_CHECKLIST_URL, 'ops.action.openChecklist'),
             smoke: buildOpsDefaultState(OPS_ACTIVE_URL, 'ops.action.openActive', OPS_PREVIEW_URL, 'ops.action.openPreview'),
           };
@@ -1520,6 +1572,7 @@ data:
           const loadOpsSummaries = async () => {
             const defaults = {
               'cold-start': buildOpsDefaultState(OPS_COLD_START_RUNBOOK_URL, 'ops.action.openRunbook', OPS_CHECKLIST_URL, 'ops.action.openChecklist'),
+              'ha-drill': buildOpsDefaultState(OPS_TEST_REPORT_URL, 'ops.action.openTestReport', OPS_COLD_START_RUNBOOK_URL, 'ops.action.openRunbook'),
               backup: buildOpsDefaultState(OPS_BACKUP_DASHBOARD_URL, 'ops.action.openBackupDashboard', OPS_CHECKLIST_URL, 'ops.action.openChecklist'),
               smoke: buildOpsDefaultState(OPS_ACTIVE_URL, 'ops.action.openActive', OPS_PREVIEW_URL, 'ops.action.openPreview'),
             };

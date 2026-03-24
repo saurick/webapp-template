@@ -4,6 +4,7 @@ defaultSettings:
   createDefaultDiskLabeledNodes: false
   defaultDataPath: /var/lib/longhorn
   nodeDownPodDeletionPolicy: delete-both-statefulset-and-deployment-pod
+  storageReservedPercentageForDefaultDisk: 20
 
 global:
   cattle:

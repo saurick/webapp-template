@@ -34,8 +34,11 @@ if [[ -z "$pod_name" ]]; then
   exit 0
 fi
 
-if ! kubectl --request-timeout=20s --kubeconfig "$KUBECONFIG" exec -i -n "$SUMMARY_NAMESPACE" "$pod_name" -- \
-  sh -c "mkdir -p /data/ops-state && cat > /data/ops-state/${SUMMARY_KEY}.json" <"$tmp_file"; then
+payload_b64="$(base64 <"$tmp_file" | tr -d '\n')"
+
+# 这里不再依赖 kubectl exec 的 stdin 直灌；当前环境里那条链路会偶发写出空文件，直接导致 Portal 摘要变成空白。
+if ! kubectl --request-timeout=20s --kubeconfig "$KUBECONFIG" exec -n "$SUMMARY_NAMESPACE" "$pod_name" -- \
+  sh -c "mkdir -p /data/ops-state && printf '%s' '$payload_b64' | base64 -d > /data/ops-state/${SUMMARY_KEY}.json"; then
   echo "WARN: failed to persist ops summary '$SUMMARY_KEY'" >&2
   exit 0
 fi

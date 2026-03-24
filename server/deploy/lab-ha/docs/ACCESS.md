@@ -10,9 +10,10 @@
 - Portal: `http://192.168.0.108:30088`
 - Harbor: `http://192.168.0.108:30002`
 - Grafana: `http://192.168.0.108:30081`
+- Headlamp: `http://192.168.0.108:30087`
 - Jaeger: `http://192.168.0.108:30686`
 - Grafana Ops Dashboard: `http://192.168.0.108:30081/d/lab-ha-overview/ha-lab-ops-overview`
-- Grafana Service Governance Dashboard: `http://192.168.0.108:30081/d/lab-ha-service-governance/ha-lab-service-governance`
+- Grafana K8s Workloads Dashboard: `http://192.168.0.108:30081/d/lab-ha-service-governance/ha-lab-service-governance`
 - Grafana Data Dashboard: `http://192.168.0.108:30081/d/lab-ha-data/ha-lab-data-and-storage`
 - Grafana PostgreSQL Dashboard: `http://192.168.0.108:30081/d/lab-ha-postgres/ha-lab-postgresql-and-backup`
 - Grafana GitOps Dashboard: `http://192.168.0.108:30081/d/lab-ha-gitops/ha-lab-gitops-and-delivery`
@@ -28,11 +29,24 @@
 
 ## Tracing note
 
-- `Jaeger` 当前采用单实例 + 内存存储，只用于实验室 tracing 与排障
-- Jaeger Pod 重启、升级或被重新调度后，历史 trace 会丢失；它不是当前环境的持久化真源
+- `Jaeger` 当前采用单实例 + `Badger` 本地持久化 + `7d TTL`
+- Jaeger Pod 重启或升级后，最近 traces 不应再因为内存存储被直接清空；但它仍然不是长期归档平台
 - 集群内默认 OTLP HTTP 入口：`jaeger.monitoring.svc.cluster.local:4318`
 - Grafana 已预置 `Jaeger` datasource，并通过 `trace_link_id` 只给已采样日志展示 `View trace`，避免低采样场景点进 Jaeger 直接 `404`
 - 值班排障建议口径：先在 Grafana Explore 看 Loki，再点 sampled 日志上的 `View trace` 进入 Jaeger
+
+## Headlamp 登录说明
+
+- Headlamp 当前走内部 `NodePort`：`http://192.168.0.108:30087`
+- Headlamp 官方推荐使用 Kubernetes `ServiceAccount token` 登录
+- 当前实验室已经预置 `headlamp/headlamp-admin`，可直接执行：
+
+```bash
+bash /Users/simon/projects/webapp-template/server/deploy/lab-ha/scripts/get-headlamp-token.sh
+```
+
+- 默认会生成一个 `24h` 临时 token；如需缩短或拉长时效，可在命令前加 `TOKEN_DURATION=8h` 之类的环境变量
+- 当前这条入口面向内网/实验室使用；若后续要更大范围暴露，应再补 ingress 级 basic auth 或 OIDC，而不是裸露给更大的网络面
 
 ## S3 endpoint note
 
@@ -46,6 +60,7 @@
 - It now includes a dedicated favicon and one-click copy buttons for default credentials
 - It also includes an operational snapshot area for CI, GitOps, HA drills, and blackbox guidance
 - It now also surfaces the latest verified backup result and alert delivery summary for faster daily checks
+- It now also exposes dedicated `K8s Workloads` and `Headlamp` entries, so operators can choose between curated Grafana triage and interactive Kubernetes resource browsing
 
 ## 当前实验室默认凭据
 
