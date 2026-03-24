@@ -79,6 +79,35 @@ bash /Users/simon/projects/webapp-template/server/deploy/lab-ha/scripts/check-ha
 
 这类现象不是 chart 真源错误，更像同宿主机 VM 之间的资源争用；在底层压力没降下来前，继续反复撞 Helm 发布通常只会重复超时。
 
+如果故障表现是某个新组件长期 `ImagePullBackOff`，而节点本身 SSH 正常、`curl -4 https://ghcr.io/v2/` 能通，但事件里反复出现 `connection reset by peer` 或卡在 `pkg-containers.githubusercontent.com`，优先检查节点是否已经按基线关闭 IPv6。单纯改 `/etc/gai.conf` 对 `containerd/kubelet` 不够，现场验证里真正生效的是节点级 `sysctl`：
+
+```bash
+for host in 192.168.0.7 192.168.0.108 192.168.0.128; do
+  printf '== %s ==\n' "$host"
+  ssh root@"$host" "sysctl -n net.ipv6.conf.all.disable_ipv6 net.ipv6.conf.default.disable_ipv6 net.ipv6.conf.lo.disable_ipv6"
+done
+```
+
+如果不是三行都等于 `1`，先补回，再删掉出问题的 Pod 让 kubelet 重拉：
+
+```bash
+for host in 192.168.0.7 192.168.0.108 192.168.0.128; do
+  ssh root@"$host" "cat >/etc/sysctl.d/99-disable-ipv6-lab.conf <<'EOF'
+net.ipv6.conf.all.disable_ipv6 = 1
+net.ipv6.conf.default.disable_ipv6 = 1
+net.ipv6.conf.lo.disable_ipv6 = 1
+EOF
+sysctl --system >/dev/null"
+done
+
+kubectl --kubeconfig /Users/simon/.kube/ha-lab.conf delete pod -n headlamp -l app.kubernetes.io/instance=headlamp
+```
+
+如果节点已经关闭 IPv6，但事件仍然变成 IPv4 地址上的 `connection reset by peer`，那就说明问题已经从“协议选错”收窄成“公网 blob 下载链路本身不稳”。这时不要继续把希望寄托在自动重试上，优先改成两种更稳的路径之一：
+
+- 把镜像镜像到当前 Harbor，再把 values 里的镜像地址切到 Harbor
+- 先把镜像预热到节点 `containerd`，再恢复 Deployment
+
 ## 2. WebApp 返回 500 / `readyz` 失败
 
 ### 排查

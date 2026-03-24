@@ -99,6 +99,9 @@ net.ipv4.ip_forward = 1
 vm.max_map_count = 262144
 fs.inotify.max_user_instances = 8192
 fs.inotify.max_user_watches = 1048576
+net.ipv6.conf.all.disable_ipv6 = 1
+net.ipv6.conf.default.disable_ipv6 = 1
+net.ipv6.conf.lo.disable_ipv6 = 1
 EOF
 	sysctl --system >/dev/null
 }
@@ -148,6 +151,10 @@ print_baseline_summary() {
 			"$(systemctl is-enabled multipathd.socket 2>/dev/null || echo unknown)" \
 			"$(systemctl is-active multipathd.socket 2>/dev/null || echo inactive)"
 	fi
+	printf 'ipv6_disable=%s/%s/%s\n' \
+		"$(sysctl -n net.ipv6.conf.all.disable_ipv6 2>/dev/null || echo unknown)" \
+		"$(sysctl -n net.ipv6.conf.default.disable_ipv6 2>/dev/null || echo unknown)" \
+		"$(sysctl -n net.ipv6.conf.lo.disable_ipv6 2>/dev/null || echo unknown)"
 }
 
 printf '==> set hostname to %s\n' "$NEW_HOSTNAME"

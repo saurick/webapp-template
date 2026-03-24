@@ -1,8 +1,15 @@
+image:
+  # 跟业务镜像保持同一 Harbor 真源，避免 Headlamp 再直接依赖外网 ghcr 可达性。
+  registry: harbor.192.168.0.108.nip.io:32668
+  repository: library/headlamp
+  tag: v0.40.1
+
 config:
   inCluster: true
   inClusterContextName: main
-  sessionTTL: 43200
   enableHelm: true
+  # v0.40.1 镜像不识别 -session-ttl，实验室值文件显式关闭该参数注入。
+  enableSessionTTLFlag: false
   oidc:
     secret:
       create: false

@@ -26,6 +26,7 @@
 - `docs/RECOVERY_RUNBOOK.md`: 恢复与故障演练手册
 - `scripts/helm-release.sh`: Helm 统一入口，负责 repo 初始化、模板渲染与 release 同步
 - `charts/lab-platform/`: Jaeger、Loki、Grafana、Portal、NodePort/Ingress、Argo 补充对象等平台级本地 chart
+- `charts/headlamp/`: 实验室收口后的 Headlamp 本地 chart；用于修正上游 chart 与 `v0.40.1` 镜像的参数不兼容
 - `charts/webapp-template/`: `lab`、`prod-trial`、`prod-trial internal` 复用的业务 chart
 - `manifests/seaweedfs-values.yaml`: SeaweedFS 实验室值文件
 - `manifests/loki-standalone.yaml`: Loki 轻量化独立部署
@@ -68,7 +69,7 @@
 - `charts/webapp-template/values-prod-trial-internal.yaml`: WebApp 内部域名 values overlay
 - `argocd/webapp-prod-trial/runtime-secret.example.yaml`: WebApp 生产试验运行时 Secret 示例
 - `manifests/argocd-repo-secret-sealed.yaml`: Argo CD 仓库凭据的 SealedSecret
-- `scripts/ha-node-bootstrap.sh`: 节点初始化脚本
+- `scripts/ha-node-bootstrap.sh`: 节点初始化脚本，包含 swap/防火墙/multipathd/关闭 IPv6 等基线
 - `scripts/check-ha-lab-cold-start.sh`: 节点重启 / 整集群冷启动后的统一验收脚本，同时刷新 Portal 里的最近冷启动摘要
 - `scripts/verify-ha-lab-drill.sh`: 在真实故障演练后复跑统一验收，并把“最近 HA 演练”摘要写到 Portal
 - `scripts/cleanup-stale-controlled-pods.sh`: 带边界地清理全量冷启动后残留的 `Unknown/Terminating` controller Pod
@@ -104,7 +105,7 @@
 - `helm-release.sh apply` 现在会先做一轮短 API 稳定性预检：只有 `readyz` 和 `kubectl get nodes` 都能在当前运维机侧稳定返回，才会继续执行 Helm。这样能把“控制面/API 链路临时抖动”尽早暴露成明确错误，而不是表现成 Helm 长时间无输出
 - `helm-release.sh apply` 现在会在每个 release 开始前打印 `Applying release ...`，并默认给 `helm upgrade` 加 `--timeout 120s`；若现场需要更长观察窗口，可临时设置 `HELM_TIMEOUT=<duration>`
 - 如果 `kubectl get ...` 或 `helm-release.sh apply` 仍偶发 `context deadline exceeded`，先执行 `bash /Users/simon/projects/webapp-template/server/deploy/lab-ha/scripts/check-ha-lab-node-pressure.sh`；当前已知更像同宿主机 VM 的 CPU steal / I/O 抖动，而不是 `lab-platform` chart 真源持续损坏
-- Headlamp 当前通过官方 Helm chart 安装，固定版本 `0.40.1`，内网直连入口为 `http://192.168.0.108:30087`；当前值班口径仍要求使用 Kubernetes token 登录，而不是在仓库里固化长期静态口令
+- Headlamp 当前通过仓库内 `charts/headlamp` 安装，基于 `0.40.1` 上游 chart 收口了 `sessionTTL` 参数兼容性；内网直连入口为 `http://192.168.0.108:30087`，当前值班口径仍要求使用 Kubernetes token 登录，而不是在仓库里固化长期静态口令
 - 若历史手工 `kubectl apply` 资源导致 Helm 首次接管失败，可仅在迁移那一次追加 `HELM_TAKE_OWNERSHIP=1`；若进一步遇到旧 `kubectl-client-side-apply` field manager 与 Helm v4 server-side apply 的字段冲突，可再临时叠加 `HELM_FORCE_CONFLICTS=1`。release 进入稳态后，应恢复为默认命令，避免把日常发布放宽成“无条件接管”或“无条件强改冲突字段”。
 - 平台自定义资源仍保留在 `manifests/` 目录，但 `helm-release.sh` 会在渲染前同步到 `charts/lab-platform/files/raw/`，由 Helm 接管实际安装；这样既不丢现有文档落点，也避免 dashboard JSON 里的 `{{...}}` 被 Helm 误解析
 - `webapp-template-lab`、`webapp-template-prod-trial` 与 internal 变体已统一改为同一个 Helm chart，由 Argo CD 按不同 values 文件渲染

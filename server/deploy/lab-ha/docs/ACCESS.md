@@ -45,7 +45,7 @@
 bash /Users/simon/projects/webapp-template/server/deploy/lab-ha/scripts/get-headlamp-token.sh
 ```
 
-- 默认会生成一个 `24h` 临时 token；如需缩短或拉长时效，可在命令前加 `TOKEN_DURATION=8h` 之类的环境变量
+- 默认会生成一个 `90d` 临时 token；如需缩短或拉长时效，可在命令前加 `TOKEN_DURATION=8h`、`TOKEN_DURATION=30d` 之类的环境变量
 - 当前这条入口面向内网/实验室使用；若后续要更大范围暴露，应再补 ingress 级 basic auth 或 OIDC，而不是裸露给更大的网络面
 
 ## S3 endpoint note

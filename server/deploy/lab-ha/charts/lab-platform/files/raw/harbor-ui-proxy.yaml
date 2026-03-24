@@ -12,8 +12,9 @@ data:
       proxy_buffering off;
       server {
         listen 8080;
-        proxy_set_header Host $host;
+        proxy_set_header Host $http_host;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Host $http_host;
         proxy_set_header X-Forwarded-Proto http;
         proxy_set_header X-Forwarded-Port 30002;
         proxy_set_header X-Real-IP $remote_addr;
@@ -59,6 +60,16 @@ spec:
       labels:
         app: harbor-ui-proxy
     spec:
+      affinity:
+        podAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            # Harbor 外层代理跟 harbor-core 同节点，减少当前小集群里跨节点代理带来的额外抖动。
+            - labelSelector:
+                matchLabels:
+                  app: harbor
+                  component: core
+                  release: harbor
+              topologyKey: kubernetes.io/hostname
       containers:
         - name: nginx
           image: docker.m.daocloud.io/library/nginx:1.27-alpine

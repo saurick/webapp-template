@@ -29,7 +29,7 @@
   - `containerd` 切到 `SystemdCgroup=true`
   - 扩满系统 LVM
   - 预加载 `overlay`、`br_netfilter`、`iscsi_tcp`
-  - 关闭 IPv6，减少镜像拉取超时
+  - 关闭节点 IPv6，避免 `containerd/kubelet` 对 `ghcr.io` 等仓库命中不稳定的 IPv6 路径后出现 `ImagePullBackOff`
 - K8s 层：
   - 统一 `kubeadm` 标准控制面
   - `kube-vip` 负责 API VIP

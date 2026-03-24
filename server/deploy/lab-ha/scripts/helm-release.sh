@@ -297,7 +297,7 @@ main() {
     -f "${ROOT_DIR}/manifests/cert-manager-values.yaml"
   run_release metrics-server kube-system metrics-server/metrics-server 3.13.0 \
     -f "${ROOT_DIR}/manifests/metrics-server-values.yaml"
-  run_release headlamp headlamp headlamp/headlamp 0.40.1 \
+  run_release headlamp headlamp "${ROOT_DIR}/charts/headlamp" "" \
     -f "${ROOT_DIR}/manifests/headlamp-values.yaml"
   run_release longhorn longhorn-system longhorn/longhorn 1.8.1 \
     -f "${ROOT_DIR}/manifests/longhorn-values.yaml"

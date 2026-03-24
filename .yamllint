@@ -7,6 +7,7 @@ ignore: |
   server/bin/
   web/pnpm-lock.yaml
   .playwright-cli/
+  server/deploy/lab-ha/charts/headlamp/
 
 rules:
   document-start: disable
