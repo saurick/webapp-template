@@ -65,9 +65,11 @@ bash /Users/simon/projects/webapp-template/server/deploy/lab-ha/scripts/helm-rel
 3. 创建或启用 `root`
 4. 安装 SSH 公钥，优先使用密钥免密，不建议保留 root 密码直登
 5. 关闭 swap
-6. 配置内核参数与模块
-7. 安装基础依赖：`curl wget vim jq socat conntrack ebtables ethtool nfs-common open-iscsi`
-8. 时间同步正常
+6. 关闭主机防火墙模糊态（当前 Ubuntu 基线统一关闭 `ufw` / `firewalld`）
+7. 关闭 `multipathd`（当前 Longhorn 节点默认不保留多路径服务）
+8. 配置内核参数与模块
+9. 安装基础依赖：`curl wget vim jq socat conntrack ebtables ethtool nfs-common open-iscsi`
+10. 时间同步正常
 
 建议直接执行：
 
@@ -78,6 +80,8 @@ bash /Users/simon/projects/webapp-template/server/deploy/lab-ha/scripts/ha-node-
 说明：该脚本现在会把节点层最容易在 reboot 后漂移的基线一起固化，包括：
 
 - 持久关闭 swap，并同步改 `/etc/fstab`
+- 关闭 `ufw` / `firewalld`，避免主机防火墙在节点重启后把 K8s / 存储 / NodePort 链路重新拦住
+- 关闭 `multipathd`，避免 Longhorn 在全量冷启动后命中官方已知块设备问题
 - 写入 `overlay / br_netfilter / iscsi_tcp` 模块加载配置
 - 写入 K8s/存储所需的最小 `sysctl` 基线
 - 安装 `open-iscsi / nfs-common / conntrack / ebtables / ethtool` 等基础依赖
@@ -88,6 +92,9 @@ bash /Users/simon/projects/webapp-template/server/deploy/lab-ha/scripts/ha-node-
 - 三台节点 `hostnamectl` 正确
 - `ssh root@nodeX` 免密可登录
 - `swapoff -a` 后 `free -h` 中 swap 为 0 使用
+- `grep -nE 'swap|swap.img' /etc/fstab` 里只剩被注释掉的 swap 项
+- `ufw status` 为 `Status: inactive`，且 `systemctl is-enabled ufw` 不再是 `enabled`
+- `systemctl is-enabled multipathd.service multipathd.socket` 不再是 `enabled`
 
 ---
 
@@ -221,7 +228,7 @@ bash /Users/simon/projects/webapp-template/server/deploy/lab-ha/scripts/ha-node-
 - 观察应用 Pod 是否重调度
 - 预期：业务通过 Ingress 仍可访问
 
-补充说明：这一步不要只验证“节点掉线时工作负载能漂移”，还要单独验证“节点重启回来后 kubelet / Longhorn / 入口能自动恢复”；对应统一收口到 `check-ha-lab-cold-start.sh`。
+补充说明：这一步不要只验证“节点掉线时工作负载能漂移”，还要单独验证“节点重启回来后 kubelet / Longhorn / 入口能自动恢复”；对应统一收口到 `check-ha-lab-cold-start.sh`，其中当前 Longhorn 节点还必须额外确认 `multipathd` 没有回到运行态。
 
 ## 4.3 PostgreSQL 演练
 

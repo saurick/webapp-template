@@ -1,6 +1,9 @@
 defaultSettings:
+  autoDeletePodWhenVolumeDetachedUnexpectedly: true
+  autoSalvage: true
   createDefaultDiskLabeledNodes: false
   defaultDataPath: /var/lib/longhorn
+  nodeDownPodDeletionPolicy: delete-both-statefulset-and-deployment-pod
 
 global:
   cattle:

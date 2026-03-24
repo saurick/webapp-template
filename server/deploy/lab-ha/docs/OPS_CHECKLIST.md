@@ -36,11 +36,19 @@ bash /Users/simon/projects/webapp-template/server/deploy/lab-ha/scripts/check-ha
 ```bash
 kubectl --kubeconfig /Users/simon/.kube/ha-lab.conf get nodes -o wide
 kubectl --kubeconfig /Users/simon/.kube/ha-lab.conf get pods -A | egrep 'CrashLoopBackOff|ImagePullBackOff|Error|Pending' || true
+kubectl --kubeconfig /Users/simon/.kube/ha-lab.conf get settings.longhorn.io -n longhorn-system \
+  auto-salvage auto-delete-pod-when-volume-detached-unexpectedly node-down-pod-deletion-policy -o yaml
 ```
 
 正常标准：
 
 - 3 个节点都是 `Ready`
+- 节点 `swap` 仍然关闭，且 `/etc/fstab` 里不再保留生效中的 swap 挂载
+- 当前 Ubuntu 节点的 `ufw/firewalld` 仍然保持关闭态
+- Longhorn 节点的 `multipathd.service` 与 `multipathd.socket` 仍然保持关闭态
+- `Longhorn` 的 `auto-salvage=true`
+- `Longhorn` 的 `auto-delete-pod-when-volume-detached-unexpectedly=true`
+- `Longhorn` 的 `node-down-pod-deletion-policy=delete-both-statefulset-and-deployment-pod`
 - 没有关键命名空间异常 Pod
 
 ### 3. 看入口是否可用

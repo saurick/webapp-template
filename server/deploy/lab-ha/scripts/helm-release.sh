@@ -78,6 +78,7 @@ sync_platform_raw() {
 
   local files=(
     alert-webhook-receiver.yaml
+    app-pg-cluster.yaml
     argocd-repo-secret-sealed.yaml
     argocd-rollouts-metrics.yaml
     argocd-webapp-app.yaml

@@ -56,6 +56,31 @@ disable_swap_persistently() {
 	rm -f "$tmp_fstab"
 }
 
+disable_host_firewalls() {
+	printf '==> disable host firewall baseline\n'
+
+	# 当前 lab-ha 依赖 Cilium、NodePort、Longhorn 与多组件固定端口；在没有单独维护主机防火墙端口矩阵前，默认不保留模糊态。
+	if command -v ufw >/dev/null 2>&1; then
+		ufw disable || true
+	fi
+	if systemctl list-unit-files | grep -q '^ufw\.service'; then
+		systemctl disable --now ufw || true
+	fi
+	if systemctl list-unit-files | grep -q '^firewalld\.service'; then
+		systemctl disable --now firewalld || true
+	fi
+}
+
+disable_multipathd() {
+	printf '==> disable multipathd baseline for longhorn nodes\n'
+
+	# Longhorn 官方将运行中的 multipathd 标为已知问题；当前节点未承载独立 SAN，多路径默认不保留。
+	if systemctl list-unit-files | grep -q '^multipathd\.service'; then
+		systemctl disable --now multipathd.service multipathd.socket || true
+		systemctl mask multipathd.service multipathd.socket || true
+	fi
+}
+
 configure_kernel_modules() {
 	printf '==> configure kernel modules for k8s + storage baseline\n'
 	mkdir -p /etc/modules-load.d
@@ -93,6 +118,8 @@ print_baseline_summary() {
 	printf 'hostname=%s\n' "$(hostnamectl --static)"
 	printf 'swap:\n'
 	swapon --show || true
+	printf 'fstab-swap:\n'
+	grep -nE 'swap|swap\.img' /etc/fstab || true
 	printf 'modules:\n'
 	lsmod | egrep '^(overlay|br_netfilter|iscsi_tcp)' || true
 	printf 'sysctl:\n'
@@ -107,6 +134,20 @@ print_baseline_summary() {
 	printf 'kubelet=%s\n' "$(systemctl is-active kubelet 2>/dev/null || echo inactive)"
 	printf 'containerd=%s\n' "$(systemctl is-active containerd 2>/dev/null || echo inactive)"
 	printf 'iscsid=%s\n' "$(systemctl is-active iscsid 2>/dev/null || echo inactive)"
+	if command -v ufw >/dev/null 2>&1; then
+		printf 'ufw=%s\n' "$(ufw status | sed -n '1p' 2>/dev/null || echo unknown)"
+	fi
+	if systemctl list-unit-files | grep -q '^firewalld\.service'; then
+		printf 'firewalld=%s\n' "$(systemctl is-active firewalld 2>/dev/null || echo inactive)"
+	fi
+	if systemctl list-unit-files | grep -q '^multipathd\.service'; then
+		printf 'multipathd=%s/%s\n' \
+			"$(systemctl is-enabled multipathd.service 2>/dev/null || echo unknown)" \
+			"$(systemctl is-active multipathd.service 2>/dev/null || echo inactive)"
+		printf 'multipathd.socket=%s/%s\n' \
+			"$(systemctl is-enabled multipathd.socket 2>/dev/null || echo unknown)" \
+			"$(systemctl is-active multipathd.socket 2>/dev/null || echo inactive)"
+	fi
 }
 
 printf '==> set hostname to %s\n' "$NEW_HOSTNAME"
@@ -125,6 +166,8 @@ cp /etc/machine-id /var/lib/dbus/machine-id
 
 install_baseline_packages
 disable_swap_persistently
+disable_host_firewalls
+disable_multipathd
 configure_kernel_modules
 configure_sysctl_baseline
 enable_storage_services

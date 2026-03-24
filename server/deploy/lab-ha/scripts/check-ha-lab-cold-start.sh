@@ -37,6 +37,23 @@ record_failure() {
 	printf 'FAIL: %s\n' "$1" >&2
 }
 
+fetch_url_code() {
+	local url="$1"
+	local code="000"
+	local attempt
+
+	# 冷启动尾巴里入口会有短暂 flap，做短重试避免把瞬时收敛误判成永久失败。
+	for attempt in 1 2 3; do
+		code="$(curl --noproxy '*' -k -L -o /dev/null -s -w '%{http_code}' --connect-timeout 5 --max-time 12 "$url" || true)"
+		if [[ "$code" == "200" ]]; then
+			break
+		fi
+		sleep 2
+	done
+
+	printf '%s' "$code"
+}
+
 persist_summary() {
 	if ! command -v jq >/dev/null 2>&1; then
 		printf 'WARN: jq not found, skip portal cold-start summary update\n' >&2
@@ -110,6 +127,13 @@ if swapon --show --noheadings 2>/dev/null | grep -q .; then
 fi
 echo 'swap=off'
 
+if awk '!/^[[:space:]]*#/ && $3 == "swap" {exit 1}' /etc/fstab; then
+	echo 'fstab_swap=commented'
+else
+	echo 'fstab_swap=present'
+	exit 15
+fi
+
 systemctl is-active --quiet kubelet || {
 	printf 'kubelet=%s\n' "$(systemctl is-active kubelet 2>/dev/null || echo inactive)"
 	exit 11
@@ -140,6 +164,62 @@ for pair in "${required_sysctls[@]}"; do
 	}
 done
 echo 'sysctl=ok'
+
+if systemctl list-unit-files | grep -q '^firewalld\.service'; then
+	firewalld_enabled="$(systemctl is-enabled firewalld 2>/dev/null || true)"
+	firewalld_active="$(systemctl is-active firewalld 2>/dev/null || true)"
+	[[ "$firewalld_enabled" != "enabled" && "$firewalld_active" != "active" ]] || {
+		printf 'firewalld=%s/%s\n' "$firewalld_enabled" "$firewalld_active"
+		exit 16
+	}
+fi
+echo 'firewalld=off'
+
+if command -v ufw >/dev/null 2>&1; then
+	ufw_status="$(ufw status 2>/dev/null | sed -n '1p' || true)"
+	ufw_enabled="$(systemctl is-enabled ufw 2>/dev/null || true)"
+	[[ "$ufw_status" == "Status: inactive" && "$ufw_enabled" != "enabled" ]] || {
+		printf 'ufw=%s/%s\n' "$ufw_enabled" "$ufw_status"
+		exit 17
+	}
+fi
+echo 'ufw=off'
+
+if systemctl list-unit-files | grep -q '^multipathd\.service'; then
+	multipathd_enabled="$(systemctl is-enabled multipathd.service 2>/dev/null || true)"
+	multipathd_active="$(systemctl is-active multipathd.service 2>/dev/null || true)"
+	multipathd_socket_enabled="$(systemctl is-enabled multipathd.socket 2>/dev/null || true)"
+	multipathd_socket_active="$(systemctl is-active multipathd.socket 2>/dev/null || true)"
+	case "$multipathd_enabled" in
+		enabled|enabled-runtime)
+			printf 'multipathd=%s/%s\n' "$multipathd_enabled" "$multipathd_active"
+			exit 19
+			;;
+	esac
+	case "$multipathd_socket_enabled" in
+		enabled|enabled-runtime)
+			printf 'multipathd.socket=%s/%s\n' "$multipathd_socket_enabled" "$multipathd_socket_active"
+			exit 20
+			;;
+	esac
+	[[ "$multipathd_active" != "active" && "$multipathd_socket_active" != "active" ]] || {
+		printf 'multipathd_runtime=%s/%s\n' "$multipathd_active" "$multipathd_socket_active"
+		exit 21
+	}
+fi
+echo 'multipathd=off'
+
+if command -v sestatus >/dev/null 2>&1; then
+	selinux_state="$(sestatus | awk -F: '/SELinux status:/ {gsub(/^[[:space:]]+/, "", $2); print $2}')"
+	selinux_mode="$(sestatus | awk -F: '/Current mode:/ {gsub(/^[[:space:]]+/, "", $2); print $2}')"
+	if [[ "$selinux_state" == "enabled" && "$selinux_mode" == "enforcing" ]]; then
+		printf 'selinux=%s/%s\n' "$selinux_state" "$selinux_mode"
+		exit 18
+	fi
+	printf 'selinux=%s/%s\n' "${selinux_state:-unknown}" "${selinux_mode:-unknown}"
+else
+	echo 'selinux=absent'
+fi
 EOF
 	then
 		record_failure "node ${host} baseline not ready"
@@ -172,6 +252,30 @@ check_kubernetes() {
 	fi
 }
 
+check_storage_ha_baseline() {
+	printf '== storage ha baseline ==\n'
+
+	local auto_salvage auto_delete node_down_policy
+	local multipath_nodes faulted_volumes
+	auto_salvage="$(kubectl --request-timeout=20s --kubeconfig "$KUBECONFIG" get settings.longhorn.io -n longhorn-system auto-salvage -o jsonpath='{.value}' 2>/dev/null || true)"
+	auto_delete="$(kubectl --request-timeout=20s --kubeconfig "$KUBECONFIG" get settings.longhorn.io -n longhorn-system auto-delete-pod-when-volume-detached-unexpectedly -o jsonpath='{.value}' 2>/dev/null || true)"
+	node_down_policy="$(kubectl --request-timeout=20s --kubeconfig "$KUBECONFIG" get settings.longhorn.io -n longhorn-system node-down-pod-deletion-policy -o jsonpath='{.value}' 2>/dev/null || true)"
+	multipath_nodes="$(kubectl --request-timeout=20s --kubeconfig "$KUBECONFIG" get nodes.longhorn.io -n longhorn-system -o jsonpath='{range .items[*]}{.metadata.name}{"\t"}{range .status.conditions[?(@.type=="Multipathd")]}{.status}{"\n"}{end}{end}' 2>/dev/null | awk '$2 == "False" {print $1}' | paste -sd',' -)"
+	faulted_volumes="$(kubectl --request-timeout=20s --kubeconfig "$KUBECONFIG" get volumes.longhorn.io -n longhorn-system -o jsonpath='{range .items[*]}{.metadata.name}{"\t"}{.status.robustness}{"\n"}{end}' 2>/dev/null | awk '$2 == "faulted" {print $1}' | paste -sd',' -)"
+
+	printf 'longhorn_auto_salvage=%s\n' "${auto_salvage:-unknown}"
+	printf 'longhorn_auto_delete_detached_pod=%s\n' "${auto_delete:-unknown}"
+	printf 'longhorn_node_down_pod_deletion_policy=%s\n' "${node_down_policy:-unknown}"
+	printf 'longhorn_multipath_nodes=%s\n' "${multipath_nodes:-none}"
+	printf 'longhorn_faulted_volumes=%s\n' "${faulted_volumes:-none}"
+
+	[[ "$auto_salvage" == "true" ]] || record_failure 'longhorn auto-salvage is not enabled'
+	[[ "$auto_delete" == "true" ]] || record_failure 'longhorn auto-delete-pod-when-volume-detached-unexpectedly is not enabled'
+	[[ "$node_down_policy" == "delete-both-statefulset-and-deployment-pod" ]] || record_failure 'longhorn node-down-pod-deletion-policy is not production-ha baseline'
+	[[ -z "$multipath_nodes" ]] || record_failure "longhorn nodes still report Multipathd issue: ${multipath_nodes}"
+	[[ -z "$faulted_volumes" ]] || record_failure "longhorn still has faulted volumes: ${faulted_volumes}"
+}
+
 check_gitops_and_backup() {
 	printf '== gitops and backup ==\n'
 	local argo_status
@@ -199,7 +303,7 @@ check_access_urls() {
 	printf '== access urls ==\n'
 	local url code
 	for url in "${ACCESS_URLS[@]}"; do
-		code="$(curl --noproxy '*' -k -L -o /dev/null -s -w '%{http_code}' --connect-timeout 5 --max-time 12 "$url" || true)"
+		code="$(fetch_url_code "$url")"
 		printf '%s -> %s\n' "$url" "$code"
 		if [[ "$code" == "200" ]]; then
 			ACCESS_OK_COUNT=$((ACCESS_OK_COUNT + 1))
@@ -215,6 +319,7 @@ for host in "${NODE_IPS[@]}"; do
 done
 
 check_kubernetes
+check_storage_ha_baseline
 check_gitops_and_backup
 check_access_urls
 persist_summary

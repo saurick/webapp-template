@@ -51,6 +51,8 @@ bash /Users/simon/projects/webapp-template/server/deploy/lab-ha/scripts/check-ha
 这一步会优先暴露：
 
 - 节点 swap 又被系统挂回，导致 `kubelet` 起不来
+- 主机防火墙在节点重启后恢复，导致 NodePort、存储或 CNI 链路被拦
+- `multipathd` 在节点上恢复为运行态，导致 Longhorn 命中官方已知问题
 - `containerd` 或存储基线没恢复
 - 关键 NodePort / 管理入口还没回到 `200`
 - `Alert Sink / Jaeger` 这类值班留痕页是不是还在，避免误把“历史被清空”当成“系统没恢复”
@@ -213,6 +215,10 @@ kubectl --kubeconfig /Users/simon/.kube/ha-lab.conf get pods -n kube-system -o w
 ssh root@192.168.0.7 'systemctl status kubelet --no-pager -l'
 ssh root@192.168.0.7 'grep kubelet /var/log/syslog | tail -n 80'
 ssh root@192.168.0.7 'swapon --show'
+ssh root@192.168.0.7 'grep -nE "swap|swap.img" /etc/fstab'
+ssh root@192.168.0.7 'ufw status; systemctl is-enabled ufw 2>/dev/null || true; systemctl is-active ufw 2>/dev/null || true'
+ssh root@192.168.0.7 'systemctl is-enabled firewalld 2>/dev/null || true; systemctl is-active firewalld 2>/dev/null || true'
+ssh root@192.168.0.7 'systemctl is-enabled multipathd.service 2>/dev/null || true; systemctl is-active multipathd.service 2>/dev/null || true; systemctl is-enabled multipathd.socket 2>/dev/null || true; systemctl is-active multipathd.socket 2>/dev/null || true'
 ```
 
 ### 针对 `NetworkPluginNotReady`
@@ -247,7 +253,34 @@ bash /Users/simon/projects/webapp-template/server/deploy/lab-ha/scripts/ha-node-
 bash /Users/simon/projects/webapp-template/server/deploy/lab-ha/scripts/check-ha-lab-cold-start.sh
 ```
 
-## 9. 想确认是不是“环境整体不稳”
+## 9. 全节点重启后只剩 Prometheus / Grafana / Harbor 这类 PVC 服务起不来
+
+### 先判断是不是 Longhorn 卷卡住
+
+```bash
+kubectl --kubeconfig /Users/simon/.kube/ha-lab.conf get settings.longhorn.io -n longhorn-system \
+  auto-salvage auto-delete-pod-when-volume-detached-unexpectedly node-down-pod-deletion-policy -o yaml
+kubectl --kubeconfig /Users/simon/.kube/ha-lab.conf get volume.longhorn.io -n longhorn-system | egrep 'faulted|detached|degraded'
+kubectl --kubeconfig /Users/simon/.kube/ha-lab.conf get volumeattachments.longhorn.io -n longhorn-system | grep pvc-
+```
+
+### 典型现象
+
+- 节点都已经 `Ready`
+- 大多数入口都回到 `200`
+- 只有 `Prometheus / Grafana / Harbor` 之类挂 `RWO PVC` 的服务一直卡着
+- Pod 事件反复出现 `MountVolume.MountDevice failed ... hasn't been attached yet`
+- 对应 `Longhorn Volume` 显示 `state=detached`、`robustness=faulted`
+
+### 处理顺序
+
+1. 先确认 `Longhorn` 基线没有退回 `node-down-pod-deletion-policy=do-nothing`
+2. 删除一次卡住的 Pod，观察卷是否自动回到 `attached`
+3. 同时确认三台 Longhorn 节点没有再报 `Multipathd=False`；若命中，先停掉节点侧 `multipathd.service` 与 `multipathd.socket`
+4. 如果 `attachment ticket` 已存在但长期 `satisfied=false`，按 `RECOVERY_RUNBOOK.md` 第 9 节做最小人工 salvage
+5. 卷恢复后，再回跑 `check-ha-lab-cold-start.sh`
+
+## 10. 想确认是不是“环境整体不稳”
 
 最短判断链路：
 
@@ -260,7 +293,7 @@ kubectl --kubeconfig /Users/simon/.kube/ha-lab.conf get backupstoragelocation -n
 
 这四步都过，通常说明主链路还是健康的。
 
-## 10. 收到 `LabEndpointDown` 告警
+## 11. 收到 `LabEndpointDown` 告警
 
 ### 去哪里看
 
@@ -281,7 +314,7 @@ kubectl --kubeconfig /Users/simon/.kube/ha-lab.conf get backupstoragelocation -n
 - `grafana/prometheus/alertmanager` 一起失败：先看监控栈整体
 - `webapp` 单独失败：优先看应用与数据库
 
-## 11. 收到 `TargetDown / Kube*Down` 告警
+## 12. 收到 `TargetDown / Kube*Down` 告警
 
 ### 去哪里看
 

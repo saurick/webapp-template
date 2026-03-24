@@ -93,9 +93,24 @@
 - 结果：WebApp / Harbor / Grafana / Prometheus / Alertmanager / Argo CD / Longhorn / Hubble / SeaweedFS / GitLab / Portal 均可直接访问
 - 结论：通过
 
+### 12. 三节点顺序重启演练
+
+- 操作：依次重启 `192.168.0.7 / 192.168.0.108 / 192.168.0.128`
+- 结果：整套服务最终恢复，但在重启尾巴阶段暴露出 `CloudNativePG` 主库卡在已失联实例的问题
+- 修复：把 `app-pg` 主库提升到存活实例，并把 `switchoverDelay` 收口为 `30`、`stopDelay` 收口为 `60`
+- 结论：通过，但必须把 CNPG 集群真源纳入仓库
+
+### 13. 三节点同时重启 / 全量冷启动演练
+
+- 操作：三台 VM 同时 reboot，再用统一冷启动脚本验收
+- 结果：节点基线、GitOps、备份和大多数入口均可恢复；但 `Prometheus` 的 Longhorn 卷曾停在 `faulted/detached`
+- 修复：补齐 `Longhorn` 冷启动策略基线，把 `node-down-pod-deletion-policy` 收口为 `delete-both-statefulset-and-deployment-pod`；随后继续排查发现三台节点都运行着 `multipathd`，Longhorn 节点条件明确报 `Multipathd=False`，因此又把 `multipathd` 纳入节点基线并在现场关闭，最后再对残留 `faulted` 卷做最小人工 salvage
+- 复验：再次执行真实三节点同时重启后，`Longhorn Multipathd` 条件已经恢复为 `True`，说明 `multipathd` 这条已知问题已被消除；但 `Longhorn` 仍会把一批卷打成 `faulted`，最终还是要靠最小人工 salvage 才能把 `Portal / WebApp / Grafana / Prometheus / Alertmanager / Argo CD` 全部拉回 `200`
+- 结论：通过，但也证明“整集群同时冷启动”目前仍存在存储恢复尾巴；`multipathd` 是必须收口的节点基线，不是让冷启动自动恢复的最终答案，不能只拿运行中故障演练替代冷启动验收
+
 ## 当前结论
 
-- 在三台实验室 VM 上，软件层高可用链路已跑通
+- 在三台实验室 VM 上，顺序重启与全量冷启动都已经做过真实演练
 - 当前用户侧主访问口径已经切换为 `192.168.0.108:port`，避免 `nip.io` 域名在浏览器/代理环境下失效
-- 这套结果适合作为“实验室 HA 基线”与后续扩展起点
+- 这套结果适合作为“虚拟机级 HA 基线”与后续扩展起点
 - 但仍不应宣称为“硬件级高可用”

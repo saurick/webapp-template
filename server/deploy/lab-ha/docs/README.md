@@ -36,7 +36,8 @@
 - `manifests/cilium-values.yaml`: Cilium 与 Hubble 值文件
 - `manifests/argo-cd-values.yaml`: Argo CD 值文件
 - `manifests/harbor-values.yaml`: Harbor 值文件
-- `manifests/longhorn-values.yaml`: Longhorn 值文件
+- `manifests/longhorn-values.yaml`: Longhorn 值文件，含 `autoSalvage`、`autoDeletePodWhenVolumeDetachedUnexpectedly` 与 `nodeDownPodDeletionPolicy`
+- `manifests/app-pg-cluster.yaml`: CloudNativePG `app-pg` 集群真源，含 `switchoverDelay=30`、`stopDelay=60`
 - `manifests/promtail-values.yaml`: Promtail 值文件
 - `manifests/jaeger.yaml`: Jaeger v2 轻量 tracing 基线
 - `manifests/platform-ingresses.yaml`: 平台 UI 入口
@@ -86,7 +87,7 @@
 - 面向人操作的日常巡检、值班和恢复，默认先看 `Portal + Grafana + Alert Sink + Alertmanager + Argo CD` 这些 live 页面，再决定是否执行脚本
 - 当前对人展示统一口径：`WebApp Lab`、`WebApp Prod-Trial Active`、`WebApp Prod-Trial Preview`
 - 技术命名暂保持不变：`webapp` / `webapp-prod-trial` 命名空间与对应 Argo app 名仍作为底层真名
-- 当前对外可承诺的最低基线，应至少包含“节点重启后 swap 不会回挂 + kubelet 能自动恢复 + `check-ha-lab-cold-start.sh` 全量通过”
+- 当前对外可承诺的最低基线，应至少包含“节点重启后 swap 不会回挂 + `/etc/fstab` 不再保留生效中的 swap 挂载 + 主机防火墙保持关闭态 + `multipathd` 保持关闭 + kubelet 能自动恢复 + Longhorn 冷启动策略已经收口 + `check-ha-lab-cold-start.sh` 全量通过”
 - 对值班直接有帮助且体量可控的数据，默认要做轻量持久化；当前基线包括 `Alert Sink` 最近 webhook payload 与 `Jaeger` 最近 traces
 
 ## Helm 使用口径

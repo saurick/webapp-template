@@ -23,7 +23,9 @@
 ## 已做调优
 
 - 节点层：
-  - 关闭 swap
+  - 持久关闭 swap，并同步改 `/etc/fstab`
+  - 关闭主机防火墙模糊态：当前 Ubuntu 基线统一关闭 `ufw` / `firewalld`
+  - 关闭 `multipathd`：当前 Longhorn 节点不承载独立 SAN，多路径服务会命中官方已知问题
   - `containerd` 切到 `SystemdCgroup=true`
   - 扩满系统 LVM
   - 预加载 `overlay`、`br_netfilter`、`iscsi_tcp`
@@ -35,10 +37,12 @@
   - 统一通过 `ingress-nginx` 对外
 - 存储层：
   - `Longhorn` 默认 2 副本，兼顾数据冗余和容量
+  - 显式开启 `autoSalvage`、`autoDeletePodWhenVolumeDetachedUnexpectedly` 与 `nodeDownPodDeletionPolicy=delete-both-statefulset-and-deployment-pod`，避免整集群 reboot 后 `RWO PVC` 长时间卡在 `faulted/detached`
   - `SeaweedFS` 的 `idx` 改成持久卷，避免 volume pod 重建时丢索引
 - 数据库层：
   - `CloudNativePG` 3 实例 + rw pooler
   - 应用连接统一走 `app-pg-rw`
+  - `app-pg` 集群本体必须纳入仓库真源，不能再只靠历史手工 `kubectl apply`
 - 应用层：
   - 应用镜像已经推送到 Harbor，运行态统一改为从 `harbor.192.168.0.108.nip.io:32668/library/webapp-template-server:ha-lab` 拉取
   - `requests/limits`
@@ -58,6 +62,13 @@
 - 对“最近告警”“最近 traces”“最近一次 smoke/巡检摘要”这类高频值班线索，默认采用“小容量持久化 + 上限/TTL”策略，不为了留痕而引入重型外部组件。
 - `emptyDir` 更适合临时日志、可重建缓存和一次性工作目录；如果一重启就让排障上下文消失，就说明放错层了。
 - 单副本且挂 `RWO PVC` 的轻量工具服务（例如当前 `Alert Sink`、`Jaeger`）默认用 `Recreate` 更新策略，不要继续沿用 `RollingUpdate` 去制造卷互斥死锁。
+
+## 节点操作系统口径
+
+- `swap` 对当前 kubelet 基线是硬门槛，不允许只做临时 `swapoff -a` 就算完成；必须确保重启后仍然是 `swap=off`。
+- `firewalld` 在当前三台 Ubuntu 节点上并未安装；`ufw` 即使规则层面显示 `inactive`，也不应长期保留成 “service enabled + runtime inactive” 这种模糊态，当前基线统一收口为彻底关闭。
+- `multipathd` 对当前 Longhorn 节点不是可选优化，而是已知风险项；如果节点没有明确的多路径存储需求，就应像 `swap` 一样持久关闭 `multipathd.service` 和 `multipathd.socket`。
+- `SELinux` 在当前 Ubuntu 24.04 节点上不存在，所以不是这套实验环境的故障面；如果未来迁到 RHEL 系发行版，需单独评估 `permissive / enforcing`，不能直接沿用 Ubuntu 经验。
 
 ## 资源预算建议
 

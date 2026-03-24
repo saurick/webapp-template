@@ -22,6 +22,13 @@
 - 这类持久化必须同时给出容量上限、保留条数或 TTL，避免把“应该留痕”做成无限堆积。
 - 纯缓存、可快速重建的临时目录或日志缓冲可以继续使用 `emptyDir` / 内存，但要在配置或文档里明确它不是恢复真源。
 
+## 节点基线硬要求
+
+- `lab-ha` 节点上的 `swap` 不是“建议关闭”，而是必须持久关闭；除了 `swapoff -a`，还必须同步清理 `/etc/fstab` 或等效启动项，确保节点重启后不会把 swap 再挂回来。
+- 当前 `Ubuntu 24.04` 实验节点默认不保留主机防火墙模糊态；`ufw` / `firewalld` 要么完全按端口矩阵受控，要么默认关闭。对当前 `lab-ha`，基线口径是关闭主机防火墙，避免 `Cilium / NodePort / Longhorn / 管理入口` 在重启后被主机规则重新拦住。
+- 当前 `lab-ha` 的 Longhorn 节点默认不运行 `multipathd`；若节点并未明确承载 SAN/多路径存储，应持久关闭 `multipathd.service` 与 `multipathd.socket`，避免 Longhorn 命中官方已知问题并在全量冷启动后卡住卷恢复。
+- 当前这套 `lab-ha` 节点不使用 SELinux；如果后续改成 `RHEL / Rocky / AlmaLinux` 节点，必须在 runbook 里显式写清 `permissive / enforcing` 口径并实测，不要在未验证时把“SELinux 开着也行”当默认前提。
+
 ## Git 推送约定
 
 - 当前仓库默认发布 remote：`origin`、`gitlab`。

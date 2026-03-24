@@ -28,7 +28,8 @@ kubectl --kubeconfig /Users/simon/.kube/ha-lab.conf get backupstoragelocation -n
 bash /Users/simon/projects/webapp-template/server/deploy/lab-ha/scripts/check-ha-lab-cold-start.sh
 ```
 
-说明：该脚本会先核对每台节点的 `swap / kubelet / containerd / 模块 / sysctl`，再检查 K8s、GitOps、备份与外部入口，避免只看到业务 `503` 却漏掉“swap 回挂导致 kubelet 全挂”这类根因。
+说明：该脚本会先核对每台节点的 `swap / fstab / kubelet / containerd / 模块 / sysctl / 主机防火墙 / multipathd`，再检查 K8s、GitOps、备份与外部入口，避免只看到业务 `503` 却漏掉“swap 回挂导致 kubelet 全挂”“节点防火墙在 reboot 后把 NodePort/存储端口重新拦住”或“multipathd 抢占块设备导致 Longhorn 卷恢复失败”这类根因。
+补充说明：脚本现在也会核对 `Longhorn auto-salvage / auto-delete-pod-when-volume-detached-unexpectedly / node-down-pod-deletion-policy`，并直接检查 Longhorn 节点是否还报 `Multipathd` 已知问题，以及现场是否仍残留 `faulted` 卷。
 补充说明：脚本执行完成后，也会同步刷新 Portal 里的“最近冷启动验收”摘要卡，方便值班人员先在页面上看到最近一次结果。
 
 ## 1. API VIP 漂移演练
@@ -203,12 +204,64 @@ bash /Users/simon/projects/webapp-template/server/deploy/lab-ha/scripts/check-ha
 期望：
 
 - 每台节点 `swap=off`
+- `/etc/fstab` 不再保留生效中的 swap 挂载
 - 每台节点 `kubelet/containerd=active`
+- `ufw/firewalld` 处于关闭态
+- Longhorn 节点的 `multipathd` 与 `multipathd.socket` 处于关闭态
+- `Longhorn` 的 `auto-salvage=true`
+- `Longhorn` 的 `auto-delete-pod-when-volume-detached-unexpectedly=true`
+- `Longhorn` 的 `node-down-pod-deletion-policy=delete-both-statefulset-and-deployment-pod`
 - `overlay / br_netfilter / iscsi_tcp` 已加载
 - `Alert Sink` 仍能回看最近 webhook payload，`Jaeger` 不会因 Pod/节点重启把最近 traces 全清掉
 - 入口 `Portal / WebApp / Grafana / Prometheus / Alertmanager / Argo CD` 返回 `200`
 - `webapp-template-lab` 维持 `Synced / Healthy`
 - `Velero BackupStorageLocation` 仍为 `Available`
+
+## 9. Longhorn 卷在全量冷启动后卡在 `faulted/detached`
+
+适用场景：
+
+- `Prometheus / Grafana / Harbor / Alert Sink / Jaeger` 这类挂 `RWO PVC` 的服务在三节点同时重启后长期起不来
+- `kubectl get volume.longhorn.io -n longhorn-system <volume>` 显示 `state=detached`、`robustness=faulted`
+- Pod 事件持续出现 `MountVolume.MountDevice failed ... hasn't been attached yet`
+
+先确认基线没有回退：
+
+```bash
+kubectl --kubeconfig /Users/simon/.kube/ha-lab.conf get settings.longhorn.io -n longhorn-system \
+  auto-salvage auto-delete-pod-when-volume-detached-unexpectedly node-down-pod-deletion-policy -o yaml
+kubectl --kubeconfig /Users/simon/.kube/ha-lab.conf get nodes.longhorn.io -n longhorn-system -o jsonpath='{range .items[*]}{.metadata.name}{"\t"}{range .status.conditions[?(@.type=="Multipathd")]}{.status}{"\t"}{.message}{"\n"}{end}{end}'
+```
+
+再看卷状态：
+
+```bash
+kubectl --kubeconfig /Users/simon/.kube/ha-lab.conf get volume.longhorn.io -n longhorn-system <volume> -o yaml
+kubectl --kubeconfig /Users/simon/.kube/ha-lab.conf get volumeattachments.longhorn.io -n longhorn-system <volume> -o yaml
+kubectl --kubeconfig /Users/simon/.kube/ha-lab.conf get replica.longhorn.io -n longhorn-system -l longhornvolume=<volume> -o yaml
+```
+
+如果 `attachment ticket` 已存在但 `satisfied=false`，且卷仍停在 `faulted/detached`，先确认节点侧 `multipathd` 没有回到 `enabled/active`；当前 Ubuntu+Longhorn 组合里，这是三节点同时冷启动后最值得先排除的已知问题。随后按下面步骤做最小人工 salvage：
+
+1. 先把对应 workload 缩到 `0`，避免 kubelet 一边反复 mount、一边干扰恢复。
+2. 只选择 `lastHealthyAt` 最新的那份 replica，把 `spec.failedAt` 清空。
+3. 等卷回到 `attached`，至少恢复为 `degraded`。
+4. 再把 workload 拉回去，确认入口和 Pod 彻底恢复。
+
+Prometheus 现场命令示例：
+
+```bash
+kubectl --kubeconfig /Users/simon/.kube/ha-lab.conf scale statefulset -n monitoring prometheus-kube-prometheus-stack-prometheus --replicas=0
+kubectl --kubeconfig /Users/simon/.kube/ha-lab.conf patch replica.longhorn.io -n longhorn-system pvc-f1c3f635-518d-42df-a4c5-28ece977b7c1-r-c141d2ad \
+  --type=merge -p '{"spec":{"failedAt":""}}'
+kubectl --kubeconfig /Users/simon/.kube/ha-lab.conf scale statefulset -n monitoring prometheus-kube-prometheus-stack-prometheus --replicas=1
+```
+
+恢复完成后务必再执行：
+
+```bash
+bash /Users/simon/projects/webapp-template/server/deploy/lab-ha/scripts/check-ha-lab-cold-start.sh
+```
 
 ## 当前边界
 
