@@ -68,6 +68,7 @@ bash /Users/simon/projects/webapp-template/scripts/setup-git-hooks.sh
 ```
 
 说明：模板当前已内置最小前端回归测试，可执行 `cd /Users/simon/projects/webapp-template/web && pnpm test` 验证错误码常量与登录态错误分类。
+说明：当前仓库里 `bash scripts/qa/fast.sh` 更接近粗粒度冒烟，`bash scripts/qa/full.sh` 是仓库级全量 QA；若本轮是前端样式/布局任务，仍应额外执行 `cd /Users/simon/projects/webapp-template/web && pnpm lint && pnpm css && pnpm test`，并做浏览器级回归。
 
 ## 新项目初始化
 

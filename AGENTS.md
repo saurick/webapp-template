@@ -59,6 +59,16 @@
 - 当 `README / docs / progress.md` 之间出现冲突时，默认先以 `docs/project-init.md` 和 `docs/deployment-conventions.md` 为准；只有用户明确要求按历史现场口径复盘时，才回到 `progress.md` 或 live 现状逐条核对。
 - 涉及模板逻辑或部署规则复查时，局部脚本注释、单份 runbook 或某次现场记录只能作为线索，不能覆盖这里定义的文档优先级；发现冲突时应同步修正文档或注释。
 
+## 前端样式改动与验证
+
+- 处理页面样式、布局、间距、字体、图片、图标或表格内容问题时，默认先连真实浏览器或真实页面运行时定位，不要只凭静态代码或截图猜。
+- 改动前必须先确认：当前到底是哪条规则在生效、改完准备由哪条规则接管、会影响哪些相邻 box、父子容器、兄弟节点或响应式断点。
+- 遇到遮挡、溢出、重叠、误隐藏、错位时，必须显式检查 box 关系，而不只看当前节点自己：至少确认父子包含、兄弟相邻、`overflow`、`min/max-size`、`flex-shrink`、`white-space`、`word-break`、`object-fit`、`position`、`z-index`、`transform` 和关键 `gap/padding/margin`。
+- 不能只验证默认内容。若区域内有长文本、大数字、标签、图片或其他 media，至少补一组边界样本，确认不会把容器撑爆、裁切相邻区域或被相邻布局挤到不可见。
+- 本仓库目前没有固定的 `style:l1/l2/l3` 浏览器脚本入口；因此前端样式任务默认要同时做两件事：1) 浏览器级手工/自动回归，确认默认态、交互态、恢复态和相邻区域；2) 执行当前已有质量命令 `cd /Users/simon/projects/webapp-template/web && pnpm lint && pnpm css && pnpm test`。
+- 名词不要混用：这里说的“回归”是验证某次改动没有把既有页面、状态、相邻区域和关键交互带坏；这里说的“冒烟”只保留给更粗粒度的主路径可用性确认。当前仓库里，`bash /Users/simon/projects/webapp-template/scripts/qa/fast.sh` 更接近“粗粒度冒烟/快速检查”，`bash /Users/simon/projects/webapp-template/scripts/qa/full.sh` 是仓库级全量 QA，都不能替代浏览器级样式回归。
+- 若某个高频页面的样式问题反复出现，应优先在该仓库补固定浏览器 fixture 或自动化脚本，而不是长期依赖人工口头回归。
+
 ## 服务端可观测性约束
 
 - 新增或修改服务端链路（HTTP / gRPC / JSON-RPC / 定时任务 / 数据写路径）时，必须同时检查 `trace` 和 `log` 是否打全打对。

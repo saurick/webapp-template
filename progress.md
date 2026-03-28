@@ -1,3 +1,27 @@
+## 2026-03-27
+- 完成：继续完善 `/Users/simon/projects/webapp-template/server/deploy/lab-ha/docs/VM_POWER_SEQUENCE.md`，把“整套重新开机时的影响”也显式收口成独立章节与表格，明确 `1/3`、`2/3`、`3/3` 节点恢复时分别意味着“单机起来了 / 控制面开始恢复 / 整套接近恢复完成”，并补充 `192.168.0.108` 固定管理入口、`etcd quorum`、`Longhorn PVC` 收敛这几类最容易误判的现场现象。随后又把文档从平台绑定口径改成平台无关描述，删掉对特定虚拟化产品界面的依赖，并新增“值班速查”表，直接回答“先关谁、先开谁、看到什么算正常、什么时候不要继续点下一台”。
+- 验证：本轮仅做文档增强，已人工回读新增“开机阶段的影响”章节；未执行新的 live 开机/关机或集群验收命令。
+- 下一步：如果后续要继续压缩值班成本，可考虑再把这份速查表同步到 Portal 或值班首页，让顺序和验收条件不只存在于仓库文档里。
+- 阻塞/风险：文档已经说明“2/3 节点恢复 ≠ 业务入口全部恢复”，但 live 中实际 `VIP` 持有者、`etcd leader`、PVC 收敛速度仍会随现场状态波动，值班时仍需结合 `check-ha-lab-cold-start.sh` 验证。
+
+## 2026-03-27
+- 完成：把“三台 VM 计划性关机 / 开机顺序与影响”正式收口成独立文档，新增 `/Users/simon/projects/webapp-template/server/deploy/lab-ha/docs/VM_POWER_SEQUENCE.md`，明确当前 `lab-cp-01/02/03 -> 192.168.0.7 / 192.168.0.108 / 192.168.0.128` 的固定映射、`192.168.0.110` 只是 `API VIP` 而不是某台永久主机、单台维护与整套停机的影响边界、推荐关机顺序 / 开机顺序，以及每轮电源操作后的统一验收命令。同步更新 `/Users/simon/projects/webapp-template/server/deploy/lab-ha/docs/README.md`、`/Users/simon/projects/webapp-template/server/deploy/lab-ha/docs/RECOVERY_RUNBOOK.md`、`/Users/simon/projects/webapp-template/server/deploy/lab-ha/docs/OPS_CHECKLIST.md`，把这份 runbook 挂到值班入口与恢复手册里，避免后续再靠聊天记录记忆顺序。
+- 验证：本轮仅做文档收口，已人工回读新增文档与入口引用，确认 `README / RECOVERY_RUNBOOK / OPS_CHECKLIST` 都已指向 `VM_POWER_SEQUENCE.md`；未执行新的 live 关机 / 开机或集群验收命令。
+- 下一步：如果后续要把当前 VM 显示名和这份文档完全对齐，可再补一份虚拟化管理平台侧的显示名改名记录，确保 `lab-cp-01/02/03` 与当前固定 IP 映射不会再靠人工口头记忆。
+- 阻塞/风险：这份 runbook 已把当前推荐顺序和影响说清楚，但 `API VIP` 持有者与 `etcd leader` 本质上仍会漂移；因此文档里保留了“先查 live 角色、再决定顺序”的口径，不能把某台节点永久当成固定主节点。
+
+## 2026-03-27
+- 完成：把 `node1` 与 `node3` 也从 DHCP 收口为静态 IP，避免三台 VM 里只有 `node2` 固定、其余节点仍在重启后碰运气拿 lease。live 侧已分别将 `192.168.0.7` 与 `192.168.0.128` 的 `/etc/netplan/50-cloud-init.yaml` 改为静态配置：`dhcp4/dhcp6=false`、固定地址分别为 `192.168.0.7/24` 与 `192.168.0.128/24`、默认网关统一 `192.168.0.1`、DNS 统一 `192.168.0.1`；`node2` 继续保持上一轮已修复的静态 `192.168.0.108/24`。这样当前三台控制面节点都不再依赖 DHCP，重启后地址不应再漂。
+- 验证：`kubectl --kubeconfig /Users/simon/.kube/ha-lab.conf get nodes -o wide` 已确认三台节点仍为 `Ready`，地址分别是 `192.168.0.7 / 192.168.0.108 / 192.168.0.128`；三台节点的 `ping + SSH` 正常，远端回读 `/etc/netplan/50-cloud-init.yaml` 已全部为静态配置；`kubectl get ciliumnodes.cilium.io` 已确认 `node1/node2/node3` 的 `InternalIP` 分别收口为 `7 / 108 / 128`；关键入口 `http://192.168.0.108:32668/readyz`、`http://192.168.0.108:30088/`、`http://192.168.0.108:30081/login`、`https://192.168.0.108:30443/` 当前返回 `200`。
+- 下一步：如果要真正把“虚拟机名称”从 `node1/node2/node3` 改掉，建议先只改宿主机/虚拟化管理平台里的显示名，不要直接改来宾机 `hostname`；当前这三台是 `kubeadm` 控制面节点，若要连来宾机 hostname / Kubernetes node name 一起改，需要单独按“drain + 重建/重新加入控制面”的口径做，不适合顺手在线改。
+- 阻塞/风险：这次只收口了“IP 重启不漂”问题，没有动 `kube-system` 里之前遗留的部分 `CreateContainerError` 记录；它们和本轮静态 IP 配置不是同一类问题，后续仍建议单独清理后再完整复跑一次 `check-ha-lab-cold-start.sh`。
+
+## 2026-03-26
+- 完成：排查并修复 `192.168.0.108` 在三台 VM 重启后不可访问的问题。根因已确认不是整机宕掉，而是 `node2` 重启后从 DHCP 漂到了 `192.168.0.107`，但 `Portal / GitLab / Harbor / Argo CD` 入口、`kubeadm` 静态 Pod 广告地址与 node2 本机配置仍都依赖 `192.168.0.108`。live 侧已把 node2 的 `/etc/netplan/50-cloud-init.yaml` 收口为静态 `192.168.0.108/24 -> 192.168.0.1`，随后重启 `containerd / kubelet`，并滚动 node2 上的 `cilium` DaemonSet，让 `CiliumNode/node2` 从旧地址 `192.168.0.107` 更新到 `192.168.0.108`，恢复外部对 `108` 的 NodePort 访问。仓库侧同步增强 `/Users/simon/projects/webapp-template/server/deploy/lab-ha/scripts/ha-node-bootstrap.sh`，新增可选 `STATIC_IPV4 / DEFAULT_GATEWAY_IPV4 / DNS_IPV4S / NETWORK_IFACE` 参数，允许初始化时直接把固定入口节点的静态 IP 持久写入 `netplan`；并更新 `/Users/simon/projects/webapp-template/server/deploy/lab-ha/docs/ha-lab-runbook.md`、`/Users/simon/projects/webapp-template/server/deploy/lab-ha/docs/README.md`、`/Users/simon/projects/webapp-template/server/deploy/lab-ha/docs/TROUBLESHOOTING.md`，把“固定入口节点不能继续依赖 DHCP”的基线与恢复步骤收口为正式文档。
+- 验证：`ping` 与 `nc -z` 已确认 `192.168.0.108` 的 `ICMP / SSH` 恢复；`kubectl --kubeconfig /Users/simon/.kube/ha-lab.conf get nodes -o wide` 与 `kubectl get ciliumnodes.cilium.io node2 -o jsonpath='{.spec.addresses}'` 已确认 node2 与 `CiliumNode` 都回到 `192.168.0.108`；外部入口已实测 `http://192.168.0.108:32668/readyz`、`http://192.168.0.108:30088/`、`http://192.168.0.108:30081/login`、`http://192.168.0.108:30090/-/ready`、`https://192.168.0.108:30443/` 返回 `200`，`http://192.168.0.108:30093/` 与 `http://192.168.0.108:30086/` 的 `HEAD` 分别返回 `405 / 501`，说明服务已恢复但这些端点不接受 `HEAD`；`bash -n /Users/simon/projects/webapp-template/server/deploy/lab-ha/scripts/ha-node-bootstrap.sh` 通过。
+- 下一步：补做一次控制面静态 Pod 的专项收口，重点确认 `kube-system` 里残留的 `CreateContainerError` 不是新的运行时故障，而只是重启后的旧尝试对象未清理；随后再完整复跑 `bash /Users/simon/projects/webapp-template/server/deploy/lab-ha/scripts/check-ha-lab-cold-start.sh`，把最近冷启动摘要刷回绿色。
+- 阻塞/风险：当前 `check-ha-lab-cold-start.sh` 仍未全绿，主要因为 `kube-system` 里还残留 `etcd-node2`、`kube-apiserver-node2` 以及其他控制面静态 Pod 的 `CreateContainerError` 记录；虽然当前用户侧固定入口已经恢复，且关键页面都能直接打开，但在这些残留状态进一步清干净前，不建议把这次问题误判为“整套冷启动基线已经完全通过”。
+
 ## 2026-03-24
 - 完成：继续收口 Harbor 入口时，直接抓取了 `POST /v2/.../blobs/uploads/` 的响应头，确认当前 `harbor-ui-proxy` 用 Nginx `$host` 转发会丢掉 `:30002` 端口，导致 registry upload 的 `Location` 被错误返回为 `http://192.168.0.108/...`，客户端随后错误地去连 `:80`。已把 `/Users/simon/projects/webapp-template/server/deploy/lab-ha/manifests/harbor-ui-proxy.yaml` 及其 chart raw 副本改为使用 `$http_host`，并补 `X-Forwarded-Host`，让 Harbor 在反向代理后仍能生成带端口的正确 upload URL。
 - 下一步：把新的 `harbor-ui-proxy` 配置 apply 到 live，并再次验证 `POST /v2/.../blobs/uploads/` 的 `Location` 是否已带 `:30002`；通过后继续把 Headlamp 镜像推入 Harbor，再切 `headlamp-values.yaml`。
@@ -1016,3 +1040,19 @@
 - 阻塞/风险：Headlamp 与 Harbor 现在都已可访问，但实验室外网链路对 `ghcr` 仍然不稳，因此后续若升级 Headlamp 版本，仍应优先走 Harbor 镜像镜像/预热，而不是重新依赖节点直拉 `ghcr`。
 - 完成：按值班习惯把 `/Users/simon/projects/webapp-template/server/deploy/lab-ha/scripts/get-headlamp-token.sh` 的默认 token 时长从 `24h` 调整为 `90d`，并补了对 `90d`、`30d` 这类“按天数表达”的兼容转换。脚本内部现在会把天数自动换算成 `kubectl create token` 可接受的小时单位，再继续打印人可读的 `90d/30d` 头部信息；对应访问文档 `/Users/simon/projects/webapp-template/server/deploy/lab-ha/docs/ACCESS.md` 也已同步更新默认值说明。
 - 验证：`bash -n /Users/simon/projects/webapp-template/server/deploy/lab-ha/scripts/get-headlamp-token.sh` 通过；默认执行脚本时头部已显示 `Token duration: 90d`，额外回归 `TOKEN_DURATION=30d` 时头部也能正常显示 `Token duration: 30d`，说明“按天数输入 -> 自动转换 -> 成功生成 token”这条路径已经成立。
+## 2026-03-25 10:20
+- 完成：在回答 `lab-ha` 实验环境是否需要继续加服务组件时，复核了 `/Users/simon/projects/webapp-template/server/deploy/lab-ha/docs/README.md`、`ACCESS.md`、`BEST_PRACTICES.md`、`OPS_CHECKLIST.md` 的当前口径，并顺手修正文档漂移：`BEST_PRACTICES.md` 原先把已落地的 `Velero / Sealed Secrets` 仍写成未来扩展，现已改成更准确的“后续如节点升级，再补 Velero 数据面备份能力”，避免后续 AI/维护者继续把现状误判为未部署。
+- 下一步：基于当前 `3 x 4C/8G + 同宿主机单点 + Portal/Grafana/Headlamp/Argo` 的实验口径，继续按“少加重组件、优先补访问治理和恢复能力”给出后续组件建议。
+- 阻塞/风险：当前仓库文档总体已一致，但这套实验仍然是软件层 HA 而不是硬件级 HA；因此任何新增服务的价值，都应先和“是否真的降低现场风险”对齐，避免为了功能名词继续抬高维护复杂度。
+
+## 2026-03-26 13:45
+- 完成：同步补齐 webapp-template 的前端样式改动约束。项目级 `/Users/simon/projects/webapp-template/AGENTS.md` 现已明确：样式任务要先连真实浏览器定位，显式检查 box 关系与边界样本，并区分“回归”和“冒烟”；当前仓库暂无固定 `style:l1/l2/l3` 入口，因此样式任务默认需要浏览器级回归，外加 `cd /Users/simon/projects/webapp-template/web && pnpm lint && pnpm css && pnpm test`。
+- 完成：同步更新 `/Users/simon/projects/webapp-template/README.md` 与 `/Users/simon/projects/webapp-template/scripts/README.md`，把 `fast.sh` 定位为更接近粗粒度冒烟/快速检查，把 `full.sh` 定位为仓库级 QA 全量检查，并明确它们都不能替代前端样式任务的浏览器级回归。
+- 验证：后续补跑 `bash /Users/simon/projects/webapp-template/scripts/qa/fast.sh` 与 `bash /Users/simon/projects/webapp-template/scripts/qa/full.sh`；本轮文档改动已通过 `git -C /Users/simon/projects/webapp-template diff --check -- AGENTS.md README.md scripts/README.md progress.md`。
+- 下一步：若模板派生项目后续出现高频样式问题，可在对应仓库继续补固定浏览器 fixture 或 Playwright 脚本，不必在模板里预埋一整套高复杂度入口。
+- 阻塞/风险：当前只是把规则与术语边界写清楚，尚未为模板仓库新增固定浏览器样式脚本；后续执行质量仍依赖任务内是否真的连浏览器做页面级回归。
+
+## 2026-03-28 00:10
+- 完成：补齐 `/Users/simon/projects/webapp-template/web/README.md` 的前端样式回归口径，明确当前模板仓库尚无固定 `style:l1/l2/l3` 浏览器脚本入口，样式/布局任务仍需配合真实浏览器做页面级回归；同时把 `pnpm test` 的职责收口为“最小前端基线”，避免被误读成样式验收替代品。
+- 下一步：若模板本身或派生项目持续频繁出现同类前端样式问题，再评估是否在模板仓库内补最小浏览器级 `L1` fixture / Playwright 脚本。
+- 阻塞/风险：模板仓库当前仍以规则和文档约束为主，尚未沉淀固定浏览器级样式脚本；后续执行质量仍取决于具体任务是否真的连浏览器回归。

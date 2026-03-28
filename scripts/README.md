@@ -210,7 +210,7 @@ bash scripts/qa/fast.sh
 - `error-codes`：统一错误码魔法数字检查
 - web：`pnpm lint && pnpm css`
 - server：优先执行 `go test ./internal/... ./pkg/...`（目录存在才执行）
-- 适合在开发中频繁执行，快速发现明显问题。
+- 适合在开发中频繁执行，快速发现明显问题；它更接近“粗粒度冒烟/快速检查”，不替代前端浏览器级样式回归。
 
 ## 15) full
 
@@ -219,6 +219,7 @@ bash scripts/qa/full.sh
 ```
 
 - pre-push 默认以 `SECRETS_STRICT=1` 执行此脚本
+- 若定义了前端 `test`，会在 `full` 中一并执行，但它仍然属于仓库级 QA 全量检查，不替代样式/布局任务的浏览器级回归。
 
 ## 16) loadtest
 
