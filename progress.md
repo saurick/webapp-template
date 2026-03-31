@@ -10,6 +10,12 @@
 - 下一步：如果后续要把当前 VM 显示名和这份文档完全对齐，可再补一份虚拟化管理平台侧的显示名改名记录，确保 `lab-cp-01/02/03` 与当前固定 IP 映射不会再靠人工口头记忆。
 - 阻塞/风险：这份 runbook 已把当前推荐顺序和影响说清楚，但 `API VIP` 持有者与 `etcd leader` 本质上仍会漂移；因此文档里保留了“先查 live 角色、再决定顺序”的口径，不能把某台节点永久当成固定主节点。
 
+## 2026-04-01
+- 完成：把最近这轮 `lab-ha` 节点基线与电源操作口径正式收口到仓库真源。`/Users/simon/projects/webapp-template/server/deploy/lab-ha/scripts/ha-node-bootstrap.sh` 现支持通过 `STATIC_IPV4 / DEFAULT_GATEWAY_IPV4 / DNS_IPV4S / NETWORK_IFACE` 可选参数把固定节点 IP 直接持久写入 `netplan`，避免入口节点重启后继续因 DHCP 漂移；`/Users/simon/projects/webapp-template/server/deploy/lab-ha/docs/ha-lab-runbook.md`、`README.md`、`TROUBLESHOOTING.md` 已同步补齐静态 IP 基线与 `192.168.0.108` 漂移恢复步骤。另新增 `/Users/simon/projects/webapp-template/server/deploy/lab-ha/docs/VM_POWER_SEQUENCE.md`，把三台 VM 的计划性关机 / 开机顺序、影响、值班速查、冷启动验收和平台无关的电源操作建议收成正式 runbook，并在 `/Users/simon/projects/webapp-template/server/deploy/lab-ha/docs/RECOVERY_RUNBOOK.md`、`OPS_CHECKLIST.md`、`README.md` 挂上入口。
+- 验证：已人工回读上述脚本与文档 diff，确认静态 IP 参数、`VM_POWER_SEQUENCE.md` 新文档、以及 `README / RECOVERY_RUNBOOK / OPS_CHECKLIST` 的入口引用一致；本轮未执行新的 live 集群变更或电源操作验证。
+- 下一步：把这套“固定入口节点静态 IP + 计划性 VM 电源顺序 + 冷启动验收”继续沉到日常值班入口，必要时再把值班速查同步到 Portal，减少人工翻文档成本。
+- 阻塞/风险：当前 runbook 已把推荐顺序和验收条件写清楚，但 `API VIP` 持有者、`etcd leader` 与 PVC 收敛速度仍属于 live 状态，实际维护时仍应先查当前角色，再结合 `check-ha-lab-cold-start.sh` 判断是否真正恢复完成。
+
 ## 2026-03-27
 - 完成：把 `node1` 与 `node3` 也从 DHCP 收口为静态 IP，避免三台 VM 里只有 `node2` 固定、其余节点仍在重启后碰运气拿 lease。live 侧已分别将 `192.168.0.7` 与 `192.168.0.128` 的 `/etc/netplan/50-cloud-init.yaml` 改为静态配置：`dhcp4/dhcp6=false`、固定地址分别为 `192.168.0.7/24` 与 `192.168.0.128/24`、默认网关统一 `192.168.0.1`、DNS 统一 `192.168.0.1`；`node2` 继续保持上一轮已修复的静态 `192.168.0.108/24`。这样当前三台控制面节点都不再依赖 DHCP，重启后地址不应再漂。
 - 验证：`kubectl --kubeconfig /Users/simon/.kube/ha-lab.conf get nodes -o wide` 已确认三台节点仍为 `Ready`，地址分别是 `192.168.0.7 / 192.168.0.108 / 192.168.0.128`；三台节点的 `ping + SSH` 正常，远端回读 `/etc/netplan/50-cloud-init.yaml` 已全部为静态配置；`kubectl get ciliumnodes.cilium.io` 已确认 `node1/node2/node3` 的 `InternalIP` 分别收口为 `7 / 108 / 128`；关键入口 `http://192.168.0.108:32668/readyz`、`http://192.168.0.108:30088/`、`http://192.168.0.108:30081/login`、`https://192.168.0.108:30443/` 当前返回 `200`。

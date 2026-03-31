@@ -2,13 +2,17 @@
 set -euo pipefail
 
 if [[ $# -ne 1 ]]; then
-	printf 'Usage: %s <new-hostname>\n' "$0" >&2
+	printf 'Usage: STATIC_IPV4=<ip/cidr> DEFAULT_GATEWAY_IPV4=<gateway> [DNS_IPV4S=ip1,ip2] [NETWORK_IFACE=eth0] %s <new-hostname>\n' "$0" >&2
 	exit 1
 fi
 
 NEW_HOSTNAME="$1"
 ROOT_PASSWORD="${ROOT_PASSWORD:-123456}"
 SKIP_APT="${SKIP_APT:-0}"
+STATIC_IPV4="${STATIC_IPV4:-}"
+DEFAULT_GATEWAY_IPV4="${DEFAULT_GATEWAY_IPV4:-}"
+DNS_IPV4S="${DNS_IPV4S:-}"
+NETWORK_IFACE="${NETWORK_IFACE:-}"
 PUBKEY='ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAINvGvKbsg+kIQcpQNey1+O18hi11Bl5ZDb/+0HI5xr14 simon@simons-MacBook-Air.local'
 BASELINE_PACKAGES=(
 	curl
@@ -27,6 +31,62 @@ BASELINE_MODULES=(overlay br_netfilter iscsi_tcp)
 if [[ $EUID -ne 0 ]]; then
 	exec sudo -E bash "$0" "$@"
 fi
+
+detect_default_iface() {
+	ip route show default 2>/dev/null | awk '/default/ {print $5; exit}'
+}
+
+configure_static_ipv4_if_requested() {
+	if [[ -z "$STATIC_IPV4" ]]; then
+		printf '==> skip static IPv4 config because STATIC_IPV4 is empty\n'
+		return
+	fi
+
+	local iface gateway dns_csv backup_file
+	iface="${NETWORK_IFACE:-$(detect_default_iface)}"
+	gateway="${DEFAULT_GATEWAY_IPV4:-}"
+	dns_csv="${DNS_IPV4S:-$gateway}"
+
+	if [[ -z "$iface" ]]; then
+		printf 'ERROR: failed to detect default network interface, set NETWORK_IFACE manually\n' >&2
+		exit 2
+	fi
+	if [[ -z "$gateway" ]]; then
+		printf 'ERROR: STATIC_IPV4 is set but DEFAULT_GATEWAY_IPV4 is empty\n' >&2
+		exit 3
+	fi
+
+	printf '==> persist static IPv4 %s on %s\n' "$STATIC_IPV4" "$iface"
+	# 当前入口节点和 kubeadm/etcd 广告地址依赖稳定节点 IP，继续走 DHCP 会在 reboot 后把入口和控制面一起漂坏。
+	backup_file="/etc/netplan/50-cloud-init.yaml.bak.$(date +%Y%m%d%H%M%S)"
+	if [[ -f /etc/netplan/50-cloud-init.yaml ]]; then
+		cp /etc/netplan/50-cloud-init.yaml "$backup_file"
+	fi
+	mkdir -p /etc/netplan
+	{
+		printf 'network:\n'
+		printf '  version: 2\n'
+		printf '  ethernets:\n'
+		printf '    %s:\n' "$iface"
+		printf '      dhcp4: false\n'
+		printf '      dhcp6: false\n'
+		printf '      addresses:\n'
+		printf '        - %s\n' "$STATIC_IPV4"
+		printf '      routes:\n'
+		printf '        - to: default\n'
+		printf '          via: %s\n' "$gateway"
+		printf '      nameservers:\n'
+		printf '        addresses:\n'
+		IFS=',' read -r -a dns_list <<<"$dns_csv"
+		for dns_ip in "${dns_list[@]}"; do
+			dns_ip="${dns_ip//[[:space:]]/}"
+			[[ -n "$dns_ip" ]] || continue
+			printf '          - %s\n' "$dns_ip"
+		done
+	} >/etc/netplan/50-cloud-init.yaml
+	netplan generate
+	netplan apply
+}
 
 install_baseline_packages() {
 	if [[ "$SKIP_APT" == "1" ]]; then
@@ -171,6 +231,7 @@ truncate -s 0 /etc/machine-id
 systemd-machine-id-setup
 cp /etc/machine-id /var/lib/dbus/machine-id
 
+configure_static_ipv4_if_requested
 install_baseline_packages
 disable_swap_persistently
 disable_host_firewalls

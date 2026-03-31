@@ -52,6 +52,7 @@ bash /Users/simon/projects/webapp-template/server/deploy/lab-ha/scripts/check-ha
 这一步会优先暴露：
 
 - 节点 swap 又被系统挂回，导致 `kubelet` 起不来
+- 固定入口节点在重启后被 DHCP 分到新地址，导致 `192.168.0.108` 这类写死入口整体失效
 - 主机防火墙在节点重启后恢复，导致 NodePort、存储或 CNI 链路被拦
 - `multipathd` 在节点上恢复为运行态，导致 Longhorn 命中官方已知问题
 - `containerd` 或存储基线没恢复
@@ -107,6 +108,40 @@ kubectl --kubeconfig /Users/simon/.kube/ha-lab.conf delete pod -n headlamp -l ap
 
 - 把镜像镜像到当前 Harbor，再把 values 里的镜像地址切到 Harbor
 - 先把镜像预热到节点 `containerd`，再恢复 Deployment
+
+如果现象是“`192.168.0.108` ping/SSH 一起失效，但另外两台 VM 正常”，先直接检查这台节点是不是从固定地址漂到了新的 DHCP 地址：
+
+```bash
+kubectl --kubeconfig /Users/simon/.kube/ha-lab.conf get nodes -o wide
+ssh root@<node2-current-ip> 'ip -4 addr show dev enp3s0; sed -n "1,120p" /etc/netplan/50-cloud-init.yaml'
+```
+
+若看到节点主 IP 不是 `192.168.0.108`，且 `netplan` 里仍是 `dhcp4: true`，应尽快把它收口回静态 IP，再重启该节点的 `containerd / kubelet`，并让 node2 上的 `cilium` 重新注册：
+
+```bash
+ssh root@<node2-current-ip> 'cat >/etc/netplan/50-cloud-init.yaml <<'"'"'EOF'"'"'
+network:
+  version: 2
+  ethernets:
+    enp3s0:
+      dhcp4: false
+      dhcp6: false
+      addresses:
+        - 192.168.0.108/24
+      routes:
+        - to: default
+          via: 192.168.0.1
+      nameservers:
+        addresses:
+          - 192.168.0.1
+EOF
+netplan generate
+netplan apply
+systemctl restart containerd
+systemctl restart kubelet'
+
+kubectl --kubeconfig /Users/simon/.kube/ha-lab.conf -n kube-system delete pod -l k8s-app=cilium --field-selector spec.nodeName=node2
+```
 
 ## 2. WebApp 返回 500 / `readyz` 失败
 

@@ -34,6 +34,7 @@ bash /Users/simon/projects/webapp-template/server/deploy/lab-ha/scripts/check-ha
 补充说明：脚本执行完成后，也会同步刷新 Portal 里的“最近冷启动验收”摘要卡，方便值班人员先在页面上看到最近一次结果。
 补充说明：脚本现在会在 `3/3 Ready` 之后，带边界地清理全量冷启动后残留的 `Unknown/Terminating` controller Pod，减少控制器已经恢复但旧 Pod 对象还挂在 API 里的误报。
 补充说明：如果这是一次正式 HA 演练而不是普通巡检，后续再执行 `verify-ha-lab-drill.sh`，把“最近 HA 演练”卡片一起刷新到 Portal。
+补充说明：如果这次不是“故障后恢复”，而是计划性在虚拟化管理平台层面对三台 VM 做关机、开机或重启，请先看 `/Users/simon/projects/webapp-template/server/deploy/lab-ha/docs/VM_POWER_SEQUENCE.md`，不要在不了解 `etcd quorum` 与固定入口影响的情况下随意连续点三台电源按钮。
 
 ## 1. API VIP 漂移演练
 
@@ -203,6 +204,8 @@ bash /Users/simon/projects/webapp-template/server/deploy/lab-ha/scripts/verify-h
 - 单节点 reboot 后回到集群
 - 三节点顺序重启
 - 宿主机维护后整套 VM 冷启动
+
+如果操作本身是计划性的 VM 关机 / 开机 / 重启顺序，请先参考 `/Users/simon/projects/webapp-template/server/deploy/lab-ha/docs/VM_POWER_SEQUENCE.md`；这里的重点是“操作完成后如何统一验收”，不是代替电源操作顺序说明。
 
 统一验收命令：
 

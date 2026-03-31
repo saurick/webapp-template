@@ -77,8 +77,18 @@ bash /Users/simon/projects/webapp-template/server/deploy/lab-ha/scripts/helm-rel
 bash /Users/simon/projects/webapp-template/server/deploy/lab-ha/scripts/ha-node-bootstrap.sh <new-hostname>
 ```
 
+如果当前节点承担固定入口、`kubeadm` 广告地址或其他被仓库写死的稳定 IP，不要继续依赖 DHCP。可直接把静态 IP 一起交给脚本：
+
+```bash
+STATIC_IPV4=192.168.0.108/24 \
+DEFAULT_GATEWAY_IPV4=192.168.0.1 \
+DNS_IPV4S=192.168.0.1 \
+bash /Users/simon/projects/webapp-template/server/deploy/lab-ha/scripts/ha-node-bootstrap.sh node2
+```
+
 说明：该脚本现在会把节点层最容易在 reboot 后漂移的基线一起固化，包括：
 
+- 可选地把节点主 IP 持久写入 `netplan`，避免固定入口节点在重启后被 DHCP 漂到其他地址
 - 持久关闭 swap，并同步改 `/etc/fstab`
 - 关闭 `ufw` / `firewalld`，避免主机防火墙在节点重启后把 K8s / 存储 / NodePort 链路重新拦住
 - 关闭 `multipathd`，避免 Longhorn 在全量冷启动后命中官方已知块设备问题

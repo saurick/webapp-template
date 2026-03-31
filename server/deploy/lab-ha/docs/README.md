@@ -24,6 +24,7 @@
 - `docs/CILIUM_HUBBLE_RUNBOOK.md`: Cilium eBPF 与 Hubble 运行/排障手册
 - `docs/TROUBLESHOOTING.md`: 常见故障排查手册
 - `docs/RECOVERY_RUNBOOK.md`: 恢复与故障演练手册
+- `docs/VM_POWER_SEQUENCE.md`: 三台 VM 计划性关机 / 开机顺序、影响与验收口径
 - `scripts/helm-release.sh`: Helm 统一入口，负责 repo 初始化、模板渲染与 release 同步
 - `charts/lab-platform/`: Jaeger、Loki、Grafana、Portal、NodePort/Ingress、Argo 补充对象等平台级本地 chart
 - `charts/headlamp/`: 实验室收口后的 Headlamp 本地 chart；用于修正上游 chart 与 `v0.40.1` 镜像的参数不兼容
@@ -69,7 +70,7 @@
 - `charts/webapp-template/values-prod-trial-internal.yaml`: WebApp 内部域名 values overlay
 - `argocd/webapp-prod-trial/runtime-secret.example.yaml`: WebApp 生产试验运行时 Secret 示例
 - `manifests/argocd-repo-secret-sealed.yaml`: Argo CD 仓库凭据的 SealedSecret
-- `scripts/ha-node-bootstrap.sh`: 节点初始化脚本，包含 swap/防火墙/multipathd/关闭 IPv6 等基线
+- `scripts/ha-node-bootstrap.sh`: 节点初始化脚本，包含静态 IP/swap/防火墙/multipathd/关闭 IPv6 等基线
 - `scripts/check-ha-lab-cold-start.sh`: 节点重启 / 整集群冷启动后的统一验收脚本，同时刷新 Portal 里的最近冷启动摘要
 - `scripts/verify-ha-lab-drill.sh`: 在真实故障演练后复跑统一验收，并把“最近 HA 演练”摘要写到 Portal
 - `scripts/cleanup-stale-controlled-pods.sh`: 带边界地清理全量冷启动后残留的 `Unknown/Terminating` controller Pod
@@ -95,6 +96,7 @@
 - 当前对人展示统一口径：`WebApp Lab`、`WebApp Prod-Trial Active`、`WebApp Prod-Trial Preview`
 - 技术命名暂保持不变：`webapp` / `webapp-prod-trial` 命名空间与对应 Argo app 名仍作为底层真名
 - 当前对外可承诺的最低基线，应至少包含“节点重启后 swap 不会回挂 + `/etc/fstab` 不再保留生效中的 swap 挂载 + 主机防火墙保持关闭态 + `multipathd` 保持关闭 + kubelet 能自动恢复 + Longhorn 冷启动策略已经收口 + `check-ha-lab-cold-start.sh` 全量通过”
+- 对外固定入口节点不能继续依赖 DHCP；像 `192.168.0.108` 这类被 Portal、GitLab、Harbor、Argo CD 与 kubeadm 广告地址共同依赖的节点 IP，必须在宿主机 `netplan` 层持久收口为静态地址
 - 对值班直接有帮助且体量可控的数据，默认要做轻量持久化；当前基线包括 `Alert Sink` 最近 webhook payload 与 `Jaeger` 最近 traces
 
 ## Helm 使用口径
@@ -141,6 +143,7 @@
 3. `docs/OPS_CHECKLIST.md`
 4. `docs/TROUBLESHOOTING.md`
 5. `docs/RECOVERY_RUNBOOK.md`
-6. `docs/TEST_REPORT.md`
-7. `docs/BEST_PRACTICES.md`
-8. `docs/HANDOVER.md`
+6. `docs/VM_POWER_SEQUENCE.md`
+7. `docs/TEST_REPORT.md`
+8. `docs/BEST_PRACTICES.md`
+9. `docs/HANDOVER.md`

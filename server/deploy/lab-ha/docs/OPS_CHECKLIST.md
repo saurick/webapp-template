@@ -151,7 +151,7 @@ curl -sG 'http://127.0.0.1:19090/api/v1/query' \
 - PG primary 删除后自动切主
 - 删除一个 WebApp Pod 后自动恢复
 
-执行顺序见 `server/deploy/lab-ha/docs/RECOVERY_RUNBOOK.md`
+执行顺序见 `server/deploy/lab-ha/docs/RECOVERY_RUNBOOK.md`；如果这周的动作本身包含 VM 计划性关机 / 开机 / 重启，再先看 `server/deploy/lab-ha/docs/VM_POWER_SEQUENCE.md`
 
 如果这周做的是节点重启、整集群冷启动或宿主机维护恢复，还要补一次正式演练验收：
 
