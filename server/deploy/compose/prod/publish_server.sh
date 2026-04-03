@@ -14,6 +14,11 @@ REMOTE_USER="${REMOTE_USER:-deploy}"
 REMOTE_DIR="${REMOTE_DIR:-~/deploy/your-project}"
 REMOTE_SCRIPT_NAME="${REMOTE_SCRIPT_NAME:-deploy_app_server.sh}"
 REMOTE_COMPOSE_FILE_NAME="${REMOTE_COMPOSE_FILE_NAME:-compose.app-server.yml}"
+REMOTE_MIGRATE_SCRIPT_NAME="${REMOTE_MIGRATE_SCRIPT_NAME:-migrate_online.sh}"
+REMOTE_MIGRATE_DIR_NAME="${REMOTE_MIGRATE_DIR_NAME:-migrate}"
+LOCAL_MIGRATE_SCRIPT="${LOCAL_MIGRATE_SCRIPT:-$SCRIPT_DIR/migrate_online.sh}"
+LOCAL_MIGRATE_DIR="${LOCAL_MIGRATE_DIR:-$SERVER_DIR/internal/data/model/migrate}"
+DB_MIGRATION_MODE="${DB_MIGRATION_MODE:-check}"
 AUTO_SMOKE="${AUTO_SMOKE:-auto}"
 SIM_HTTP_PORT="${SIM_HTTP_PORT:-8200}"
 SIM_ADMIN_HTTP_PORT="${SIM_ADMIN_HTTP_PORT:-}"
@@ -49,6 +54,11 @@ usage() {
   REMOTE_DIR    远端上传目录（默认 ~/deploy/your-project）
   REMOTE_SCRIPT_NAME 远端部署脚本文件名（默认 deploy_app_server.sh）
   REMOTE_COMPOSE_FILE_NAME 远端 compose 文件名（默认 compose.app-server.yml）
+  REMOTE_MIGRATE_SCRIPT_NAME 远端迁移脚本文件名（默认 migrate_online.sh）
+  REMOTE_MIGRATE_DIR_NAME 远端迁移目录名（默认 migrate）
+  LOCAL_MIGRATE_SCRIPT 本地迁移脚本路径（默认 server/deploy/compose/prod/migrate_online.sh）
+  LOCAL_MIGRATE_DIR 本地迁移目录（默认 server/internal/data/model/migrate）
+  DB_MIGRATION_MODE 线上迁移策略（off/check/apply，默认 check）
   AUTO_SMOKE    部署后检查策略（off/basic/auto/strict，默认 auto）
   SIM_HTTP_PORT 业务 HTTP 端口（默认 8200）
   SIM_ADMIN_HTTP_PORT 管理 HTTP 端口（默认空，空值表示跳过管理口检查）
@@ -101,7 +111,7 @@ REMOTE_IMAGE_TAR_NAME=$(basename "$IMAGE_TAR")
 
 run_remote_preflight() {
 	if [ "$PRE_DEPLOY_PREFLIGHT" = "off" ]; then
-		echo "==> [0/6] 跳过远端资源预检（PRE_DEPLOY_PREFLIGHT=off）"
+		echo "==> [0/8] 跳过远端资源预检（PRE_DEPLOY_PREFLIGHT=off）"
 		return 0
 	fi
 
@@ -113,7 +123,7 @@ run_remote_preflight() {
 		;;
 	esac
 
-	echo "==> [0/6] 远端资源预检"
+	echo "==> [0/8] 远端资源预检"
 	ssh "$REMOTE_TARGET" \
 		"MIN_MEM_MB='${PREFLIGHT_MIN_MEM_AVAILABLE_MB}' MAX_ROOT_PCT='${PREFLIGHT_MAX_ROOT_USAGE_PCT}' FAIL_ON_POSTGRES='${PREFLIGHT_FAIL_ON_POSTGRES_UNHEALTHY}' POSTGRES_CONTAINER='${PREFLIGHT_POSTGRES_CONTAINER_NAME}' sh -s" <<'EOF'
 set -eu
@@ -155,6 +165,57 @@ if [ "$FAIL_ON_POSTGRES" = "1" ] && [ "$postgres_status" != "healthy" ] && [ "$p
   exit 23
 fi
 EOF
+}
+
+sync_remote_migration_assets() {
+	if [ ! -f "$LOCAL_MIGRATE_SCRIPT" ]; then
+		echo "ERROR: 未找到本地迁移脚本: $LOCAL_MIGRATE_SCRIPT" >&2
+		exit 1
+	fi
+	if [ ! -d "$LOCAL_MIGRATE_DIR" ]; then
+		echo "ERROR: 未找到本地迁移目录: $LOCAL_MIGRATE_DIR" >&2
+		exit 1
+	fi
+
+	ssh "$REMOTE_TARGET" "mkdir -p ${REMOTE_DIR}/${REMOTE_MIGRATE_DIR_NAME}"
+	rsync -avz -e "ssh" "$LOCAL_MIGRATE_SCRIPT" "${REMOTE_TARGET}:${REMOTE_DIR}/${REMOTE_MIGRATE_SCRIPT_NAME}"
+	rsync -avz -e "ssh" --delete --exclude '.DS_Store' "$LOCAL_MIGRATE_DIR/" "${REMOTE_TARGET}:${REMOTE_DIR}/${REMOTE_MIGRATE_DIR_NAME}/"
+}
+
+run_remote_migration_guard() {
+	case "$DB_MIGRATION_MODE" in
+	off | check | apply) ;;
+	*)
+		echo "ERROR: DB_MIGRATION_MODE 仅支持 off/check/apply，当前为 $DB_MIGRATION_MODE" >&2
+		exit 1
+		;;
+	esac
+
+	if [ "$DB_MIGRATION_MODE" = "off" ]; then
+		echo "==> [1/8] 跳过线上迁移检查（DB_MIGRATION_MODE=off）"
+		return 0
+	fi
+
+	echo "==> [1/8] 同步迁移脚本与目录: ${REMOTE_TARGET}:${REMOTE_DIR}"
+	sync_remote_migration_assets
+
+	if [ "$DB_MIGRATION_MODE" = "apply" ]; then
+		echo "==> [2/8] 线上迁移检查并执行 apply"
+		ssh "$REMOTE_TARGET" "cd ${REMOTE_DIR} && COMPOSE_FILE=./${REMOTE_COMPOSE_FILE_NAME} MIG_DIR=\$(pwd)/${REMOTE_MIGRATE_DIR_NAME} sh ./${REMOTE_MIGRATE_SCRIPT_NAME} --apply"
+		return 0
+	fi
+
+	echo "==> [2/8] 线上迁移检查（存在 pending migration 时阻断发布）"
+	migration_output=$(ssh "$REMOTE_TARGET" "cd ${REMOTE_DIR} && COMPOSE_FILE=./${REMOTE_COMPOSE_FILE_NAME} MIG_DIR=\$(pwd)/${REMOTE_MIGRATE_DIR_NAME} sh ./${REMOTE_MIGRATE_SCRIPT_NAME}" 2>&1) || {
+		printf '%s\n' "$migration_output"
+		echo "ERROR: 线上迁移检查失败，请先排查 migration 状态。" >&2
+		exit 1
+	}
+	printf '%s\n' "$migration_output"
+	if printf '%s\n' "$migration_output" | grep -Eq 'Pending Files:[[:space:]]*[1-9]'; then
+		echo "ERROR: 检测到线上存在 pending migration；请先执行 DB_MIGRATION_MODE=apply 发布，或单独运行 migrate_online.sh --apply 后再继续。" >&2
+		exit 1
+	fi
 }
 
 collect_changed_files() {
@@ -240,11 +301,11 @@ run_smoke_check() {
 	base_url="http://${REMOTE_HOST}"
 
 	if [ "$smoke_mode" = "off" ]; then
-		echo "==> [6/6] 跳过部署后检查（AUTO_SMOKE=off）"
+		echo "==> [8/8] 跳过部署后检查（AUTO_SMOKE=off）"
 		return 0
 	fi
 
-	echo "==> [6/6] 部署后检查（mode=${smoke_mode}）"
+	echo "==> [8/8] 部署后检查（mode=${smoke_mode}）"
 	run_http_check "业务 healthz" "${base_url}:${SIM_HTTP_PORT}${HEALTH_PATH}"
 	run_http_check "业务 readyz" "${base_url}:${SIM_HTTP_PORT}${READY_PATH}"
 	if [ -n "$SIM_ADMIN_HTTP_PORT" ]; then
@@ -279,23 +340,24 @@ run_smoke_check() {
 }
 
 run_remote_preflight
+run_remote_migration_guard
 
-echo "==> [1/6] 构建服务镜像"
+echo "==> [3/8] 构建服务镜像"
 (cd "$SERVER_DIR" && make build_server)
 
-echo "==> [2/6] 导出镜像包: $IMAGE_NAME -> $IMAGE_TAR"
+echo "==> [4/8] 导出镜像包: $IMAGE_NAME -> $IMAGE_TAR"
 mkdir -p "$(dirname "$IMAGE_TAR")"
 docker save -o "$IMAGE_TAR" "$IMAGE_NAME"
 
-echo "==> [3/6] 上传镜像包到远端: ${REMOTE_TARGET}:${REMOTE_DIR}"
+echo "==> [5/8] 上传镜像包到远端: ${REMOTE_TARGET}:${REMOTE_DIR}"
 ssh "$REMOTE_TARGET" "mkdir -p ${REMOTE_DIR}"
 rsync -avz -e "ssh" "$IMAGE_TAR" "${REMOTE_TARGET}:${REMOTE_DIR}"
 
-echo "==> [4/6] 上传远端部署脚本与 compose: ${REMOTE_TARGET}:${REMOTE_DIR}"
+echo "==> [6/8] 上传远端部署脚本与 compose: ${REMOTE_TARGET}:${REMOTE_DIR}"
 rsync -avz -e "ssh" "$SCRIPT_DIR/deploy_server.sh" "${REMOTE_TARGET}:${REMOTE_DIR}/${REMOTE_SCRIPT_NAME}"
 rsync -avz -e "ssh" "$SCRIPT_DIR/compose.yml" "${REMOTE_TARGET}:${REMOTE_DIR}/${REMOTE_COMPOSE_FILE_NAME}"
 
-echo "==> [5/6] 远端执行部署脚本: ${REMOTE_SCRIPT_NAME}"
+echo "==> [7/8] 远端执行部署脚本: ${REMOTE_SCRIPT_NAME}"
 ssh "$REMOTE_TARGET" "cd ${REMOTE_DIR} && COMPOSE_FILE=./${REMOTE_COMPOSE_FILE_NAME} sh ./${REMOTE_SCRIPT_NAME} ${REMOTE_IMAGE_TAR_NAME}"
 
 CHANGED_FILES=$(collect_changed_files || true)

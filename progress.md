@@ -1069,3 +1069,33 @@
 - 完成：补齐 `/Users/simon/projects/webapp-template/web/README.md` 的前端样式回归口径，明确当前模板仓库尚无固定 `style:l1/l2/l3` 浏览器脚本入口，样式/布局任务仍需配合真实浏览器做页面级回归；同时把 `pnpm test` 的职责收口为“最小前端基线”，避免被误读成样式验收替代品。
 - 下一步：若模板本身或派生项目持续频繁出现同类前端样式问题，再评估是否在模板仓库内补最小浏览器级 `L1` fixture / Playwright 脚本。
 - 阻塞/风险：模板仓库当前仍以规则和文档约束为主，尚未沉淀固定浏览器级样式脚本；后续执行质量仍取决于具体任务是否真的连浏览器回归。
+
+## 2026-04-02 11:20
+- 完成：按“`Tailscale` 只作为外部运维访问入口，不作为业务公网发布方案”的边界，为 `lab-ha` 正式补齐 tailnet 接入真源。新增 `/Users/simon/projects/webapp-template/server/deploy/lab-ha/docs/TAILSCALE.md`，明确 subnet router 形态、落地步骤、DNS 边界、回退方式与验证命令；新增 `/Users/simon/projects/webapp-template/server/deploy/lab-ha/scripts/install-tailscale-subnet-router.sh`，用于在边界主机或宿主机侧通过 SSH 安装并配置 `Tailscale subnet router`，持久开启 `net.ipv4.ip_forward`，并广播 `192.168.0.0/24`。同时同步更新 `/Users/simon/projects/webapp-template/server/deploy/lab-ha/docs/README.md`、`ACCESS.md`、`INTERNAL_DNS.md`、`PROD_TRIAL.md`、`OPS_CHECKLIST.md`、`BEST_PRACTICES.md` 与 `/Users/simon/projects/webapp-template/server/deploy/README.md`，把“外部通过 Tailscale 进入、内部仍按 NodePort + Host / internal DNS 验证”的口径写成正式说明。
+- 验证：`bash -n /Users/simon/projects/webapp-template/server/deploy/lab-ha/scripts/install-tailscale-subnet-router.sh` 通过；`git diff --check -- server/deploy/README.md server/deploy/lab-ha/docs/README.md server/deploy/lab-ha/docs/ACCESS.md server/deploy/lab-ha/docs/INTERNAL_DNS.md server/deploy/lab-ha/docs/PROD_TRIAL.md server/deploy/lab-ha/docs/OPS_CHECKLIST.md server/deploy/lab-ha/docs/BEST_PRACTICES.md server/deploy/lab-ha/docs/TAILSCALE.md server/deploy/lab-ha/scripts/install-tailscale-subnet-router.sh` 通过。
+- 下一步：若要真正启用，准备 tailnet auth key / tag owner 后，在目标边界主机执行新脚本并到 Tailscale 管理台审批 `192.168.0.0/24` 路由；审批后再从 tailnet 客户端按 `TAILSCALE.md` 回归 `Portal / Grafana / Argo CD / prod-trial readyz`。
+- 阻塞/风险：本轮只完成仓库真源与脚本落地，没有持有真实 `TAILSCALE_AUTH_KEY` 去连实际 tailnet，也没有在 live 节点上执行安装；因此“脚本语法与文档闭环”已验证，但“真实 Tailscale 控制面审批 / 路由生效 / 外部客户端连通性”仍需现场执行后再确认。
+
+## 2026-04-02 14:55
+- 完成：收到真实 `TAILSCALE_AUTH_KEY` 后，已在 live 路由主机 `root@192.168.0.108` 实跑 `/Users/simon/projects/webapp-template/server/deploy/lab-ha/scripts/install-tailscale-subnet-router.sh`。期间按现场反馈继续修正脚本幂等与兼容性：远端安装逻辑改为“本地先打印变量赋值，再通过 `ssh ... 'bash -s'` 喂给远端”，避免 heredoc 在本地提前展开触发 `unbound variable`；`tailscale up` 默认追加 `--reset`，避免二次重跑被旧 state 拦截；`TAILSCALE_ADVERTISE_TAGS` 默认值改为可被显式空字符串覆盖，便于当前 auth key 无 tag 权限时临时禁用 tag；对应 `/Users/simon/projects/webapp-template/server/deploy/lab-ha/docs/TAILSCALE.md` 与 `ACCESS.md` 也同步补充了“无 tag 权限时可传空值”与“已有同网段旧路由时需在控制台决定 primary route”的说明。
+- 验证：远端 `tailscale status` 已显示新节点 `lab-ha-router`，tailnet IPv4 为 `100.110.51.53`，`tailscale debug prefs` 已确认本机配置为 `Hostname=lab-ha-router`、`RunSSH=true`、`AdvertiseRoutes=[192.168.0.0/24]`。同时远端 `tailscale status --json` 也暴露了当前 live 尾项：tailnet 内已有设备 `zos` 作为 `192.168.0.0/24` 的现有 `PrimaryRoutes`，因此 `192.168.0.108` 这台新路由机虽已入网并开始广告该网段，但是否真正接管流量，仍取决于 Tailscale 管理台的路由审批与主路由选择。
+- 下一步：到 Tailscale 管理台审批或切换 `192.168.0.0/24` 路由；如果希望当前 `lab-ha-router (192.168.0.108)` 成为主路由，需要在控制台上取消旧设备 `zos` 的同网段主路由，或把新路由设为 primary。完成后，再从 tailnet 客户端回归 `Portal / Grafana / Argo CD / prod-trial readyz`。
+- 阻塞/风险：当前 live 实跑是通过 `TAILSCALE_ADVERTISE_TAGS=''` 临时禁用了 `tag:lab-ha-router`，因为这把 auth key 尚未获准使用该 tag；另外，节点基线关闭 IPv6，因此 `tailscale up` 会提示 `IPv6 forwarding is disabled`，在当前只广播 IPv4 `192.168.0.0/24` 的场景下可接受，但仍不是“所有 warning 清零”的最终收口状态。
+
+## 2026-04-03 00:25
+- 完成：补齐 `/Users/simon/projects/webapp-template/AGENTS.md` 的数据库迁移执行边界，明确当问题已定位为“当前开发库缺少仓库中已存在的迁移”时，AI 可直接执行 `cd /Users/simon/projects/webapp-template/server && make migrate_apply`，再按仓库实际提供的方式做 schema 校验；若仓库没有固定 `db_schema_check` 目标，则至少以 `migrate_apply` 成功输出和只读 schema 查询确认结果。同时写清了仅限开发库/非生产库、先确认配置来源，以及生产库/共享库/高风险迁移仍需先说明风险再继续。
+- 下一步：后续若模板派生项目继续复用这套规则，可再按项目形态决定是否把同样边界同步写入各自 README 或 DB runbook，减少只看 `AGENTS.md` 才知道的隐性约束。
+- 阻塞/风险：当前只更新了 AI 协作约束，没有替模板仓库新增自动探测“缺迁移即提示 apply”的脚本；后续执行质量仍依赖 AI 先核对数据库来源，再按规则落地。
+
+## 2026-04-03 00:40
+- 完成：补齐 `/Users/simon/projects/webapp-template/server/internal/data/AI_DB_WORKFLOW.md`，把“开发库仅缺仓库内已存在迁移时的默认动作”写成正式 DB workflow：直接执行 `make migrate_apply`，不要重生成 migration、不要手动改库，并在 apply 后以成功输出和只读 schema 查询确认结果。同时顺手修正了项目级规则里误写的 `make db_schema_check`，避免后续 AI 再按不存在的命令执行。
+- 下一步：若模板后续新增了统一 schema 校验目标，可再把 workflow 中“只读确认”的描述收口为固定命令，减少每次按库结构手工确认的心智成本。
+- 阻塞/风险：当前模板仓库仍未提供统一的 schema 校验 make target，因此“apply 后确认”依旧需要结合迁移输出和只读查询完成；规则已明确，但还没有完全脚本化。
+
+## 2026-04-03 21:02
+- 完成：为 `/Users/simon/projects/webapp-template/AGENTS.md` 补齐线上迁移联动约束。模板仓库现已明确：开发库缺少仓库内既有 migration 时可按既有规则直接 `make migrate_apply`，但线上发布前必须先核对 migration 状态，pending migration 默认禁止继续发布依赖该 schema 的版本，避免后续派生项目继续复用“先发代码、再手补库”的高风险流程。
+- 完成：为 `/Users/simon/projects/webapp-template/server/deploy/compose/prod/publish_server.sh` 补上线上 migration 门禁。脚本现新增 `REMOTE_MIGRATE_SCRIPT_NAME`、`REMOTE_MIGRATE_DIR_NAME`、`LOCAL_MIGRATE_SCRIPT`、`LOCAL_MIGRATE_DIR` 与 `DB_MIGRATION_MODE=off|check|apply`，默认发布前先同步 `migrate_online.sh` 和 migration 目录到远端，再执行 `status + dry-run`；发现 pending migration 就直接阻断发布。这层能力属于模板基线，后续派生项目若沿用 Compose 发布脚本，会直接继承这套保护。
+- 完成：同步更新 `/Users/simon/projects/webapp-template/server/deploy/compose/prod/README.md`，把 migration 联动的环境变量、默认行为和适用原因写成正式模板说明，避免只在脚本里存在隐性规则。
+- 验证：`sh -n /Users/simon/projects/webapp-template/server/deploy/compose/prod/publish_server.sh`；`git -C /Users/simon/projects/webapp-template diff --check -- AGENTS.md server/deploy/compose/prod/README.md server/deploy/compose/prod/publish_server.sh`。
+- 下一步：若要把这套规则继续收口成模板外层入口，可再考虑把“Compose 发布默认带 migration 门禁”补一句到 `/Users/simon/projects/webapp-template/server/deploy/README.md` 或 `docs/deployment-conventions.md`，进一步降低派生项目只看总览文档时漏读细则的概率。
+- 阻塞/风险：本轮只补了模板脚本和模板文档，没有在某个派生项目或真实宿主机上演练 `DB_MIGRATION_MODE=check/apply`；模板能力本身已静态通过，但真实派生项目仍需要按各自远端目录、容器名和 compose 文件名再做一次现场验证。

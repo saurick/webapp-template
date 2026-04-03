@@ -51,6 +51,7 @@ sh publish_server.sh
 默认执行步骤：
 
 - 先执行远端资源预检（默认要求可用内存、磁盘与目标 PostgreSQL 健康状态达标）
+- 同步当前仓库的 `migrate_online.sh` 与 migration 目录到远端，并默认检查线上是否存在 pending migration
 - 在 `server` 目录执行 `make build_server`
 - `docker save -o output/app-server.tar your-project-server:dev`
 - `rsync -avz -e "ssh" output/app-server.tar deploy@deploy.example.com:~/deploy/your-project`
@@ -78,8 +79,14 @@ export REMOTE_USER=deploy
 export REMOTE_DIR=~/deploy/your-project
 export REMOTE_SCRIPT_NAME=deploy_app_server.sh
 export REMOTE_COMPOSE_FILE_NAME=compose.app-server.yml
+export REMOTE_MIGRATE_SCRIPT_NAME=migrate_online.sh
+export REMOTE_MIGRATE_DIR_NAME=migrate
 export POSTGRES_DSN='postgres://postgres:***@postgres:5432/test_database_atlas?sslmode=disable'
 export TRACE_ENDPOINT=jaeger:4318
+
+# 线上迁移策略（默认 check）
+# off: 跳过；check: status + dry-run，并在有 pending migration 时阻断发布；apply: 直接 apply 后继续发布
+export DB_MIGRATION_MODE=check
 
 # 部署后检查策略（off/basic/auto/strict）
 export AUTO_SMOKE=auto
@@ -107,6 +114,16 @@ export PREFLIGHT_POSTGRES_CONTAINER_NAME=your-project-postgres
   - 根分区使用率不高于 `PREFLIGHT_MAX_ROOT_USAGE_PCT`
   - `PREFLIGHT_POSTGRES_CONTAINER_NAME` 对应容器为 `healthy`（当 `PREFLIGHT_FAIL_ON_POSTGRES_UNHEALTHY=1`）
 - 模板默认值按 4G 单机部署收口，派生项目如果自定义了 `PROJECT_SLUG` 或 PostgreSQL 容器名，记得同步覆盖 `PREFLIGHT_POSTGRES_CONTAINER_NAME`。
+
+## 线上迁移联动
+
+- `DB_MIGRATION_MODE=check`（默认）：发布前先把当前仓库的 migration 目录同步到远端，并执行 `status + dry-run`；只要发现 pending migration，就直接阻断发布。
+- `DB_MIGRATION_MODE=apply`：发布前先在远端执行 `migrate_online.sh --apply`，确认 migration 已正式落库后再继续发版。
+- `DB_MIGRATION_MODE=off`：跳过线上迁移检查，仅适用于你明确接受风险或正在处理首次冷启动等特殊场景。
+
+适用原因：
+- 模板层若不默认挡住 pending migration，派生项目很容易复用出“代码已发布、目标库还没 apply migration”的事故。
+- 仅靠 `db-guard.sh` 只能防“忘了生成 migration 文件”，防不了“migration 文件已经提交，但线上库还没 apply”。
 
 ## 迁移脚本
 
