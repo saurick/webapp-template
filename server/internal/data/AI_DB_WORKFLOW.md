@@ -26,6 +26,20 @@
     ```
     *解释：此命令会将生成的 SQL 应用到实际数据库，并更新 `atlas_schema_revisions` 表。*
 
+4.  **只补齐当前开发库已有迁移时的做法**:
+    如果问题已经明确定位为“代码和迁移文件都已存在，但当前开发库还没 apply 到最新版本”，不要重新生成 migration，也不要手动改库；直接在 `server/` 目录执行：
+    ```bash
+    make migrate_apply
+    ```
+    执行后再做只读确认，至少核对：
+    - `migrate_apply` 已成功应用到目标 revision，没有 checksum / drift 报错
+    - 目标字段 / 索引 / 表已在当前开发库中可见
+
+    **注意：**
+    - 这里只适用于当前仓库开发配置命中的非生产库，例如 `server/configs/dev/config.yaml`、`server/configs/dev/config.local.yaml` 或用户明确指定的开发/个人测试库。
+    - 如果当前 shell 里还带着旧的 `DB_URL`、`USE_ENV_DB_URL=1` 或其他连接环境变量，必须先确认实际命中的库，再执行 `make migrate_apply`。
+    - 如果目标库可能是生产库、共享测试库，或当前无法明确判断数据库归属，必须先说明将命中的库和风险，再等待确认。
+
 ## 🔴 严格禁止的操作 (WHAT NOT TO DO)
 
 *   ❌ **绝对不要** 手动创建类似 `2024..._migrate.sql` 的文件。这会破坏 checksum 哈希校验 (`atlas.sum`)。
@@ -35,7 +49,8 @@
 ## 🛠 常见问题处理
 
 *   **Checksum Mismatch (校验和不匹配)**: 如果遇到此错误，请运行 `make migrate_hash`。
-*   **Drift Detected / Duplicate Column (字段已存在)**: 如果数据库里已经有了某个字段（比如因为你手动加过），但迁移文件里又要加一遍，请使用 `make migrate_set` 跳过该版本，或先清理数据库中的脏数据。
+*   **开发库只是落后于仓库已有 migration**: 直接执行 `make migrate_apply`，不要因为“缺字段”就重新 `make data`，也不要跳版本。
+*   **Drift Detected / Duplicate Column (字段已存在)**: 这通常表示数据库曾被手动改过，或当前库状态已经偏离迁移历史；不要把它和“开发库单纯还没 apply 最新 migration”混为一谈。只有在确认数据库已被手动改动、且你明确理解后果时，才考虑使用 `make migrate_set` 跳过版本，或先清理数据库中的脏状态。
 
 ---
 **请严格遵守此流程以保证数据库完整性。**
