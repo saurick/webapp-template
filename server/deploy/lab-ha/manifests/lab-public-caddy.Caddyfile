@@ -1,0 +1,103 @@
+{
+	admin off
+}
+
+(common_headers) {
+	bind [::]
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+	}
+}
+
+(http_proxy) {
+	import common_headers
+	reverse_proxy {args[0]} {
+		header_up Host {host}
+	}
+}
+
+(gitlab_proxy) {
+	import common_headers
+	reverse_proxy {args[0]} {
+		header_up Host {host}
+		# GitLab 需要把 session cookie 扩到父域，Portal 才能复用同一浏览器登录态。
+		header_down Set-Cookie "$" "; Domain=.saurick.space"
+	}
+}
+
+lab.saurick.space {
+	import http_proxy http://192.168.0.108:30089
+}
+
+preview.saurick.space {
+	import http_proxy http://192.168.0.108:30091
+}
+
+portal.saurick.space {
+	import http_proxy http://192.168.0.108:30088
+}
+
+harbor.saurick.space {
+	import http_proxy http://192.168.0.108:30002
+}
+
+grafana.saurick.space {
+	import http_proxy http://192.168.0.108:30081
+}
+
+headlamp.saurick.space {
+	import http_proxy http://192.168.0.108:30087
+}
+
+jaeger.saurick.space {
+	import http_proxy http://192.168.0.108:30686
+}
+
+prometheus.saurick.space {
+	import http_proxy http://192.168.0.108:30090
+}
+
+alertmanager.saurick.space {
+	import http_proxy http://192.168.0.108:30093
+}
+
+longhorn.saurick.space {
+	import http_proxy http://192.168.0.108:30084
+}
+
+hubble.saurick.space {
+	import http_proxy http://192.168.0.108:30085
+}
+
+seaweedfs.saurick.space {
+	import http_proxy http://192.168.0.108:30888
+}
+
+alertsink.saurick.space {
+	import http_proxy http://192.168.0.108:30086
+}
+
+gitlab.saurick.space {
+	import gitlab_proxy http://192.168.0.108:8929
+}
+
+s3.saurick.space {
+	import http_proxy http://192.168.0.108:30333
+}
+
+app.saurick.space {
+	import common_headers
+	reverse_proxy http://192.168.0.108:32668 {
+		header_up Host app.192.168.0.108.nip.io
+	}
+}
+
+argocd.saurick.space {
+	import common_headers
+	reverse_proxy https://192.168.0.108:30443 {
+		transport http {
+			tls_insecure_skip_verify
+		}
+		header_up Host {host}
+	}
+}

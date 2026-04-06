@@ -539,7 +539,7 @@ data:
               <a class="card" href="http://192.168.0.108:30086" target="_blank" rel="noreferrer" data-i18n-html="cards.alertSink">
                 <small>Alerts</small><strong>Alert Sink</strong><span>Recent webhook payloads for quick routing checks and triage.</span>
               </a>
-              <a class="card" href="http://192.168.0.108:8929/users/sign_in" target="_blank" rel="noreferrer" data-i18n-html="cards.gitlab">
+              <a class="card" href="http://192.168.0.108:8929/root/webapp-template-lab" target="_blank" rel="noreferrer" data-i18n-html="cards.gitlab">
                 <small>Source Code</small><strong>GitLab</strong><span>CI/CD and experiment repo.</span>
               </a>
             </div>
@@ -900,7 +900,7 @@ data:
           ];
           const GITLAB_LOGIN_REQUIRED_HEADER = 'x-portal-login-required';
           const LOADTEST_PROJECT_PATH = 'root/webapp-template-lab';
-          const PORTAL_BASE_URL = 'http://192.168.0.108:30088';
+          // Portal fetch 继续走同源代理复用登录态，但整页 GitLab 浏览保留直连地址，避免未登录时被 204 sentinel 截成空白页。
           const LOADTEST_RUN_URL = 'http://192.168.0.108:8929/root/webapp-template-lab/-/pipelines/new?ref=master&var[PIPELINE_MODE]=loadtest&var[LOADTEST_SCENARIO]=system';
           const LOADTEST_PIPELINES_URL = 'http://192.168.0.108:8929/root/webapp-template-lab/-/pipelines';
           const GITLAB_LOGIN_URL = 'http://192.168.0.108:8929/users/sign_in';
@@ -925,7 +925,7 @@ data:
           const LOADTEST_PORTAL_SUMMARY_PATH = (jobId) => `/gitlab/root/webapp-template-lab/-/jobs/${jobId}/artifacts/raw/server/deploy/lab-ha/artifacts/loadtest/job/portal-summary.json`;
           const LOADTEST_SUMMARY_PATH = (jobId) => `/gitlab/root/webapp-template-lab/-/jobs/${jobId}/artifacts/raw/server/deploy/lab-ha/artifacts/loadtest/job/summary.json`;
           const LOADTEST_META_PATH = (jobId) => `/gitlab/root/webapp-template-lab/-/jobs/${jobId}/artifacts/raw/server/deploy/lab-ha/artifacts/loadtest/job/meta.env`;
-          const LOADTEST_REPORT_URL = (jobId) => `${PORTAL_BASE_URL}/loadtest-report.html?job_id=${jobId}`;
+          const LOADTEST_REPORT_URL = (jobId) => `/loadtest-report.html?job_id=${jobId}`;
           const LOADTEST_PIPELINE_URL = (pipelineId) => `http://192.168.0.108:8929/root/webapp-template-lab/-/pipelines/${pipelineId}`;
           const LOADTEST_DASHBOARD_URL = (runId) => `http://192.168.0.108:30081/d/lab-ha-loadtest/ha-lab-load-test?orgId=1&var-testid=${encodeURIComponent(runId)}`;
           const LOADTEST_TRIGGER_MUTATION = `mutation internalPipelineCreate($input: PipelineCreateInput!) {
@@ -2642,7 +2642,7 @@ data:
             <div class="actions">
               <a class="btn" href="/">返回 Portal</a>
               <a class="btn" id="open-job" href="/gitlab/root/webapp-template-lab/-/jobs" target="_blank" rel="noreferrer">打开 Job</a>
-              <a class="btn primary hidden" id="login-link" href="/gitlab/users/sign_in" target="_blank" rel="noreferrer">登录 GitLab</a>
+              <a class="btn primary hidden" id="login-link" href="http://192.168.0.108:8929/users/sign_in" target="_blank" rel="noreferrer">登录 GitLab</a>
             </div>
           </div>
           <div class="status" id="status">加载中，请稍候...</div>
@@ -2651,6 +2651,7 @@ data:
         <script>
           const params = new URLSearchParams(window.location.search);
           const jobId = (params.get('job_id') || '').trim();
+          const isPublicPortalHost = window.location.hostname === 'saurick.space' || window.location.hostname.endsWith('.saurick.space');
           const statusNode = document.getElementById('status');
           const subtitleNode = document.getElementById('subtitle');
           const frameNode = document.getElementById('report-frame');
@@ -2663,6 +2664,7 @@ data:
             openJobLink.href = jobUrl(jobId);
             subtitleNode.textContent = `Job #${jobId} 的在线报告预览`;
           }
+          loginLink.href = isPublicPortalHost ? 'https://gitlab.saurick.space/users/sign_in' : 'http://192.168.0.108:8929/users/sign_in';
 
           const showStatus = (text, isError = false) => {
             statusNode.textContent = text;

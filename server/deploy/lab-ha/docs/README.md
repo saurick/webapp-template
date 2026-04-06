@@ -19,6 +19,7 @@
 - `docs/PROD_TRIAL.md`: WebApp 生产试验 Runbook
 - `docs/LOAD_TEST.md`: 实验室最小压测能力与观测口径
 - `docs/INTERNAL_DNS.md`: 内部域名与内网 DNS 说明
+- `docs/PUBLIC_GATEWAY.md`: 宿主机公网 `Caddy` 网关配置与 GitLab cookie 共享口径
 - `docs/CILIUM_GATEWAY_MIGRATION.md`: `Cilium Gateway API` 正式切换说明
 - `docs/TAILSCALE.md`: 外部运维访问通过 Tailscale 接入的边界、运维入口机脚本与验证方式
 - `docs/OPS_CHECKLIST.md`: 日常巡检清单
@@ -60,6 +61,7 @@
 - `manifests/blackbox-values.yaml`: Blackbox Exporter 探测配置
 - `manifests/metrics-server-values.yaml`: Metrics Server 值文件，给 HPA 提供资源指标
 - `manifests/gateway-api-v1.4.1-standard-install.yaml`: Gateway API CRD 真源，供 Cilium Gateway Controller 使用
+- `manifests/lab-public-caddy.Caddyfile`: 宿主机公网 `Caddy` 网关模板，包含 GitLab `Domain=.saurick.space` cookie 共享配置
 - `manifests/headlamp-values.yaml`: Headlamp 值文件，固定当前实验室 K8s UI 入口
 - `manifests/alert-webhook-receiver.yaml`: 实验室默认 webhook 告警接收页，可查看最近 payload
 - `manifests/webapp-governance.yaml`: webapp 命名空间治理基线

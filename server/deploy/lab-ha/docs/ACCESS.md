@@ -63,6 +63,12 @@ Portal 现在内置“内网 / 外网”访问模式切换：
 - SeaweedFS S3: `https://s3.saurick.space`
 - GitLab: `https://gitlab.saurick.space`
 
+说明：
+
+- 公网 `gitlab.saurick.space` 当前由宿主机侧网关补写 `Set-Cookie: Domain=.saurick.space`
+- 因此同一浏览器先在 `gitlab.saurick.space` 登录后，`portal.saurick.space` 下的 GitLab 代理请求现在可以复用这份登录态，不必再额外登录一次
+- 若后续这条体验再次退化，先执行 `curl --noproxy '*' -I https://gitlab.saurick.space/users/sign_in`，确认 `_gitlab_session` 响应头里仍然带有 `Domain=.saurick.space`
+
 ## Tracing note
 
 - `Jaeger` 当前采用单实例 + `Badger` 本地持久化 + `7d TTL`
