@@ -10,9 +10,7 @@
 ## 目录
 
 - `manifests/argocd-webapp-prod-trial-app.yaml`：Argo CD 应用定义
-- `manifests/argocd-webapp-prod-trial-app-internal.yaml`：切换到内部域名 values overlay 的 Argo CD 应用定义
 - `charts/webapp-template/values-prod-trial.yaml`：生产试验 Helm values
-- `charts/webapp-template/values-prod-trial-internal.yaml`：内部域名 Helm values overlay
 - `argocd/webapp-prod-trial/runtime-secret.example.yaml`：运行时 Secret 示例
 - `docs/INTERNAL_DNS.md`：内部域名与内网 DNS 落地说明
 
@@ -62,8 +60,8 @@ kubectl --kubeconfig /Users/simon/.kube/ha-lab.conf apply \
 ```
 
 3. 在 Argo CD 中手动同步 `webapp-template-prod-trial`
-4. 当前仓库默认 active host 为 `webapp-trial.192.168.0.108.nip.io`
-5. 当前仓库默认 preview host 为 `webapp-trial-preview.192.168.0.108.nip.io`
+4. 当前仓库默认正式 active 入口为 `http://192.168.0.108:30089`
+5. 当前仓库默认正式 preview 入口为 `http://192.168.0.108:30091`
 
 ## 蓝绿发布口径
 
@@ -86,27 +84,23 @@ kubectl argo rollouts -n webapp-prod-trial promote webapp-template-prod-trial
 
 ## 内部域名优先建议
 
-如果当前阶段先走内网访问，不急着开放公网，建议优先使用：
+如果当前阶段先走内网访问，不急着开放公网，直接给下面两个域名配置多条 A 记录即可：
 
-- `/Users/simon/projects/webapp-template/server/deploy/lab-ha/manifests/argocd-webapp-prod-trial-app-internal.yaml`
+- `webapp-trial.lab.home.arpa`
+- `webapp-trial-preview.lab.home.arpa`
 
-操作顺序：
+推荐解析目标：
 
-1. 先确认 `/Users/simon/projects/webapp-template/server/deploy/lab-ha/charts/webapp-template/values-prod-trial-internal.yaml` 里的内部域名符合当前预期
-2. 如果访问端和集群处于同一二层广播域，在本机 `hosts` 或内网 DNS 中把该域名指向 `192.168.0.120`
-3. 如果访问端是通过 VPN / 子网路由去访问 `192.168.0.0/24`，先不要把“内部域名可达”建立在 `192.168.0.120` 上，而是先继续用节点 IP + NodePort 验证 Host 路由
-4. `192.168.0.120` 是 `MetalLB` 分配给 `ingress-nginx` 的 VIP，不是 `node1/node2/node3` 任意一台机器的固定 IP
-5. 当前阶段正式推荐入口是：`webapp-trial.lab.home.arpa` 指向 `192.168.0.7 / 108 / 128` 三条 A 记录，并统一走 `:32668`
-6. 若要在内网继续做蓝绿演练，preview 入口对应 `webapp-trial-preview.lab.home.arpa`
-7. 为了让 NodePort 不依赖“本机正好有 ingress pod”，当前 `ingress-nginx-controller` 已切到 `externalTrafficPolicy=Cluster`
-8. 再执行：
+- `192.168.0.7`
+- `192.168.0.108`
+- `192.168.0.128`
 
-```bash
-kubectl --kubeconfig /Users/simon/.kube/ha-lab.conf apply \
-  -f /Users/simon/projects/webapp-template/server/deploy/lab-ha/manifests/argocd-webapp-prod-trial-app-internal.yaml
-```
+固定访问端口：
 
-完整说明见 `/Users/simon/projects/webapp-template/server/deploy/lab-ha/docs/INTERNAL_DNS.md`。
+- active：`30089`
+- preview：`30091`
+
+这一步已经不再需要单独的 Helm overlay，也不再需要额外切 Argo Application。完整说明见 `/Users/simon/projects/webapp-template/server/deploy/lab-ha/docs/INTERNAL_DNS.md`。
 
 ## 验收
 
@@ -115,8 +109,8 @@ kubectl --kubeconfig /Users/simon/.kube/ha-lab.conf apply \
 1. `kubectl --kubeconfig /Users/simon/.kube/ha-lab.conf -n webapp-prod-trial get rollout webapp-template-prod-trial`
 2. `kubectl --kubeconfig /Users/simon/.kube/ha-lab.conf -n webapp-prod-trial get svc webapp-template-prod-trial webapp-template-prod-trial-preview`
 3. `bash /Users/simon/projects/webapp-template/server/deploy/lab-ha/scripts/check-webapp-prod-trial-bluegreen.sh`
-4. `curl --noproxy '*' -H 'Host: webapp-trial.192.168.0.108.nip.io' http://192.168.0.108:32668/healthz`
-5. `curl --noproxy '*' -H 'Host: webapp-trial-preview.192.168.0.108.nip.io' http://192.168.0.108:32668/readyz`
+4. `curl --noproxy '*' http://192.168.0.108:30089/healthz`
+5. `curl --noproxy '*' http://192.168.0.108:30091/readyz`
 6. 管理员登录、普通登录、核心接口最少走一遍
 7. `bash /Users/simon/projects/webapp-template/server/deploy/lab-ha/scripts/check-webapp-prod-trial-tracing.sh`
 8. 打开 `Grafana -> HA Lab / GitOps & Delivery`，确认 active/preview 探测和 prod-trial 健康状态一致
@@ -129,24 +123,13 @@ kubectl --kubeconfig /Users/simon/.kube/ha-lab.conf apply \
 如果访问端不是同二层网络，先用下面这种保守验证方式：
 
 ```bash
-bash /Users/simon/projects/webapp-template/server/deploy/lab-ha/scripts/check-webapp-prod-trial-internal.sh
+bash /Users/simon/projects/webapp-template/server/deploy/lab-ha/scripts/check-webapp-prod-trial-bluegreen.sh \
+  192.168.0.7 192.168.0.108 192.168.0.128
 
-HOST_HEADER_ACTIVE=webapp-trial.lab.home.arpa \
-HOST_HEADER_PREVIEW=webapp-trial-preview.lab.home.arpa \
-  bash /Users/simon/projects/webapp-template/server/deploy/lab-ha/scripts/check-webapp-prod-trial-bluegreen.sh \
-    192.168.0.7 192.168.0.108 192.168.0.128
-
-curl --noproxy '*' -H 'Host: webapp-trial.lab.home.arpa' \
-  http://192.168.0.7:32668/readyz
-
-curl --noproxy '*' -H 'Host: webapp-trial.lab.home.arpa' \
-  http://192.168.0.108:32668/readyz
-
-curl --noproxy '*' -H 'Host: webapp-trial.lab.home.arpa' \
-  http://192.168.0.128:32668/readyz
-
-curl --noproxy '*' -H 'Host: webapp-trial-preview.lab.home.arpa' \
-  http://192.168.0.108:32668/readyz
+curl --noproxy '*' http://192.168.0.7:30089/readyz
+curl --noproxy '*' http://192.168.0.108:30089/readyz
+curl --noproxy '*' http://192.168.0.128:30089/readyz
+curl --noproxy '*' http://192.168.0.108:30091/readyz
 ```
 
 ## 回滚

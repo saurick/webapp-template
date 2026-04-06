@@ -13,7 +13,6 @@ metadata:
 spec:
   args:
     - name: readyUrl
-    - name: hostHeader
   metrics:
     - name: readyz
       count: {{ $analysis.count }}
@@ -23,10 +22,7 @@ spec:
       successCondition: result == {{ $analysis.expectedReadyBody | quote }}
       provider:
         web:
-          # 这里故意走 NodePort + Host 头，确保蓝绿切换验证的是最终入口，而不是只验证 ClusterIP。
+          # 这里直接走正式 Gateway 入口，确保蓝绿切换验证的是 active/preview 对外端口。
           url: '{{ "{{args.readyUrl}}" }}'
           timeoutSeconds: {{ $analysis.timeoutSeconds }}
-          headers:
-            - key: Host
-              value: '{{ "{{args.hostHeader}}" }}'
 {{- end }}

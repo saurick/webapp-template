@@ -64,6 +64,12 @@ data:
             align-items: flex-start;
             gap: 18px;
           }
+          .hero-controls {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+            gap: 12px;
+          }
           .hero-copy {
             min-width: 0;
             flex: 1;
@@ -75,7 +81,19 @@ data:
             font-size: 12px;
             margin-bottom: 14px;
           }
-          .lang-switch {
+          .control-stack {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            align-items: flex-start;
+          }
+          .control-label {
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 0.14em;
+            font-size: 11px;
+          }
+          .control-switch {
             display: inline-flex;
             gap: 8px;
             padding: 6px;
@@ -83,7 +101,7 @@ data:
             border: 1px solid rgba(255,255,255,0.08);
             background: rgba(255,255,255,0.04);
           }
-          .lang-btn {
+          .control-btn {
             border: 0;
             border-radius: 999px;
             padding: 8px 12px;
@@ -96,11 +114,11 @@ data:
             letter-spacing: 0.04em;
             transition: background 160ms ease, color 160ms ease, transform 160ms ease;
           }
-          .lang-btn:hover {
+          .control-btn:hover {
             color: var(--text);
             transform: translateY(-1px);
           }
-          .lang-btn[aria-pressed="true"] {
+          .control-btn[aria-pressed="true"] {
             background: linear-gradient(180deg, rgba(102,217,239,0.28), rgba(102,217,239,0.16));
             color: var(--text);
             box-shadow: inset 0 0 0 1px rgba(102,217,239,0.18);
@@ -257,7 +275,23 @@ data:
             font-size: 13px;
             word-break: break-all;
           }
+          .cred-meta {
+            margin-top: 4px;
+            color: var(--muted);
+            font-size: 12px;
+            line-height: 1.6;
+            word-break: break-word;
+          }
+          .cred-actions {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+            gap: 8px;
+          }
           .copy {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
             border: 0;
             border-radius: 999px;
             min-width: 112px;
@@ -268,7 +302,13 @@ data:
             font-size: 12px;
             white-space: nowrap;
           }
-          .copy:hover { background: rgba(102,217,239,0.22); }
+          .copy:hover {
+            background: rgba(102,217,239,0.22);
+          }
+          .copy:disabled {
+            opacity: 0.42;
+            cursor: not-allowed;
+          }
           ul { margin: 10px 0 0; padding-left: 18px; }
           code {
             background: rgba(255,255,255,0.06);
@@ -375,7 +415,7 @@ data:
             .hero-head {
               flex-direction: column;
             }
-            .lang-switch {
+            .hero-controls {
               align-self: flex-start;
             }
           }
@@ -389,27 +429,44 @@ data:
                 <div class="eyebrow" data-i18n="hero.eyebrow">3-node HA Lab</div>
                 <h1 data-i18n="hero.title">WebApp Lab Portal</h1>
                 <p class="sub" data-i18n-html="hero.sub">
-                  Direct browser entrypoints for <code>WebApp Lab</code> and
-                  <code>WebApp Prod-Trial</code> on the current cluster. These links are mapped to
-                  stable <code>192.168.0.108:port</code> endpoints so they keep working even when
-                  <code>nip.io</code> or Host-header based routes are unreliable on the client side.
+                  This portal now keeps both internal <code>IP:Port</code> entrypoints and public
+                  <code>HTTPS</code> domains. Use the access switch on the right to decide which
+                  target each card opens.
                 </p>
               </div>
-              <div
-                class="lang-switch"
-                role="group"
-                aria-label="Switch language"
-                data-i18n-aria-label="language.switch"
-              >
-                <button type="button" class="lang-btn" data-lang="zh" aria-pressed="false">中文</button>
-                <button type="button" class="lang-btn" data-lang="en" aria-pressed="true">EN</button>
+              <div class="hero-controls">
+                <div class="control-stack">
+                  <div class="control-label" data-i18n="access.title">Link target</div>
+                  <div
+                    class="control-switch"
+                    role="group"
+                    aria-label="Switch portal access mode"
+                    data-i18n-aria-label="access.switch"
+                  >
+                    <button type="button" class="control-btn access-btn" data-access-mode="internal" aria-pressed="false" data-i18n="access.internal">Internal</button>
+                    <button type="button" class="control-btn access-btn" data-access-mode="external" aria-pressed="false" data-i18n="access.external">Public</button>
+                  </div>
+                </div>
+                <div class="control-stack">
+                  <div class="control-label" data-i18n="language.title">Language</div>
+                  <div
+                    class="control-switch"
+                    role="group"
+                    aria-label="Switch language"
+                    data-i18n-aria-label="language.switch"
+                  >
+                    <button type="button" class="control-btn lang-btn" data-lang="zh" aria-pressed="false">中文</button>
+                    <button type="button" class="control-btn lang-btn" data-lang="en" aria-pressed="true">EN</button>
+                  </div>
+                </div>
               </div>
             </div>
             <div class="pill-row">
               <div class="pill" data-i18n-html="pill.mode"><b>Mode</b> Experiment HA</div>
               <div class="pill" data-i18n-html="pill.nodes"><b>Nodes</b> 3 VM / single stable host</div>
               <div class="pill" data-i18n-html="pill.status"><b>Status</b> <span class="status-ok">Healthy</span></div>
-              <div class="pill" data-i18n-html="pill.bestEntry"><b>Best Entry</b> IP:Port direct</div>
+              <div id="access-mode-pill" class="pill"><b>Access</b> Internal links</div>
+              <div id="best-entry-pill" class="pill"><b>Best Entry</b> IP:Port direct</div>
               <div class="pill" data-i18n-html="pill.curated"><b>Portal Curated</b> 2026-03-22</div>
             </div>
             <div class="grid">
@@ -486,7 +543,7 @@ data:
                 <small>Source Code</small><strong>GitLab</strong><span>CI/CD and experiment repo.</span>
               </a>
             </div>
-            <div class="tag" data-i18n="tag.stableEndpoints">Stable direct browser endpoints</div>
+            <div id="endpoint-mode-tag" class="tag">Stable direct browser endpoints</div>
           </section>
 
           <section class="snapshot">
@@ -732,6 +789,24 @@ data:
                 </div>
                 <button type="button" class="copy" data-copy="L4b!Runr2026#Git" data-copy-state="default">Copy password</button>
               </div>
+              <div class="cred-line">
+                <div>
+                  <div class="cred-label" data-i18n="cred.headlampTokenLabel">Headlamp 10y token</div>
+                  <div id="headlamp-token-summary" class="cred-value" data-i18n="cred.headlampTokenLoading">Loading the 10-year Headlamp token from the portal runtime secret.</div>
+                  <div id="headlamp-token-meta" class="cred-meta hidden"></div>
+                </div>
+                <div class="cred-actions">
+                  <button
+                    id="headlamp-token-copy"
+                    type="button"
+                    class="copy"
+                    data-copy=""
+                    data-copy-default-key="copy.token"
+                    data-copy-state="default"
+                    disabled
+                  >Copy token</button>
+                </div>
+              </div>
             </div>
 
             <div class="cred">
@@ -776,9 +851,9 @@ data:
             <div class="note">
               <h2 data-i18n="notes.seaweedfsTitle">SeaweedFS S3 note</h2>
               <p data-i18n-html="notes.seaweedfsBody">
-                <code>http://192.168.0.108:30333</code> is an S3 API endpoint, not a normal web UI.
-                Browsers hit it without signed credentials, so an <code>AccessDenied</code> XML response
-                is expected. Use <code>30888</code> for the filer UI instead.
+                SeaweedFS S3 is an API endpoint, not a normal web UI. Browsers hit it without signed
+                credentials, so an <code>AccessDenied</code> response is expected. Use the Filer UI
+                entry instead.
               </p>
             </div>
             <div class="note">
@@ -788,20 +863,44 @@ data:
                 <code>server/deploy/lab-ha/docs</code> inside the repository.
               </p>
               <ul>
-                <li><a href="http://192.168.0.108:8929/root/webapp-template-lab/-/blob/master/server/deploy/lab-ha/docs/ACCESS.md" target="_blank" rel="noreferrer">ACCESS.md</a></li>
-                <li><a href="http://192.168.0.108:8929/root/webapp-template-lab/-/blob/master/server/deploy/lab-ha/docs/OPS_CHECKLIST.md" target="_blank" rel="noreferrer">OPS_CHECKLIST.md</a></li>
-                <li><a href="http://192.168.0.108:8929/root/webapp-template-lab/-/blob/master/server/deploy/lab-ha/docs/TROUBLESHOOTING.md" target="_blank" rel="noreferrer">TROUBLESHOOTING.md</a></li>
-                <li><a href="http://192.168.0.108:8929/root/webapp-template-lab/-/blob/master/server/deploy/lab-ha/docs/RECOVERY_RUNBOOK.md" target="_blank" rel="noreferrer">RECOVERY_RUNBOOK.md</a></li>
-                <li><a href="http://192.168.0.108:8929/root/webapp-template-lab/-/blob/master/server/deploy/lab-ha/docs/LOAD_TEST.md" target="_blank" rel="noreferrer">LOAD_TEST.md</a></li>
-                <li><a href="http://192.168.0.108:8929/root/webapp-template-lab/-/blob/master/server/deploy/lab-ha/docs/TEST_REPORT.md" target="_blank" rel="noreferrer">TEST_REPORT.md</a></li>
-                <li><a href="http://192.168.0.108:8929/root/webapp-template-lab/-/blob/master/server/deploy/lab-ha/docs/HANDOVER.md" target="_blank" rel="noreferrer">HANDOVER.md</a></li>
+                <li><a href="http://192.168.0.108:8929/root/webapp-template-lab/-/blob/master/server/deploy/lab-ha/docs/ACCESS.md" target="_blank" rel="noreferrer" data-canonical-href="http://192.168.0.108:8929/root/webapp-template-lab/-/blob/master/server/deploy/lab-ha/docs/ACCESS.md">ACCESS.md</a></li>
+                <li><a href="http://192.168.0.108:8929/root/webapp-template-lab/-/blob/master/server/deploy/lab-ha/docs/OPS_CHECKLIST.md" target="_blank" rel="noreferrer" data-canonical-href="http://192.168.0.108:8929/root/webapp-template-lab/-/blob/master/server/deploy/lab-ha/docs/OPS_CHECKLIST.md">OPS_CHECKLIST.md</a></li>
+                <li><a href="http://192.168.0.108:8929/root/webapp-template-lab/-/blob/master/server/deploy/lab-ha/docs/TROUBLESHOOTING.md" target="_blank" rel="noreferrer" data-canonical-href="http://192.168.0.108:8929/root/webapp-template-lab/-/blob/master/server/deploy/lab-ha/docs/TROUBLESHOOTING.md">TROUBLESHOOTING.md</a></li>
+                <li><a href="http://192.168.0.108:8929/root/webapp-template-lab/-/blob/master/server/deploy/lab-ha/docs/RECOVERY_RUNBOOK.md" target="_blank" rel="noreferrer" data-canonical-href="http://192.168.0.108:8929/root/webapp-template-lab/-/blob/master/server/deploy/lab-ha/docs/RECOVERY_RUNBOOK.md">RECOVERY_RUNBOOK.md</a></li>
+                <li><a href="http://192.168.0.108:8929/root/webapp-template-lab/-/blob/master/server/deploy/lab-ha/docs/LOAD_TEST.md" target="_blank" rel="noreferrer" data-canonical-href="http://192.168.0.108:8929/root/webapp-template-lab/-/blob/master/server/deploy/lab-ha/docs/LOAD_TEST.md">LOAD_TEST.md</a></li>
+                <li><a href="http://192.168.0.108:8929/root/webapp-template-lab/-/blob/master/server/deploy/lab-ha/docs/TEST_REPORT.md" target="_blank" rel="noreferrer" data-canonical-href="http://192.168.0.108:8929/root/webapp-template-lab/-/blob/master/server/deploy/lab-ha/docs/TEST_REPORT.md">TEST_REPORT.md</a></li>
+                <li><a href="http://192.168.0.108:8929/root/webapp-template-lab/-/blob/master/server/deploy/lab-ha/docs/HANDOVER.md" target="_blank" rel="noreferrer" data-canonical-href="http://192.168.0.108:8929/root/webapp-template-lab/-/blob/master/server/deploy/lab-ha/docs/HANDOVER.md">HANDOVER.md</a></li>
               </ul>
             </div>
           </section>
         </div>
         <script>
           const PORTAL_LANGUAGE_STORAGE_KEY = 'labPortalLanguage';
+          const PORTAL_ACCESS_MODE_STORAGE_KEY = 'labPortalAccessMode';
+          const ACCESS_MODE_INTERNAL = 'internal';
+          const ACCESS_MODE_EXTERNAL = 'external';
+          const PUBLIC_DOMAIN_SUFFIX = 'saurick.space';
+          const URL_BASE_MAPPINGS = [
+            { internal: 'https://192.168.0.108:30443', external: 'https://argocd.saurick.space' },
+            { internal: 'http://192.168.0.108:30686', external: 'https://jaeger.saurick.space' },
+            { internal: 'http://192.168.0.108:8929', external: 'https://gitlab.saurick.space' },
+            { internal: 'http://192.168.0.108:30888', external: 'https://seaweedfs.saurick.space' },
+            { internal: 'http://192.168.0.108:32668', external: 'https://app.saurick.space' },
+            { internal: 'http://192.168.0.108:30093', external: 'https://alertmanager.saurick.space' },
+            { internal: 'http://192.168.0.108:30090', external: 'https://prometheus.saurick.space' },
+            { internal: 'http://192.168.0.108:30089', external: 'https://lab.saurick.space' },
+            { internal: 'http://192.168.0.108:30088', external: 'https://portal.saurick.space' },
+            { internal: 'http://192.168.0.108:30087', external: 'https://headlamp.saurick.space' },
+            { internal: 'http://192.168.0.108:30086', external: 'https://alertsink.saurick.space' },
+            { internal: 'http://192.168.0.108:30085', external: 'https://hubble.saurick.space' },
+            { internal: 'http://192.168.0.108:30084', external: 'https://longhorn.saurick.space' },
+            { internal: 'http://192.168.0.108:30081', external: 'https://grafana.saurick.space' },
+            { internal: 'http://192.168.0.108:30002', external: 'https://harbor.saurick.space' },
+            { internal: 'http://192.168.0.108:30091', external: 'https://preview.saurick.space' },
+          ];
+          const GITLAB_LOGIN_REQUIRED_HEADER = 'x-portal-login-required';
           const LOADTEST_PROJECT_PATH = 'root/webapp-template-lab';
+          const PORTAL_BASE_URL = 'http://192.168.0.108:30088';
           const LOADTEST_RUN_URL = 'http://192.168.0.108:8929/root/webapp-template-lab/-/pipelines/new?ref=master&var[PIPELINE_MODE]=loadtest&var[LOADTEST_SCENARIO]=system';
           const LOADTEST_PIPELINES_URL = 'http://192.168.0.108:8929/root/webapp-template-lab/-/pipelines';
           const GITLAB_LOGIN_URL = 'http://192.168.0.108:8929/users/sign_in';
@@ -818,13 +917,15 @@ data:
           const OPS_BACKUP_DASHBOARD_URL = 'http://192.168.0.108:30081/d/lab-ha-postgres/ha-lab-postgresql-and-backup';
           const OPS_ACTIVE_URL = 'http://192.168.0.108:30089/';
           const OPS_PREVIEW_URL = 'http://192.168.0.108:30091/';
+          const HEADLAMP_ACCESS_PATH = '/portal-secrets/headlamp-access.json';
+          const HEADLAMP_SYNC_HINT = 'bash /Users/simon/projects/webapp-template/server/deploy/lab-ha/scripts/sync-headlamp-portal-token.sh';
           const LOADTEST_TRIGGER_FORM_PATH = `/gitlab/${LOADTEST_PROJECT_PATH}/-/pipelines/new?ref=master`;
           const LOADTEST_GRAPHQL_PATH = '/gitlab/api/graphql';
           const LOADTEST_JOBS_API_PATH = `/gitlab-api/projects/${GITLAB_PROJECT_ID}/jobs?per_page=40&scope[]=created&scope[]=pending&scope[]=running&scope[]=failed&scope[]=success`;
           const LOADTEST_PORTAL_SUMMARY_PATH = (jobId) => `/gitlab/root/webapp-template-lab/-/jobs/${jobId}/artifacts/raw/server/deploy/lab-ha/artifacts/loadtest/job/portal-summary.json`;
           const LOADTEST_SUMMARY_PATH = (jobId) => `/gitlab/root/webapp-template-lab/-/jobs/${jobId}/artifacts/raw/server/deploy/lab-ha/artifacts/loadtest/job/summary.json`;
           const LOADTEST_META_PATH = (jobId) => `/gitlab/root/webapp-template-lab/-/jobs/${jobId}/artifacts/raw/server/deploy/lab-ha/artifacts/loadtest/job/meta.env`;
-          const LOADTEST_REPORT_URL = (jobId) => `/loadtest-report.html?job_id=${jobId}`;
+          const LOADTEST_REPORT_URL = (jobId) => `${PORTAL_BASE_URL}/loadtest-report.html?job_id=${jobId}`;
           const LOADTEST_PIPELINE_URL = (pipelineId) => `http://192.168.0.108:8929/root/webapp-template-lab/-/pipelines/${pipelineId}`;
           const LOADTEST_DASHBOARD_URL = (runId) => `http://192.168.0.108:30081/d/lab-ha-loadtest/ha-lab-load-test?orgId=1&var-testid=${encodeURIComponent(runId)}`;
           const LOADTEST_TRIGGER_MUTATION = `mutation internalPipelineCreate($input: PipelineCreateInput!) {
@@ -854,15 +955,23 @@ data:
           const translations = {
             en: {
               'document.title': 'WebApp Lab Portal',
+              'language.title': 'Language',
               'language.switch': 'Switch language',
+              'access.title': 'Link target',
+              'access.switch': 'Switch portal access mode',
+              'access.internal': 'Internal',
+              'access.external': 'Public',
               'hero.eyebrow': '3-node HA Lab',
               'hero.title': 'WebApp Lab Portal',
-              'hero.sub': 'Direct browser entrypoints for <code>WebApp Lab</code> and <code>WebApp Prod-Trial</code> on the current cluster. These links are mapped to stable <code>192.168.0.108:port</code> endpoints so they keep working even when <code>nip.io</code> or Host-header based routes are unreliable on the client side.',
+              'hero.sub': 'This portal now keeps both internal <code>IP:Port</code> entrypoints and public <code>HTTPS</code> domains. Use the access switch on the right to decide which target each card opens.',
               'pill.mode': '<b>Mode</b> Experiment HA',
               'pill.nodes': '<b>Nodes</b> 3 VM / single stable host',
               'pill.status': '<b>Status</b> <span class="status-ok">Healthy</span>',
-              'pill.bestEntry': '<b>Best Entry</b> IP:Port direct',
-              'pill.curated': '<b>Portal Curated</b> 2026-03-22',
+              'pill.accessInternal': '<b>Access</b> Internal links',
+              'pill.accessExternal': '<b>Access</b> Public domains',
+              'pill.bestEntryInternal': '<b>Best Entry</b> IP:Port direct',
+              'pill.bestEntryExternal': '<b>Best Entry</b> Public HTTPS',
+              'pill.curated': '<b>Portal Curated</b> 2026-04-06',
               'cards.app': '<small>App</small><strong>WebApp Lab</strong><span>Current lab entry via the shared ingress.</span>',
               'cards.portal': '<small>Portal</small><strong>Lab Portal</strong><span>This navigation page itself.</span>',
               'cards.registry': '<small>Registry</small><strong>Harbor</strong><span>Container registry UI.</span>',
@@ -875,19 +984,20 @@ data:
               'cards.delivery': '<small>Delivery</small><strong>WebApp GitOps &amp; Release</strong><span>WebApp Lab sync plus WebApp Prod-Trial active/preview release signals.</span>',
               'cards.prodTrialActive': '<small>Release</small><strong>WebApp Prod-Trial Active</strong><span>Current live release entry routed to the active Service.</span>',
               'cards.prodTrialPreview': '<small>Release</small><strong>WebApp Prod-Trial Preview</strong><span>Pre-release validation entry routed to the preview Service.</span>',
-              'cards.runLoadtest': '<small>Testing</small><strong>Run Load Test</strong><span>Portal directly triggers the safe default system scenario. Results stay on 192-address pages.</span>',
+              'cards.runLoadtest': '<small>Testing</small><strong>Run Load Test</strong><span>Portal directly triggers the safe default system scenario and links to the latest report.</span>',
               'cards.loadtestDashboard': '<small>Testing</small><strong>Load Test Dashboard</strong><span>Grafana view for k6 remote-write trends, latency, failures, and per-step breakdown.</span>',
               'cards.loadtestDashboardOfficial': '<small>Testing</small><strong>Official k6 Dashboard</strong><span>Official Grafana k6 Prometheus dashboard, adapted to the lab Prometheus datasource.</span>',
               'cards.loadtest': '<small>Testing</small><strong>Load Test Guide</strong><span>k6 entry commands, safe scenarios, and observability flow for HA drills.</span>',
               'cards.prometheus': '<small>Metrics</small><strong>Prometheus</strong><span>Raw scrape and query UI.</span>',
               'cards.alertmanager': '<small>Alerts</small><strong>Alertmanager</strong><span>Alert grouping and routing.</span>',
-              'cards.argocd': '<small>GitOps</small><strong>Argo CD</strong><span>Self-signed HTTPS. Browser may ask you to continue once.</span>',
+              'cards.argocd': '<small>GitOps</small><strong>Argo CD</strong><span>GitOps control plane. Internal IP keeps the original self-signed TLS; the public gateway terminates HTTPS for browsers.</span>',
               'cards.longhorn': '<small>Storage</small><strong>Longhorn</strong><span>Persistent volume UI.</span>',
               'cards.hubble': '<small>Network</small><strong>Hubble</strong><span>Cilium flow visibility UI.</span>',
               'cards.seaweedfs': '<small>Object Store</small><strong>SeaweedFS Filer</strong><span>Human-friendly browser UI.</span>',
               'cards.alertSink': '<small>Alerts</small><strong>Alert Sink</strong><span>Recent webhook payloads for quick routing checks and triage.</span>',
               'cards.gitlab': '<small>Source Code</small><strong>GitLab</strong><span>CI/CD and experiment repo.</span>',
-              'tag.stableEndpoints': 'Stable direct browser endpoints',
+              'tag.internalEndpoints': 'Internal LAN browser endpoints',
+              'tag.externalEndpoints': 'Public HTTPS browser endpoints',
               'snapshot.loadtestTitle': 'Latest Load Test',
               'snapshot.alertSinkLatestTitle': 'Latest Real Alert',
               'snapshot.coldStartTitle': 'Latest Cold-Start Check',
@@ -953,10 +1063,18 @@ data:
               'snapshot.alerts': '<h2>Alert Delivery</h2><div class="status-value status-ok">Check live</div><p>Use <a href="http://192.168.0.108:30093" target="_blank" rel="noreferrer">Alertmanager</a> and the alert sink to confirm current routing. The portal only records the default path.</p>',
               'snapshot.blackbox': '<h2>Blackbox Probes</h2><div class="status-value status-ok">Check Grafana</div><p>Human-facing entrypoints are under Prometheus blackbox probing. Direct truth remains in Prometheus, Grafana, and Alertmanager, not in the static page itself.</p>',
               'cred.defaultAccountsTitle': 'Default Accounts',
+              'cred.headlampTokenLabel': 'Headlamp 10y token',
+              'cred.headlampTokenLoading': 'Loading the 10-year Headlamp token from the portal runtime secret.',
+              'cred.headlampTokenMissing': 'Portal token secret has not been synced yet.',
+              'cred.headlampTokenMissingHint': 'Run the sync script once to seed this card.',
+              'cred.headlampTokenUnavailable': 'Portal token secret is temporarily unavailable.',
+              'cred.headlampTokenUnavailableHint': 'Re-sync the token secret or use the CLI fallback to mint a temporary token.',
+              'cred.headlampTokenIssued': 'Issued ',
+              'cred.headlampTokenExpires': 'Expires ',
               'cred.quickNotesTitle': 'Quick Notes',
-              'quickNotes.argocd': 'Self-signed HTTPS. Browser warning once is expected.',
+              'quickNotes.argocd': 'Internal IP keeps self-signed TLS; the public gateway presents a normal browser certificate.',
               'quickNotes.seaweedfsS3': '30333 is API-only. Browser AccessDenied is expected.',
-              'quickNotes.filerUi': 'Use 30888 for human browsing and basic object checks.',
+              'quickNotes.filerUi': 'Use the Filer UI card for human browsing and basic object checks.',
               'quickNotes.gitops': 'GitLab CI + Argo CD drive WebApp Lab delivery; WebApp Prod-Trial blue-green status lives in the release dashboard.',
               'notes.purposeTitle': 'What Portal is for',
               'notes.purpose1': 'Central landing page for every lab system.',
@@ -964,24 +1082,34 @@ data:
               'notes.purpose3': 'Explains which endpoints are web pages and which are APIs.',
               'notes.purpose4': 'Lets future operators or AI pick up the lab quickly.',
               'notes.seaweedfsTitle': 'SeaweedFS S3 note',
-              'notes.seaweedfsBody': '<code>http://192.168.0.108:30333</code> is an S3 API endpoint, not a normal web UI. Browsers hit it without signed credentials, so an <code>AccessDenied</code> XML response is expected. Use <code>30888</code> for the filer UI instead.',
+              'notes.seaweedfsBody': 'SeaweedFS S3 is an API endpoint, not a normal web UI. Browsers hit it without signed credentials, so an <code>AccessDenied</code> response is expected. Use the Filer UI entry instead.',
               'notes.docsTitle': 'Docs',
               'notes.docsBody': 'Full runbook, access notes, HA drills, and handover docs live in <code>server/deploy/lab-ha/docs</code> inside the repository.',
               'copy.default': 'Copy password',
+              'copy.token': 'Copy token',
               'copy.success': 'Copied',
               'copy.fallback': 'Manual copy',
+              'copy.prompt': 'Clipboard access is unavailable. Please copy the value below manually:',
             },
             zh: {
               'document.title': 'WebApp Lab 门户',
+              'language.title': '语言',
               'language.switch': '切换语言',
+              'access.title': '链接目标',
+              'access.switch': '切换 Portal 访问模式',
+              'access.internal': '内网',
+              'access.external': '外网',
               'hero.eyebrow': '3 节点高可用实验室',
               'hero.title': 'WebApp Lab 导航门户',
-              'hero.sub': '当前集群里 <code>WebApp Lab</code> 与 <code>WebApp Prod-Trial</code> 的人类可直接访问入口页。这些链接统一映射到稳定的 <code>192.168.0.108:port</code> 端口，因此即使客户端侧的 <code>nip.io</code> 或基于 Host 头的路由不稳定，也仍可直接打开。',
+              'hero.sub': '这个 Portal 现在同时保留内网 <code>IP:Port</code> 入口和公网 <code>HTTPS</code> 域名。右侧切换按钮决定每张卡片打开哪一套地址。',
               'pill.mode': '<b>模式</b> 实验高可用',
               'pill.nodes': '<b>节点</b> 3 台 VM / 单稳定入口主机',
               'pill.status': '<b>状态</b> <span class="status-ok">健康</span>',
-              'pill.bestEntry': '<b>最佳入口</b> 直连 IP:Port',
-              'pill.curated': '<b>Portal 收口时间</b> 2026-03-22',
+              'pill.accessInternal': '<b>访问</b> 内网链接',
+              'pill.accessExternal': '<b>访问</b> 外网域名',
+              'pill.bestEntryInternal': '<b>最佳入口</b> 直连 IP:Port',
+              'pill.bestEntryExternal': '<b>最佳入口</b> 公网 HTTPS',
+              'pill.curated': '<b>Portal 收口时间</b> 2026-04-06',
               'cards.app': '<small>应用</small><strong>WebApp Lab</strong><span>当前 lab 入口，走共享 ingress。</span>',
               'cards.portal': '<small>门户</small><strong>实验室导航页</strong><span>就是当前这张导航页。</span>',
               'cards.registry': '<small>镜像仓库</small><strong>Harbor</strong><span>容器镜像仓库界面。</span>',
@@ -994,19 +1122,20 @@ data:
               'cards.delivery': '<small>交付</small><strong>WebApp GitOps 与发布</strong><span>WebApp Lab 同步，以及 WebApp Prod-Trial active/preview 发布信号。</span>',
               'cards.prodTrialActive': '<small>发布验证</small><strong>WebApp Prod-Trial Active</strong><span>当前对外生效的正式侧入口。</span>',
               'cards.prodTrialPreview': '<small>发布验证</small><strong>WebApp Prod-Trial Preview</strong><span>上线前验新的预发布入口。</span>',
-              'cards.runLoadtest': '<small>测试</small><strong>运行压测</strong><span>直接由 Portal 触发安全的 system 场景，结果仍落在 192 地址页面。</span>',
+              'cards.runLoadtest': '<small>测试</small><strong>运行压测</strong><span>直接由 Portal 触发安全的 system 场景，并给出最近一轮报告入口。</span>',
               'cards.loadtestDashboard': '<small>测试</small><strong>压测看板</strong><span>Grafana 统一查看 k6 remote write 时序、延迟、失败率和分步骤拆解。</span>',
               'cards.loadtestDashboardOfficial': '<small>测试</small><strong>官方 k6 看板</strong><span>官方 Grafana k6 Prometheus dashboard，已适配实验室 Prometheus 数据源。</span>',
               'cards.loadtest': '<small>测试</small><strong>压测指南</strong><span>k6 入口命令、安全场景与高可用演练时的观测路径。</span>',
               'cards.prometheus': '<small>监控</small><strong>Prometheus</strong><span>原始抓取与查询界面。</span>',
               'cards.alertmanager': '<small>告警</small><strong>Alertmanager</strong><span>告警聚合与路由入口。</span>',
-              'cards.argocd': '<small>GitOps</small><strong>Argo CD</strong><span>自签 HTTPS；浏览器首次访问可能需要手动继续。</span>',
+              'cards.argocd': '<small>GitOps</small><strong>Argo CD</strong><span>GitOps 控制面。内网 IP 仍是原始自签 TLS，对外域名由网关统一终止 HTTPS。</span>',
               'cards.longhorn': '<small>存储</small><strong>Longhorn</strong><span>持久卷管理界面。</span>',
               'cards.hubble': '<small>网络</small><strong>Hubble</strong><span>Cilium 流量可视化界面。</span>',
               'cards.seaweedfs': '<small>对象存储</small><strong>SeaweedFS Filer</strong><span>适合人工查看的文件浏览界面。</span>',
               'cards.alertSink': '<small>告警</small><strong>Alert Sink</strong><span>最近 webhook payload 收件页，方便快速确认路由和排障。</span>',
               'cards.gitlab': '<small>源码</small><strong>GitLab</strong><span>CI/CD 与实验仓库入口。</span>',
-              'tag.stableEndpoints': '稳定的浏览器直连入口',
+              'tag.internalEndpoints': '内网浏览器入口',
+              'tag.externalEndpoints': '公网 HTTPS 入口',
               'snapshot.loadtestTitle': '最近一次压测',
               'snapshot.alertSinkLatestTitle': '最近真实告警',
               'snapshot.coldStartTitle': '最近冷启动验收',
@@ -1072,10 +1201,18 @@ data:
               'snapshot.alerts': '<h2>告警投递</h2><div class="status-value status-ok">查看 live</div><p>当前告警路由是否正常，请直接看 <a href="http://192.168.0.108:30093" target="_blank" rel="noreferrer">Alertmanager</a> 和 alert sink；Portal 只保留默认链路说明。</p>',
               'snapshot.blackbox': '<h2>Blackbox 探测</h2><div class="status-value status-ok">查看 Grafana</div><p>面向人的入口页仍由 Prometheus blackbox 探测，真实状态以 Prometheus、Grafana 和 Alertmanager 为准，而不是这张静态页。</p>',
               'cred.defaultAccountsTitle': '默认账号',
+              'cred.headlampTokenLabel': 'Headlamp 10 年 token',
+              'cred.headlampTokenLoading': '正在从 Portal runtime Secret 读取 10 年 Headlamp token。',
+              'cred.headlampTokenMissing': 'Portal token Secret 还没有同步。',
+              'cred.headlampTokenMissingHint': '先执行一次同步脚本，这张卡片就会出现可复制 token。',
+              'cred.headlampTokenUnavailable': 'Portal token Secret 暂时不可用。',
+              'cred.headlampTokenUnavailableHint': '请重跑同步脚本，或先用 CLI 临时生成 token 登录。',
+              'cred.headlampTokenIssued': '签发 ',
+              'cred.headlampTokenExpires': '到期 ',
               'cred.quickNotesTitle': '快速说明',
-              'quickNotes.argocd': '自签 HTTPS，浏览器首次出现证书警告属于预期。',
+              'quickNotes.argocd': '内网 IP 仍是自签 TLS，对外域名则由公网网关提供正常浏览器证书。',
               'quickNotes.seaweedfsS3': '30333 仅提供 API，浏览器看到 AccessDenied 属于预期。',
-              'quickNotes.filerUi': '人工访问与基础对象检查请使用 30888。',
+              'quickNotes.filerUi': '人工访问与基础对象检查请使用 Filer UI 卡片。',
               'quickNotes.gitops': '当前实验部署路径已由 GitLab CI + Argo CD 驱动；WebApp Lab 走日常同步，WebApp Prod-Trial 蓝绿发布状态统一看发布看板。',
               'notes.purposeTitle': 'Portal 的用途',
               'notes.purpose1': '作为实验室所有系统的统一落地页。',
@@ -1083,17 +1220,23 @@ data:
               'notes.purpose3': '说明哪些入口是网页，哪些入口只是 API。',
               'notes.purpose4': '让后续值班人员或 AI 能更快接手环境。',
               'notes.seaweedfsTitle': 'SeaweedFS S3 说明',
-              'notes.seaweedfsBody': '<code>http://192.168.0.108:30333</code> 是 S3 API 入口，不是普通网页界面。浏览器在没有签名凭据时访问它，返回 <code>AccessDenied</code> XML 属于预期；人工浏览请改用 <code>30888</code> 的 filer UI。',
+              'notes.seaweedfsBody': 'SeaweedFS S3 是 API 入口，不是普通网页界面。浏览器在没有签名凭据时访问它，返回 <code>AccessDenied</code> 属于预期；人工浏览请改用 Filer UI 入口。',
               'notes.docsTitle': '文档',
               'notes.docsBody': '完整 runbook、访问说明、高可用演练与交接文档都在仓库内的 <code>server/deploy/lab-ha/docs</code> 目录。',
               'copy.default': '复制密码',
+              'copy.token': '复制 token',
               'copy.success': '已复制',
               'copy.fallback': '手动复制',
+              'copy.prompt': '当前浏览器拿不到剪贴板权限，请手动复制下面的内容：',
             },
           };
 
           const langButtons = Array.from(document.querySelectorAll('.lang-btn'));
-          const copyButtons = Array.from(document.querySelectorAll('.copy'));
+          const accessButtons = Array.from(document.querySelectorAll('.access-btn'));
+          const copyButtons = Array.from(document.querySelectorAll('button.copy'));
+          const accessModePill = document.getElementById('access-mode-pill');
+          const bestEntryPill = document.getElementById('best-entry-pill');
+          const endpointModeTag = document.getElementById('endpoint-mode-tag');
           const runLoadtestCard = document.getElementById('run-loadtest-card');
           const alertsinkStatus = document.getElementById('alertsink-status');
           const alertsinkSummary = document.getElementById('alertsink-summary');
@@ -1126,7 +1269,11 @@ data:
           const loadtestPrimaryLink = document.getElementById('loadtest-primary-link');
           const loadtestSecondaryLink = document.getElementById('loadtest-secondary-link');
           const loadtestTertiaryLink = document.getElementById('loadtest-tertiary-link');
+          const headlampTokenSummary = document.getElementById('headlamp-token-summary');
+          const headlampTokenMeta = document.getElementById('headlamp-token-meta');
+          const headlampTokenCopy = document.getElementById('headlamp-token-copy');
           let currentLocale = 'en';
+          let currentAccessMode = ACCESS_MODE_INTERNAL;
           let loadtestTriggerInFlight = false;
           let loadtestPendingPipelineId = 0;
           let loadtestPollTimer = null;
@@ -1156,6 +1303,14 @@ data:
             primaryLabelKey: 'alertsink.action.openSink',
             secondaryHref: ALERTMANAGER_URL,
             secondaryLabelKey: 'alertsink.action.openAlertmanager',
+          };
+          let headlampAccessState = {
+            data: null,
+            statusKey: 'cred.headlampTokenLoading',
+            hintKey: '',
+            summaryText: '',
+            metaText: '',
+            token: '',
           };
           const buildOpsDefaultState = (primaryHref, primaryLabelKey, secondaryHref, secondaryLabelKey) => ({
             statusKey: 'ops.state.loading',
@@ -1210,15 +1365,130 @@ data:
             return translations[locale][key] || translations.en[key] || '';
           };
 
+          const transformUrl = (value, mode = currentAccessMode) => {
+            if (!value || value.startsWith('/')) {
+              return value;
+            }
+            const mappings = mode === ACCESS_MODE_EXTERNAL
+              ? URL_BASE_MAPPINGS
+              : URL_BASE_MAPPINGS.map(({ internal, external }) => ({ internal: external, external: internal }));
+            for (const mapping of mappings) {
+              if (value.startsWith(mapping.internal)) {
+                return `${mapping.external}${value.slice(mapping.internal.length)}`;
+              }
+            }
+            return value;
+          };
+
+          const renderAccessModeChrome = () => {
+            if (accessModePill) {
+              accessModePill.innerHTML = getMessage(
+                currentLocale,
+                currentAccessMode === ACCESS_MODE_EXTERNAL ? 'pill.accessExternal' : 'pill.accessInternal'
+              );
+            }
+            if (bestEntryPill) {
+              bestEntryPill.innerHTML = getMessage(
+                currentLocale,
+                currentAccessMode === ACCESS_MODE_EXTERNAL ? 'pill.bestEntryExternal' : 'pill.bestEntryInternal'
+              );
+            }
+            if (endpointModeTag) {
+              endpointModeTag.textContent = getMessage(
+                currentLocale,
+                currentAccessMode === ACCESS_MODE_EXTERNAL ? 'tag.externalEndpoints' : 'tag.internalEndpoints'
+              );
+            }
+          };
+
+          const rewriteAnchorsForAccessMode = () => {
+            document.querySelectorAll('a[href]').forEach((link) => {
+              const canonicalHref = link.getAttribute('data-canonical-href') || link.getAttribute('href');
+              if (!canonicalHref) {
+                return;
+              }
+              link.setAttribute('data-canonical-href', canonicalHref);
+              link.setAttribute('href', transformUrl(canonicalHref));
+            });
+          };
+
           const renderCopyButton = (button) => {
             const state = button.getAttribute('data-copy-state') || 'default';
-            const messageKey = state === 'default' ? 'copy.default' : `copy.${state}`;
+            const messageKey = state === 'default' ? (button.getAttribute('data-copy-default-key') || 'copy.default') : `copy.${state}`;
             button.textContent = getMessage(currentLocale, messageKey);
+          };
+
+          const setCopyButtonState = (button, state, timeoutMs) => {
+            button.setAttribute('data-copy-state', state);
+            renderCopyButton(button);
+            if (timeoutMs > 0) {
+              button._copyTimer = setTimeout(() => {
+                button.setAttribute('data-copy-state', 'default');
+                renderCopyButton(button);
+              }, timeoutMs);
+            }
+          };
+
+          const legacyCopyText = (value) => {
+            const textarea = document.createElement('textarea');
+            textarea.value = value;
+            textarea.setAttribute('readonly', 'readonly');
+            textarea.style.position = 'fixed';
+            textarea.style.top = '-9999px';
+            textarea.style.left = '-9999px';
+            document.body.appendChild(textarea);
+            textarea.focus();
+            textarea.select();
+            textarea.setSelectionRange(0, value.length);
+            let copied = false;
+            try {
+              copied = document.execCommand('copy');
+            } finally {
+              document.body.removeChild(textarea);
+            }
+            return copied;
+          };
+
+          const openManualCopyPrompt = (value) => {
+            window.prompt(getMessage(currentLocale, 'copy.prompt'), value);
+          };
+
+          const renderHeadlampAccess = () => {
+            const summaryText = headlampAccessState.data
+              ? [headlampAccessState.data.serviceAccount, headlampAccessState.data.duration].filter(Boolean).join(' · ')
+              : (headlampAccessState.summaryText || getMessage(currentLocale, headlampAccessState.statusKey));
+            const metaText = headlampAccessState.data
+              ? buildHeadlampMetaText(headlampAccessState.data)
+              : (headlampAccessState.hintKey ? `${getMessage(currentLocale, headlampAccessState.hintKey)} ${HEADLAMP_SYNC_HINT}` : headlampAccessState.metaText);
+            if (headlampTokenSummary) {
+              headlampTokenSummary.textContent = summaryText;
+            }
+            if (headlampTokenMeta) {
+              if (metaText) {
+                headlampTokenMeta.textContent = metaText;
+                headlampTokenMeta.classList.remove('hidden');
+              } else {
+                headlampTokenMeta.textContent = '';
+                headlampTokenMeta.classList.add('hidden');
+              }
+            }
+            if (headlampTokenCopy) {
+              const hasToken = Boolean(headlampAccessState.token);
+              headlampTokenCopy.setAttribute('data-copy', hasToken ? headlampAccessState.token : '');
+              headlampTokenCopy.toggleAttribute('disabled', !hasToken);
+              renderCopyButton(headlampTokenCopy);
+            }
           };
 
           const setActiveLanguage = (locale) => {
             langButtons.forEach((button) => {
               button.setAttribute('aria-pressed', button.getAttribute('data-lang') === locale ? 'true' : 'false');
+            });
+          };
+
+          const setActiveAccessMode = (mode) => {
+            accessButtons.forEach((button) => {
+              button.setAttribute('aria-pressed', button.getAttribute('data-access-mode') === mode ? 'true' : 'false');
             });
           };
 
@@ -1235,11 +1505,13 @@ data:
             if (!href || !labelKey) {
               link.classList.add('hidden');
               link.removeAttribute('href');
+              link.removeAttribute('data-canonical-href');
               link.textContent = '';
               return;
             }
             link.classList.remove('hidden');
-            link.setAttribute('href', href);
+            link.setAttribute('data-canonical-href', href);
+            link.setAttribute('href', transformUrl(href));
             link.textContent = getMessage(currentLocale, labelKey);
           };
 
@@ -1283,10 +1555,14 @@ data:
             copyButtons.forEach((button) => {
               renderCopyButton(button);
             });
+            renderHeadlampAccess();
             renderAlertSinkCard();
             renderOpsSummaryCards();
             renderLoadtestCard();
+            renderAccessModeChrome();
+            rewriteAnchorsForAccessMode();
             setActiveLanguage(locale);
+            setActiveAccessMode(currentAccessMode);
           };
 
           const loadPreferredLocale = () => {
@@ -1302,11 +1578,33 @@ data:
             return navigator.language && navigator.language.toLowerCase().startsWith('zh') ? 'zh' : 'en';
           };
 
+          const loadPreferredAccessMode = () => {
+            try {
+              const stored = window.localStorage.getItem(PORTAL_ACCESS_MODE_STORAGE_KEY);
+              if (stored === ACCESS_MODE_INTERNAL || stored === ACCESS_MODE_EXTERNAL) {
+                return stored;
+              }
+            } catch (_err) {
+              // 访问模式仍然可以按当前 host 推断，只是不记忆下次选择。
+            }
+            return window.location.hostname === PUBLIC_DOMAIN_SUFFIX || window.location.hostname.endsWith(`.${PUBLIC_DOMAIN_SUFFIX}`)
+              ? ACCESS_MODE_EXTERNAL
+              : ACCESS_MODE_INTERNAL;
+          };
+
           const savePreferredLocale = (locale) => {
             try {
               window.localStorage.setItem(PORTAL_LANGUAGE_STORAGE_KEY, locale);
             } catch (_err) {
               // 语言切换仍然生效，只是不记忆下次访问偏好。
+            }
+          };
+
+          const savePreferredAccessMode = (mode) => {
+            try {
+              window.localStorage.setItem(PORTAL_ACCESS_MODE_STORAGE_KEY, mode);
+            } catch (_err) {
+              // 访问模式仍然生效，只是不记忆下次访问偏好。
             }
           };
 
@@ -1379,6 +1677,24 @@ data:
             }).format(parsed);
           };
 
+          const formatDateTimeLong = (value) => {
+            if (!value) {
+              return '';
+            }
+            const parsed = new Date(value);
+            if (Number.isNaN(parsed.getTime())) {
+              return value;
+            }
+            return new Intl.DateTimeFormat(currentLocale === 'zh' ? 'zh-CN' : 'en-US', {
+              year: 'numeric',
+              month: '2-digit',
+              day: '2-digit',
+              hour: '2-digit',
+              minute: '2-digit',
+              hour12: false,
+            }).format(parsed);
+          };
+
           const fetchPortalJson = async (path) => {
             const response = await fetch(path, {
               cache: 'no-store',
@@ -1397,6 +1713,67 @@ data:
               throw error;
             }
             return response.json();
+          };
+
+          const isGitLabLoginRequiredResponse = (response) => {
+            if (!response) {
+              return false;
+            }
+            if (response.type === 'opaqueredirect' || response.status === 401 || response.status === 302) {
+              return true;
+            }
+            return response.status === 204 && response.headers.get(GITLAB_LOGIN_REQUIRED_HEADER) === '1';
+          };
+
+          const buildHeadlampMetaText = (data) => {
+            const parts = [];
+            if (data && data.issuedAt) {
+              parts.push(`${getMessage(currentLocale, 'cred.headlampTokenIssued')}${formatDateTimeLong(data.issuedAt)}`);
+            }
+            if (data && data.expiresAt) {
+              parts.push(`${getMessage(currentLocale, 'cred.headlampTokenExpires')}${formatDateTimeLong(data.expiresAt)}`);
+            }
+            return parts.join(' · ');
+          };
+
+          const loadHeadlampAccess = async () => {
+            try {
+              const data = await fetchPortalJson(HEADLAMP_ACCESS_PATH);
+              if (!data || !data.token) {
+                const error = new Error('not found');
+                error.code = 'not_found';
+                throw error;
+              }
+              headlampAccessState = {
+                data,
+                statusKey: '',
+                hintKey: '',
+                summaryText: '',
+                metaText: '',
+                token: data.token,
+              };
+            } catch (error) {
+              if (error.code === 'not_found') {
+                headlampAccessState = {
+                  data: null,
+                  statusKey: 'cred.headlampTokenMissing',
+                  hintKey: 'cred.headlampTokenMissingHint',
+                  summaryText: '',
+                  metaText: '',
+                  token: '',
+                };
+              } else {
+                headlampAccessState = {
+                  data: null,
+                  statusKey: 'cred.headlampTokenUnavailable',
+                  hintKey: 'cred.headlampTokenUnavailableHint',
+                  summaryText: '',
+                  metaText: '',
+                  token: '',
+                };
+              }
+            }
+            renderHeadlampAccess();
           };
 
           const getMetricValue = (summary, metricName, fieldName) => {
@@ -1628,7 +2005,7 @@ data:
               headers: { Accept: 'application/json' },
               redirect: 'manual',
             });
-            if (response.type === 'opaqueredirect' || response.status === 401 || response.status === 302) {
+            if (isGitLabLoginRequiredResponse(response)) {
               const error = new Error('login required');
               error.code = 'login';
               throw error;
@@ -1697,7 +2074,7 @@ data:
               headers: { Accept: 'text/plain' },
               redirect: 'manual',
             });
-            if (response.type === 'opaqueredirect' || response.status === 401 || response.status === 302) {
+            if (isGitLabLoginRequiredResponse(response)) {
               const error = new Error('login required');
               error.code = 'login';
               throw error;
@@ -1717,7 +2094,7 @@ data:
               headers: { Accept: 'text/html,application/xhtml+xml' },
               redirect: 'manual',
             });
-            if (response.type === 'opaqueredirect' || response.status === 401 || response.status === 302) {
+            if (isGitLabLoginRequiredResponse(response)) {
               const error = new Error('login required');
               error.code = 'login';
               throw error;
@@ -1803,7 +2180,7 @@ data:
                 },
               }),
             });
-            if (response.type === 'opaqueredirect' || response.status === 401 || response.status === 302) {
+            if (isGitLabLoginRequiredResponse(response)) {
               const error = new Error('login required');
               error.code = 'login';
               throw error;
@@ -2102,33 +2479,53 @@ data:
             });
           });
 
+          accessButtons.forEach((button) => {
+            button.addEventListener('click', () => {
+              const mode = button.getAttribute('data-access-mode') === ACCESS_MODE_EXTERNAL
+                ? ACCESS_MODE_EXTERNAL
+                : ACCESS_MODE_INTERNAL;
+              currentAccessMode = mode;
+              savePreferredAccessMode(mode);
+              renderAlertSinkCard();
+              renderOpsSummaryCards();
+              renderLoadtestCard();
+              renderAccessModeChrome();
+              rewriteAnchorsForAccessMode();
+              setActiveAccessMode(mode);
+            });
+          });
+
           copyButtons.forEach((button) => {
             renderCopyButton(button);
             button.addEventListener('click', async () => {
-              // 页面继续展示“账号 / 密码”，但按钮只复制密码，避免粘贴时把用户名一并带走。
+              // 页面上既有密码也有 token，但按钮始终只复制敏感值本身，避免把说明文字一并带走。
               const value = button.getAttribute('data-copy') || '';
               clearTimeout(button._copyTimer);
+              if (!value) {
+                return;
+              }
               try {
                 await navigator.clipboard.writeText(value);
-                button.setAttribute('data-copy-state', 'success');
-                renderCopyButton(button);
-                button._copyTimer = setTimeout(() => {
-                  button.setAttribute('data-copy-state', 'default');
-                  renderCopyButton(button);
-                }, 1200);
-              } catch (_err) {
-                // 剪贴板权限不可用时保留人工复制提示，避免用户误以为已经成功。
-                button.setAttribute('data-copy-state', 'fallback');
-                renderCopyButton(button);
-                button._copyTimer = setTimeout(() => {
-                  button.setAttribute('data-copy-state', 'default');
-                  renderCopyButton(button);
-                }, 1800);
+                setCopyButtonState(button, 'success', 1200);
+              } catch (_clipboardErr) {
+                try {
+                  if (legacyCopyText(value)) {
+                    setCopyButtonState(button, 'success', 1200);
+                    return;
+                  }
+                } catch (_legacyErr) {
+                  // 留给下面的手工复制 prompt 兜底。
+                }
+                // 当前浏览器拿不到系统剪贴板时，至少给出一个可选中的手工复制入口。
+                openManualCopyPrompt(value);
+                setCopyButtonState(button, 'fallback', 1800);
               }
             });
           });
 
+          currentAccessMode = loadPreferredAccessMode();
           applyTranslations(loadPreferredLocale());
+          loadHeadlampAccess();
           loadLatestAlertSink();
           setInterval(loadLatestAlertSink, ALERT_SINK_REFRESH_MS);
           loadOpsSummaries();
@@ -2243,9 +2640,9 @@ data:
               <p id="subtitle">正在从 GitLab artifact 拉取报告内容。</p>
             </div>
             <div class="actions">
-              <a class="btn" href="http://192.168.0.108:30088">返回 Portal</a>
-              <a class="btn" id="open-job" href="http://192.168.0.108:8929/root/webapp-template-lab/-/jobs" target="_blank" rel="noreferrer">打开 Job</a>
-              <a class="btn primary hidden" id="login-link" href="http://192.168.0.108:8929/users/sign_in" target="_blank" rel="noreferrer">登录 GitLab</a>
+              <a class="btn" href="/">返回 Portal</a>
+              <a class="btn" id="open-job" href="/gitlab/root/webapp-template-lab/-/jobs" target="_blank" rel="noreferrer">打开 Job</a>
+              <a class="btn primary hidden" id="login-link" href="/gitlab/users/sign_in" target="_blank" rel="noreferrer">登录 GitLab</a>
             </div>
           </div>
           <div class="status" id="status">加载中，请稍候...</div>
@@ -2260,7 +2657,7 @@ data:
           const loginLink = document.getElementById('login-link');
           const openJobLink = document.getElementById('open-job');
           const reportPath = (id) => `/gitlab/root/webapp-template-lab/-/jobs/${id}/artifacts/raw/server/deploy/lab-ha/artifacts/loadtest/job/report.html`;
-          const jobUrl = (id) => `http://192.168.0.108:8929/root/webapp-template-lab/-/jobs/${id}`;
+          const jobUrl = (id) => `/gitlab/root/webapp-template-lab/-/jobs/${id}`;
 
           if (jobId) {
             openJobLink.href = jobUrl(jobId);
@@ -2285,7 +2682,7 @@ data:
                 credentials: 'same-origin',
                 redirect: 'follow',
               });
-              if (response.status === 401) {
+              if (response.status === 204 && response.headers.get('x-portal-login-required') === '1') {
                 showStatus('当前浏览器还没有 GitLab 登录态，请先登录后再回来查看。', true);
                 loginLink.classList.remove('hidden');
                 return;
@@ -2326,7 +2723,7 @@ data:
         proxy_set_header X-Forwarded-Host $host;
         proxy_set_header X-Forwarded-Proto $scheme;
         proxy_intercept_errors on;
-        error_page 301 302 307 308 = @gitlab_login_required;
+        error_page 301 302 307 308 401 = @gitlab_login_required;
       }
 
       location /gitlab/ {
@@ -2338,7 +2735,7 @@ data:
         proxy_set_header X-Forwarded-Host $host;
         proxy_set_header X-Forwarded-Proto $scheme;
         proxy_intercept_errors on;
-        error_page 301 302 307 308 = @gitlab_login_required;
+        error_page 301 302 307 308 401 = @gitlab_login_required;
       }
 
       location /alert-sink-api/ {
@@ -2350,8 +2747,20 @@ data:
         proxy_set_header X-Forwarded-Proto $scheme;
       }
 
+      location /portal-secrets/ {
+        alias /etc/lab-portal-secrets/;
+        default_type application/json;
+        add_header Cache-Control "no-store, no-cache, must-revalidate, max-age=0" always;
+        add_header Pragma "no-cache" always;
+        expires -1;
+        autoindex off;
+      }
+
       location @gitlab_login_required {
-        return 401;
+        add_header Cache-Control "no-store, no-cache, must-revalidate, max-age=0" always;
+        add_header Pragma "no-cache" always;
+        add_header X-Portal-Login-Required "1" always;
+        return 204;
       }
 
       location / {
@@ -2363,35 +2772,6 @@ data:
       }
     }
 
-    server {
-      listen 8080;
-      server_name _;
-
-      location / {
-        # active / preview 前端是根路径 SPA，必须用独立端口整站代理，不能简单挂到子路径。
-        proxy_pass http://192.168.0.108:32668;
-        proxy_http_version 1.1;
-        proxy_set_header Host webapp-trial.192.168.0.108.nip.io;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Host $host;
-        proxy_set_header X-Forwarded-Proto $scheme;
-      }
-    }
-
-    server {
-      listen 8081;
-      server_name _;
-
-      location / {
-        # preview 复用同一条 NodePort + Host 线路，保持和 blackbox / runbook 的验证口径一致。
-        proxy_pass http://192.168.0.108:32668;
-        proxy_http_version 1.1;
-        proxy_set_header Host webapp-trial-preview.192.168.0.108.nip.io;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Host $host;
-        proxy_set_header X-Forwarded-Proto $scheme;
-      }
-    }
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -2414,10 +2794,6 @@ spec:
           ports:
             - containerPort: 80
               name: http
-            - containerPort: 8080
-              name: trial-active
-            - containerPort: 8081
-              name: trial-preview
           resources:
             requests:
               cpu: 30m
@@ -2431,6 +2807,9 @@ spec:
               mountPath: /usr/share/nginx/html
             - name: nginx-config
               mountPath: /etc/nginx/conf.d
+            - name: portal-secrets
+              mountPath: /etc/lab-portal-secrets
+              readOnly: true
       volumes:
         - name: html
           configMap:
@@ -2446,6 +2825,10 @@ spec:
             items:
               - key: default.conf
                 path: default.conf
+        - name: portal-secrets
+          secret:
+            secretName: lab-portal-headlamp-access
+            optional: true
 ---
 apiVersion: v1
 kind: Service
@@ -2461,11 +2844,3 @@ spec:
       port: 80
       targetPort: http
       nodePort: 30088
-    - name: trial-active
-      port: 8080
-      targetPort: trial-active
-      nodePort: 30089
-    - name: trial-preview
-      port: 8081
-      targetPort: trial-preview
-      nodePort: 30091

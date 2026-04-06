@@ -12,10 +12,10 @@ data:
       "id": null,
       "uid": "lab-ha-service-governance",
       "title": "HA Lab / K8s Workloads",
-      "tags": ["lab-ha", "governance", "hpa", "ingress"],
+      "tags": ["lab-ha", "governance", "hpa", "edge"],
       "timezone": "browser",
       "schemaVersion": 39,
-      "version": 2,
+      "version": 3,
       "refresh": "30s",
       "time": {
         "from": "now-6h",
@@ -55,12 +55,12 @@ data:
         {
           "id": 4,
           "type": "stat",
-          "title": "Ingress 429 RPS",
+          "title": "WebApp Edge Up Targets",
           "datasource": {"type": "prometheus", "uid": "prometheus"},
           "gridPos": {"h": 5, "w": 4, "x": 12, "y": 0},
-          "targets": [{"expr": "sum(rate(nginx_ingress_controller_requests{exported_namespace=~\"webapp.*\",ingress=~\"webapp-template.*\",status=\"429\"}[5m])) or vector(0)", "instant": true, "refId": "A"}],
+          "targets": [{"expr": "sum(probe_success{job=~\"prometheus-blackbox-exporter.*\",target=~\"webapp|webapp-prod-trial-active|webapp-prod-trial-preview\"}) or vector(0)", "instant": true, "refId": "A"}],
           "options": {"colorMode": "value", "graphMode": "none", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}},
-          "fieldConfig": {"defaults": {"unit": "reqps", "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "orange", "value": 0.1}, {"color": "red", "value": 1}]}}}
+          "fieldConfig": {"defaults": {"unit": "none", "thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": null}, {"color": "orange", "value": 1}, {"color": "green", "value": 3}]}}}
         },
         {
           "id": 5,
@@ -132,20 +132,20 @@ data:
         {
           "id": 11,
           "type": "timeseries",
-          "title": "Ingress Requests by Status",
+          "title": "Edge Probe Success",
           "datasource": {"type": "prometheus", "uid": "prometheus"},
           "gridPos": {"h": 8, "w": 12, "x": 0, "y": 21},
-          "targets": [{"expr": "sum by(exported_namespace,ingress,status) (rate(nginx_ingress_controller_requests{exported_namespace=~\"webapp.*\",ingress=~\"webapp-template.*\"}[5m]))", "legendFormat": "{{exported_namespace}}/{{ingress}} {{status}}", "refId": "A"}],
-          "fieldConfig": {"defaults": {"unit": "reqps"}},
+          "targets": [{"expr": "probe_success{job=~\"prometheus-blackbox-exporter.*\",target=~\"webapp|webapp-prod-trial-active|webapp-prod-trial-preview\"}", "legendFormat": "{{target}}", "refId": "A"}],
+          "fieldConfig": {"defaults": {"unit": "none"}},
           "options": {"legend": {"displayMode": "table", "placement": "bottom"}, "tooltip": {"mode": "multi"}}
         },
         {
           "id": 12,
           "type": "timeseries",
-          "title": "Ingress p95 Latency",
+          "title": "Edge Probe Duration",
           "datasource": {"type": "prometheus", "uid": "prometheus"},
           "gridPos": {"h": 8, "w": 12, "x": 12, "y": 21},
-          "targets": [{"expr": "histogram_quantile(0.95, sum by(le, exported_namespace, ingress) (rate(nginx_ingress_controller_request_duration_seconds_bucket{exported_namespace=~\"webapp.*\",ingress=~\"webapp-template.*\"}[5m])))", "legendFormat": "{{exported_namespace}}/{{ingress}}", "refId": "A"}],
+          "targets": [{"expr": "avg_over_time(probe_duration_seconds{job=~\"prometheus-blackbox-exporter.*\",target=~\"webapp|webapp-prod-trial-active|webapp-prod-trial-preview\"}[5m])", "legendFormat": "{{target}}", "refId": "A"}],
           "fieldConfig": {"defaults": {"unit": "s"}},
           "options": {"legend": {"displayMode": "table", "placement": "bottom"}, "tooltip": {"mode": "multi"}}
         },
@@ -175,7 +175,7 @@ data:
           "title": "Firing Governance Alerts",
           "datasource": {"type": "prometheus", "uid": "prometheus"},
           "gridPos": {"h": 5, "w": 4, "x": 0, "y": 37},
-          "targets": [{"expr": "count(ALERTS{alertname=~\"LabWebappHpaAtMax|LabWebappPdbBudgetExhausted|LabIngress429High|LabIngressP95LatencyHigh\",alertstate=\"firing\"}) or vector(0)", "instant": true, "refId": "A"}],
+          "targets": [{"expr": "count(ALERTS{alertname=~\"LabWebappHpaAtMax|LabWebappPdbBudgetExhausted|LabWebappEdgeDown|LabWebappEdgeSlow\",alertstate=\"firing\"}) or vector(0)", "instant": true, "refId": "A"}],
           "options": {"colorMode": "value", "graphMode": "none", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}},
           "fieldConfig": {"defaults": {"unit": "none", "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "orange", "value": 1}, {"color": "red", "value": 2}]}}}
         },
@@ -185,7 +185,7 @@ data:
           "title": "Pending Governance Alerts",
           "datasource": {"type": "prometheus", "uid": "prometheus"},
           "gridPos": {"h": 5, "w": 4, "x": 4, "y": 37},
-          "targets": [{"expr": "count(ALERTS{alertname=~\"LabWebappHpaAtMax|LabWebappPdbBudgetExhausted|LabIngress429High|LabIngressP95LatencyHigh\",alertstate=\"pending\"}) or vector(0)", "instant": true, "refId": "A"}],
+          "targets": [{"expr": "count(ALERTS{alertname=~\"LabWebappHpaAtMax|LabWebappPdbBudgetExhausted|LabWebappEdgeDown|LabWebappEdgeSlow\",alertstate=\"pending\"}) or vector(0)", "instant": true, "refId": "A"}],
           "options": {"colorMode": "value", "graphMode": "none", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}},
           "fieldConfig": {"defaults": {"unit": "none", "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "yellow", "value": 1}, {"color": "orange", "value": 2}]}}}
         },
@@ -195,7 +195,7 @@ data:
           "title": "Current Governance Alerts",
           "datasource": {"type": "prometheus", "uid": "prometheus"},
           "gridPos": {"h": 5, "w": 16, "x": 8, "y": 37},
-          "targets": [{"expr": "ALERTS{alertname=~\"LabWebappHpaAtMax|LabWebappPdbBudgetExhausted|LabIngress429High|LabIngressP95LatencyHigh\",alertstate=~\"pending|firing\"}", "instant": true, "refId": "A"}],
+          "targets": [{"expr": "ALERTS{alertname=~\"LabWebappHpaAtMax|LabWebappPdbBudgetExhausted|LabWebappEdgeDown|LabWebappEdgeSlow\",alertstate=~\"pending|firing\"}", "instant": true, "refId": "A"}],
           "options": {"cellHeight": "sm", "showHeader": true},
           "fieldConfig": {"defaults": {"custom": {"align": "auto", "cellOptions": {"type": "auto"}, "inspect": false}}, "overrides": []}
         },
@@ -206,7 +206,7 @@ data:
           "gridPos": {"h": 8, "w": 24, "x": 0, "y": 42},
           "options": {
             "mode": "markdown",
-            "content": "### K8s Workloads Notes\n\n- This board focuses on the first-step workload governance baseline: `nodes`, deployments, `HPA`, ingress rate limiting, `PDB`, pod health, and rollout controller readiness.\n- The alert row shows current `pending` / `firing` governance alerts directly from Prometheus `ALERTS`, so on-call can decide whether Alertmanager deserves a deeper look.\n- Network allow / drop truth still lives in [Hubble](http://192.168.0.108:30085), not in Grafana.\n- GitOps drift, sync status, and rollout operations still belong to [Argo CD](https://192.168.0.108:30443) and the delivery board.\n- If ingress panels stay empty, check whether `ingress-nginx` ServiceMonitor is present and scraped.\n- This dashboard intentionally stays small enough for on-call triage instead of replacing every detailed view."
+            "content": "### K8s Workloads Notes\n\n- This board focuses on the first-step workload governance baseline: `nodes`, deployments, `HPA`, `Gateway` 正式入口、`PDB`、pod health, and rollout controller readiness.\n- The alert row shows current `pending` / `firing` governance alerts directly from Prometheus `ALERTS`, so on-call can decide whether Alertmanager deserves a deeper look.\n- Network allow / drop truth still lives in [Hubble](http://192.168.0.108:30085), not in Grafana.\n- GitOps drift, sync status, and rollout operations still belong to [Argo CD](https://192.168.0.108:30443) and the delivery board.\n- Edge panels now read direct blackbox probes against `32668 / 30089 / 30091`, no longer depend on `ingress-nginx` controller metrics.\n- This dashboard intentionally stays small enough for on-call triage instead of replacing every detailed view."
           }
         }
       ]

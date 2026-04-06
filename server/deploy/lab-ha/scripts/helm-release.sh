@@ -4,6 +4,7 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 KUBECONFIG_PATH="${KUBECONFIG_PATH:-/Users/simon/.kube/ha-lab.conf}"
 OUTPUT_DIR="${ROOT_DIR}/artifacts/helm-rendered"
+GATEWAY_API_CRDS_FILE="${ROOT_DIR}/manifests/gateway-api-v1.4.1-standard-install.yaml"
 MODE="${1:-template}"
 ONLY="${ONLY:-}"
 SKIP_REPO_UPDATE="${SKIP_REPO_UPDATE:-0}"
@@ -40,10 +41,13 @@ match_release() {
   [ -z "$ONLY" ] || [ "$ONLY" = "$name" ]
 }
 
+need_gateway_api_crds() {
+  [ -z "$ONLY" ] || [ "$ONLY" = "cilium" ] || [ "$ONLY" = "gateway-api-crds" ]
+}
+
 add_repos() {
   helm repo add cilium https://helm.cilium.io >/dev/null
   helm repo add metallb https://metallb.github.io/metallb >/dev/null
-  helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx >/dev/null
   helm repo add jetstack https://charts.jetstack.io >/dev/null
   helm repo add longhorn https://charts.longhorn.io >/dev/null
   helm repo add cnpg https://cloudnative-pg.github.io/charts >/dev/null
@@ -58,7 +62,7 @@ add_repos() {
   helm repo add harbor https://helm.goharbor.io >/dev/null
   # 只更新 lab-ha 实际依赖的仓库，避免本机残留的无关 repo 让整套发布链路被环境噪音拖死。
   helm repo update \
-    cilium metallb ingress-nginx jetstack longhorn cnpg seaweedfs grafana \
+    cilium metallb jetstack longhorn cnpg seaweedfs grafana \
     prometheus-community metrics-server headlamp bitnami-labs vmware-tanzu argo harbor >/dev/null
 }
 
@@ -119,7 +123,6 @@ sync_platform_raw() {
     harbor-ui-proxy.yaml
     jaeger.yaml
     loki-standalone.yaml
-    platform-ingresses.yaml
     platform-nodeports.yaml
     platform-portal.yaml
     prometheus-rule-service-governance.yaml
@@ -129,6 +132,38 @@ sync_platform_raw() {
   for file in "${files[@]}"; do
     cp "${ROOT_DIR}/manifests/${file}" "${raw_dir}/${file}"
   done
+}
+
+sync_gateway_api_crds() {
+  [ -f "$GATEWAY_API_CRDS_FILE" ] || {
+    printf 'missing required file: %s\n' "$GATEWAY_API_CRDS_FILE" >&2
+    exit 1
+  }
+
+  case "$MODE" in
+    template)
+      if ! need_gateway_api_crds; then
+        return 0
+      fi
+      mkdir -p "$OUTPUT_DIR"
+      cp "$GATEWAY_API_CRDS_FILE" "${OUTPUT_DIR}/gateway-api-crds.yaml"
+      ;;
+    apply)
+      if ! need_gateway_api_crds; then
+        return 0
+      fi
+      require_tool kubectl
+      # Gateway API CRD 需要先于 Cilium Gateway Controller 存在，避免 operator 启动后只报缺 CRD。
+      printf 'Applying Gateway API CRDs from %s\n' "$(basename "$GATEWAY_API_CRDS_FILE")"
+      kubectl --kubeconfig "$KUBECONFIG_PATH" apply -f "$GATEWAY_API_CRDS_FILE" >/dev/null
+      ;;
+    list)
+      if ! need_gateway_api_crds; then
+        return 0
+      fi
+      printf '%s\t%s\t%s\t%s\n' "gateway-api-crds" "cluster" "$GATEWAY_API_CRDS_FILE" "v1.4.1"
+      ;;
+  esac
 }
 
 run_release() {
@@ -275,6 +310,7 @@ main() {
   esac
 
   sync_platform_raw
+  sync_gateway_api_crds
 
   if [ "$MODE" = "repos" ]; then
     add_repos
@@ -288,11 +324,9 @@ main() {
 
   check_kube_api_stability
 
-  run_release cilium kube-system cilium/cilium 1.17.6 \
+  run_release cilium kube-system cilium/cilium 1.19.2 \
     -f "${ROOT_DIR}/manifests/cilium-values.yaml"
   run_release metallb metallb-system metallb/metallb 0.14.9
-  run_release ingress-nginx ingress-nginx ingress-nginx/ingress-nginx 4.12.2 \
-    -f "${ROOT_DIR}/manifests/ingress-nginx-values.yaml"
   run_release cert-manager cert-manager jetstack/cert-manager v1.17.1 \
     -f "${ROOT_DIR}/manifests/cert-manager-values.yaml"
   run_release metrics-server kube-system metrics-server/metrics-server 3.13.0 \

@@ -640,22 +640,3 @@ spec:
     - name: http
       port: 8080
       targetPort: http
----
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: alert-webhook-receiver
-  namespace: monitoring
-spec:
-  ingressClassName: nginx
-  rules:
-    - host: alertsink.192.168.0.108.nip.io
-      http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: alert-webhook-receiver
-                port:
-                  number: 8080

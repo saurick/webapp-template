@@ -12,6 +12,23 @@ bash /Users/simon/projects/webapp-template/server/deploy/lab-ha/scripts/check-ha
 
 ## 每日 5 分钟巡检
 
+### 0. 如当前通过 Tailscale 从实验室外值班
+
+如果你当前是通过 tailnet 接入，而不是在同一局域网内直连，先补一轮外部路径确认：
+
+```bash
+tailscale status
+curl -k -L -o /dev/null -s -w '%{http_code}\n' http://192.168.0.108:30088
+curl -k -L -o /dev/null -s -w '%{http_code}\n' https://192.168.0.108:30443/
+curl -s -o /dev/null -w '%{http_code}\n' http://192.168.0.108:30089/readyz
+```
+
+正常标准：
+
+- 当前 tailnet 已连接
+- 通过 tailnet 访问 `Portal / Argo CD / prod-trial readyz` 均可返回 `200`
+- 若某个单独节点 IP 不可达，但其他节点的 `30089 / 30091` 正常，不视为 DNS 或 Gateway 故障；先按节点网络问题排查
+
 ### 1. 先看门户与值班看板
 
 - 打开 `http://192.168.0.108:30088`
@@ -29,9 +46,10 @@ bash /Users/simon/projects/webapp-template/server/deploy/lab-ha/scripts/check-ha
 - 页面都能打开
 - Portal 摘要没有明显异常
 - Portal 里的“最近冷启动验收 / 最近 HA 演练 / 最近备份检查 / 最近烟雾检查”不是空白或长期过期
+- Portal 默认账号区里能看到 `Headlamp 10 年 token` 卡片，复制按钮可用，签发/到期时间显示正常
 - Grafana 看板里的关键 stat 卡片大多为绿色
 - `K8s Workloads` 看板里的节点、工作负载、HPA 与 Pod 重启曲线没有明显异常
-- 若需要继续看某个具体对象、命名空间、YAML 或 owner 关系，`Headlamp` 能正常打开并接受 token 登录
+- 若需要继续看某个具体对象、命名空间、YAML 或 owner 关系，`Headlamp` 能正常打开，并可直接复用 Portal 里的 token 登录
 - `Alert Sink` 能看到最近 webhook payload
 - `Jaeger` 页面可打开，且重启后不再因为内存存储被清空最近 traces
 
@@ -62,6 +80,8 @@ kubectl --kubeconfig /Users/simon/.kube/ha-lab.conf get settings.longhorn.io -n 
 for url in \
   http://192.168.0.108:30088 \
   http://192.168.0.108:32668 \
+  http://192.168.0.108:30089 \
+  http://192.168.0.108:30091 \
   http://192.168.0.108:30002 \
   http://192.168.0.108:30081 \
   http://192.168.0.108:30087 \
@@ -88,13 +108,14 @@ done
 
 ```bash
 curl -fsS http://192.168.0.108:32668/readyz
+curl -fsS http://192.168.0.108:30089/readyz
 kubectl --kubeconfig /Users/simon/.kube/ha-lab.conf get pods -n database -l cnpg.io/cluster=app-pg -o wide
 kubectl --kubeconfig /Users/simon/.kube/ha-lab.conf get pods -n object-storage -o wide
 ```
 
 正常标准：
 
-- `readyz` 返回 `ready`
+- `lab` 与 `prod-trial active` 的 `readyz` 都返回 `ready`
 - `database` 3 个 PG 实例都在跑
 - `object-storage` 的 `master/filer/volume/s3` 都在跑
 

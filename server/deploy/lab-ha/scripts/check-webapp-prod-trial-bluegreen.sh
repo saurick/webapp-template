@@ -2,10 +2,9 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-# 蓝绿校验默认直接走 NodePort + Host 头，避免本机 DNS / nip.io / VPN 路由差异把发布验证搞成假失败。
-HOST_HEADER_ACTIVE="${HOST_HEADER_ACTIVE:-webapp-trial.192.168.0.108.nip.io}"
-HOST_HEADER_PREVIEW="${HOST_HEADER_PREVIEW:-webapp-trial-preview.192.168.0.108.nip.io}"
-NODE_PORT="${NODE_PORT:-32668}"
+# 蓝绿校验默认直接走正式 Gateway 端口，避免继续依赖旧 Ingress Host 头路由。
+ACTIVE_PORT="${ACTIVE_PORT:-30089}"
+PREVIEW_PORT="${PREVIEW_PORT:-30091}"
 PATH_SUFFIX="${PATH_SUFFIX:-/readyz}"
 SUMMARY_HELPER="${SCRIPT_DIR}/write-lab-ops-summary.sh"
 
@@ -31,8 +30,8 @@ persist_summary() {
   if [[ "$FAILURES" -gt 0 ]]; then
     status="fail"
   fi
-  summary="active+preview ${PASSED_CHECKS}/${TOTAL_CHECKS} ok · path ${PATH_SUFFIX} · port ${NODE_PORT}"
-  detail="nodes ${#NODES[@]} · active host ${HOST_HEADER_ACTIVE} · preview host ${HOST_HEADER_PREVIEW}"
+  summary="active+preview ${PASSED_CHECKS}/${TOTAL_CHECKS} ok · path ${PATH_SUFFIX} · ports ${ACTIVE_PORT}/${PREVIEW_PORT}"
+  detail="nodes ${#NODES[@]} · active port ${ACTIVE_PORT} · preview port ${PREVIEW_PORT}"
 
   jq -n \
     --arg kind "smoke" \
@@ -40,9 +39,8 @@ persist_summary() {
     --arg checked_at "$(date -u +%FT%TZ)" \
     --arg summary "$summary" \
     --arg detail "$detail" \
-    --arg active_host "$HOST_HEADER_ACTIVE" \
-    --arg preview_host "$HOST_HEADER_PREVIEW" \
-    --arg node_port "$NODE_PORT" \
+    --arg active_port "$ACTIVE_PORT" \
+    --arg preview_port "$PREVIEW_PORT" \
     --arg path_suffix "$PATH_SUFFIX" \
     --arg passed_checks "$PASSED_CHECKS" \
     --arg total_checks "$TOTAL_CHECKS" \
@@ -53,9 +51,8 @@ persist_summary() {
       summary: $summary,
       detail: $detail,
       metrics: {
-        active_host: $active_host,
-        preview_host: $preview_host,
-        node_port: $node_port,
+        active_port: $active_port,
+        preview_port: $preview_port,
         path_suffix: $path_suffix,
         passed_checks: $passed_checks,
         total_checks: $total_checks
@@ -65,9 +62,9 @@ persist_summary() {
 
 check_slot() {
   local slot_name="$1"
-  local host_header="$2"
+  local port="$2"
 
-  printf '\n[%s] host=%s path=%s port=%s\n' "$slot_name" "$host_header" "$PATH_SUFFIX" "$NODE_PORT"
+  printf '\n[%s] path=%s port=%s\n' "$slot_name" "$PATH_SUFFIX" "$port"
 
   local node=""
   for node in "${NODES[@]}"; do
@@ -79,8 +76,7 @@ check_slot() {
         -sS \
         -o "$TMP_OUTPUT" \
         -w '%{http_code}' \
-        -H "Host: ${host_header}" \
-        "http://${node}:${NODE_PORT}${PATH_SUFFIX}" || printf 'ERR'
+        "http://${node}:${port}${PATH_SUFFIX}" || printf 'ERR'
     )"
 
     if [[ "$code" == "200" ]]; then
@@ -98,8 +94,8 @@ check_slot() {
 
 trap 'rm -f "$TMP_OUTPUT"' EXIT
 
-check_slot "active" "$HOST_HEADER_ACTIVE"
-check_slot "preview" "$HOST_HEADER_PREVIEW"
+check_slot "active" "$ACTIVE_PORT"
+check_slot "preview" "$PREVIEW_PORT"
 persist_summary
 
 if [[ "$FAILURES" -gt 0 ]]; then

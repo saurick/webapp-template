@@ -19,7 +19,7 @@
 
 1. `kubectl --kubeconfig /Users/simon/.kube/ha-lab.conf get nodes`
 2. `kubectl --kubeconfig /Users/simon/.kube/ha-lab.conf get pods -A`
-3. `curl --noproxy '*' -H 'Host: app.192.168.0.108.nip.io' http://192.168.0.108:32668/readyz`
+3. `curl --noproxy '*' http://192.168.0.108:32668/readyz`
 4. `curl --noproxy '*' -u 'admin:HarborAdmin123!' http://harbor.192.168.0.108.nip.io:32668/api/v2.0/users/current`
 5. `ssh root@192.168.0.108 'gitlab-runner verify'`
 6. `bash /Users/simon/projects/webapp-template/server/deploy/lab-ha/scripts/helm-release.sh list`

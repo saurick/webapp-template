@@ -2,7 +2,18 @@
 
 ## 访问入口
 
-说明：当前用户侧浏览器/代理环境对 `*.nip.io` 这类主机名不稳定，因此实验室对外访问已统一切到 `192.168.0.108` 的直连 `IP:Port` 方案；这是目前最稳、最直接、最少踩坑的入口口径。
+说明：当前实验室同时保留两套人类访问入口：
+
+- 内网入口：`192.168.0.108` 的直连 `IP:Port`
+- 公网入口：`*.saurick.space` 的 `HTTPS` 子域名，由宿主机侧网关统一反代到内网服务
+
+Portal 现在内置“内网 / 外网”访问模式切换：
+
+- 通过内网 `IP:Port` 打开 Portal 时，默认优先使用内网链接
+- 通过公网 `portal.saurick.space` 打开 Portal 时，默认优先使用外网链接
+- 页面右上角可以手动切换，并记住当前浏览器上次选择
+
+### 内网入口
 
 - WebApp Lab: `http://192.168.0.108:32668`
 - WebApp Prod-Trial Active: `http://192.168.0.108:30089`
@@ -27,6 +38,31 @@
 - SeaweedFS S3: `http://192.168.0.108:30333`
 - GitLab: `http://192.168.0.108:8929`
 
+### 公网入口
+
+- WebApp Lab: `https://app.saurick.space`
+- WebApp Prod-Trial Active: `https://lab.saurick.space`
+- WebApp Prod-Trial Preview: `https://preview.saurick.space`
+- Portal: `https://portal.saurick.space`
+- Harbor: `https://harbor.saurick.space`
+- Grafana: `https://grafana.saurick.space`
+- Headlamp: `https://headlamp.saurick.space`
+- Jaeger: `https://jaeger.saurick.space`
+- Grafana Ops Dashboard: `https://grafana.saurick.space/d/lab-ha-overview/ha-lab-ops-overview`
+- Grafana K8s Workloads Dashboard: `https://grafana.saurick.space/d/lab-ha-service-governance/ha-lab-service-governance`
+- Grafana Data Dashboard: `https://grafana.saurick.space/d/lab-ha-data/ha-lab-data-and-storage`
+- Grafana PostgreSQL Dashboard: `https://grafana.saurick.space/d/lab-ha-postgres/ha-lab-postgresql-and-backup`
+- Grafana GitOps Dashboard: `https://grafana.saurick.space/d/lab-ha-gitops/ha-lab-gitops-and-delivery`
+- Prometheus: `https://prometheus.saurick.space`
+- Alertmanager: `https://alertmanager.saurick.space`
+- Argo CD: `https://argocd.saurick.space`
+- Hubble UI: `https://hubble.saurick.space`
+- Longhorn UI: `https://longhorn.saurick.space`
+- SeaweedFS Filer UI: `https://seaweedfs.saurick.space`
+- Alert Sink: `https://alertsink.saurick.space`
+- SeaweedFS S3: `https://s3.saurick.space`
+- GitLab: `https://gitlab.saurick.space`
+
 ## Tracing note
 
 - `Jaeger` 当前采用单实例 + `Badger` 本地持久化 + `7d TTL`
@@ -39,14 +75,51 @@
 
 - Headlamp 当前走内部 `NodePort`：`http://192.168.0.108:30087`
 - Headlamp 官方推荐使用 Kubernetes `ServiceAccount token` 登录
-- 当前实验室已经预置 `headlamp/headlamp-admin`，可直接执行：
+- `Portal` 的默认账号区现在会直接显示一条 `Headlamp 10y token` 卡片，并提供复制按钮；该 token 不写入 git，而是从 live 集群里的 `lab-portal/lab-portal-headlamp-access` runtime Secret 读取
+- 当前实验室已经预置 `headlamp/headlamp-admin`；如需重新生成 Portal 里的长时效 token，可直接执行：
+
+```bash
+bash /Users/simon/projects/webapp-template/server/deploy/lab-ha/scripts/sync-headlamp-portal-token.sh
+```
+
+- 上述脚本默认按 `10y` 生成并同步到 Portal；当前 API server 已确认接受这条时效，实际到期时间以 Portal 卡片展示为准
+- 如果只想拿一次性的临时 token，不想刷新 Portal Secret，继续执行：
 
 ```bash
 bash /Users/simon/projects/webapp-template/server/deploy/lab-ha/scripts/get-headlamp-token.sh
 ```
 
-- 默认会生成一个 `90d` 临时 token；如需缩短或拉长时效，可在命令前加 `TOKEN_DURATION=8h`、`TOKEN_DURATION=30d` 之类的环境变量
-- 当前这条入口面向内网/实验室使用；若后续要更大范围暴露，应再补 ingress 级 basic auth 或 OIDC，而不是裸露给更大的网络面
+- 临时 token 默认仍是 `90d`；如需缩短或拉长时效，可在命令前加 `TOKEN_DURATION=8h`、`TOKEN_DURATION=30d`、`TOKEN_DURATION=10y` 之类的环境变量
+- 当前这条入口面向内网/实验室使用；若后续要更大范围暴露，应继续在宿主机网关或统一认证层补鉴权，而不是直接放大网络面
+
+## Tailscale 外部访问建议
+
+- 当前如果需要让少量固定运维人员从实验室外访问，优先引入 `Tailscale` 作为外部运维入口，而不是直接把管理面做公网暴露
+- 当前推荐做法是：先在集群外边界主机，或当前宿主机侧一个稳定节点上接入 `Tailscale` 作为运维入口机
+- 如果 tailnet 已经有现成的 LAN `subnet router`，例如当前继续承担 `192.168.0.0/24` 的 `zos`，就保留它处理整段内网路由；`lab-ha-router` 只负责自己的 tailnet 身份、`Tailscale SSH` 和跳板访问
+- 只有在 tailnet 里没有现成 LAN 子路由，或者你明确要迁移主入口时，才显式给 `lab-ha-router` 加 `TAILSCALE_ROUTES=192.168.0.0/24`
+- 当前最小可执行入口见：
+
+```bash
+TAILSCALE_AUTH_KEY=tskey-xxxx \
+ROUTER_HOST=root@192.168.0.108 \
+  bash /Users/simon/projects/webapp-template/server/deploy/lab-ha/scripts/configure-tailscale-ops-host.sh
+```
+
+- 如果当前没有别的 `subnet router`，需要让 tailnet 客户端直接访问整段 `192.168.0.0/24`，再显式执行：
+
+```bash
+TAILSCALE_AUTH_KEY=tskey-xxxx \
+ROUTER_HOST=root@192.168.0.108 \
+TAILSCALE_ROUTES=192.168.0.0/24 \
+  bash /Users/simon/projects/webapp-template/server/deploy/lab-ha/scripts/configure-tailscale-ops-host.sh
+```
+
+- `Tailscale` 在这套环境里解决的是“外部运维访问”，不是“真实用户业务发布”；Portal/Grafana/Headlamp/Argo CD/GitLab 这类入口优先通过 tailnet 使用
+- 通过 tailnet 访问业务时，不要把某个单一 VIP 当成唯一前提；跨网段 / 路由式访问更稳的口径仍然是 `192.168.0.7 / 108 / 128 + Cilium Gateway hostNetwork 端口`
+- 如果当前 auth key 没有 `tag:lab-ha-router` 权限，可临时加 `TAILSCALE_ADVERTISE_TAGS=''` 关闭 tag，待后续补好 tailnet policy 再收紧
+- 如需浏览器里继续使用 `webapp-trial.lab.home.arpa` 这类内部域名，要么给 tailnet 配 split DNS，要么先在客户端本地 `hosts` 指向三台节点中的任一可达 IP
+- 详细说明见 `/Users/simon/projects/webapp-template/server/deploy/lab-ha/docs/TAILSCALE.md`
 
 ## S3 endpoint note
 
@@ -57,7 +130,9 @@ bash /Users/simon/projects/webapp-template/server/deploy/lab-ha/scripts/get-head
 ## Portal note
 
 - Portal is the navigation homepage for this lab environment
+- It now supports one-click switching between internal `IP:Port` links and external `HTTPS` domain links
 - It now includes a dedicated favicon and one-click copy buttons for default credentials
+- It now also includes a `Headlamp 10y token` copy card, backed by a live runtime Secret instead of a git-tracked static secret
 - It also includes an operational snapshot area for CI, GitOps, HA drills, and blackbox guidance
 - It now also surfaces the latest verified backup result and alert delivery summary for faster daily checks
 - It now also exposes dedicated `K8s Workloads` and `Headlamp` entries, so operators can choose between curated Grafana triage and interactive Kubernetes resource browsing
@@ -84,8 +159,9 @@ bash /Users/simon/projects/webapp-template/server/deploy/lab-ha/scripts/get-head
 ## 集群入口与节点
 
 - API VIP: `192.168.0.110:6443`
-- ingress NodePort HTTP: `192.168.0.108:32668`
-- ingress NodePort HTTPS: `192.168.0.108:30943`
+- WebApp Lab Gateway: `192.168.0.108:32668`
+- WebApp Prod-Trial Active Gateway: `192.168.0.108:30089`
+- WebApp Prod-Trial Preview Gateway: `192.168.0.108:30091`
 - node1: `192.168.0.7`
 - node2: `192.168.0.108`
 - node3: `192.168.0.128`
@@ -96,11 +172,9 @@ bash /Users/simon/projects/webapp-template/server/deploy/lab-ha/scripts/get-head
 - `gitlab`: 当前实验室部署仓库，建议用于 CI/CD / Argo CD / 演练环境
 - 默认不要同时推两个远程，除非明确说明
 
-## 历史入口说明
+## 当前业务入口口径
 
-- `*.192.168.0.108.nip.io:32668` 这组基于 Host 头的入口仍保留在集群内配置里
-- 其中 `app.192.168.0.108.nip.io` 对应 `WebApp Lab`
-- `webapp-trial.192.168.0.108.nip.io` 对应 `WebApp Prod-Trial Active`
-- `webapp-trial-preview.192.168.0.108.nip.io` 对应 `WebApp Prod-Trial Preview`
-- 但对当前浏览器环境不再作为主推荐入口
-- 后续若本机代理绕过规则已修好，可再切回主机名入口
+- `WebApp Lab` 直接访问 `32668`
+- `WebApp Prod-Trial Active` 直接访问 `30089`
+- `WebApp Prod-Trial Preview` 直接访问 `30091`
+- 业务入口已经不再依赖旧的 `Host` 头路由或 `Ingress NGINX`

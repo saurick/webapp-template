@@ -49,58 +49,35 @@ spec:
             dashboard_url: "http://192.168.0.108:30081/d/lab-ha-service-governance/ha-lab-service-governance"
             runbook_url: "http://192.168.0.108:8929/root/webapp-template-lab/-/blob/master/server/deploy/lab-ha/docs/TROUBLESHOOTING.md"
             alertmanager_url: "http://192.168.0.108:30093/#/alerts"
-        - alert: LabIngress429High
+        - alert: LabWebappEdgeDown
           expr: |
-            sum by (exported_namespace, ingress) (
-              rate(
-                nginx_ingress_controller_requests{
-                  exported_namespace=~"webapp.*",
-                  ingress=~"webapp-template.*",
-                  status="429"
-                }[5m]
-              )
-            ) > 0.05
-          for: 10m
+            probe_success{
+              job=~"prometheus-blackbox-exporter.*",
+              target=~"webapp|webapp-prod-trial-active|webapp-prod-trial-preview"
+            } == 0
+          for: 5m
           labels:
             severity: warning
           annotations:
-            summary: "实验室入口限流持续命中（{{ $labels.exported_namespace }}/{{ $labels.ingress }}）"
-            description: "{{ $labels.exported_namespace }} / {{ $labels.ingress }} 连续 10 分钟出现较高 429 速率，说明入口限流或客户端重试策略可能需要调整。先看 dashboard_url 里的 429、RPS 与副本变化。"
+            summary: "实验室业务正式入口不可用（{{ $labels.target }}）"
+            description: "{{ $labels.target }} 连续 5 分钟探测失败，说明对应 Gateway 正式端口已经不可用。先看 dashboard_url 里的 Endpoint 状态，再按 runbook_url 排查。"
             dashboard_url: "http://192.168.0.108:30081/d/lab-ha-service-governance/ha-lab-service-governance"
             runbook_url: "http://192.168.0.108:8929/root/webapp-template-lab/-/blob/master/server/deploy/lab-ha/docs/OPS_CHECKLIST.md"
             alertmanager_url: "http://192.168.0.108:30093/#/alerts"
-        - alert: LabIngressP95LatencyHigh
+        - alert: LabWebappEdgeSlow
           expr: |
-            (
-              histogram_quantile(
-                0.95,
-                sum by (le, exported_namespace, ingress) (
-                  rate(
-                    nginx_ingress_controller_request_duration_seconds_bucket{
-                      exported_namespace=~"webapp.*",
-                      ingress=~"webapp-template.*"
-                    }[5m]
-                  )
-                )
-              ) > 0.8
-            )
-            and
-            (
-              sum by (exported_namespace, ingress) (
-                rate(
-                  nginx_ingress_controller_requests{
-                    exported_namespace=~"webapp.*",
-                    ingress=~"webapp-template.*"
-                  }[5m]
-                )
-              ) > 0.2
-            )
+            avg_over_time(
+              probe_duration_seconds{
+                job=~"prometheus-blackbox-exporter.*",
+                target=~"webapp|webapp-prod-trial-active|webapp-prod-trial-preview"
+              }[5m]
+            ) > 0.8
           for: 10m
           labels:
             severity: warning
           annotations:
-            summary: "实验室入口 p95 延迟升高（{{ $labels.exported_namespace }}/{{ $labels.ingress }}）"
-            description: "{{ $labels.exported_namespace }} / {{ $labels.ingress }} 在有持续流量时连续 10 分钟 p95 延迟高于 800ms。先看 dashboard_url 里的入口延迟、HPA 与 Pod 健康，再按 runbook_url 排查。"
+            summary: "实验室业务正式入口探测变慢（{{ $labels.target }}）"
+            description: "{{ $labels.target }} 连续 10 分钟探测耗时高于 800ms。先看 dashboard_url 里的 Endpoint 耗时、HPA 与 Pod 健康，再按 runbook_url 排查。"
             dashboard_url: "http://192.168.0.108:30081/d/lab-ha-service-governance/ha-lab-service-governance"
             runbook_url: "http://192.168.0.108:8929/root/webapp-template-lab/-/blob/master/server/deploy/lab-ha/docs/TROUBLESHOOTING.md"
             alertmanager_url: "http://192.168.0.108:30093/#/alerts"

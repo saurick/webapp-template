@@ -1,0 +1,22 @@
+# yamllint disable-file
+{{- if .Values.ciliumIngressPolicy.enabled }}
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: {{ required "ciliumIngressPolicy.name is required" .Values.ciliumIngressPolicy.name }}
+  namespace: {{ required "namespace.name is required" .Values.namespace.name }}
+spec:
+{{- with .Values.ciliumIngressPolicy.description }}
+  description: {{ . | quote }}
+{{- end }}
+  endpointSelector:
+    matchLabels:
+{{ include "webapp-template.selectorLabels" . | nindent 6 }}
+  ingress:
+    - fromEntities:
+        - ingress
+{{- with .Values.ciliumIngressPolicy.toPorts }}
+      toPorts:
+{{ toYaml . | nindent 8 }}
+{{- end }}
+{{- end }}

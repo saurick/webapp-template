@@ -185,28 +185,6 @@ spec:
       targetPort: grpc
 ---
 apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: webapp-template-prod-trial
-  namespace: webapp-prod-trial
-  annotations:
-    nginx.ingress.kubernetes.io/proxy-body-size: "8m"
-spec:
-  ingressClassName: nginx
-  rules:
-    # 当前先用独立试验 host，与现有 lab 应用隔离；若后续切到正式域名，再按运维口径替换。
-    - host: webapp-trial.192.168.0.108.nip.io
-      http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: webapp-template-prod-trial
-                port:
-                  number: 80
----
-apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: webapp-template-prod-trial

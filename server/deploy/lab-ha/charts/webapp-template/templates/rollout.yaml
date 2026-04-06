@@ -46,23 +46,19 @@ spec:
       scaleDownDelayRevisionLimit: {{ $blueGreen.scaleDownDelayRevisionLimit }}
 {{- end }}
 {{- if (default false $analysis.enabled) }}
-      # 发布验证统一走 active/preview 实际入口，避免只看 Pod Ready 却漏掉 Host 路由与 Service 切换。
+      # 发布验证统一走 active/preview 正式端口，避免只看 Pod Ready 却漏掉最终入口与 Service 切换。
       prePromotionAnalysis:
         templates:
           - templateName: {{ printf "%s-readyz-check" $rolloutName }}
         args:
           - name: readyUrl
             value: {{ required "rollout.analysis.preview.url is required when rollout.analysis.enabled=true" $analysisPreview.url | quote }}
-          - name: hostHeader
-            value: {{ required "rollout.analysis.preview.hostHeader is required when rollout.analysis.enabled=true" $analysisPreview.hostHeader | quote }}
       postPromotionAnalysis:
         templates:
           - templateName: {{ printf "%s-readyz-check" $rolloutName }}
         args:
           - name: readyUrl
             value: {{ required "rollout.analysis.active.url is required when rollout.analysis.enabled=true" $analysisActive.url | quote }}
-          - name: hostHeader
-            value: {{ required "rollout.analysis.active.hostHeader is required when rollout.analysis.enabled=true" $analysisActive.hostHeader | quote }}
 {{- end }}
   template:
     metadata:

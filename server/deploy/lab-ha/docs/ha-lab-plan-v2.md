@@ -1,6 +1,8 @@
 # 实验室版高可用平台建设方案 v2
 ## Kubernetes + GitLab + Harbor + PostgreSQL HA + 监控日志 + GitOps
 
+> 说明：本文件是方案演进记录。当前 `lab-ha` 的业务正式入口已切到 `Cilium Gateway API`；下文保留的 `ingress-nginx` 讨论仅作历史背景，不再是 live 方案。
+
 ## 1. 建设目标
 
 搭建一套实验室版高可用平台，完成以下能力打通：

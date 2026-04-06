@@ -131,39 +131,45 @@ pdb:
   name: webapp-template
   minAvailable: 1
 
-ingress:
-  name: webapp-template
-  annotations:
-    # 保留足够余量，避免日常巡检和默认压测被误伤，同时先对单 IP 突发流量做基础兜底。
-    nginx.ingress.kubernetes.io/limit-connections: "40"
-    nginx.ingress.kubernetes.io/limit-rps: "60"
-    nginx.ingress.kubernetes.io/limit-burst-multiplier: "5"
-    nginx.ingress.kubernetes.io/proxy-body-size: "8m"
-    nginx.ingress.kubernetes.io/proxy-read-timeout: "30"
-    nginx.ingress.kubernetes.io/proxy-send-timeout: "30"
-  ingressClassName: nginx
-  rules:
-    - paths:
-        - path: /
-          pathType: Prefix
-          servicePort: 80
-    - host: app.192.168.0.108.nip.io
-      paths:
-        - path: /
-          pathType: Prefix
-          servicePort: 80
+gateway:
+  enabled: true
+  name: webapp-template-edge
+  gatewayClassName: cilium
+  listeners:
+    - name: lab
+      protocol: HTTP
+      port: 32668
+      allowedRoutes:
+        namespaces:
+          from: Same
+
+httpRoutes:
+  - name: webapp-template-edge
+    parentRefs:
+      - name: webapp-template-edge
+        sectionName: lab
+    rules:
+      - matches:
+          - path:
+              type: PathPrefix
+              value: /
+        backendRefs:
+          - name: webapp-template
+            port: 80
+
+ciliumIngressPolicy:
+  enabled: true
+  name: webapp-template-cilium-ingress
+  description: 允许 Cilium Gateway 的 reserved:ingress 身份进入 WebApp Lab Pod。
+  toPorts:
+    - ports:
+        - port: "8000"
+          protocol: TCP
 
 networkPolicy:
   name: webapp-template
   ingress:
-    # 只允许 ingress controller 和节点侧健康检查来源直接进 Pod，避免同集群其它业务 Pod 横向直连。
-    - from:
-        - namespaceSelector:
-            matchLabels:
-              kubernetes.io/metadata.name: ingress-nginx
-      ports:
-        - protocol: TCP
-          port: 8000
+    # 当前只保留节点侧直探来源；Gateway 入口放行统一收口到上面的 CiliumNetworkPolicy。
     - from:
         - ipBlock:
             cidr: 192.168.0.0/24

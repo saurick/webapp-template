@@ -35,13 +35,13 @@ for url in \
   curl -k -L -o /dev/null -s -w '%{http_code}\n' "$url"
 done
 
-bash /Users/simon/projects/webapp-template/server/deploy/lab-ha/scripts/check-webapp-prod-trial-internal.sh
+bash /Users/simon/projects/webapp-template/server/deploy/lab-ha/scripts/check-webapp-prod-trial-bluegreen.sh
 ```
 
 ### 判断
 
 - 只有一个站点挂：优先看该命名空间 Pod 和 Service
-- 全部挂：先看节点、`ingress-nginx`、当前访问端是否通过 VPN / 子网路由进入实验室网段
+- 全部挂：先看节点、`Cilium Gateway` 正式端口、当前访问端是否通过 VPN / 子网路由进入实验室网段
 
 如果故障发生在“刚重启 VM / 宿主机维护恢复”之后，第一反应不要先猜业务配置，直接跑：
 
@@ -148,7 +148,7 @@ kubectl --kubeconfig /Users/simon/.kube/ha-lab.conf -n kube-system delete pod -l
 ### 排查
 
 ```bash
-bash /Users/simon/projects/webapp-template/server/deploy/lab-ha/scripts/check-webapp-prod-trial-internal.sh
+bash /Users/simon/projects/webapp-template/server/deploy/lab-ha/scripts/check-webapp-prod-trial-bluegreen.sh
 kubectl --kubeconfig /Users/simon/.kube/ha-lab.conf get pods -n webapp -o wide
 kubectl --kubeconfig /Users/simon/.kube/ha-lab.conf logs -n webapp deploy/webapp-template --tail=120
 kubectl --kubeconfig /Users/simon/.kube/ha-lab.conf get pods -n database -l cnpg.io/cluster=app-pg -o wide
@@ -166,30 +166,29 @@ kubectl --kubeconfig /Users/simon/.kube/ha-lab.conf get pods -n database -l cnpg
 kubectl --kubeconfig /Users/simon/.kube/ha-lab.conf rollout status deployment/webapp-template -n webapp --timeout=300s
 ```
 
-## 2.1 内部域名 `VIP` 不通，但节点入口可用
+## 2.1 内部域名不通，但节点入口可用
 
 ### 现象
 
-- `http://192.168.0.120` 或 `webapp-trial.lab.home.arpa` 直连 VIP 不通
-- 但 `192.168.0.7 / 108 / 128:32668` 带 `Host: webapp-trial.lab.home.arpa` 仍能返回 `200`
+- `webapp-trial.lab.home.arpa:30089` 或 `webapp-trial-preview.lab.home.arpa:30091` 不通
+- 但 `192.168.0.7 / 108 / 128:30089/30091` 直连仍能返回 `200`
 
 ### 结论
 
 - 这通常不是 `webapp` 故障
-- 更常见的是访问端不在与集群相同的二层广播域，`MetalLB L2 VIP` 不能直接穿过 VPN / 子网路由到达
+- 更常见的是访问端没有拿到正确的内部 DNS 结果，或本机缓存还没刷新到三条节点 A 记录
 
 ### 处理
 
 ```bash
-bash /Users/simon/projects/webapp-template/server/deploy/lab-ha/scripts/ensure-ingress-nodeport-cluster.sh
-bash /Users/simon/projects/webapp-template/server/deploy/lab-ha/scripts/check-webapp-prod-trial-internal.sh
+bash /Users/simon/projects/webapp-template/server/deploy/lab-ha/scripts/check-webapp-prod-trial-bluegreen.sh
 ```
 
 当前阶段把正式访问口径收口为：
 
 - `webapp-trial.lab.home.arpa`
 - 多节点 A 记录：`192.168.0.7 / 108 / 128`
-- 访问端口：`32668`
+- 访问端口：`30089`
 
 ## 3. GitLab Pipeline 失败
 

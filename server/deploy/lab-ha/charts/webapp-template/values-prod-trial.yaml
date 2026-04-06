@@ -151,11 +151,9 @@ rollout:
     timeoutSeconds: 5
     expectedReadyBody: ready
     active:
-      url: http://192.168.0.108:32668/readyz
-      hostHeader: webapp-trial.192.168.0.108.nip.io
+      url: http://192.168.0.108:30089/readyz
     preview:
-      url: http://192.168.0.108:32668/readyz
-      hostHeader: webapp-trial-preview.192.168.0.108.nip.io
+      url: http://192.168.0.108:30091/readyz
 
 service:
   name: webapp-template-prod-trial
@@ -199,42 +197,63 @@ pdb:
   name: webapp-template-prod-trial
   minAvailable: 1
 
-ingress:
-  name: webapp-template-prod-trial
-  annotations:
-    # 生产试验命名空间先保持和 lab 一致的基础限流，降低单 IP 异常流量把小规格节点打满的风险。
-    nginx.ingress.kubernetes.io/limit-connections: "40"
-    nginx.ingress.kubernetes.io/limit-rps: "60"
-    nginx.ingress.kubernetes.io/limit-burst-multiplier: "5"
-    nginx.ingress.kubernetes.io/proxy-body-size: "8m"
-    nginx.ingress.kubernetes.io/proxy-read-timeout: "30"
-    nginx.ingress.kubernetes.io/proxy-send-timeout: "30"
-  ingressClassName: nginx
-  rules:
-    - host: webapp-trial.192.168.0.108.nip.io
-      paths:
-        - path: /
-          pathType: Prefix
-          servicePort: 80
-    # preview host 固定指向 preview Service，便于蓝绿发布时先验新版本入口，再决定是否切主流量。
-    - host: webapp-trial-preview.192.168.0.108.nip.io
-      paths:
-        - path: /
-          pathType: Prefix
-          serviceName: webapp-template-prod-trial-preview
-          servicePort: 80
+gateway:
+  enabled: true
+  name: webapp-template-prod-trial-edge
+  gatewayClassName: cilium
+  listeners:
+    - name: active
+      protocol: HTTP
+      port: 30089
+      allowedRoutes:
+        namespaces:
+          from: Same
+    - name: preview
+      protocol: HTTP
+      port: 30091
+      allowedRoutes:
+        namespaces:
+          from: Same
+
+httpRoutes:
+  - name: webapp-template-prod-trial-edge
+    parentRefs:
+      - name: webapp-template-prod-trial-edge
+        sectionName: active
+    rules:
+      - matches:
+          - path:
+              type: PathPrefix
+              value: /
+        backendRefs:
+          - name: webapp-template-prod-trial
+            port: 80
+  - name: webapp-template-prod-trial-preview-edge
+    parentRefs:
+      - name: webapp-template-prod-trial-edge
+        sectionName: preview
+    rules:
+      - matches:
+          - path:
+              type: PathPrefix
+              value: /
+        backendRefs:
+          - name: webapp-template-prod-trial-preview
+            port: 80
+
+ciliumIngressPolicy:
+  enabled: true
+  name: webapp-template-prod-trial-cilium-ingress
+  description: 允许 Cilium Gateway 的 reserved:ingress 身份进入 prod-trial active/preview Pod。
+  toPorts:
+    - ports:
+        - port: "8000"
+          protocol: TCP
 
 networkPolicy:
   name: webapp-template-prod-trial
   ingress:
-    # 生产试验入口只允许 ingress controller 和节点探针直接进 Pod，避免 namespace 间随意横向访问。
-    - from:
-        - namespaceSelector:
-            matchLabels:
-              kubernetes.io/metadata.name: ingress-nginx
-      ports:
-        - protocol: TCP
-          port: 8000
+    # 当前只保留节点侧直探来源；Gateway 入口放行统一收口到上面的 CiliumNetworkPolicy。
     - from:
         - ipBlock:
             cidr: 192.168.0.0/24

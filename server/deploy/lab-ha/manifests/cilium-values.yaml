@@ -21,5 +21,38 @@ k8sServicePort: 6443
 # 这里显式开启，收口 ClusterIP / NodePort / LoadBalancer 转发到 Cilium eBPF datapath。
 kubeProxyReplacement: true
 
+# WebApp 正式入口已经收口到 Cilium Gateway hostNetwork，避免继续依赖已退役的 ingress-nginx。
+gatewayAPI:
+  enabled: true
+  gatewayClass:
+    create: "true"
+  hostNetwork:
+    enabled: true
+
+prometheus:
+  enabled: true
+  metricsService: true
+  serviceMonitor:
+    enabled: true
+    trustCRDsExist: true
+    labels:
+      release: kube-prometheus-stack
+
 operator:
   replicas: 1
+  prometheus:
+    enabled: true
+    metricsService: true
+    serviceMonitor:
+      enabled: true
+      labels:
+        release: kube-prometheus-stack
+
+envoy:
+  enabled: true
+  prometheus:
+    enabled: true
+    serviceMonitor:
+      enabled: true
+      labels:
+        release: kube-prometheus-stack

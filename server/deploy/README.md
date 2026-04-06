@@ -58,6 +58,7 @@
 - 关键内容：
   - `docs/README.md`
   - `docs/ACCESS.md`
+  - `docs/TAILSCALE.md`
   - `docs/TEST_REPORT.md`
   - `/Users/simon/projects/webapp-template/docs/deployment-conventions.md`
   - `scripts/helm-release.sh`

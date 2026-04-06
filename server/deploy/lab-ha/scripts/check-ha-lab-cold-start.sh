@@ -22,6 +22,8 @@ fi
 ACCESS_URLS=(
 	"http://${ACCESS_HOST}:30088/"
 	"http://${ACCESS_HOST}:32668/readyz"
+	"http://${ACCESS_HOST}:30089/readyz"
+	"http://${ACCESS_HOST}:30091/readyz"
 	"http://${ACCESS_HOST}:30081/login"
 	"http://${ACCESS_HOST}:30090/-/ready"
 	"http://${ACCESS_HOST}:30093/"

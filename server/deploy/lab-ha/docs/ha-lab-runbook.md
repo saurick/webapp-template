@@ -1,5 +1,7 @@
 # 3 节点实验室版高可用平台部署 Runbook
 
+> 说明：本文件保留建设过程记录。当前 live 真源已经切到 `Cilium Gateway API`，文中提到的 `ingress-nginx` 步骤仅供历史复盘，不再代表现行入口方案。
+
 ## 1. 目标
 
 在 3 台 `Ubuntu 24.04` 节点上落地以下平台能力：
@@ -8,7 +10,7 @@
 - `Cilium` 网络与 `Hubble`
 - `kube-vip` 提供 API VIP
 - `MetalLB` 提供裸机 `LoadBalancer`
-- `ingress-nginx` + `cert-manager`
+- `Cilium Gateway API` + `cert-manager`
 - `Longhorn` 持久卷高可用
 - `SeaweedFS` S3 兼容对象存储
 - `CloudNativePG` PostgreSQL 高可用
@@ -33,7 +35,7 @@ bash /Users/simon/projects/webapp-template/server/deploy/lab-ha/scripts/helm-rel
 
 - 第三方 chart 使用固定版本，和当前实验集群对齐
 - 平台自定义对象通过本地 `charts/lab-platform` 交给 Helm 管理
-- `webapp-template` 的 `lab / prod-trial / internal` 三种形态统一走 `charts/webapp-template`
+- `webapp-template` 的 `lab / prod-trial` 两种形态统一走 `charts/webapp-template`
 
 ---
 

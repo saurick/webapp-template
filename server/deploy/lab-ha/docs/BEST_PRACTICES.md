@@ -19,6 +19,7 @@
 - `Velero` 仅启用对象级备份：当前资源预算下优先保护 K8s 对象与配置状态，不在本轮实验默认打开 node-agent 数据面备份
 - `Sealed Secrets` 作为 GitOps 场景下的密钥收口：避免把 Argo CD 仓库凭据明文写进仓库
 - 浏览器访问入口优先改成 `192.168.0.108:port`：避免用户侧代理/DNS 对 `nip.io` 域名的不可控影响
+- 外部运维访问优先引入 `Tailscale` 运维入口机；只有 tailnet 没有现成 LAN `subnet router`，或你明确要迁移主入口时，才显式把它升格为 `subnet router`
 
 ## 已做调优
 
@@ -34,7 +35,7 @@
   - 统一 `kubeadm` 标准控制面
   - `kube-vip` 负责 API VIP
   - `Cilium + Hubble` 提供网络策略与网络可观测
-  - 统一通过 `ingress-nginx` 对外
+  - `WebApp` 业务入口统一通过 `Cilium Gateway hostNetwork` 对外
 - 存储层：
   - `Longhorn` 默认 2 副本，兼顾数据冗余和容量
   - 显式开启 `autoSalvage`、`autoDeletePodWhenVolumeDetachedUnexpectedly` 与 `nodeDownPodDeletionPolicy=delete-both-statefulset-and-deployment-pod`，避免整集群 reboot 后 `RWO PVC` 长时间卡在 `faulted/detached`
@@ -84,8 +85,7 @@
 
 - 如果节点升级到 `8C/16G`，优先补：
   - Harbor `trivy`
-  - Velero + SeaweedFS S3 备份
-  - Sealed Secrets
+  - Velero 数据面备份能力（如 node-agent / 卷级恢复链路），而不只停留在当前对象级备份
   - Kyverno 强策略
 - 如果后续拿到 3 台独立宿主机，再评估：
   - 更强的对象存储冗余策略

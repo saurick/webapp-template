@@ -43,7 +43,7 @@
 
 满足任一条件时，优先用 Helm：
 
-- 资源来自第三方成熟 chart，例如 `ingress-nginx`、`kube-prometheus-stack`、`velero`、`harbor`
+- 资源来自第三方成熟 chart，例如 `cilium`、`kube-prometheus-stack`、`velero`、`harbor`
 - 同一类资源存在多个环境变体，且差异主要体现在 values
 - 需要明确 release 名、chart 版本、升级入口和回滚口径
 - 资源会被 Argo CD 长期接管，且后续还要持续升级
@@ -73,7 +73,7 @@
 例如：
 
 - 若 `webapp-template-prod-trial` 已由 `charts/webapp-template` 管理，就不要再维护另一份等价的 Kustomize 主清单
-- 若 `ingress-nginx-controller` 的入口策略已写入 Helm values，就不要再把 `externalTrafficPolicy` 长期留在现场 patch 里
+- 若 `webapp-template` 的 `Gateway listeners` 已写入 Helm values，就不要再把对外端口长期留在现场 patch 里
 
 ### 2. 现场 patch 只能做应急，不算完成
 
@@ -101,7 +101,6 @@
 
 - `cilium`
 - `metallb`
-- `ingress-nginx`
 - `cert-manager`
 - `longhorn`
 - `cloudnative-pg`
