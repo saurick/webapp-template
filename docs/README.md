@@ -4,6 +4,7 @@
 
 当前项目文档主要分布在以下目录：
 
+- 当前真源、阅读顺序与新对话交接模板：`/Users/simon/projects/webapp-template/docs/current-source-of-truth.md`
 - 后端文档索引：`/Users/simon/projects/webapp-template/server/docs/README.md`
 - 后端文档：`/Users/simon/projects/webapp-template/server/docs`
 - 部署模板：`/Users/simon/projects/webapp-template/server/deploy/README.md`

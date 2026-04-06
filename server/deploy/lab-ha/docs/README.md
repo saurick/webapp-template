@@ -29,6 +29,7 @@
 - `docs/RECOVERY_RUNBOOK.md`: 恢复与故障演练手册
 - `docs/VM_POWER_SEQUENCE.md`: 三台 VM 计划性关机 / 开机顺序、影响与验收口径
 - `scripts/helm-release.sh`: Helm 统一入口，负责 repo 初始化、模板渲染与 release 同步
+- `scripts/harden-gitlab-instance.sh`: 收口独立 GitLab 实例的管理员基线，关闭公开注册与 usage/service ping，并按需重载 Puma
 - `charts/lab-platform/`: Jaeger、Loki、Grafana、Portal、NodePort、Argo 补充对象等平台级本地 chart
 - `charts/headlamp/`: 实验室收口后的 Headlamp 本地 chart；用于修正上游 chart 与 `v0.40.1` 镜像的参数不兼容
 - `charts/webapp-template/`: `lab`、`prod-trial` 复用的业务 chart
@@ -93,8 +94,9 @@
 - 当前外部访问主入口统一收口为 `192.168.0.108` 的直连 `IP:Port`
 - 这是对当前虚拟化网络和用户本机代理环境最稳定、最易维护的口径
 - `Cilium Gateway API` 已正式接管 `WebApp Lab / Prod-Trial Active / Prod-Trial Preview` 三条业务入口
-- `Portal` 已作为默认起始页，包含入口导航、默认账号、Headlamp 10 年 token 复制卡、快照摘要、最近一次压测摘要与文档直达链接
-- `Portal` 当前还会展示最近一次冷启动验收、最近一次 HA 演练、最近一次备份检查、最近一次烟雾检查；这些摘要会复用 Alert Sink 已持久化的轻量存储，避免重启后整块上下文直接清空
+- `Portal` 已作为默认起始页，包含入口导航、默认账号、Headlamp 10 年 token 复制卡、文档直达链接，以及面向值班的“当前开机进度 / 当前关机进度”live 区域
+- `Portal` 当前既会展示“当前开机进度 / 当前关机进度 / 下一台建议”，也会展示最近一次冷启动验收、最近一次 HA 演练、最近一次备份检查、最近一次烟雾检查；最近结果摘要继续复用 Alert Sink 已持久化的轻量存储，避免重启后整块上下文直接清空
+- `Portal` 的关机进度卡片只负责回答“现在能不能继续关下一台”；由于 Portal 自己固定在 `node2 / 192.168.0.108`，当下一步轮到关闭 `node2` 时，卡片会明确提示“这是最后一个可视步骤”，后续最终关机仍以虚拟化平台电源状态为准
 - `Portal` 现在也会显式给出 `K8s Workloads` 与 `Headlamp` 两类 K8s 入口，避免值班人员在“看趋势”与“看对象细节”之间来回猜测
 - 面向人操作的日常巡检、值班和恢复，默认先看 `Portal + Grafana Ops + K8s Workloads + Headlamp + Alert Sink + Alertmanager + Argo CD` 这些 live 页面，再决定是否执行脚本
 - 当前对人展示统一口径：`WebApp Lab`、`WebApp Prod-Trial Active`、`WebApp Prod-Trial Preview`

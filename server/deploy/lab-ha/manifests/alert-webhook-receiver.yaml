@@ -9,6 +9,7 @@ data:
     import json
     import logging
     import os
+    import ssl
     import threading
     import uuid
     from collections import deque
@@ -16,14 +17,92 @@ data:
     from http import HTTPStatus
     from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
     from pathlib import Path
+    from urllib.error import HTTPError, URLError
     from urllib.parse import parse_qs, urlparse
+    from urllib.request import Request, urlopen
 
     DATA_PATH = Path(os.getenv("DATA_PATH", "/data/alerts.jsonl"))
     OPS_STATE_DIR = DATA_PATH.parent / "ops-state"
     MAX_EVENTS = int(os.getenv("MAX_EVENTS", "200"))
     MAX_BODY_BYTES = int(os.getenv("MAX_BODY_BYTES", str(2 * 1024 * 1024)))
+    K8S_TOKEN_PATH = Path("/var/run/secrets/kubernetes.io/serviceaccount/token")
+    K8S_CA_PATH = Path("/var/run/secrets/kubernetes.io/serviceaccount/ca.crt")
+    K8S_API_HOST = os.getenv("KUBERNETES_SERVICE_HOST", "kubernetes.default.svc")
+    K8S_API_PORT = os.getenv("KUBERNETES_SERVICE_PORT_HTTPS", "443")
+    K8S_API_BASE = f"https://{K8S_API_HOST}:{K8S_API_PORT}"
+    LIVE_STATUS_TIMEOUT_SECONDS = float(os.getenv("LIVE_STATUS_TIMEOUT_SECONDS", "3"))
     STORE_LOCK = threading.Lock()
     EVENTS = deque(maxlen=MAX_EVENTS)
+    BOOT_NODE_ORDER = [
+        {"name": "node3", "ip": "192.168.0.128", "order": 1},
+        {"name": "node2", "ip": "192.168.0.108", "order": 2},
+        {"name": "node1", "ip": "192.168.0.7", "order": 3},
+    ]
+    SHUTDOWN_NODE_ORDER = [
+        {"name": "node1", "ip": "192.168.0.7", "order": 1},
+        {"name": "node2", "ip": "192.168.0.108", "order": 2},
+        {"name": "node3", "ip": "192.168.0.128", "order": 3},
+    ]
+    PORTAL_ENTRY_NODE = {"name": "node2", "ip": "192.168.0.108"}
+    BOOT_WORKLOAD_GROUPS = [
+        {
+            "key": "portal",
+            "label": "Portal",
+            "namespace": "lab-portal",
+            "requirements": [{"prefix": "lab-portal-", "label": "portal", "min_ready": 1}],
+        },
+        {
+            "key": "database",
+            "label": "PostgreSQL",
+            "namespace": "database",
+            "requirements": [{"prefix": "app-pg-", "label": "cluster", "min_ready": 1}],
+        },
+        {
+            "key": "harbor",
+            "label": "Harbor",
+            "namespace": "harbor",
+            "requirements": [
+                {"prefix": "harbor-core-", "label": "core", "min_ready": 1},
+                {"prefix": "harbor-database-", "label": "database", "min_ready": 1},
+                {"prefix": "harbor-redis-", "label": "redis", "min_ready": 1},
+                {"prefix": "harbor-registry-", "label": "registry", "min_ready": 1},
+                {"prefix": "harbor-jobservice-", "label": "jobservice", "min_ready": 1},
+            ],
+        },
+        {
+            "key": "grafana",
+            "label": "Grafana",
+            "namespace": "monitoring",
+            "requirements": [{"prefix": "kube-prometheus-stack-grafana-", "label": "grafana", "min_ready": 1}],
+        },
+        {
+            "key": "alert-sink",
+            "label": "Alert Sink",
+            "namespace": "monitoring",
+            "requirements": [{"prefix": "alert-webhook-receiver-", "label": "alert-sink", "min_ready": 1}],
+        },
+        {
+            "key": "webapp-lab",
+            "label": "WebApp Lab",
+            "namespace": "webapp",
+            "requirements": [{"prefix": "webapp-template-", "label": "lab", "min_ready": 1}],
+        },
+        {
+            "key": "prod-trial",
+            "label": "Prod-Trial",
+            "namespace": "webapp-prod-trial",
+            "requirements": [{"prefix": "webapp-template-prod-trial-", "label": "active+preview", "min_ready": 2}],
+        },
+    ]
+    BOOT_PROBE_URLS = [
+        {"key": "portal", "label": "Portal", "url": "http://192.168.0.108:30088/"},
+        {"key": "lab", "label": "WebApp Lab", "url": "http://192.168.0.108:32668/readyz"},
+        {"key": "active", "label": "Prod-Trial Active", "url": "http://192.168.0.108:30089/readyz"},
+        {"key": "preview", "label": "Prod-Trial Preview", "url": "http://192.168.0.108:30091/readyz"},
+        {"key": "grafana", "label": "Grafana", "url": "http://192.168.0.108:30081/login"},
+        {"key": "alertmanager", "label": "Alertmanager", "url": "http://192.168.0.108:30093/"},
+        {"key": "gitlab", "label": "GitLab", "url": "http://192.168.0.108:8929/users/sign_in"},
+    ]
 
     logging.basicConfig(
         level=os.getenv("LOG_LEVEL", "INFO").upper(),
@@ -438,6 +517,362 @@ data:
         return items
 
 
+    def service_account_token():
+        if not K8S_TOKEN_PATH.exists():
+            raise RuntimeError("service account token not mounted")
+        token = K8S_TOKEN_PATH.read_text(encoding="utf-8").strip()
+        if not token:
+            raise RuntimeError("service account token is empty")
+        return token
+
+
+    def kubernetes_ssl_context():
+        if K8S_CA_PATH.exists():
+            return ssl.create_default_context(cafile=str(K8S_CA_PATH))
+        return ssl.create_default_context()
+
+
+    def kubernetes_json(path):
+        request = Request(
+            f"{K8S_API_BASE}{path}",
+            headers={
+                "Authorization": f"Bearer {service_account_token()}",
+                "Accept": "application/json",
+            },
+        )
+        try:
+            with urlopen(request, timeout=LIVE_STATUS_TIMEOUT_SECONDS, context=kubernetes_ssl_context()) as response:
+                return json.loads(response.read().decode("utf-8"))
+        except HTTPError as exc:
+            raise RuntimeError(f"kubernetes api http {exc.code} for {path}") from exc
+        except URLError as exc:
+            raise RuntimeError(f"kubernetes api unavailable for {path}: {exc.reason}") from exc
+
+
+    def list_namespace_pods(namespace):
+        data = kubernetes_json(f"/api/v1/namespaces/{namespace}/pods")
+        items = data.get("items")
+        return items if isinstance(items, list) else []
+
+
+    def list_nodes():
+        data = kubernetes_json("/api/v1/nodes")
+        items = data.get("items")
+        return items if isinstance(items, list) else []
+
+
+    def pod_is_ready(pod):
+        status = pod.get("status") or {}
+        if status.get("phase") != "Running":
+            return False
+        container_statuses = status.get("containerStatuses") or []
+        if not container_statuses:
+            return False
+        return all(bool(item.get("ready")) for item in container_statuses)
+
+
+    def node_is_ready(node):
+        status = node.get("status") or {}
+        conditions = status.get("conditions") or []
+        for condition in conditions:
+            if condition.get("type") == "Ready":
+                return condition.get("status") == "True"
+        return False
+
+
+    def summarize_requirement(pods, requirement):
+        matched = [pod for pod in pods if (pod.get("metadata") or {}).get("name", "").startswith(requirement["prefix"])]
+        ready_count = sum(1 for pod in matched if pod_is_ready(pod))
+        min_ready = int(requirement.get("min_ready", 1))
+        return {
+            "label": requirement["label"],
+            "ready": ready_count >= min_ready,
+            "ready_count": ready_count,
+            "min_ready": min_ready,
+            "matched": len(matched),
+        }
+
+
+    def summarize_workload_group(group, namespace_pods):
+        pods = namespace_pods.get(group["namespace"], [])
+        requirement_results = [summarize_requirement(pods, item) for item in group["requirements"]]
+        blocked = [item["label"] for item in requirement_results if not item["ready"]]
+        return {
+            "key": group["key"],
+            "label": group["label"],
+            "status": "ok" if not blocked else "warn",
+            "ready": 0 if blocked else 1,
+            "total": 1,
+            "blocked": blocked,
+        }
+
+
+    def probe_url(url):
+        request = Request(url, headers={"User-Agent": "alert-webhook-receiver/live-ops"})
+        try:
+            with urlopen(request, timeout=LIVE_STATUS_TIMEOUT_SECONDS) as response:
+                return response.status == HTTPStatus.OK, response.status
+        except HTTPError as exc:
+            return False, exc.code
+        except Exception:
+            return False, 0
+
+
+    def build_ordered_nodes(order, node_map):
+        ordered_nodes = []
+        for node in order:
+            live_item = node_map.get(node["name"])
+            ready = node_is_ready(live_item or {})
+            ordered_nodes.append({
+                "name": node["name"],
+                "ip": node["ip"],
+                "order": node["order"],
+                "ready": ready,
+                "stopped": not ready,
+                "status": "ok" if ready else "warn",
+            })
+        return ordered_nodes
+
+
+    def count_contiguous(items, predicate):
+        count = 0
+        for item in items:
+            if predicate(item):
+                count += 1
+                continue
+            break
+        return count
+
+
+    def collect_live_status_snapshot():
+        nodes = list_nodes()
+        namespace_pods = {
+            group["namespace"]: list_namespace_pods(group["namespace"])
+            for group in BOOT_WORKLOAD_GROUPS
+        }
+        node_map = {
+            (item.get("metadata") or {}).get("name"): item
+            for item in nodes
+        }
+        boot_nodes = build_ordered_nodes(BOOT_NODE_ORDER, node_map)
+        shutdown_nodes = build_ordered_nodes(SHUTDOWN_NODE_ORDER, node_map)
+        workload_groups = [summarize_workload_group(group, namespace_pods) for group in BOOT_WORKLOAD_GROUPS]
+        core_ready = sum(item["ready"] for item in workload_groups)
+        blocked_components = [
+            f'{item["label"]}({", ".join(item["blocked"])})' if item["blocked"] else item["label"]
+            for item in workload_groups
+            if item["status"] != "ok"
+        ]
+
+        url_results = []
+        url_ok = 0
+        for item in BOOT_PROBE_URLS:
+            ok, status_code = probe_url(item["url"])
+            if ok:
+                url_ok += 1
+            url_results.append({
+                "key": item["key"],
+                "label": item["label"],
+                "ok": ok,
+                "status_code": status_code,
+                "status": "ok" if ok else "warn",
+            })
+        blocked_urls = [item["label"] for item in url_results if not item["ok"]]
+        fixed_entry_ready = 1 if any(
+            node["name"] == PORTAL_ENTRY_NODE["name"] and node["ready"]
+            for node in boot_nodes
+        ) else 0
+        return {
+            "checked_at": utc_now_iso(),
+            "boot_nodes": boot_nodes,
+            "shutdown_nodes": shutdown_nodes,
+            "ready_nodes": sum(1 for item in boot_nodes if item["ready"]),
+            "core_ready": core_ready,
+            "core_total": len(BOOT_WORKLOAD_GROUPS),
+            "url_ok": url_ok,
+            "url_total": len(BOOT_PROBE_URLS),
+            "blocked_components": blocked_components,
+            "blocked_urls": blocked_urls,
+            "fixed_entry_ready": fixed_entry_ready,
+        }
+
+
+    def build_boot_progress_payload():
+        payload = {
+            "kind": "boot-progress",
+            "checked_at": utc_now_iso(),
+            "status": "loading",
+            "phase": "loading",
+            "ready_nodes": 0,
+            "total_nodes": len(BOOT_NODE_ORDER),
+            "contiguous_ready_nodes": 0,
+            "core_ready": 0,
+            "core_total": len(BOOT_WORKLOAD_GROUPS),
+            "url_ok": 0,
+            "url_total": len(BOOT_PROBE_URLS),
+            "next_node": "",
+            "next_node_ip": "",
+            "nodes": [],
+            "gates": [],
+            "blocked_components": [],
+            "blocked_urls": [],
+            "error": "",
+        }
+        try:
+            snapshot = collect_live_status_snapshot()
+            ordered_nodes = snapshot["boot_nodes"]
+            ready_nodes = snapshot["ready_nodes"]
+            contiguous_ready_nodes = count_contiguous(ordered_nodes, lambda item: item["ready"])
+            out_of_order = any(item["ready"] for item in ordered_nodes[contiguous_ready_nodes:])
+            next_node = ordered_nodes[contiguous_ready_nodes] if contiguous_ready_nodes < len(ordered_nodes) else None
+            core_ready = snapshot["core_ready"]
+            url_ok = snapshot["url_ok"]
+            blocked_components = snapshot["blocked_components"]
+            blocked_urls = snapshot["blocked_urls"]
+            if out_of_order:
+                phase = "out-of-order"
+                status = "warn"
+            elif next_node is not None:
+                phase = f'waiting-{next_node["name"]}'
+                status = "warn" if contiguous_ready_nodes > 0 else "loading"
+            elif core_ready < len(BOOT_WORKLOAD_GROUPS) or url_ok < len(BOOT_PROBE_URLS):
+                phase = "stabilizing"
+                status = "warn"
+            else:
+                phase = "complete"
+                status = "ok"
+
+            payload.update({
+                "checked_at": snapshot["checked_at"],
+                "status": status,
+                "phase": phase,
+                "ready_nodes": ready_nodes,
+                "contiguous_ready_nodes": contiguous_ready_nodes,
+                "core_ready": core_ready,
+                "url_ok": url_ok,
+                "next_node": next_node["name"] if next_node else "",
+                "next_node_ip": next_node["ip"] if next_node else "",
+                "nodes": ordered_nodes,
+                "gates": [
+                    {"key": "nodes", "status": "ok" if ready_nodes == len(ordered_nodes) else ("warn" if ready_nodes > 0 else "loading"), "ready": ready_nodes, "total": len(ordered_nodes)},
+                    {"key": "entry-node", "status": "ok" if snapshot["fixed_entry_ready"] else "warn", "ready": snapshot["fixed_entry_ready"], "total": 1},
+                    {"key": "core", "status": "ok" if core_ready == len(BOOT_WORKLOAD_GROUPS) else "warn", "ready": core_ready, "total": len(BOOT_WORKLOAD_GROUPS), "blocked": blocked_components},
+                    {"key": "urls", "status": "ok" if url_ok == len(BOOT_PROBE_URLS) else "warn", "ready": url_ok, "total": len(BOOT_PROBE_URLS), "blocked": blocked_urls},
+                ],
+                "blocked_components": blocked_components,
+                "blocked_urls": blocked_urls,
+            })
+            return payload
+        except Exception as exc:
+            LOGGER.warning("build boot progress failed: %s", exc)
+            payload.update({
+                "status": "fail",
+                "phase": "unavailable",
+                "error": str(exc),
+                "gates": [
+                    {"key": "nodes", "status": "loading", "ready": 0, "total": len(BOOT_NODE_ORDER)},
+                    {"key": "entry-node", "status": "loading", "ready": 0, "total": 1},
+                    {"key": "core", "status": "loading", "ready": 0, "total": len(BOOT_WORKLOAD_GROUPS), "blocked": []},
+                    {"key": "urls", "status": "loading", "ready": 0, "total": len(BOOT_PROBE_URLS), "blocked": []},
+                ],
+            })
+            return payload
+
+
+    def build_shutdown_progress_payload():
+        payload = {
+            "kind": "shutdown-progress",
+            "checked_at": utc_now_iso(),
+            "status": "loading",
+            "phase": "loading",
+            "stopped_nodes": 0,
+            "total_nodes": len(SHUTDOWN_NODE_ORDER),
+            "remaining_ready_nodes": 0,
+            "remaining_total_nodes": len(SHUTDOWN_NODE_ORDER),
+            "contiguous_stopped_nodes": 0,
+            "core_ready": 0,
+            "core_total": len(BOOT_WORKLOAD_GROUPS),
+            "url_ok": 0,
+            "url_total": len(BOOT_PROBE_URLS),
+            "next_node": "",
+            "next_node_ip": "",
+            "portal_last_visible_step": False,
+            "nodes": [],
+            "gates": [],
+            "blocked_components": [],
+            "blocked_urls": [],
+            "error": "",
+        }
+        try:
+            snapshot = collect_live_status_snapshot()
+            ordered_nodes = snapshot["shutdown_nodes"]
+            stopped_nodes = sum(1 for item in ordered_nodes if item["stopped"])
+            remaining_ready_nodes = sum(1 for item in ordered_nodes if item["ready"])
+            contiguous_stopped_nodes = count_contiguous(ordered_nodes, lambda item: item["stopped"])
+            out_of_order = any(item["stopped"] for item in ordered_nodes[contiguous_stopped_nodes:])
+            next_node = ordered_nodes[contiguous_stopped_nodes] if contiguous_stopped_nodes < len(ordered_nodes) else None
+            core_ready = snapshot["core_ready"]
+            url_ok = snapshot["url_ok"]
+            blocked_components = snapshot["blocked_components"]
+            blocked_urls = snapshot["blocked_urls"]
+            portal_last_visible_step = bool(next_node and next_node["name"] == PORTAL_ENTRY_NODE["name"])
+            stable_remaining_stack = core_ready == len(BOOT_WORKLOAD_GROUPS) and url_ok == len(BOOT_PROBE_URLS)
+            if out_of_order:
+                phase = "out-of-order"
+                status = "warn"
+            elif next_node is None:
+                phase = "complete"
+                status = "ok"
+            elif stopped_nodes > 0 and not stable_remaining_stack:
+                phase = "stabilizing"
+                status = "warn"
+            elif portal_last_visible_step:
+                phase = "portal-last-visible-step"
+                status = "warn"
+            else:
+                phase = f'waiting-{next_node["name"]}'
+                status = "ok" if stable_remaining_stack else "warn"
+
+            payload.update({
+                "checked_at": snapshot["checked_at"],
+                "status": status,
+                "phase": phase,
+                "stopped_nodes": stopped_nodes,
+                "remaining_ready_nodes": remaining_ready_nodes,
+                "remaining_total_nodes": max(len(ordered_nodes) - contiguous_stopped_nodes, 0),
+                "contiguous_stopped_nodes": contiguous_stopped_nodes,
+                "core_ready": core_ready,
+                "url_ok": url_ok,
+                "next_node": next_node["name"] if next_node else "",
+                "next_node_ip": next_node["ip"] if next_node else "",
+                "portal_last_visible_step": portal_last_visible_step,
+                "nodes": ordered_nodes,
+                "gates": [
+                    {"key": "stopped", "status": "ok" if stopped_nodes == len(ordered_nodes) else ("warn" if stopped_nodes > 0 else "loading"), "ready": stopped_nodes, "total": len(ordered_nodes)},
+                    {"key": "remaining", "status": "ok" if remaining_ready_nodes == len(ordered_nodes) - stopped_nodes else "warn", "ready": remaining_ready_nodes, "total": len(ordered_nodes) - stopped_nodes},
+                    {"key": "core", "status": "ok" if core_ready == len(BOOT_WORKLOAD_GROUPS) else "warn", "ready": core_ready, "total": len(BOOT_WORKLOAD_GROUPS), "blocked": blocked_components},
+                    {"key": "urls", "status": "ok" if url_ok == len(BOOT_PROBE_URLS) else "warn", "ready": url_ok, "total": len(BOOT_PROBE_URLS), "blocked": blocked_urls},
+                ],
+                "blocked_components": blocked_components,
+                "blocked_urls": blocked_urls,
+            })
+            return payload
+        except Exception as exc:
+            LOGGER.warning("build shutdown progress failed: %s", exc)
+            payload.update({
+                "status": "fail",
+                "phase": "unavailable",
+                "error": str(exc),
+                "gates": [
+                    {"key": "stopped", "status": "loading", "ready": 0, "total": len(SHUTDOWN_NODE_ORDER)},
+                    {"key": "remaining", "status": "loading", "ready": 0, "total": len(SHUTDOWN_NODE_ORDER)},
+                    {"key": "core", "status": "loading", "ready": 0, "total": len(BOOT_WORKLOAD_GROUPS), "blocked": []},
+                    {"key": "urls", "status": "loading", "ready": 0, "total": len(BOOT_PROBE_URLS), "blocked": []},
+                ],
+            })
+            return payload
+
+
     class Handler(BaseHTTPRequestHandler):
         server_version = "AlertSink/1.0"
 
@@ -486,6 +921,12 @@ data:
                 return
             if path == "/api/ops/summaries":
                 self._send_json({"summaries": read_all_ops_summaries()})
+                return
+            if path == "/api/ops/live/cold-start":
+                self._send_json(build_boot_progress_payload())
+                return
+            if path == "/api/ops/live/shutdown":
+                self._send_json(build_shutdown_progress_payload())
                 return
             if path.startswith("/api/ops/summaries/"):
                 summary_name = path.rsplit("/", 1)[-1].strip().lower()
@@ -558,6 +999,39 @@ spec:
     requests:
       storage: 1Gi
 ---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: alert-webhook-receiver
+  namespace: monitoring
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: alert-webhook-receiver-read-cluster
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - nodes
+      - pods
+    verbs:
+      - get
+      - list
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: alert-webhook-receiver-read-cluster
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: alert-webhook-receiver-read-cluster
+subjects:
+  - kind: ServiceAccount
+    name: alert-webhook-receiver
+    namespace: monitoring
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -577,6 +1051,7 @@ spec:
       labels:
         app: alert-webhook-receiver
     spec:
+      serviceAccountName: alert-webhook-receiver
       containers:
         - name: receiver
           image: docker.m.daocloud.io/library/python:3.12-alpine

@@ -12,6 +12,9 @@ Portal 现在内置“内网 / 外网”访问模式切换：
 - 通过内网 `IP:Port` 打开 Portal 时，默认优先使用内网链接
 - 通过公网 `portal.saurick.space` 打开 Portal 时，默认优先使用外网链接
 - 页面右上角可以手动切换，并记住当前浏览器上次选择
+- Portal 主页上方现在还会显示“当前开机进度 / 当前关机进度”两块 live 区域，用来回答“已经恢复到哪一步 / 下一台能不能继续开”以及“现在能不能继续关下一台”
+- 关机 live 卡片只覆盖到 `node2 / 192.168.0.108` 下电前；因为 Portal 自己就挂在这台节点上，轮到关闭 `node2` 时卡片会明确提示“这是最后一个可视步骤”，之后请改到虚拟化控制台继续确认
+- 推荐顺序与最终验收口径仍以 `VM_POWER_SEQUENCE.md` 和 `check-ha-lab-cold-start.sh` 为准
 
 ### 内网入口
 
@@ -68,6 +71,25 @@ Portal 现在内置“内网 / 外网”访问模式切换：
 - 公网 `gitlab.saurick.space` 当前由宿主机侧网关补写 `Set-Cookie: Domain=.saurick.space`
 - 因此同一浏览器先在 `gitlab.saurick.space` 登录后，`portal.saurick.space` 下的 GitLab 代理请求现在可以复用这份登录态，不必再额外登录一次
 - 若后续这条体验再次退化，先执行 `curl --noproxy '*' -I https://gitlab.saurick.space/users/sign_in`，确认 `_gitlab_session` 响应头里仍然带有 `Domain=.saurick.space`
+- 当前 GitLab 管理基线默认关闭公开注册与 `usage/service ping`；若重装或手工改动后又出现首页横幅，直接执行：
+
+```bash
+bash /Users/simon/projects/webapp-template/server/deploy/lab-ha/scripts/harden-gitlab-instance.sh
+```
+
+- 若页面仍短时间保留旧横幅，再在低峰时段显式补一轮 `RESTART_PUMA=1`，不要把 Web 重载当成默认日常动作：
+
+```bash
+RESTART_PUMA=1 \
+  bash /Users/simon/projects/webapp-template/server/deploy/lab-ha/scripts/harden-gitlab-instance.sh
+```
+
+- 复核当前库值可执行：
+
+```bash
+ssh root@192.168.0.108 \
+  "gitlab-psql -d gitlabhq_production -c \"select signup_enabled, usage_ping_enabled, usage_ping_features_enabled, usage_ping_generation_enabled, version_check_enabled, include_optional_metrics_in_service_ping, service_ping_settings from application_settings order by id desc limit 1;\""
+```
 
 ## Tracing note
 
@@ -142,6 +164,7 @@ TAILSCALE_ROUTES=192.168.0.0/24 \
 - It also includes an operational snapshot area for CI, GitOps, HA drills, and blackbox guidance
 - It now also surfaces the latest verified backup result and alert delivery summary for faster daily checks
 - It now also exposes dedicated `K8s Workloads` and `Headlamp` entries, so operators can choose between curated Grafana triage and interactive Kubernetes resource browsing
+- It now also exposes live `boot progress` and `shutdown progress` cards; the shutdown card intentionally stops at the `node2` step because Portal itself goes away once `192.168.0.108` is shut down
 
 ## 当前实验室默认凭据
 

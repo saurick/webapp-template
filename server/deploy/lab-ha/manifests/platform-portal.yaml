@@ -408,6 +408,144 @@ data:
             background: rgba(255,209,102,0.18);
             border-color: rgba(255,209,102,0.28);
           }
+          .boot-progress {
+            margin-top: 24px;
+            padding: 22px;
+          }
+          .boot-progress-head {
+            display: grid;
+            grid-template-columns: minmax(0, 1.3fr) minmax(280px, 1fr);
+            gap: 18px;
+            align-items: start;
+          }
+          .boot-progress-copy h2 {
+            margin: 0 0 10px;
+            font-size: 18px;
+          }
+          .boot-progress-copy .eyebrow {
+            margin-bottom: 10px;
+          }
+          .boot-progress-board {
+            display: grid;
+            gap: 12px;
+            padding: 16px;
+            border-radius: 18px;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.08);
+          }
+          .boot-progress-board h3 {
+            margin: 0;
+            font-size: 13px;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: var(--muted);
+          }
+          .boot-steps {
+            display: grid;
+            gap: 10px;
+          }
+          .boot-step {
+            display: grid;
+            grid-template-columns: 28px minmax(0, 1fr) auto;
+            gap: 10px;
+            align-items: center;
+            padding: 12px 14px;
+            border-radius: 14px;
+            background: rgba(7,17,31,0.56);
+            border: 1px solid rgba(255,255,255,0.08);
+          }
+          .boot-step-index {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 28px;
+            height: 28px;
+            border-radius: 999px;
+            background: rgba(102,217,239,0.12);
+            color: var(--accent);
+            font-size: 12px;
+            font-weight: 700;
+          }
+          .boot-step-copy {
+            min-width: 0;
+          }
+          .boot-step-copy strong,
+          .boot-step-copy small {
+            display: block;
+          }
+          .boot-step-copy strong {
+            font-size: 14px;
+          }
+          .boot-step-copy small {
+            margin-top: 4px;
+            color: var(--muted);
+            font-size: 12px;
+          }
+          .boot-step-copy .boot-step-hint {
+            font-size: 11px;
+            line-height: 1.45;
+            color: rgba(214, 227, 255, 0.72);
+          }
+          .boot-step-state {
+            font-size: 13px;
+            font-weight: 700;
+            white-space: nowrap;
+          }
+          .boot-step-ready {
+            border-color: rgba(123,216,143,0.2);
+            background: rgba(10,30,18,0.42);
+          }
+          .boot-step-ready .boot-step-index {
+            background: rgba(123,216,143,0.16);
+            color: var(--ok);
+          }
+          .boot-step-ready .boot-step-state {
+            color: var(--ok);
+          }
+          .boot-step-next {
+            border-color: rgba(255,209,102,0.28);
+            background: rgba(52,38,8,0.26);
+          }
+          .boot-step-next .boot-step-index {
+            background: rgba(255,209,102,0.18);
+            color: var(--accent-2);
+          }
+          .boot-step-next .boot-step-state {
+            color: var(--accent-2);
+          }
+          .boot-step-waiting .boot-step-state {
+            color: var(--muted);
+          }
+          .boot-gates {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 10px;
+            margin-top: 16px;
+          }
+          .boot-gate {
+            padding: 12px 14px;
+            border-radius: 14px;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.08);
+          }
+          .boot-gate-label {
+            color: var(--muted);
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+          }
+          .boot-gate-value {
+            display: block;
+            margin-top: 8px;
+            font-size: 16px;
+            font-weight: 700;
+          }
+          .boot-gate-detail {
+            margin-top: 6px;
+            color: var(--muted);
+            font-size: 12px;
+            line-height: 1.5;
+          }
           .hidden {
             display: none;
           }
@@ -417,6 +555,9 @@ data:
             }
             .hero-controls {
               align-self: flex-start;
+            }
+            .boot-progress-head {
+              grid-template-columns: 1fr;
             }
           }
         </style>
@@ -544,6 +685,190 @@ data:
               </a>
             </div>
             <div id="endpoint-mode-tag" class="tag">Stable direct browser endpoints</div>
+          </section>
+
+          <section class="boot-progress status-card status-emphasis">
+            <div class="boot-progress-head">
+              <div class="boot-progress-copy">
+                <div class="eyebrow" data-i18n="boot.eyebrow">Cold-start monitor</div>
+                <h2 data-i18n="boot.title">Current Boot Progress</h2>
+                <div id="boot-progress-status" class="status-value status-loading" data-i18n="boot.state.loading">Loading</div>
+                <p id="boot-progress-summary" data-i18n="boot.body.loading">Checking current node, workload, and entrypoint status.</p>
+                <p id="boot-progress-detail" class="status-detail hidden"></p>
+                <div class="status-actions">
+                  <a
+                    id="boot-progress-primary-link"
+                    class="status-link"
+                    href="http://192.168.0.108:8929/root/webapp-template-lab/-/blob/master/server/deploy/lab-ha/docs/VM_POWER_SEQUENCE.md"
+                    target="_blank"
+                    rel="noreferrer"
+                    data-i18n="boot.action.openPowerSequence"
+                  >Open power sequence</a>
+                  <a
+                    id="boot-progress-secondary-link"
+                    class="status-link status-link-secondary"
+                    href="http://192.168.0.108:8929/root/webapp-template-lab/-/blob/master/server/deploy/lab-ha/docs/RECOVERY_RUNBOOK.md"
+                    target="_blank"
+                    rel="noreferrer"
+                    data-i18n="ops.action.openRunbook"
+                  >Open runbook</a>
+                  <a
+                    id="boot-progress-tertiary-link"
+                    class="status-link hidden"
+                    href="http://192.168.0.108:30081/d/lab-ha-service-governance/ha-lab-service-governance"
+                    target="_blank"
+                    rel="noreferrer"
+                    data-i18n="boot.action.openK8s"
+                  >Open K8s workloads</a>
+                </div>
+              </div>
+              <div class="boot-progress-board">
+                <h3 data-i18n="boot.order.title">Recommended power-on order</h3>
+                <div class="boot-steps">
+                  <div class="boot-step boot-step-waiting" data-boot-node="node3">
+                    <div class="boot-step-index">1</div>
+                    <div class="boot-step-copy">
+                      <strong>node3</strong>
+                      <small>192.168.0.128</small>
+                      <small class="boot-step-hint" data-i18n="boot.role.node3">First control-plane peer, start quorum recovery.</small>
+                    </div>
+                    <div class="boot-step-state" data-i18n="boot.step.waiting">Waiting</div>
+                  </div>
+                  <div class="boot-step boot-step-waiting" data-boot-node="node2">
+                    <div class="boot-step-index">2</div>
+                    <div class="boot-step-copy">
+                      <strong>node2</strong>
+                      <small>192.168.0.108</small>
+                      <small class="boot-step-hint" data-i18n="boot.role.node2">Fixed ops entry for Portal, GitLab, Harbor, and Argo.</small>
+                    </div>
+                    <div class="boot-step-state" data-i18n="boot.step.waiting">Waiting</div>
+                  </div>
+                  <div class="boot-step boot-step-waiting" data-boot-node="node1">
+                    <div class="boot-step-index">3</div>
+                    <div class="boot-step-copy">
+                      <strong>node1</strong>
+                      <small>192.168.0.7</small>
+                      <small class="boot-step-hint" data-i18n="boot.role.node1">Final control-plane node to finish convergence.</small>
+                    </div>
+                    <div class="boot-step-state" data-i18n="boot.step.waiting">Waiting</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="boot-gates">
+              <div class="boot-gate" data-boot-gate="nodes">
+                <div class="boot-gate-label" data-i18n="boot.gate.nodes">Nodes</div>
+                <strong class="boot-gate-value">0/3</strong>
+                <div class="boot-gate-detail hidden"></div>
+              </div>
+              <div class="boot-gate" data-boot-gate="entry-node">
+                <div class="boot-gate-label" data-i18n="boot.gate.entryNode">Fixed entry</div>
+                <strong class="boot-gate-value">0/1</strong>
+                <div class="boot-gate-detail hidden"></div>
+              </div>
+              <div class="boot-gate" data-boot-gate="core">
+                <div class="boot-gate-label" data-i18n="boot.gate.core">Core services</div>
+                <strong class="boot-gate-value">0/7</strong>
+                <div class="boot-gate-detail hidden"></div>
+              </div>
+              <div class="boot-gate" data-boot-gate="urls">
+                <div class="boot-gate-label" data-i18n="boot.gate.urls">Entrypoints</div>
+                <strong class="boot-gate-value">0/7</strong>
+                <div class="boot-gate-detail hidden"></div>
+              </div>
+            </div>
+          </section>
+
+          <section class="boot-progress status-card status-emphasis">
+            <div class="boot-progress-head">
+              <div class="boot-progress-copy">
+                <div class="eyebrow" data-i18n="shutdown.eyebrow">Planned shutdown monitor</div>
+                <h2 data-i18n="shutdown.title">Current Shutdown Progress</h2>
+                <div id="shutdown-progress-status" class="status-value status-loading" data-i18n="shutdown.state.loading">Loading</div>
+                <p id="shutdown-progress-summary" data-i18n="shutdown.body.loading">Checking which VM has already left the Ready set and whether the remaining stack is stable.</p>
+                <p id="shutdown-progress-detail" class="status-detail hidden"></p>
+                <div class="status-actions">
+                  <a
+                    id="shutdown-progress-primary-link"
+                    class="status-link"
+                    href="http://192.168.0.108:8929/root/webapp-template-lab/-/blob/master/server/deploy/lab-ha/docs/VM_POWER_SEQUENCE.md"
+                    target="_blank"
+                    rel="noreferrer"
+                    data-i18n="boot.action.openPowerSequence"
+                  >Open power sequence</a>
+                  <a
+                    id="shutdown-progress-secondary-link"
+                    class="status-link status-link-secondary"
+                    href="http://192.168.0.108:8929/root/webapp-template-lab/-/blob/master/server/deploy/lab-ha/docs/RECOVERY_RUNBOOK.md"
+                    target="_blank"
+                    rel="noreferrer"
+                    data-i18n="ops.action.openRunbook"
+                  >Open runbook</a>
+                  <a
+                    id="shutdown-progress-tertiary-link"
+                    class="status-link hidden"
+                    href="http://192.168.0.108:30081/d/lab-ha-service-governance/ha-lab-service-governance"
+                    target="_blank"
+                    rel="noreferrer"
+                    data-i18n="boot.action.openK8s"
+                  >Open K8s workloads</a>
+                </div>
+              </div>
+              <div class="boot-progress-board">
+                <h3 data-i18n="shutdown.order.title">Recommended shutdown order</h3>
+                <div class="boot-steps">
+                  <div class="boot-step boot-step-waiting" data-shutdown-node="node1">
+                    <div class="boot-step-index">1</div>
+                    <div class="boot-step-copy">
+                      <strong>node1</strong>
+                      <small>192.168.0.7</small>
+                      <small class="boot-step-hint" data-i18n="shutdown.role.node1">Non-entry control-plane node, shut down first.</small>
+                    </div>
+                    <div class="boot-step-state" data-i18n="shutdown.step.waiting">Keep running</div>
+                  </div>
+                  <div class="boot-step boot-step-waiting" data-shutdown-node="node2">
+                    <div class="boot-step-index">2</div>
+                    <div class="boot-step-copy">
+                      <strong>node2</strong>
+                      <small>192.168.0.108</small>
+                      <small class="boot-step-hint" data-i18n="shutdown.role.node2">Fixed ops entry, keep until the second-to-last step.</small>
+                    </div>
+                    <div class="boot-step-state" data-i18n="shutdown.step.waiting">Keep running</div>
+                  </div>
+                  <div class="boot-step boot-step-waiting" data-shutdown-node="node3">
+                    <div class="boot-step-index">3</div>
+                    <div class="boot-step-copy">
+                      <strong>node3</strong>
+                      <small>192.168.0.128</small>
+                      <small class="boot-step-hint" data-i18n="shutdown.role.node3">Last remaining control-plane node, finish in the hypervisor.</small>
+                    </div>
+                    <div class="boot-step-state" data-i18n="shutdown.step.waiting">Keep running</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="boot-gates">
+              <div class="boot-gate" data-shutdown-gate="stopped">
+                <div class="boot-gate-label" data-i18n="shutdown.gate.stopped">Shutdown steps</div>
+                <strong class="boot-gate-value">0/3</strong>
+                <div class="boot-gate-detail hidden"></div>
+              </div>
+              <div class="boot-gate" data-shutdown-gate="remaining">
+                <div class="boot-gate-label" data-i18n="shutdown.gate.remaining">Remaining Ready nodes</div>
+                <strong class="boot-gate-value">0/3</strong>
+                <div class="boot-gate-detail hidden"></div>
+              </div>
+              <div class="boot-gate" data-shutdown-gate="core">
+                <div class="boot-gate-label" data-i18n="shutdown.gate.core">Core services</div>
+                <strong class="boot-gate-value">0/7</strong>
+                <div class="boot-gate-detail hidden"></div>
+              </div>
+              <div class="boot-gate" data-shutdown-gate="urls">
+                <div class="boot-gate-label" data-i18n="shutdown.gate.urls">Entrypoints</div>
+                <strong class="boot-gate-value">0/7</strong>
+                <div class="boot-gate-detail hidden"></div>
+              </div>
+            </div>
           </section>
 
           <section class="snapshot">
@@ -865,6 +1190,7 @@ data:
               <ul>
                 <li><a href="http://192.168.0.108:8929/root/webapp-template-lab/-/blob/master/server/deploy/lab-ha/docs/ACCESS.md" target="_blank" rel="noreferrer" data-canonical-href="http://192.168.0.108:8929/root/webapp-template-lab/-/blob/master/server/deploy/lab-ha/docs/ACCESS.md">ACCESS.md</a></li>
                 <li><a href="http://192.168.0.108:8929/root/webapp-template-lab/-/blob/master/server/deploy/lab-ha/docs/OPS_CHECKLIST.md" target="_blank" rel="noreferrer" data-canonical-href="http://192.168.0.108:8929/root/webapp-template-lab/-/blob/master/server/deploy/lab-ha/docs/OPS_CHECKLIST.md">OPS_CHECKLIST.md</a></li>
+                <li><a href="http://192.168.0.108:8929/root/webapp-template-lab/-/blob/master/server/deploy/lab-ha/docs/VM_POWER_SEQUENCE.md" target="_blank" rel="noreferrer" data-canonical-href="http://192.168.0.108:8929/root/webapp-template-lab/-/blob/master/server/deploy/lab-ha/docs/VM_POWER_SEQUENCE.md">VM_POWER_SEQUENCE.md</a></li>
                 <li><a href="http://192.168.0.108:8929/root/webapp-template-lab/-/blob/master/server/deploy/lab-ha/docs/TROUBLESHOOTING.md" target="_blank" rel="noreferrer" data-canonical-href="http://192.168.0.108:8929/root/webapp-template-lab/-/blob/master/server/deploy/lab-ha/docs/TROUBLESHOOTING.md">TROUBLESHOOTING.md</a></li>
                 <li><a href="http://192.168.0.108:8929/root/webapp-template-lab/-/blob/master/server/deploy/lab-ha/docs/RECOVERY_RUNBOOK.md" target="_blank" rel="noreferrer" data-canonical-href="http://192.168.0.108:8929/root/webapp-template-lab/-/blob/master/server/deploy/lab-ha/docs/RECOVERY_RUNBOOK.md">RECOVERY_RUNBOOK.md</a></li>
                 <li><a href="http://192.168.0.108:8929/root/webapp-template-lab/-/blob/master/server/deploy/lab-ha/docs/LOAD_TEST.md" target="_blank" rel="noreferrer" data-canonical-href="http://192.168.0.108:8929/root/webapp-template-lab/-/blob/master/server/deploy/lab-ha/docs/LOAD_TEST.md">LOAD_TEST.md</a></li>
@@ -910,10 +1236,16 @@ data:
           const ALERT_SINK_REAL_EVENTS_PATH = '/alert-sink-api/alerts?source=alertmanager';
           const ALERT_SINK_REFRESH_MS = 15000;
           const OPS_SUMMARIES_PATH = '/alert-sink-api/ops/summaries';
+          const BOOT_PROGRESS_PATH = '/alert-sink-api/ops/live/cold-start';
+          const SHUTDOWN_PROGRESS_PATH = '/alert-sink-api/ops/live/shutdown';
+          const BOOT_PROGRESS_REFRESH_MS = 10000;
+          const SHUTDOWN_PROGRESS_REFRESH_MS = 10000;
           const OPS_SUMMARY_REFRESH_MS = 30000;
           const OPS_COLD_START_RUNBOOK_URL = 'http://192.168.0.108:8929/root/webapp-template-lab/-/blob/master/server/deploy/lab-ha/docs/RECOVERY_RUNBOOK.md';
           const OPS_TEST_REPORT_URL = 'http://192.168.0.108:8929/root/webapp-template-lab/-/blob/master/server/deploy/lab-ha/docs/TEST_REPORT.md';
           const OPS_CHECKLIST_URL = 'http://192.168.0.108:8929/root/webapp-template-lab/-/blob/master/server/deploy/lab-ha/docs/OPS_CHECKLIST.md';
+          const VM_POWER_SEQUENCE_URL = 'http://192.168.0.108:8929/root/webapp-template-lab/-/blob/master/server/deploy/lab-ha/docs/VM_POWER_SEQUENCE.md';
+          const K8S_WORKLOADS_URL = 'http://192.168.0.108:30081/d/lab-ha-service-governance/ha-lab-service-governance';
           const OPS_BACKUP_DASHBOARD_URL = 'http://192.168.0.108:30081/d/lab-ha-postgres/ha-lab-postgresql-and-backup';
           const OPS_ACTIVE_URL = 'http://192.168.0.108:30089/';
           const OPS_PREVIEW_URL = 'http://192.168.0.108:30091/';
@@ -1004,6 +1336,51 @@ data:
               'snapshot.haDrillTitle': 'Latest HA Drill',
               'snapshot.backupCheckTitle': 'Latest Backup Check',
               'snapshot.smokeTitle': 'Latest Smoke Check',
+              'boot.eyebrow': 'Cold-start monitor',
+              'boot.title': 'Current Boot Progress',
+              'boot.state.loading': 'Loading',
+              'boot.state.readyForNext': 'Ready for next VM',
+              'boot.state.stabilizing': 'Stabilizing',
+              'boot.state.complete': 'Cold-start complete',
+              'boot.state.outOfOrder': 'Check order',
+              'boot.state.unavailable': 'Unavailable',
+              'boot.body.loading': 'Checking current node, workload, and entrypoint status.',
+              'boot.body.unavailable': 'Portal is up, but live boot progress is still unavailable. Open K8s Workloads or the runbook directly.',
+              'boot.action.openPowerSequence': 'Open power sequence',
+              'boot.action.openK8s': 'Open K8s workloads',
+              'boot.order.title': 'Recommended power-on order',
+              'boot.step.waiting': 'Waiting',
+              'boot.step.ready': 'Ready',
+              'boot.step.next': 'Next',
+              'boot.role.node3': 'First control-plane peer, start quorum recovery.',
+              'boot.role.node2': 'Fixed ops entry for Portal, GitLab, Harbor, and Argo.',
+              'boot.role.node1': 'Final control-plane node to finish convergence.',
+              'boot.gate.nodes': 'Nodes',
+              'boot.gate.entryNode': 'Fixed entry',
+              'boot.gate.core': 'Core services',
+              'boot.gate.urls': 'Entrypoints',
+              'shutdown.eyebrow': 'Planned shutdown monitor',
+              'shutdown.title': 'Current Shutdown Progress',
+              'shutdown.state.loading': 'Loading',
+              'shutdown.state.readyForNext': 'Ready for next shutdown',
+              'shutdown.state.stabilizing': 'Stabilizing',
+              'shutdown.state.portalLast': 'Portal will disappear next',
+              'shutdown.state.complete': 'Shutdown complete',
+              'shutdown.state.outOfOrder': 'Check order',
+              'shutdown.state.unavailable': 'Unavailable',
+              'shutdown.body.loading': 'Checking which VM has already left the Ready set and whether the remaining stack is stable.',
+              'shutdown.body.unavailable': 'Portal is up, but live shutdown progress is still unavailable. Open K8s Workloads or the power-sequence doc directly.',
+              'shutdown.order.title': 'Recommended shutdown order',
+              'shutdown.step.waiting': 'Keep running',
+              'shutdown.step.stopped': 'Exited Ready',
+              'shutdown.step.next': 'Next',
+              'shutdown.role.node1': 'Non-entry control-plane node, shut down first.',
+              'shutdown.role.node2': 'Fixed ops entry, keep until the second-to-last step.',
+              'shutdown.role.node3': 'Last remaining control-plane node, finish in the hypervisor.',
+              'shutdown.gate.stopped': 'Shutdown steps',
+              'shutdown.gate.remaining': 'Remaining Ready nodes',
+              'shutdown.gate.core': 'Core services',
+              'shutdown.gate.urls': 'Entrypoints',
               'ops.state.loading': 'Loading',
               'ops.state.ok': 'Healthy',
               'ops.state.fail': 'Failed',
@@ -1142,6 +1519,51 @@ data:
               'snapshot.haDrillTitle': '最近 HA 演练',
               'snapshot.backupCheckTitle': '最近备份检查',
               'snapshot.smokeTitle': '最近烟雾检查',
+              'boot.eyebrow': '冷启动监视',
+              'boot.title': '当前开机进度',
+              'boot.state.loading': '加载中',
+              'boot.state.readyForNext': '可以继续开下一台',
+              'boot.state.stabilizing': '工作负载收敛中',
+              'boot.state.complete': '冷启动完成',
+              'boot.state.outOfOrder': '顺序需复核',
+              'boot.state.unavailable': '暂不可用',
+              'boot.body.loading': '正在检查当前节点、关键工作负载和入口状态。',
+              'boot.body.unavailable': 'Portal 已可用，但当前还拿不到 live 开机进度。请直接打开 K8s 工作负载或 runbook。',
+              'boot.action.openPowerSequence': '打开开关机顺序',
+              'boot.action.openK8s': '打开 K8s 工作负载',
+              'boot.order.title': '推荐开机顺序',
+              'boot.step.waiting': '等待中',
+              'boot.step.ready': '已就绪',
+              'boot.step.next': '下一台',
+              'boot.role.node3': '先拉起一台控制面，给 quorum 打底。',
+              'boot.role.node2': '固定管理入口，Portal / GitLab / Harbor / Argo 在这台。',
+              'boot.role.node1': '最后补齐第三台控制面，完成收敛。',
+              'boot.gate.nodes': '节点',
+              'boot.gate.entryNode': '固定入口',
+              'boot.gate.core': '核心服务',
+              'boot.gate.urls': '入口检测',
+              'shutdown.eyebrow': '计划关机监视',
+              'shutdown.title': '当前关机进度',
+              'shutdown.state.loading': '加载中',
+              'shutdown.state.readyForNext': '可以继续关下一台',
+              'shutdown.state.stabilizing': '剩余栈收敛中',
+              'shutdown.state.portalLast': '再下一步 Portal 会下线',
+              'shutdown.state.complete': '关机完成',
+              'shutdown.state.outOfOrder': '顺序需复核',
+              'shutdown.state.unavailable': '暂不可用',
+              'shutdown.body.loading': '正在检查哪台 VM 已经退出 Ready，以及剩余节点和入口是否稳定。',
+              'shutdown.body.unavailable': 'Portal 已可用，但当前还拿不到 live 关机进度。请直接打开 K8s 工作负载或开关机顺序文档。',
+              'shutdown.order.title': '推荐关机顺序',
+              'shutdown.step.waiting': '保持运行',
+              'shutdown.step.stopped': '已退出 Ready',
+              'shutdown.step.next': '下一台',
+              'shutdown.role.node1': '非固定入口控制面，优先下线。',
+              'shutdown.role.node2': '固定管理入口，保留到倒数第二步。',
+              'shutdown.role.node3': '最后保留的控制面，改到虚拟化平台收尾。',
+              'shutdown.gate.stopped': '已完成步骤',
+              'shutdown.gate.remaining': '剩余 Ready 节点',
+              'shutdown.gate.core': '核心服务',
+              'shutdown.gate.urls': '入口检测',
               'ops.state.loading': '加载中',
               'ops.state.ok': '健康',
               'ops.state.fail': '失败',
@@ -1238,6 +1660,22 @@ data:
           const bestEntryPill = document.getElementById('best-entry-pill');
           const endpointModeTag = document.getElementById('endpoint-mode-tag');
           const runLoadtestCard = document.getElementById('run-loadtest-card');
+          const bootProgressStatus = document.getElementById('boot-progress-status');
+          const bootProgressSummary = document.getElementById('boot-progress-summary');
+          const bootProgressDetail = document.getElementById('boot-progress-detail');
+          const bootProgressPrimaryLink = document.getElementById('boot-progress-primary-link');
+          const bootProgressSecondaryLink = document.getElementById('boot-progress-secondary-link');
+          const bootProgressTertiaryLink = document.getElementById('boot-progress-tertiary-link');
+          const bootStepNodes = Array.from(document.querySelectorAll('[data-boot-node]'));
+          const bootGateCards = Array.from(document.querySelectorAll('[data-boot-gate]'));
+          const shutdownProgressStatus = document.getElementById('shutdown-progress-status');
+          const shutdownProgressSummary = document.getElementById('shutdown-progress-summary');
+          const shutdownProgressDetail = document.getElementById('shutdown-progress-detail');
+          const shutdownProgressPrimaryLink = document.getElementById('shutdown-progress-primary-link');
+          const shutdownProgressSecondaryLink = document.getElementById('shutdown-progress-secondary-link');
+          const shutdownProgressTertiaryLink = document.getElementById('shutdown-progress-tertiary-link');
+          const shutdownStepNodes = Array.from(document.querySelectorAll('[data-shutdown-node]'));
+          const shutdownGateCards = Array.from(document.querySelectorAll('[data-shutdown-gate]'));
           const alertsinkStatus = document.getElementById('alertsink-status');
           const alertsinkSummary = document.getElementById('alertsink-summary');
           const alertsinkDetail = document.getElementById('alertsink-detail');
@@ -1278,6 +1716,34 @@ data:
           let loadtestPendingPipelineId = 0;
           let loadtestPollTimer = null;
           let loadtestPollDeadline = 0;
+          let bootProgressState = {
+            data: null,
+            statusKey: 'boot.state.loading',
+            statusClass: 'status-loading',
+            summaryKey: 'boot.body.loading',
+            summaryText: '',
+            detailText: '',
+            primaryHref: VM_POWER_SEQUENCE_URL,
+            primaryLabelKey: 'boot.action.openPowerSequence',
+            secondaryHref: OPS_COLD_START_RUNBOOK_URL,
+            secondaryLabelKey: 'ops.action.openRunbook',
+            tertiaryHref: K8S_WORKLOADS_URL,
+            tertiaryLabelKey: 'boot.action.openK8s',
+          };
+          let shutdownProgressState = {
+            data: null,
+            statusKey: 'shutdown.state.loading',
+            statusClass: 'status-loading',
+            summaryKey: 'shutdown.body.loading',
+            summaryText: '',
+            detailText: '',
+            primaryHref: VM_POWER_SEQUENCE_URL,
+            primaryLabelKey: 'boot.action.openPowerSequence',
+            secondaryHref: OPS_COLD_START_RUNBOOK_URL,
+            secondaryLabelKey: 'ops.action.openRunbook',
+            tertiaryHref: K8S_WORKLOADS_URL,
+            tertiaryLabelKey: 'boot.action.openK8s',
+          };
           let loadtestCardState = {
             statusKey: 'loadtest.state.loading',
             statusClass: 'status-loading',
@@ -1556,6 +2022,8 @@ data:
               renderCopyButton(button);
             });
             renderHeadlampAccess();
+            renderBootProgressCard();
+            renderShutdownProgressCard();
             renderAlertSinkCard();
             renderOpsSummaryCards();
             renderLoadtestCard();
@@ -1887,6 +2355,340 @@ data:
             setActionLink(alertsinkSecondaryLink, alertSinkCardState.secondaryHref, alertSinkCardState.secondaryLabelKey);
           };
 
+          const getBootStepStateLabel = (state) => {
+            if (state === 'ready') {
+              return getMessage(currentLocale, 'boot.step.ready');
+            }
+            if (state === 'next') {
+              return getMessage(currentLocale, 'boot.step.next');
+            }
+            return getMessage(currentLocale, 'boot.step.waiting');
+          };
+
+          const getShutdownStepStateLabel = (state) => {
+            if (state === 'stopped') {
+              return getMessage(currentLocale, 'shutdown.step.stopped');
+            }
+            if (state === 'next') {
+              return getMessage(currentLocale, 'shutdown.step.next');
+            }
+            return getMessage(currentLocale, 'shutdown.step.waiting');
+          };
+
+          const formatProgressBlockedList = (items) => {
+            if (!Array.isArray(items) || items.length === 0) {
+              return '';
+            }
+            return items.join(', ');
+          };
+
+          const buildBootStatusKey = (data) => {
+            if (!data) {
+              return 'boot.state.loading';
+            }
+            if (data.phase === 'complete') {
+              return 'boot.state.complete';
+            }
+            if (data.phase === 'stabilizing') {
+              return 'boot.state.stabilizing';
+            }
+            if (data.phase === 'out-of-order') {
+              return 'boot.state.outOfOrder';
+            }
+            if (data.phase === 'unavailable') {
+              return 'boot.state.unavailable';
+            }
+            if (data.next_node) {
+              return 'boot.state.readyForNext';
+            }
+            return 'boot.state.loading';
+          };
+
+          const buildProgressStatusClass = (status) => {
+            switch (status) {
+              case 'ok':
+                return 'status-ok';
+              case 'fail':
+                return 'status-fail';
+              case 'warn':
+                return 'status-warn';
+              default:
+                return 'status-loading';
+            }
+          };
+
+          const buildBootSummaryText = (data) => {
+            if (!data) {
+              return getMessage(currentLocale, 'boot.body.loading');
+            }
+            if (data.phase === 'unavailable') {
+              return getMessage(currentLocale, 'boot.body.unavailable');
+            }
+            if (currentLocale === 'zh') {
+              return `节点 ${data.ready_nodes}/${data.total_nodes} 已就绪 · 核心服务 ${data.core_ready}/${data.core_total} · 入口 ${data.url_ok}/${data.url_total}`;
+            }
+            return `nodes ${data.ready_nodes}/${data.total_nodes} ready · core ${data.core_ready}/${data.core_total} · urls ${data.url_ok}/${data.url_total}`;
+          };
+
+          const buildBootDetailText = (data) => {
+            if (!data) {
+              return '';
+            }
+            const checkedAt = formatDateTime(data.checked_at);
+            const prefix = checkedAt ? `${checkedAt} · ` : '';
+            if (data.phase === 'complete') {
+              return currentLocale === 'zh'
+                ? `${prefix}全部节点、核心工作负载和关键入口都已回绿，可以停止继续上电并按需回跑冷启动验收。`
+                : `${prefix}All nodes, core workloads, and key entrypoints are green. You can stop powering on more VMs and rerun the cold-start acceptance if needed.`;
+            }
+            if (data.phase === 'stabilizing') {
+              const blocked = formatProgressBlockedList([...(data.blocked_components || []), ...(data.blocked_urls || [])]);
+              return currentLocale === 'zh'
+                ? `${prefix}三台节点已经回到 Ready，先不要收口；仍在收敛：${blocked || '关键服务或入口仍未回绿'}。`
+                : `${prefix}All three nodes are Ready, but do not close out yet. Still converging: ${blocked || 'some core services or entrypoints are not green yet'}.`;
+            }
+            if (data.phase === 'out-of-order') {
+              return currentLocale === 'zh'
+                ? `${prefix}当前 Ready 节点与推荐顺序不一致，请先看开关机顺序文档再继续。`
+                : `${prefix}The currently Ready nodes do not match the recommended order. Open the power sequence doc before continuing.`;
+            }
+            if (data.phase === 'unavailable') {
+              return currentLocale === 'zh'
+                ? `${prefix}${data.error || '当前拿不到 live 集群状态。'}`
+                : `${prefix}${data.error || 'Live cluster status is unavailable right now.'}`;
+            }
+            if (data.next_node) {
+              const readyNames = Array.isArray(data.nodes) ? data.nodes.filter((item) => item.ready).map((item) => item.name) : [];
+              if (currentLocale === 'zh') {
+                return `${prefix}已就绪：${readyNames.join('、') || '暂无'} · 下一台建议：${data.next_node}（${data.next_node_ip || 'n/a'}）`;
+              }
+              return `${prefix}ready: ${readyNames.join(', ') || 'none'} · next recommended VM: ${data.next_node} (${data.next_node_ip || 'n/a'})`;
+            }
+            return prefix.trim();
+          };
+
+          const buildShutdownStatusKey = (data) => {
+            if (!data) {
+              return 'shutdown.state.loading';
+            }
+            if (data.phase === 'complete') {
+              return 'shutdown.state.complete';
+            }
+            if (data.phase === 'stabilizing') {
+              return 'shutdown.state.stabilizing';
+            }
+            if (data.phase === 'portal-last-visible-step') {
+              return 'shutdown.state.portalLast';
+            }
+            if (data.phase === 'out-of-order') {
+              return 'shutdown.state.outOfOrder';
+            }
+            if (data.phase === 'unavailable') {
+              return 'shutdown.state.unavailable';
+            }
+            if (data.next_node) {
+              return 'shutdown.state.readyForNext';
+            }
+            return 'shutdown.state.loading';
+          };
+
+          const buildShutdownSummaryText = (data) => {
+            if (!data) {
+              return getMessage(currentLocale, 'shutdown.body.loading');
+            }
+            if (data.phase === 'unavailable') {
+              return getMessage(currentLocale, 'shutdown.body.unavailable');
+            }
+            if (currentLocale === 'zh') {
+              return `已退出 Ready ${data.stopped_nodes}/${data.total_nodes} · 剩余节点 ${data.remaining_ready_nodes}/${data.remaining_total_nodes} · 核心服务 ${data.core_ready}/${data.core_total} · 入口 ${data.url_ok}/${data.url_total}`;
+            }
+            return `exited Ready ${data.stopped_nodes}/${data.total_nodes} · remaining nodes ${data.remaining_ready_nodes}/${data.remaining_total_nodes} · core ${data.core_ready}/${data.core_total} · urls ${data.url_ok}/${data.url_total}`;
+          };
+
+          const buildShutdownDetailText = (data) => {
+            if (!data) {
+              return '';
+            }
+            const checkedAt = formatDateTime(data.checked_at);
+            const prefix = checkedAt ? `${checkedAt} · ` : '';
+            if (data.phase === 'complete') {
+              return currentLocale === 'zh'
+                ? `${prefix}所有节点都已退出 Ready。此时 Portal 理论上也应已不可见，最终电源状态请以虚拟化平台为准。`
+                : `${prefix}All nodes have exited Ready. Portal itself should no longer be visible at that point, so use the hypervisor as the final power-state source of truth.`;
+            }
+            if (data.phase === 'stabilizing') {
+              const blocked = formatProgressBlockedList([...(data.blocked_components || []), ...(data.blocked_urls || [])]);
+              return currentLocale === 'zh'
+                ? `${prefix}上一台已经退出 Ready，但剩余节点和入口还在收敛：${blocked || '关键服务或入口仍未回稳'}。先不要继续关下一台。`
+                : `${prefix}The previous VM has already exited Ready, but the remaining nodes and entrypoints are still converging: ${blocked || 'some core services or entrypoints are not stable yet'}. Do not continue with the next shutdown yet.`;
+            }
+            if (data.phase === 'out-of-order') {
+              return currentLocale === 'zh'
+                ? `${prefix}当前退出 Ready 的节点与推荐顺序不一致，请先看开关机顺序文档再继续。`
+                : `${prefix}The nodes that have exited Ready do not match the recommended shutdown order. Open the power sequence doc before continuing.`;
+            }
+            if (data.phase === 'unavailable') {
+              return currentLocale === 'zh'
+                ? `${prefix}${data.error || '当前拿不到 live 集群状态。'}`
+                : `${prefix}${data.error || 'Live cluster status is unavailable right now.'}`;
+            }
+            if (data.next_node) {
+              const stoppedNames = Array.isArray(data.nodes) ? data.nodes.filter((item) => item.stopped).map((item) => item.name) : [];
+              if (data.portal_last_visible_step) {
+                // Portal 跟着 node2 一起下线，所以这里只负责提示“能不能继续关 node2”。
+                return currentLocale === 'zh'
+                  ? `${prefix}已完成：${stoppedNames.join('、') || '暂无'} · 下一台建议：${data.next_node}（${data.next_node_ip || 'n/a'}）。这是 Portal 最后一个可视步骤；关完 node2 后请改到虚拟化控制台确认，并直接处理 node3。`
+                  : `${prefix}done: ${stoppedNames.join(', ') || 'none'} · next recommended VM: ${data.next_node} (${data.next_node_ip || 'n/a'}). This is the last visible Portal step; after shutting down node2, switch to the hypervisor console and finish node3 there.`;
+              }
+              if (currentLocale === 'zh') {
+                return `${prefix}已完成：${stoppedNames.join('、') || '暂无'} · 下一台建议：${data.next_node}（${data.next_node_ip || 'n/a'}）`;
+              }
+              return `${prefix}done: ${stoppedNames.join(', ') || 'none'} · next recommended VM: ${data.next_node} (${data.next_node_ip || 'n/a'})`;
+            }
+            return prefix.trim();
+          };
+
+          const buildProgressGateValueText = (gate) => {
+            if (!gate) {
+              return '0/0';
+            }
+            return `${gate.ready}/${gate.total}`;
+          };
+
+          const buildProgressGateDetailText = (gate) => {
+            if (!gate || !Array.isArray(gate.blocked) || gate.blocked.length === 0) {
+              return '';
+            }
+            if (currentLocale === 'zh') {
+              return `未就绪：${gate.blocked.join('、')}`;
+            }
+            return `blocked: ${gate.blocked.join(', ')}`;
+          };
+
+          const renderBootProgressCard = () => {
+            bootProgressStatus.className = `status-value ${bootProgressState.statusClass}`;
+            bootProgressStatus.textContent = getMessage(currentLocale, bootProgressState.statusKey);
+            const summaryText = bootProgressState.data
+              ? buildBootSummaryText(bootProgressState.data)
+              : (bootProgressState.summaryText || getMessage(currentLocale, bootProgressState.summaryKey));
+            const detailText = bootProgressState.data
+              ? buildBootDetailText(bootProgressState.data)
+              : bootProgressState.detailText;
+            bootProgressSummary.textContent = summaryText;
+            if (detailText) {
+              bootProgressDetail.textContent = detailText;
+              bootProgressDetail.classList.remove('hidden');
+            } else {
+              bootProgressDetail.textContent = '';
+              bootProgressDetail.classList.add('hidden');
+            }
+            setActionLink(bootProgressPrimaryLink, bootProgressState.primaryHref, bootProgressState.primaryLabelKey);
+            setActionLink(bootProgressSecondaryLink, bootProgressState.secondaryHref, bootProgressState.secondaryLabelKey);
+            setActionLink(bootProgressTertiaryLink, bootProgressState.tertiaryHref, bootProgressState.tertiaryLabelKey);
+
+            const nodeStates = Array.isArray(bootProgressState.data && bootProgressState.data.nodes)
+              ? bootProgressState.data.nodes
+              : [];
+            bootStepNodes.forEach((nodeCard) => {
+              const nodeName = nodeCard.getAttribute('data-boot-node');
+              const liveNode = nodeStates.find((item) => item.name === nodeName);
+              const isNext = Boolean(bootProgressState.data && bootProgressState.data.next_node === nodeName && !liveNode?.ready);
+              const state = liveNode && liveNode.ready ? 'ready' : (isNext ? 'next' : 'waiting');
+              nodeCard.classList.remove('boot-step-ready', 'boot-step-next', 'boot-step-waiting');
+              nodeCard.classList.add(state === 'ready' ? 'boot-step-ready' : (state === 'next' ? 'boot-step-next' : 'boot-step-waiting'));
+              const stateNode = nodeCard.querySelector('.boot-step-state');
+              if (stateNode) {
+                stateNode.textContent = getBootStepStateLabel(state);
+              }
+            });
+
+            const gates = Array.isArray(bootProgressState.data && bootProgressState.data.gates)
+              ? bootProgressState.data.gates
+              : [];
+            bootGateCards.forEach((card) => {
+              const gateKey = card.getAttribute('data-boot-gate');
+              const gate = gates.find((item) => item.key === gateKey) || null;
+              const valueNode = card.querySelector('.boot-gate-value');
+              const detailNode = card.querySelector('.boot-gate-detail');
+              if (valueNode) {
+                valueNode.textContent = buildProgressGateValueText(gate);
+                valueNode.className = `boot-gate-value ${buildProgressStatusClass(gate && gate.status ? gate.status : 'loading')}`;
+              }
+              if (detailNode) {
+                const detailText = buildProgressGateDetailText(gate);
+                if (detailText) {
+                  detailNode.textContent = detailText;
+                  detailNode.classList.remove('hidden');
+                } else {
+                  detailNode.textContent = '';
+                  detailNode.classList.add('hidden');
+                }
+              }
+            });
+          };
+
+          const renderShutdownProgressCard = () => {
+            shutdownProgressStatus.className = `status-value ${shutdownProgressState.statusClass}`;
+            shutdownProgressStatus.textContent = getMessage(currentLocale, shutdownProgressState.statusKey);
+            const summaryText = shutdownProgressState.data
+              ? buildShutdownSummaryText(shutdownProgressState.data)
+              : (shutdownProgressState.summaryText || getMessage(currentLocale, shutdownProgressState.summaryKey));
+            const detailText = shutdownProgressState.data
+              ? buildShutdownDetailText(shutdownProgressState.data)
+              : shutdownProgressState.detailText;
+            shutdownProgressSummary.textContent = summaryText;
+            if (detailText) {
+              shutdownProgressDetail.textContent = detailText;
+              shutdownProgressDetail.classList.remove('hidden');
+            } else {
+              shutdownProgressDetail.textContent = '';
+              shutdownProgressDetail.classList.add('hidden');
+            }
+            setActionLink(shutdownProgressPrimaryLink, shutdownProgressState.primaryHref, shutdownProgressState.primaryLabelKey);
+            setActionLink(shutdownProgressSecondaryLink, shutdownProgressState.secondaryHref, shutdownProgressState.secondaryLabelKey);
+            setActionLink(shutdownProgressTertiaryLink, shutdownProgressState.tertiaryHref, shutdownProgressState.tertiaryLabelKey);
+
+            const nodeStates = Array.isArray(shutdownProgressState.data && shutdownProgressState.data.nodes)
+              ? shutdownProgressState.data.nodes
+              : [];
+            shutdownStepNodes.forEach((nodeCard) => {
+              const nodeName = nodeCard.getAttribute('data-shutdown-node');
+              const liveNode = nodeStates.find((item) => item.name === nodeName);
+              const isNext = Boolean(shutdownProgressState.data && shutdownProgressState.data.next_node === nodeName && !liveNode?.stopped);
+              const state = liveNode && liveNode.stopped ? 'stopped' : (isNext ? 'next' : 'waiting');
+              nodeCard.classList.remove('boot-step-ready', 'boot-step-next', 'boot-step-waiting');
+              nodeCard.classList.add(state === 'stopped' ? 'boot-step-ready' : (state === 'next' ? 'boot-step-next' : 'boot-step-waiting'));
+              const stateNode = nodeCard.querySelector('.boot-step-state');
+              if (stateNode) {
+                stateNode.textContent = getShutdownStepStateLabel(state);
+              }
+            });
+
+            const gates = Array.isArray(shutdownProgressState.data && shutdownProgressState.data.gates)
+              ? shutdownProgressState.data.gates
+              : [];
+            shutdownGateCards.forEach((card) => {
+              const gateKey = card.getAttribute('data-shutdown-gate');
+              const gate = gates.find((item) => item.key === gateKey) || null;
+              const valueNode = card.querySelector('.boot-gate-value');
+              const detailNode = card.querySelector('.boot-gate-detail');
+              if (valueNode) {
+                valueNode.textContent = buildProgressGateValueText(gate);
+                valueNode.className = `boot-gate-value ${buildProgressStatusClass(gate && gate.status ? gate.status : 'loading')}`;
+              }
+              if (detailNode) {
+                const detailText = buildProgressGateDetailText(gate);
+                if (detailText) {
+                  detailNode.textContent = detailText;
+                  detailNode.classList.remove('hidden');
+                } else {
+                  detailNode.textContent = '';
+                  detailNode.classList.add('hidden');
+                }
+              }
+            });
+          };
+
           const getOpsSummaryStatusClass = (status) => {
             switch (status) {
               case 'ok':
@@ -1996,6 +2798,80 @@ data:
               });
             }
             renderOpsSummaryCards();
+          };
+
+          const loadBootProgress = async () => {
+            try {
+              const data = await fetchPortalJson(BOOT_PROGRESS_PATH);
+              bootProgressState = {
+                ...bootProgressState,
+                data,
+                statusKey: buildBootStatusKey(data),
+                statusClass: buildProgressStatusClass(data && data.status ? data.status : 'loading'),
+                summaryKey: '',
+                summaryText: buildBootSummaryText(data),
+                detailText: buildBootDetailText(data),
+                primaryHref: VM_POWER_SEQUENCE_URL,
+                primaryLabelKey: 'boot.action.openPowerSequence',
+                secondaryHref: OPS_COLD_START_RUNBOOK_URL,
+                secondaryLabelKey: 'ops.action.openRunbook',
+                tertiaryHref: K8S_WORKLOADS_URL,
+                tertiaryLabelKey: 'boot.action.openK8s',
+              };
+            } catch (_error) {
+              bootProgressState = {
+                data: null,
+                statusKey: 'boot.state.unavailable',
+                statusClass: buildProgressStatusClass('fail'),
+                summaryKey: 'boot.body.unavailable',
+                summaryText: '',
+                detailText: '',
+                primaryHref: VM_POWER_SEQUENCE_URL,
+                primaryLabelKey: 'boot.action.openPowerSequence',
+                secondaryHref: OPS_COLD_START_RUNBOOK_URL,
+                secondaryLabelKey: 'ops.action.openRunbook',
+                tertiaryHref: K8S_WORKLOADS_URL,
+                tertiaryLabelKey: 'boot.action.openK8s',
+              };
+            }
+            renderBootProgressCard();
+          };
+
+          const loadShutdownProgress = async () => {
+            try {
+              const data = await fetchPortalJson(SHUTDOWN_PROGRESS_PATH);
+              shutdownProgressState = {
+                ...shutdownProgressState,
+                data,
+                statusKey: buildShutdownStatusKey(data),
+                statusClass: buildProgressStatusClass(data && data.status ? data.status : 'loading'),
+                summaryKey: '',
+                summaryText: buildShutdownSummaryText(data),
+                detailText: buildShutdownDetailText(data),
+                primaryHref: VM_POWER_SEQUENCE_URL,
+                primaryLabelKey: 'boot.action.openPowerSequence',
+                secondaryHref: OPS_COLD_START_RUNBOOK_URL,
+                secondaryLabelKey: 'ops.action.openRunbook',
+                tertiaryHref: K8S_WORKLOADS_URL,
+                tertiaryLabelKey: 'boot.action.openK8s',
+              };
+            } catch (_error) {
+              shutdownProgressState = {
+                data: null,
+                statusKey: 'shutdown.state.unavailable',
+                statusClass: buildProgressStatusClass('fail'),
+                summaryKey: 'shutdown.body.unavailable',
+                summaryText: '',
+                detailText: '',
+                primaryHref: VM_POWER_SEQUENCE_URL,
+                primaryLabelKey: 'boot.action.openPowerSequence',
+                secondaryHref: OPS_COLD_START_RUNBOOK_URL,
+                secondaryLabelKey: 'ops.action.openRunbook',
+                tertiaryHref: K8S_WORKLOADS_URL,
+                tertiaryLabelKey: 'boot.action.openK8s',
+              };
+            }
+            renderShutdownProgressCard();
           };
 
           const fetchGitLabJson = async (path) => {
@@ -2486,6 +3362,8 @@ data:
                 : ACCESS_MODE_INTERNAL;
               currentAccessMode = mode;
               savePreferredAccessMode(mode);
+              renderBootProgressCard();
+              renderShutdownProgressCard();
               renderAlertSinkCard();
               renderOpsSummaryCards();
               renderLoadtestCard();
@@ -2526,6 +3404,10 @@ data:
           currentAccessMode = loadPreferredAccessMode();
           applyTranslations(loadPreferredLocale());
           loadHeadlampAccess();
+          loadBootProgress();
+          setInterval(loadBootProgress, BOOT_PROGRESS_REFRESH_MS);
+          loadShutdownProgress();
+          setInterval(loadShutdownProgress, SHUTDOWN_PROGRESS_REFRESH_MS);
           loadLatestAlertSink();
           setInterval(loadLatestAlertSink, ALERT_SINK_REFRESH_MS);
           loadOpsSummaries();
@@ -2774,6 +3656,36 @@ data:
       }
     }
 
+    server {
+      listen 8080;
+      server_name _;
+
+      location / {
+        # active/preview 入口要复用 Portal 这层 NodePort，因此这里直接反代到 prod-trial active Service。
+        proxy_pass http://webapp-template-prod-trial.webapp-prod-trial.svc.cluster.local:80;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Host $host;
+        proxy_set_header X-Forwarded-Proto $scheme;
+      }
+    }
+
+    server {
+      listen 8081;
+      server_name _;
+
+      location / {
+        # preview 入口与 active 分离，便于 Portal / blackbox / Rollouts 走固定端口校验。
+        proxy_pass http://webapp-template-prod-trial-preview.webapp-prod-trial.svc.cluster.local:80;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Host $host;
+        proxy_set_header X-Forwarded-Proto $scheme;
+      }
+    }
+
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -2796,6 +3708,10 @@ spec:
           ports:
             - containerPort: 80
               name: http
+            - containerPort: 8080
+              name: trial-active
+            - containerPort: 8081
+              name: trial-preview
           resources:
             requests:
               cpu: 30m
@@ -2846,3 +3762,11 @@ spec:
       port: 80
       targetPort: http
       nodePort: 30088
+    - name: trial-active
+      port: 8080
+      targetPort: trial-active
+      nodePort: 30089
+    - name: trial-preview
+      port: 8081
+      targetPort: trial-preview
+      nodePort: 30091

@@ -10,6 +10,12 @@
 - 提交到仓库的注释应直接描述当前模板行为、边界和依赖关系；不要写成“新增 / 修复 / 关键修复 / 保持原有代码”或带 `⭐✅⚠️` 的补丁历史口吻，这类过程信息应写进提交说明、runbook 或 `progress.md`。
 - 模板行为、初始化规则、部署路径、runbook、页面文案、接口或配置发生变化时，必须在同一轮同步检查并更新相关注释与正式文档，避免模板代码先变、文档和脚本说明滞后。
 
+## AI 对话交接模板
+
+- 新开对话、跨轮接力、复杂问题二次排查，或怀疑当前任务容易把模板残留、现场 patch 或 live 现状误当成真源时，优先阅读 `/Users/simon/projects/webapp-template/docs/current-source-of-truth.md`，不要只丢现象描述或历史聊天记录。
+- 交接内容至少写清：先读哪些文件、当前唯一真源是谁、哪些模板残留 / 旧实现 / 现场 patch 不要碰、现象在哪些状态下复现、验收标准是什么、必须跑哪些命令。
+- 若任务本质是“基于当前模板初始化新项目”，优先复用 `/Users/simon/projects/webapp-template/docs/project-init.md` 里的 AI 输入模板，而不是重新口述一遍模板裁剪要求。
+
 ## 值班可视化优先
 
 - 面向人工日常运维、值班排障、发布巡检的能力，默认优先提供 `Portal / Grafana / Alertmanager / Hubble / Argo CD` 这类可视化入口；脚本主要承担批量校验、回归和兜底，不应成为唯一操作面。
@@ -41,6 +47,8 @@
 
 ## 模板文档阅读优先级
 
+- 涉及新开对话交接、复杂问题续写、模板残留辨认或担心 AI 误判真源时，必须先阅读：
+  - `/Users/simon/projects/webapp-template/docs/current-source-of-truth.md`
 - 涉及“如何把模板收口成当前项目”、哪些默认模块该保留/删除、哪些模板语义必须替换时，必须先阅读：
   - `/Users/simon/projects/webapp-template/docs/project-init.md`
   - `/Users/simon/projects/webapp-template/docs/README.md`
@@ -51,12 +59,13 @@
   - `/Users/simon/projects/webapp-template/server/docs/README.md`
 - 涉及服务端运行、配置、接口、可观测性、数据库迁移时，应以 `/Users/simon/projects/webapp-template/server/docs/README.md` 为索引，继续阅读对应专题文档，而不是直接凭印象修改。
 - 文档优先级固定为：
+  - 当前模板真源与任务分流：`docs/current-source-of-truth.md`
   - 当前模板初始化与裁剪规则：`docs/project-init.md`
   - 当前部署真源与边界：`docs/deployment-conventions.md`
   - 子系统专题说明：`server/docs/README.md`、`server/deploy/README.md`、`scripts/README.md`
   - 逐日过程记录与现场收口：`progress.md`
 - 禁止把 `progress.md` 单独当成模板当前规则真源；它只能补充演进原因、现场操作和未完全回收的历史痕迹。
-- 当 `README / docs / progress.md` 之间出现冲突时，默认先以 `docs/project-init.md` 和 `docs/deployment-conventions.md` 为准；只有用户明确要求按历史现场口径复盘时，才回到 `progress.md` 或 live 现状逐条核对。
+- 当 `README / docs / progress.md` 之间出现冲突时，默认先以 `docs/current-source-of-truth.md`、`docs/project-init.md` 和 `docs/deployment-conventions.md` 为准；只有用户明确要求按历史现场口径复盘时，才回到 `progress.md` 或 live 现状逐条核对。
 - 涉及模板逻辑或部署规则复查时，局部脚本注释、单份 runbook 或某次现场记录只能作为线索，不能覆盖这里定义的文档优先级；发现冲突时应同步修正文档或注释。
 
 ## 数据库迁移执行边界
