@@ -2,6 +2,11 @@
 
 当前 `*.saurick.space` 这组公网入口，不在 Kubernetes 集群内，而是由宿主机侧 `Caddy` 统一反代到实验室内网服务。
 
+当前这份网关除了 `portal / grafana / gitlab` 等集群内入口外，也正式承载：
+
+- 集群外观察页 `observer.saurick.space -> 192.168.0.156:30088`
+- 宿主机本地 `ddns-go` 控制台 `ddns.saurick.space -> 127.0.0.1:9876`
+
 ## 当前真源
 
 - 宿主机 live 配置：`/Users/simon/.config/lab-public/Caddyfile`
@@ -70,6 +75,22 @@ curl --noproxy '*' -I https://gitlab.saurick.space/users/sign_in
 - 先打开 `https://gitlab.saurick.space/users/sign_in` 并登录
 - 再打开 `https://portal.saurick.space`
 - 确认 `Latest Load Test` 不再停留在 `Login GitLab`
+
+3. `observer.saurick.space` 当前口径：
+
+- 宿主机网关已经正式接入 `observer.saurick.space -> 192.168.0.156:30088`
+- 当前公网 DNS 采用 `observer.saurick.space CNAME -> lab.saurick.space`
+- 因此现有 `ddns-go` 继续只维护 `lab.saurick.space` 即可，不需要单独再把 `ddns-go` 搬到 `lab-observer`
+- `Let's Encrypt` 证书已经签发完成，当前正式入口是 `https://observer.saurick.space`
+- 内网直连 `http://192.168.0.156:30088` 继续保留为备用入口
+
+4. `ddns.saurick.space` 当前口径：
+
+- 宿主机网关反代到本机回环 `127.0.0.1:9876`
+- `ddns-go` 继续维护 `lab.saurick.space`
+- `observer.saurick.space` 等子域名通过 `CNAME -> lab.saurick.space` 复用这条 DDNS 真源
+- `ddns-go` 当前应由宿主机系统级 `LaunchDaemon` 托管，而不是 GUI `LaunchAgent`
+- 当前 `ddns-go` Web 已启用登录页，但凭据只保留在宿主机本地配置，不写入 git
 
 ## 当前边界
 

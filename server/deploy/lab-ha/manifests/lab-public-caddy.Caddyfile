@@ -37,6 +37,14 @@ portal.saurick.space {
 	import http_proxy http://192.168.0.108:30088
 }
 
+observer.saurick.space {
+	import http_proxy http://192.168.0.156:30088
+}
+
+ddns.saurick.space {
+	import http_proxy http://127.0.0.1:9876
+}
+
 harbor.saurick.space {
 	import http_proxy http://192.168.0.108:30002
 }

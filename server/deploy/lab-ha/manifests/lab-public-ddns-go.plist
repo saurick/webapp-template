@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.simon.lab-saurick.ddns-go</string>
+
+  <key>ProgramArguments</key>
+  <array>
+    <string>/Users/simon/.local/bin/ddns-go</string>
+    <string>-c</string>
+    <string>/Users/simon/.config/ddns-go/lab-saurick.yaml</string>
+    <string>-f</string>
+    <string>300</string>
+    <string>-l</string>
+    <string>127.0.0.1:9876</string>
+  </array>
+
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>HTTP_PROXY</key>
+    <string>http://127.0.0.1:7897</string>
+    <key>HTTPS_PROXY</key>
+    <string>http://127.0.0.1:7897</string>
+    <key>ALL_PROXY</key>
+    <string>socks5://127.0.0.1:7897</string>
+    <key>NO_PROXY</key>
+    <string>localhost,127.0.0.1,::1</string>
+    <key>http_proxy</key>
+    <string>http://127.0.0.1:7897</string>
+    <key>https_proxy</key>
+    <string>http://127.0.0.1:7897</string>
+    <key>all_proxy</key>
+    <string>socks5://127.0.0.1:7897</string>
+    <key>no_proxy</key>
+    <string>localhost,127.0.0.1,::1</string>
+  </dict>
+
+  <key>KeepAlive</key>
+  <true/>
+
+  <key>RunAtLoad</key>
+  <true/>
+
+  <key>StandardOutPath</key>
+  <string>/var/log/lab-saurick-ddns-go.log</string>
+
+  <key>StandardErrorPath</key>
+  <string>/var/log/lab-saurick-ddns-go.log</string>
+</dict>
+</plist>

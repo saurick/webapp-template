@@ -14,10 +14,13 @@ Portal 现在内置“内网 / 外网”访问模式切换：
 - 页面右上角可以手动切换，并记住当前浏览器上次选择
 - Portal 主页上方现在还会显示“当前开机进度 / 当前关机进度”两块 live 区域，用来回答“已经恢复到哪一步 / 下一台能不能继续开”以及“现在能不能继续关下一台”
 - 关机 live 卡片只覆盖到 `node2 / 192.168.0.108` 下电前；因为 Portal 自己就挂在这台节点上，轮到关闭 `node2` 时卡片会明确提示“这是最后一个可视步骤”，之后请改到虚拟化控制台继续确认
+- 现在额外有一台集群外观察页 `Lab Observer`：正式公网入口是 `https://observer.saurick.space`，内网直连备用入口是 `http://192.168.0.156:30088`。开机初期 Portal 还没起来、或关机晚期 Portal 已跟着 `node2` 下线时，先看这台外置页；等 `192.168.0.108:30088` 恢复后，再切回集群内 Portal 看更细的 live 状态
+- `ddns-go` 现在也有独立公网管理入口 `https://ddns.saurick.space`，由宿主机网关反代到本机回环 `127.0.0.1:9876`，并由宿主机系统级 `LaunchDaemon` 托管。它只维护 `lab.saurick.space` 这条 DDNS 真源；当前登录凭据只保留在宿主机本地配置，不写入 git
 - 推荐顺序与最终验收口径仍以 `VM_POWER_SEQUENCE.md` 和 `check-ha-lab-cold-start.sh` 为准
 
 ### 内网入口
 
+- Lab Observer: `http://192.168.0.156:30088`
 - WebApp Lab: `http://192.168.0.108:32668`
 - WebApp Prod-Trial Active: `http://192.168.0.108:30089`
 - WebApp Prod-Trial Preview: `http://192.168.0.108:30091`
@@ -43,6 +46,8 @@ Portal 现在内置“内网 / 外网”访问模式切换：
 
 ### 公网入口
 
+- Lab Observer: `https://observer.saurick.space`
+- DDNS Go: `https://ddns.saurick.space`
 - WebApp Lab: `https://app.saurick.space`
 - WebApp Prod-Trial Active: `https://lab.saurick.space`
 - WebApp Prod-Trial Preview: `https://preview.saurick.space`
@@ -187,6 +192,7 @@ TAILSCALE_ROUTES=192.168.0.0/24 \
 
 ## 集群入口与节点
 
+- lab-observer: `192.168.0.156`
 - API VIP: `192.168.0.110:6443`
 - WebApp Lab Gateway: `192.168.0.108:32668`
 - WebApp Prod-Trial Active Gateway: `192.168.0.108:30089`

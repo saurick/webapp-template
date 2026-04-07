@@ -608,7 +608,7 @@ data:
               <div class="pill" data-i18n-html="pill.status"><b>Status</b> <span class="status-ok">Healthy</span></div>
               <div id="access-mode-pill" class="pill"><b>Access</b> Internal links</div>
               <div id="best-entry-pill" class="pill"><b>Best Entry</b> IP:Port direct</div>
-              <div class="pill" data-i18n-html="pill.curated"><b>Portal Curated</b> 2026-03-22</div>
+              <div class="pill" data-i18n-html="pill.curated"><b>Portal Curated</b> 2026-04-07</div>
             </div>
             <div class="grid">
               <a class="card" href="http://192.168.0.108:32668" target="_blank" rel="noreferrer" data-i18n-html="cards.app">
@@ -616,6 +616,12 @@ data:
               </a>
               <a class="card" href="http://192.168.0.108:30088" target="_blank" rel="noreferrer" data-i18n-html="cards.portal">
                 <small>Portal</small><strong>Lab Portal</strong><span>This navigation page itself.</span>
+              </a>
+              <a class="card" href="http://192.168.0.156:30088" target="_blank" rel="noreferrer" data-i18n-html="cards.observer">
+                <small>Fallback</small><strong>Lab Observer</strong><span>Cluster-external boot and shutdown observer for the periods when Portal is still down or already going away.</span>
+              </a>
+              <a class="card" href="https://ddns.saurick.space" target="_blank" rel="noreferrer" data-i18n-html="cards.ddns">
+                <small>DNS</small><strong>DDNS Go</strong><span>Gateway-side DDNS control plane for lab.saurick.space and its public CNAME entrypoints.</span>
               </a>
               <a class="card" href="http://192.168.0.108:30002" target="_blank" rel="noreferrer" data-i18n-html="cards.registry">
                 <small>Registry</small><strong>Harbor</strong><span>Container registry UI.</span>
@@ -1216,6 +1222,7 @@ data:
             { internal: 'http://192.168.0.108:30090', external: 'https://prometheus.saurick.space' },
             { internal: 'http://192.168.0.108:30089', external: 'https://lab.saurick.space' },
             { internal: 'http://192.168.0.108:30088', external: 'https://portal.saurick.space' },
+            { internal: 'http://192.168.0.156:30088', external: 'https://observer.saurick.space' },
             { internal: 'http://192.168.0.108:30087', external: 'https://headlamp.saurick.space' },
             { internal: 'http://192.168.0.108:30086', external: 'https://alertsink.saurick.space' },
             { internal: 'http://192.168.0.108:30085', external: 'https://hubble.saurick.space' },
@@ -1303,9 +1310,11 @@ data:
               'pill.accessExternal': '<b>Access</b> Public domains',
               'pill.bestEntryInternal': '<b>Best Entry</b> IP:Port direct',
               'pill.bestEntryExternal': '<b>Best Entry</b> Public HTTPS',
-              'pill.curated': '<b>Portal Curated</b> 2026-04-06',
+              'pill.curated': '<b>Portal Curated</b> 2026-04-07',
               'cards.app': '<small>App</small><strong>WebApp Lab</strong><span>Current lab entry via the shared ingress.</span>',
               'cards.portal': '<small>Portal</small><strong>Lab Portal</strong><span>This navigation page itself.</span>',
+              'cards.observer': '<small>Fallback</small><strong>Lab Observer</strong><span>Cluster-external boot and shutdown observer for the periods when Portal is still down or already going away.</span>',
+              'cards.ddns': '<small>DNS</small><strong>DDNS Go</strong><span>Gateway-side DDNS control plane for lab.saurick.space and its public CNAME entrypoints.</span>',
               'cards.registry': '<small>Registry</small><strong>Harbor</strong><span>Container registry UI.</span>',
               'cards.grafana': '<small>Metrics</small><strong>Grafana</strong><span>Dashboards and observability.</span>',
               'cards.k8s': '<small>K8s</small><strong>K8s Workloads</strong><span>Nodes, workloads, HPA, pod restarts, and ingress error signals.</span>',
@@ -1486,9 +1495,11 @@ data:
               'pill.accessExternal': '<b>访问</b> 外网域名',
               'pill.bestEntryInternal': '<b>最佳入口</b> 直连 IP:Port',
               'pill.bestEntryExternal': '<b>最佳入口</b> 公网 HTTPS',
-              'pill.curated': '<b>Portal 收口时间</b> 2026-04-06',
+              'pill.curated': '<b>Portal 收口时间</b> 2026-04-07',
               'cards.app': '<small>应用</small><strong>WebApp Lab</strong><span>当前 lab 入口，走共享 ingress。</span>',
               'cards.portal': '<small>门户</small><strong>实验室导航页</strong><span>就是当前这张导航页。</span>',
+              'cards.observer': '<small>兜底观察</small><strong>Lab Observer</strong><span>集群外开关机观察页，适合在 Portal 还没起来或即将跟着 node2 下线时继续看状态。</span>',
+              'cards.ddns': '<small>DNS</small><strong>DDNS Go</strong><span>公网网关侧的 DDNS 控制台，维护 lab.saurick.space 及其 CNAME 入口。</span>',
               'cards.registry': '<small>镜像仓库</small><strong>Harbor</strong><span>容器镜像仓库界面。</span>',
               'cards.grafana': '<small>监控</small><strong>Grafana</strong><span>仪表盘与可观测性入口。</span>',
               'cards.k8s': '<small>K8s</small><strong>K8s 工作负载</strong><span>节点、工作负载、HPA、Pod 重启与 ingress 错误信号。</span>',
