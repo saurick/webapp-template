@@ -148,6 +148,12 @@ tailscale ssh root@lab-ha-router 'hostname; tailscale ip -4'
 tailscale ssh -L 30088:192.168.0.108:30088 root@lab-ha-router
 ```
 
+当前 live 边界说明：
+
+- 截至 `2026-04-09`，`lab-ha-router` 当前启用了 `Tailscale SSH` 额外网页登录校验；首次执行 `tailscale ssh root@lab-ha-router ...`，或直接 `ssh root@100.110.51.53`，都可能先看到 `Tailscale SSH requires an additional check`
+- 这类提示说明 tailnet 本身已经连通，当前卡点是 `Tailscale SSH policy / check mode`，不是打洞失败，也不是 `22/TCP` 不通
+- 若要继续做无人值守 shell 校验，优先复用现有 `zos` 提供的 `192.168.0.0/24` 子路由，直接访问 `192.168.0.x`；若必须经由 `lab-ha-router`，先在浏览器完成 `login.tailscale.com` 给出的授权链接，再继续后续命令
+
 然后在本地浏览器打开 `http://127.0.0.1:30088`，或继续在 SSH 会话里执行 `curl / kubectl / helm-release.sh`。
 
 ### 2. 再验证业务入口

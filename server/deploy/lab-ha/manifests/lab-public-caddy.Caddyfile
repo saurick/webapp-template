@@ -2,6 +2,8 @@
 	admin off
 }
 
+# 当前公网证书由 Caddy 内建 ACME 自动申请与续期，默认走 Let's Encrypt；不要再并行维护 acme.sh。
+
 (common_headers) {
 	bind [::]
 	header {
@@ -9,88 +11,125 @@
 	}
 }
 
-(http_proxy) {
+lab.saurick.space {
 	import common_headers
-	reverse_proxy {args[0]} {
+	reverse_proxy http://192.168.0.108:30089 {
 		header_up Host {host}
 	}
 }
 
-(gitlab_proxy) {
+preview.saurick.space {
 	import common_headers
-	reverse_proxy {args[0]} {
+	reverse_proxy http://192.168.0.108:30091 {
+		header_up Host {host}
+	}
+}
+
+portal.saurick.space {
+	import common_headers
+	reverse_proxy http://192.168.0.108:30088 {
+		header_up Host {host}
+	}
+}
+
+observer.saurick.space {
+	import common_headers
+	reverse_proxy http://192.168.0.156:30088 {
+		header_up Host {host}
+	}
+}
+
+ddns.saurick.space {
+	import common_headers
+	reverse_proxy http://192.168.0.9:9876 {
+		header_up Host {host}
+	}
+}
+
+harbor.saurick.space {
+	import common_headers
+	reverse_proxy http://192.168.0.108:30002 {
+		header_up Host {host}
+	}
+}
+
+grafana.saurick.space {
+	import common_headers
+	reverse_proxy http://192.168.0.108:30081 {
+		header_up Host {host}
+	}
+}
+
+headlamp.saurick.space {
+	import common_headers
+	reverse_proxy http://192.168.0.108:30087 {
+		header_up Host {host}
+	}
+}
+
+jaeger.saurick.space {
+	import common_headers
+	reverse_proxy http://192.168.0.108:30686 {
+		header_up Host {host}
+	}
+}
+
+prometheus.saurick.space {
+	import common_headers
+	reverse_proxy http://192.168.0.108:30090 {
+		header_up Host {host}
+	}
+}
+
+alertmanager.saurick.space {
+	import common_headers
+	reverse_proxy http://192.168.0.108:30093 {
+		header_up Host {host}
+	}
+}
+
+longhorn.saurick.space {
+	import common_headers
+	reverse_proxy http://192.168.0.108:30084 {
+		header_up Host {host}
+	}
+}
+
+hubble.saurick.space {
+	import common_headers
+	reverse_proxy http://192.168.0.108:30085 {
+		header_up Host {host}
+	}
+}
+
+seaweedfs.saurick.space {
+	import common_headers
+	reverse_proxy http://192.168.0.108:30888 {
+		header_up Host {host}
+	}
+}
+
+alertsink.saurick.space {
+	import common_headers
+	reverse_proxy http://192.168.0.108:30086 {
+		header_up Host {host}
+	}
+}
+
+gitlab.saurick.space {
+	import common_headers
+	reverse_proxy http://192.168.0.108:8929 {
 		header_up Host {host}
 		# GitLab 需要把 session cookie 扩到父域，Portal 才能复用同一浏览器登录态。
 		header_down Set-Cookie "$" "; Domain=.saurick.space"
 	}
 }
 
-lab.saurick.space {
-	import http_proxy http://192.168.0.108:30089
-}
-
-preview.saurick.space {
-	import http_proxy http://192.168.0.108:30091
-}
-
-portal.saurick.space {
-	import http_proxy http://192.168.0.108:30088
-}
-
-observer.saurick.space {
-	import http_proxy http://192.168.0.156:30088
-}
-
-ddns.saurick.space {
-	import http_proxy http://127.0.0.1:9876
-}
-
-harbor.saurick.space {
-	import http_proxy http://192.168.0.108:30002
-}
-
-grafana.saurick.space {
-	import http_proxy http://192.168.0.108:30081
-}
-
-headlamp.saurick.space {
-	import http_proxy http://192.168.0.108:30087
-}
-
-jaeger.saurick.space {
-	import http_proxy http://192.168.0.108:30686
-}
-
-prometheus.saurick.space {
-	import http_proxy http://192.168.0.108:30090
-}
-
-alertmanager.saurick.space {
-	import http_proxy http://192.168.0.108:30093
-}
-
-longhorn.saurick.space {
-	import http_proxy http://192.168.0.108:30084
-}
-
-hubble.saurick.space {
-	import http_proxy http://192.168.0.108:30085
-}
-
-seaweedfs.saurick.space {
-	import http_proxy http://192.168.0.108:30888
-}
-
-alertsink.saurick.space {
-	import http_proxy http://192.168.0.108:30086
-}
-
-gitlab.saurick.space {
-	import gitlab_proxy http://192.168.0.108:8929
-}
-
 s3.saurick.space {
-	import http_proxy http://192.168.0.108:30333
+	import common_headers
+	reverse_proxy http://192.168.0.108:30333 {
+		header_up Host {host}
+	}
 }
 
 app.saurick.space {

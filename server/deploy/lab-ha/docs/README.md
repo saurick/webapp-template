@@ -19,7 +19,7 @@
 - `docs/PROD_TRIAL.md`: WebApp 生产试验 Runbook
 - `docs/LOAD_TEST.md`: 实验室最小压测能力与观测口径
 - `docs/INTERNAL_DNS.md`: 内部域名与内网 DNS 说明
-- `docs/PUBLIC_GATEWAY.md`: 宿主机公网 `Caddy` 网关配置与 GitLab cookie 共享口径
+- `docs/PUBLIC_GATEWAY.md`: `lab-edge` 公网 `Caddy` 网关配置与 GitLab cookie 共享口径
 - `docs/CILIUM_GATEWAY_MIGRATION.md`: `Cilium Gateway API` 正式切换说明
 - `docs/TAILSCALE.md`: 外部运维访问通过 Tailscale 接入的边界、运维入口机脚本与验证方式
 - `docs/OPS_CHECKLIST.md`: 日常巡检清单
@@ -28,8 +28,9 @@
 - `docs/TROUBLESHOOTING.md`: 常见故障排查手册
 - `docs/RECOVERY_RUNBOOK.md`: 恢复与故障演练手册
 - `docs/VM_POWER_SEQUENCE.md`: 三台 VM 计划性关机 / 开机顺序、影响与验收口径
+- `docs/LAB_EDGE.md`: 集群外 `lab-edge` 公网边界机的职责、入口与验证方式
 - `docs/LAB_OBSERVER.md`: 集群外 `lab-observer` 观察页的职责、安装方式与边界
-- `docs/DDNS_GO.md`: 宿主机侧 `ddns-go` 的职责、域名入口、live 文件位置与重载方式
+- `docs/DDNS_GO.md`: `lab-edge` 上 `ddns-go` 的职责、入口、live 文件与最小验证
 - `scripts/helm-release.sh`: Helm 统一入口，负责 repo 初始化、模板渲染与 release 同步
 - `scripts/harden-gitlab-instance.sh`: 收口独立 GitLab 实例的管理员基线，关闭公开注册与 usage/service ping，并按需重载 Puma
 - `scripts/lab-observer.py`: 集群外轻量观察页，负责整套开关机前后的外部状态视角
@@ -66,8 +67,8 @@
 - `manifests/blackbox-values.yaml`: Blackbox Exporter 探测配置
 - `manifests/metrics-server-values.yaml`: Metrics Server 值文件，给 HPA 提供资源指标
 - `manifests/gateway-api-v1.4.1-standard-install.yaml`: Gateway API CRD 真源，供 Cilium Gateway Controller 使用
-- `manifests/lab-public-caddy.Caddyfile`: 宿主机公网 `Caddy` 网关模板，包含 GitLab `Domain=.saurick.space` cookie 共享配置
-- `manifests/lab-public-ddns-go.plist`: 宿主机 `ddns-go` 的系统级 `LaunchDaemon` 模板，显式带上代理环境与本机回环监听
+- `manifests/lab-public-caddy.Caddyfile`: `lab-edge` 公网 `Caddy` 网关模板，包含 GitLab `Domain=.saurick.space` cookie 共享配置
+- `manifests/lab-edge-ddns-go.service`: `lab-edge` 上 `ddns-go` 的 systemd 真源
 - `manifests/headlamp-values.yaml`: Headlamp 值文件，固定当前实验室 K8s UI 入口
 - `manifests/alert-webhook-receiver.yaml`: 实验室默认 webhook 告警接收页，可查看最近 payload
 - `manifests/webapp-governance.yaml`: webapp 命名空间治理基线
@@ -99,11 +100,11 @@
 - 当前外部访问主入口统一收口为 `192.168.0.108` 的直连 `IP:Port`
 - 这是对当前虚拟化网络和用户本机代理环境最稳定、最易维护的口径
 - `Cilium Gateway API` 已正式接管 `WebApp Lab / Prod-Trial Active / Prod-Trial Preview` 三条业务入口
-- `Portal` 已作为默认起始页，包含入口导航、默认账号、Headlamp 10 年 token 复制卡、文档直达链接，以及面向值班的“当前开机进度 / 当前关机进度”live 区域
+- `Portal` 已作为默认起始页，包含入口导航、默认账号、Headlamp 10 年 token 复制卡、文档直达链接，以及面向值班的“当前开机进度 / 当前关机进度”live 区域；当前也已显式补出 `DDNS Go + Public Gateway` 两条 `lab-edge` 相关入口，避免再把边界机职责误认到别的机器上
 - `Portal` 当前既会展示“当前开机进度 / 当前关机进度 / 下一台建议”，也会展示最近一次冷启动验收、最近一次 HA 演练、最近一次备份检查、最近一次烟雾检查；最近结果摘要继续复用 Alert Sink 已持久化的轻量存储，避免重启后整块上下文直接清空
 - `Portal` 的关机进度卡片只负责回答“现在能不能继续关下一台”；由于 Portal 自己固定在 `node2 / 192.168.0.108`，当下一步轮到关闭 `node2` 时，卡片会明确提示“这是最后一个可视步骤”，后续最终关机仍以虚拟化平台电源状态为准
 - 现在额外有一台集群外 `lab-observer / 192.168.0.156` 负责“开关机前后不断线”的外部观察页；当前正式公网入口是 `https://observer.saurick.space`，内网直连备用入口是 `http://192.168.0.156:30088`：它不替代集群内 Portal，但会在 Portal 尚未恢复或已经跟着 `node2` 一起下线时，继续给出节点可达性、固定入口恢复情况和开/关机下一步建议
-- `ddns-go` 当前也已经收口成宿主机侧可登录控制台，正式入口 `https://ddns.saurick.space`；它负责维护 `lab.saurick.space` 这条 DDNS 真源，并通过 `CNAME` 间接支撑 `observer.saurick.space` 等公网入口，不属于 `lab-ha` 集群工作负载
+- 当前公网边界已经迁到 `lab-edge / 192.168.0.9`：`ddns-go` 继续维护 `lab.saurick.space` 动态 IPv6，`Caddy` 继续承接当前显式声明在 `manifests/lab-public-caddy.Caddyfile` 里的那组公网 HTTPS 入口；不是所有 `*.saurick.space` 域名都会自动经过 `09`，本地 Mac 也已不再承载这条公网链路
 - `Portal` 现在也会显式给出 `K8s Workloads` 与 `Headlamp` 两类 K8s 入口，避免值班人员在“看趋势”与“看对象细节”之间来回猜测
 - 面向人操作的日常巡检、值班和恢复，默认先看 `Portal + Grafana Ops + K8s Workloads + Headlamp + Alert Sink + Alertmanager + Argo CD` 这些 live 页面，再决定是否执行脚本
 - 当前对人展示统一口径：`WebApp Lab`、`WebApp Prod-Trial Active`、`WebApp Prod-Trial Preview`

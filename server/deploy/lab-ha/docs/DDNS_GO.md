@@ -5,92 +5,53 @@
 `ddns-go` 负责维护当前公网入口链路里的动态 DNS 真源：
 
 - 当前直接维护：`lab.saurick.space`
-- 当前依赖它的入口：`observer.saurick.space` 等通过 `CNAME -> lab.saurick.space` 的子域名
-
-它不在 `lab-ha` 集群里，也不应该迁到 `lab-observer`。原因很简单：
-
-- 当前公网入口实际落在宿主机侧网关
-- `lab.saurick.space` 需要跟宿主机当前真实公网地址保持一致
-- `lab-observer` 只是集群外观察页，不是公网入口宿主机
+- 当前依赖它的入口：`portal.saurick.space`、`observer.saurick.space`、`ddns.saurick.space` 等当前显式接入 `lab-edge` 公网网关、并采用 `CNAME -> lab.saurick.space` 的子域名；不是所有 `*.saurick.space` 域名都会自动跟随它
 
 ## 当前入口
 
+- 内网直连：`http://192.168.0.9:9876`
 - 公网登录页：`https://ddns.saurick.space`
-- 宿主机本地监听：`http://127.0.0.1:9876`
 
 说明：
 
-- `ddns-go` 当前只监听宿主机回环地址
-- 公网访问统一通过宿主机 `Caddy` 反代到 `ddns.saurick.space`
-- 登录凭据只保留在宿主机本地配置，不写入 git
+- 当前 `ddns-go` 运行在 `lab-edge / 192.168.0.9`
+- Portal 内网模式会直连 `192.168.0.9:9876`
+- 公网访问统一通过 `lab-edge` 上的 `Caddy` 反代到 `ddns.saurick.space`
+- 登录凭据只保留在 live 配置，不写入 git
 
 ## 当前 live 文件
 
-- 仓库模板真源：`/Users/simon/projects/webapp-template/server/deploy/lab-ha/manifests/lab-public-ddns-go.plist`
-- 配置：`/Users/simon/.config/ddns-go/lab-saurick.yaml`
-- LaunchDaemon：`/Library/LaunchDaemons/com.simon.lab-saurick.ddns-go.plist`
-- 日志：`/var/log/lab-saurick-ddns-go.log`
-- 公网网关：`/Users/simon/.config/lab-public/Caddyfile`
+- 仓库 service 真源：`/Users/simon/projects/webapp-template/server/deploy/lab-ha/manifests/lab-edge-ddns-go.service`
+- live 配置：`/etc/ddns-go/lab-saurick.yaml`
+- live systemd：`/etc/systemd/system/lab-edge-ddns-go.service`
+- 日志：`journalctl -u lab-edge-ddns-go`
 
 ## 当前运行口径
 
-- 当前使用宿主机系统级 `LaunchDaemon` 运行，不再依赖 GUI 登录会话
+- 当前边界机：`lab-edge / 192.168.0.9`
 - 当前更新频率：`300s`
-- 当前 web UI 只监听本机回环：`127.0.0.1:9876`
-- 当前公网入口仍统一通过宿主机 `Caddy` 反代到 `https://ddns.saurick.space`
-- 当前显式继承代理环境变量，避免 `Cloudflare API` 调用再隐式依赖 GUI 会话里的代理导出
-- 当前不再保留旧 GUI `LaunchAgent` 文件，避免宿主机侧留下双轨入口
-- 当前密码通过 `ddns-go -resetPassword` 写入本地配置，保存为哈希
-
-## 为什么不是搬到 Lab Observer
-
-不要把“`observer.saurick.space` 现在可用了”误读成“`ddns-go` 应该搬到 `lab-observer`”。
-
-当前真实链路是：
-
-1. `ddns-go` 维护 `lab.saurick.space`
-2. `observer.saurick.space` 等子域名通过 `CNAME` 指向 `lab.saurick.space`
-3. 宿主机 `Caddy` 再把不同子域名反代到各自内网服务
-
-所以 `ddns-go` 的职责更接近“公网入口宿主机的 DNS 同步器”，不是“集群外观察页的附属进程”。
+- 当前直接维护的域名：`lab.saurick.space`
+- 当前只同步 `AAAA`：live 配置里 `ipv4.enable=false`、`ipv6.enable=true`，因此这条公网链路当前应按“IPv6 主路径”理解，而不是期待 `ddns-go` 继续维护公网 `A` 记录
+- 当前依赖的解析链：当前显式接入 `lab-edge` 公网网关的这组子域，通过 `CNAME -> lab.saurick.space` 跟随它；是否属于这组域名，统一以 `manifests/lab-public-caddy.Caddyfile` 中是否声明该 host 为准
+- 当前 UI 登录态继续通过哈希密码保存在 live yaml
 
 ## 最小验证
 
 ```bash
-sudo launchctl print system/com.simon.lab-saurick.ddns-go
-sudo plutil -p /Library/LaunchDaemons/com.simon.lab-saurick.ddns-go.plist
-curl -fsS http://127.0.0.1:9876/login | head
-curl --noproxy '*' -I https://ddns.saurick.space/login
-tail -n 50 /var/log/lab-saurick-ddns-go.log
+ssh root@192.168.0.9 'systemctl status --no-pager lab-edge-ddns-go'
+ssh root@192.168.0.9 'journalctl -u lab-edge-ddns-go -n 50 --no-pager'
+curl -fsS http://192.168.0.9:9876/login | head
+curl -6 --noproxy '*' -I https://ddns.saurick.space/login
+dig +short AAAA lab.saurick.space @1.1.1.1
 ```
 
-## 常见操作
+说明：
 
-重置密码：
+- 若当前客户端网络本身没有可用 IPv6，优先改到 `lab-edge` 本机或任一具备 IPv6 的外部网络上验证；不要把“本机出不了 IPv6”误判成 `ddns-go` 没更新
+- 当前更可信的外部 DNS 验证方式是 `DoH + AAAA`，例如 `https://dns.google/resolve?name=lab.saurick.space&type=AAAA`
 
-```bash
-/Users/simon/.local/bin/ddns-go \
-  -c /Users/simon/.config/ddns-go/lab-saurick.yaml \
-  -resetPassword 'NewStrongPasswordHere'
-```
+## 边界
 
-更新 live `LaunchDaemon`：
-
-```bash
-plutil -lint /Users/simon/projects/webapp-template/server/deploy/lab-ha/manifests/lab-public-ddns-go.plist
-
-sudo cp /Users/simon/projects/webapp-template/server/deploy/lab-ha/manifests/lab-public-ddns-go.plist \
-  /Library/LaunchDaemons/com.simon.lab-saurick.ddns-go.plist
-sudo chown root:wheel /Library/LaunchDaemons/com.simon.lab-saurick.ddns-go.plist
-sudo chmod 644 /Library/LaunchDaemons/com.simon.lab-saurick.ddns-go.plist
-
-sudo launchctl bootout system /Library/LaunchDaemons/com.simon.lab-saurick.ddns-go.plist || true
-sudo launchctl bootstrap system /Library/LaunchDaemons/com.simon.lab-saurick.ddns-go.plist
-sudo launchctl kickstart -k system/com.simon.lab-saurick.ddns-go
-```
-
-重载公网网关：
-
-```bash
-sudo launchctl kickstart -k system/com.simon.lab-saurick.caddy
-```
+- `ddns-go` 只负责 DNS 真源同步，不负责 HTTPS 终止
+- HTTPS 网关由同一台 `lab-edge` 上的 `Caddy` 承担，配置真源见 `PUBLIC_GATEWAY.md`
+- `lab-observer` 仍然只是观察页，不承载 DDNS

@@ -5,7 +5,7 @@
 说明：当前实验室同时保留两套人类访问入口：
 
 - 内网入口：`192.168.0.108` 的直连 `IP:Port`
-- 公网入口：`*.saurick.space` 的 `HTTPS` 子域名，由宿主机侧网关统一反代到内网服务
+- 公网入口：`*.saurick.space` 的 `HTTPS` 子域名，由集群外 `lab-edge / 192.168.0.9` 统一反代到内网服务
 
 Portal 现在内置“内网 / 外网”访问模式切换：
 
@@ -14,12 +14,16 @@ Portal 现在内置“内网 / 外网”访问模式切换：
 - 页面右上角可以手动切换，并记住当前浏览器上次选择
 - Portal 主页上方现在还会显示“当前开机进度 / 当前关机进度”两块 live 区域，用来回答“已经恢复到哪一步 / 下一台能不能继续开”以及“现在能不能继续关下一台”
 - 关机 live 卡片只覆盖到 `node2 / 192.168.0.108` 下电前；因为 Portal 自己就挂在这台节点上，轮到关闭 `node2` 时卡片会明确提示“这是最后一个可视步骤”，之后请改到虚拟化控制台继续确认
-- 现在额外有一台集群外观察页 `Lab Observer`：正式公网入口是 `https://observer.saurick.space`，内网直连备用入口是 `http://192.168.0.156:30088`。开机初期 Portal 还没起来、或关机晚期 Portal 已跟着 `node2` 下线时，先看这台外置页；等 `192.168.0.108:30088` 恢复后，再切回集群内 Portal 看更细的 live 状态
-- `ddns-go` 现在也有独立公网管理入口 `https://ddns.saurick.space`，由宿主机网关反代到本机回环 `127.0.0.1:9876`，并由宿主机系统级 `LaunchDaemon` 托管。它只维护 `lab.saurick.space` 这条 DDNS 真源；当前登录凭据只保留在宿主机本地配置，不写入 git
+- 当前集群外公网边界机是 `lab-edge / 192.168.0.9`：它负责 `ddns-go + 公网 Caddy`，不是 `lab-observer`
+- 公网 `HTTPS` 证书当前由 `lab-edge` 上的 `Caddy` 直接通过 `ACME + Let's Encrypt` 自动申请与续期，不再额外并行维护 `acme.sh`
+- 现在额外有一台集群外观察页 `Lab Observer`：正式公网入口是 `https://observer.saurick.space`，内网直连备用入口是 `http://192.168.0.156:30088`。开机初期 Portal 还没起来、或关机晚期 Portal 已跟着 `node2` 下线时，先看这台外置页；它现在也会展开每台节点的当前步骤状态与 gate 计数。等 `192.168.0.108:30088` 恢复后，再切回集群内 Portal 看更细的 live 状态
+- `ddns-go` 现在已经迁到 `lab-edge`，公网控制台入口恢复为 `https://ddns.saurick.space`，内网直连入口是 `http://192.168.0.9:9876`
+- 当前本地 Mac 已不再承载 `ddns-go` 或公网 `Caddy`；笔记本睡眠不会再直接带掉这组 lab 公网入口
 - 推荐顺序与最终验收口径仍以 `VM_POWER_SEQUENCE.md` 和 `check-ha-lab-cold-start.sh` 为准
 
 ### 内网入口
 
+- Lab Edge DDNS Go: `http://192.168.0.9:9876`
 - Lab Observer: `http://192.168.0.156:30088`
 - WebApp Lab: `http://192.168.0.108:32668`
 - WebApp Prod-Trial Active: `http://192.168.0.108:30089`
@@ -46,8 +50,8 @@ Portal 现在内置“内网 / 外网”访问模式切换：
 
 ### 公网入口
 
-- Lab Observer: `https://observer.saurick.space`
 - DDNS Go: `https://ddns.saurick.space`
+- Lab Observer: `https://observer.saurick.space`
 - WebApp Lab: `https://app.saurick.space`
 - WebApp Prod-Trial Active: `https://lab.saurick.space`
 - WebApp Prod-Trial Preview: `https://preview.saurick.space`
@@ -73,7 +77,7 @@ Portal 现在内置“内网 / 外网”访问模式切换：
 
 说明：
 
-- 公网 `gitlab.saurick.space` 当前由宿主机侧网关补写 `Set-Cookie: Domain=.saurick.space`
+- 公网 `gitlab.saurick.space` 当前由 `lab-edge` 网关补写 `Set-Cookie: Domain=.saurick.space`
 - 因此同一浏览器先在 `gitlab.saurick.space` 登录后，`portal.saurick.space` 下的 GitLab 代理请求现在可以复用这份登录态，不必再额外登录一次
 - 若后续这条体验再次退化，先执行 `curl --noproxy '*' -I https://gitlab.saurick.space/users/sign_in`，确认 `_gitlab_session` 响应头里仍然带有 `Domain=.saurick.space`
 - 当前 GitLab 管理基线默认关闭公开注册与 `usage/service ping`；若重装或手工改动后又出现首页横幅，直接执行：
@@ -130,6 +134,7 @@ bash /Users/simon/projects/webapp-template/server/deploy/lab-ha/scripts/get-head
 - 当前如果需要让少量固定运维人员从实验室外访问，优先引入 `Tailscale` 作为外部运维入口，而不是直接把管理面做公网暴露
 - 当前推荐做法是：先在集群外边界主机，或当前宿主机侧一个稳定节点上接入 `Tailscale` 作为运维入口机
 - 如果 tailnet 已经有现成的 LAN `subnet router`，例如当前继续承担 `192.168.0.0/24` 的 `zos`，就保留它处理整段内网路由；`lab-ha-router` 只负责自己的 tailnet 身份、`Tailscale SSH` 和跳板访问
+- 截至 `2026-04-09` 实测，`lab-ha-router` 当前的 `Tailscale SSH` 策略会要求额外网页登录校验；`tailscale ssh root@lab-ha-router` 与直接 `ssh root@100.110.51.53` 都会先弹 `login.tailscale.com` 授权链接，因此 headless 自动化优先继续复用 `zos` 的 `192.168.0.0/24` 子路由直连内网地址，或先手工完成一次网页校验
 - 只有在 tailnet 里没有现成 LAN 子路由，或者你明确要迁移主入口时，才显式给 `lab-ha-router` 加 `TAILSCALE_ROUTES=192.168.0.0/24`
 - 当前最小可执行入口见：
 
@@ -166,6 +171,7 @@ TAILSCALE_ROUTES=192.168.0.0/24 \
 - It now supports one-click switching between internal `IP:Port` links and external `HTTPS` domain links
 - It now includes a dedicated favicon and one-click copy buttons for default credentials
 - It now also includes a `Headlamp 10y token` copy card, backed by a live runtime Secret instead of a git-tracked static secret
+- It now also includes a `Public Gateway` entry for the `lab-edge` Caddy runbook, alongside the direct `DDNS Go` card
 - It also includes an operational snapshot area for CI, GitOps, HA drills, and blackbox guidance
 - It now also surfaces the latest verified backup result and alert delivery summary for faster daily checks
 - It now also exposes dedicated `K8s Workloads` and `Headlamp` entries, so operators can choose between curated Grafana triage and interactive Kubernetes resource browsing
@@ -179,6 +185,30 @@ TAILSCALE_ROUTES=192.168.0.0/24 \
 - Grafana admin: `admin / Grafana123!`
 - Argo CD admin: `admin / aLgJjYwPdezuEzSw`
 - GitLab root: `root / L4b!Runr2026#Git`
+
+## 当前主机 SSH 凭据
+
+- 截至 `2026-04-09` 实测可用：
+  - `lab-edge`: `root@192.168.0.9 / 123456`
+  - `lab-observer`: `root@192.168.0.156 / 123456`
+- 截至 `2026-04-09` 实测可用的节点 SSH 入口：
+  - `node1`: `ssh root@192.168.0.7`
+  - `node2`: `ssh root@192.168.0.108`
+  - `node3`: `ssh root@192.168.0.128`
+  - `node2 / lab-ha-router` 的 tailnet 入口：`ssh root@100.110.51.53`
+- 截至 `2026-04-09` 通过内网地址做 `root` 密码 SSH 实测失败：
+  - `node1`: `ssh root@192.168.0.7` 后手输 `123456` 会失败
+  - `node2`: `ssh root@192.168.0.108` 后手输 `123456` 会失败
+  - `node3`: `ssh root@192.168.0.128` 后手输 `123456` 会失败
+
+说明：
+
+- 当前只有 `lab-edge` 与 `lab-observer` 已确认可用密码登录；不要再默认假定三台集群节点也走同一条密码 SSH 入口
+- 三台节点当前正确入口是 root SSH key，不是 root 密码 SSH；在这台当前工作站上，直接执行上面的 `ssh root@192.168.0.x` 已实测可用
+- 仓库节点基线脚本 [ha-node-bootstrap.sh](/Users/simon/projects/webapp-template/server/deploy/lab-ha/scripts/ha-node-bootstrap.sh#L250) 会先设置 `ROOT_PASSWORD` 作为本地兜底，再写入 `PermitRootLogin prohibit-password`，并安装固定 root 公钥；因此默认口径应理解为“root 有本地密码 fallback，但 SSH 主路径走 key”
+- `node2` 已进一步实测：`root` 本地密码仍匹配 `123456`，但 live `sshd -T` 生效配置是 `PermitRootLogin without-password`，因此 `ssh root@192.168.0.108` 输入密码会失败；同一台机器当前也可改走 `Tailscale SSH` 入口 `ssh root@100.110.51.53`
+- 当前 `lab-ha-router` 的 `100.x` 地址走的是 `Tailscale SSH`，不是普通 `sshd`；要从 tailnet 直接连这台机器时，先按上面的网页登录校验口径处理
+- 这条密码口径仅适合当前实验室交接；后续如果补密钥免密、堡垒机或更细的主机密码策略，这里必须同轮更新
 
 ## 若后续忘记密码
 

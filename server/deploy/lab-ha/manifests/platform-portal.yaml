@@ -608,7 +608,7 @@ data:
               <div class="pill" data-i18n-html="pill.status"><b>Status</b> <span class="status-ok">Healthy</span></div>
               <div id="access-mode-pill" class="pill"><b>Access</b> Internal links</div>
               <div id="best-entry-pill" class="pill"><b>Best Entry</b> IP:Port direct</div>
-              <div class="pill" data-i18n-html="pill.curated"><b>Portal Curated</b> 2026-04-07</div>
+              <div class="pill" data-i18n-html="pill.curated"><b>Portal Curated</b> 2026-04-08</div>
             </div>
             <div class="grid">
               <a class="card" href="http://192.168.0.108:32668" target="_blank" rel="noreferrer" data-i18n-html="cards.app">
@@ -620,8 +620,8 @@ data:
               <a class="card" href="http://192.168.0.156:30088" target="_blank" rel="noreferrer" data-i18n-html="cards.observer">
                 <small>Fallback</small><strong>Lab Observer</strong><span>Cluster-external boot and shutdown observer for the periods when Portal is still down or already going away.</span>
               </a>
-              <a class="card" href="https://ddns.saurick.space" target="_blank" rel="noreferrer" data-i18n-html="cards.ddns">
-                <small>DNS</small><strong>DDNS Go</strong><span>Gateway-side DDNS control plane for lab.saurick.space and its public CNAME entrypoints.</span>
+              <a class="card" href="http://192.168.0.9:9876" target="_blank" rel="noreferrer" data-i18n-html="cards.ddns">
+                <small>Edge</small><strong>DDNS Go</strong><span>Dynamic DNS console for the public edge host. Use it when lab.saurick.space needs to follow the current edge IPv6.</span>
               </a>
               <a class="card" href="http://192.168.0.108:30002" target="_blank" rel="noreferrer" data-i18n-html="cards.registry">
                 <small>Registry</small><strong>Harbor</strong><span>Container registry UI.</span>
@@ -646,6 +646,9 @@ data:
               </a>
               <a class="card" href="http://192.168.0.108:30081/d/lab-ha-gitops/ha-lab-gitops-and-delivery" target="_blank" rel="noreferrer" data-i18n-html="cards.delivery">
                 <small>Delivery</small><strong>WebApp GitOps &amp; Release</strong><span>WebApp Lab sync plus WebApp Prod-Trial active/preview release signals.</span>
+              </a>
+              <a class="card" href="http://192.168.0.108:8929/root/webapp-template-lab/-/blob/master/server/deploy/lab-ha/docs/PUBLIC_GATEWAY.md" target="_blank" rel="noreferrer" data-i18n-html="cards.publicGateway">
+                <small>Edge</small><strong>Public Gateway</strong><span>lab-edge Caddy host map, TLS renewal path, and live sync runbook.</span>
               </a>
               <a class="card card-accent" href="http://192.168.0.108:30089/" target="_blank" rel="noreferrer" data-i18n-html="cards.prodTrialActive">
                 <small>Release</small><strong>WebApp Prod-Trial Active</strong><span>Current live release entry routed to the active Service.</span>
@@ -1166,6 +1169,12 @@ data:
                   <div class="cred-value" data-i18n="quickNotes.gitops">GitLab CI + Argo CD drive WebApp Lab delivery; WebApp Prod-Trial blue-green status lives in the release dashboard.</div>
                 </div>
               </div>
+              <div class="cred-line">
+                <div>
+                  <div class="cred-label">Edge Gateway</div>
+                  <div class="cred-value" data-i18n="quickNotes.edgeGateway">DDNS Go is the live console; Public Gateway is the Caddy runbook for host mapping and ACME renewal.</div>
+                </div>
+              </div>
             </div>
           </section>
 
@@ -1196,6 +1205,8 @@ data:
               <ul>
                 <li><a href="http://192.168.0.108:8929/root/webapp-template-lab/-/blob/master/server/deploy/lab-ha/docs/ACCESS.md" target="_blank" rel="noreferrer" data-canonical-href="http://192.168.0.108:8929/root/webapp-template-lab/-/blob/master/server/deploy/lab-ha/docs/ACCESS.md">ACCESS.md</a></li>
                 <li><a href="http://192.168.0.108:8929/root/webapp-template-lab/-/blob/master/server/deploy/lab-ha/docs/OPS_CHECKLIST.md" target="_blank" rel="noreferrer" data-canonical-href="http://192.168.0.108:8929/root/webapp-template-lab/-/blob/master/server/deploy/lab-ha/docs/OPS_CHECKLIST.md">OPS_CHECKLIST.md</a></li>
+                <li><a href="http://192.168.0.108:8929/root/webapp-template-lab/-/blob/master/server/deploy/lab-ha/docs/PUBLIC_GATEWAY.md" target="_blank" rel="noreferrer" data-canonical-href="http://192.168.0.108:8929/root/webapp-template-lab/-/blob/master/server/deploy/lab-ha/docs/PUBLIC_GATEWAY.md">PUBLIC_GATEWAY.md</a></li>
+                <li><a href="http://192.168.0.108:8929/root/webapp-template-lab/-/blob/master/server/deploy/lab-ha/docs/LAB_EDGE.md" target="_blank" rel="noreferrer" data-canonical-href="http://192.168.0.108:8929/root/webapp-template-lab/-/blob/master/server/deploy/lab-ha/docs/LAB_EDGE.md">LAB_EDGE.md</a></li>
                 <li><a href="http://192.168.0.108:8929/root/webapp-template-lab/-/blob/master/server/deploy/lab-ha/docs/VM_POWER_SEQUENCE.md" target="_blank" rel="noreferrer" data-canonical-href="http://192.168.0.108:8929/root/webapp-template-lab/-/blob/master/server/deploy/lab-ha/docs/VM_POWER_SEQUENCE.md">VM_POWER_SEQUENCE.md</a></li>
                 <li><a href="http://192.168.0.108:8929/root/webapp-template-lab/-/blob/master/server/deploy/lab-ha/docs/TROUBLESHOOTING.md" target="_blank" rel="noreferrer" data-canonical-href="http://192.168.0.108:8929/root/webapp-template-lab/-/blob/master/server/deploy/lab-ha/docs/TROUBLESHOOTING.md">TROUBLESHOOTING.md</a></li>
                 <li><a href="http://192.168.0.108:8929/root/webapp-template-lab/-/blob/master/server/deploy/lab-ha/docs/RECOVERY_RUNBOOK.md" target="_blank" rel="noreferrer" data-canonical-href="http://192.168.0.108:8929/root/webapp-template-lab/-/blob/master/server/deploy/lab-ha/docs/RECOVERY_RUNBOOK.md">RECOVERY_RUNBOOK.md</a></li>
@@ -1223,6 +1234,7 @@ data:
             { internal: 'http://192.168.0.108:30089', external: 'https://lab.saurick.space' },
             { internal: 'http://192.168.0.108:30088', external: 'https://portal.saurick.space' },
             { internal: 'http://192.168.0.156:30088', external: 'https://observer.saurick.space' },
+            { internal: 'http://192.168.0.9:9876', external: 'https://ddns.saurick.space' },
             { internal: 'http://192.168.0.108:30087', external: 'https://headlamp.saurick.space' },
             { internal: 'http://192.168.0.108:30086', external: 'https://alertsink.saurick.space' },
             { internal: 'http://192.168.0.108:30085', external: 'https://hubble.saurick.space' },
@@ -1310,11 +1322,11 @@ data:
               'pill.accessExternal': '<b>Access</b> Public domains',
               'pill.bestEntryInternal': '<b>Best Entry</b> IP:Port direct',
               'pill.bestEntryExternal': '<b>Best Entry</b> Public HTTPS',
-              'pill.curated': '<b>Portal Curated</b> 2026-04-07',
+              'pill.curated': '<b>Portal Curated</b> 2026-04-08',
               'cards.app': '<small>App</small><strong>WebApp Lab</strong><span>Current lab entry via the shared ingress.</span>',
               'cards.portal': '<small>Portal</small><strong>Lab Portal</strong><span>This navigation page itself.</span>',
               'cards.observer': '<small>Fallback</small><strong>Lab Observer</strong><span>Cluster-external boot and shutdown observer for the periods when Portal is still down or already going away.</span>',
-              'cards.ddns': '<small>DNS</small><strong>DDNS Go</strong><span>Gateway-side DDNS control plane for lab.saurick.space and its public CNAME entrypoints.</span>',
+              'cards.ddns': '<small>Edge</small><strong>DDNS Go</strong><span>Dynamic DNS console for the public edge host. Use it when lab.saurick.space needs to follow the current edge IPv6.</span>',
               'cards.registry': '<small>Registry</small><strong>Harbor</strong><span>Container registry UI.</span>',
               'cards.grafana': '<small>Metrics</small><strong>Grafana</strong><span>Dashboards and observability.</span>',
               'cards.k8s': '<small>K8s</small><strong>K8s Workloads</strong><span>Nodes, workloads, HPA, pod restarts, and ingress error signals.</span>',
@@ -1323,6 +1335,7 @@ data:
               'cards.data': '<small>Data</small><strong>Data &amp; Storage</strong><span>Database, Harbor, Longhorn, SeaweedFS, and PVC health view.</span>',
               'cards.database': '<small>Database</small><strong>PostgreSQL &amp; Backup</strong><span>Primary/replica roles, lag, DB size, and Velero backup signals.</span>',
               'cards.delivery': '<small>Delivery</small><strong>WebApp GitOps &amp; Release</strong><span>WebApp Lab sync plus WebApp Prod-Trial active/preview release signals.</span>',
+              'cards.publicGateway': '<small>Edge</small><strong>Public Gateway</strong><span>lab-edge Caddy host map, TLS renewal path, and live sync runbook.</span>',
               'cards.prodTrialActive': '<small>Release</small><strong>WebApp Prod-Trial Active</strong><span>Current live release entry routed to the active Service.</span>',
               'cards.prodTrialPreview': '<small>Release</small><strong>WebApp Prod-Trial Preview</strong><span>Pre-release validation entry routed to the preview Service.</span>',
               'cards.runLoadtest': '<small>Testing</small><strong>Run Load Test</strong><span>Portal directly triggers the safe default system scenario and links to the latest report.</span>',
@@ -1462,6 +1475,7 @@ data:
               'quickNotes.seaweedfsS3': '30333 is API-only. Browser AccessDenied is expected.',
               'quickNotes.filerUi': 'Use the Filer UI card for human browsing and basic object checks.',
               'quickNotes.gitops': 'GitLab CI + Argo CD drive WebApp Lab delivery; WebApp Prod-Trial blue-green status lives in the release dashboard.',
+              'quickNotes.edgeGateway': 'DDNS Go is the live console; Public Gateway is the Caddy runbook for host mapping and ACME renewal.',
               'notes.purposeTitle': 'What Portal is for',
               'notes.purpose1': 'Central landing page for every lab system.',
               'notes.purpose2': 'Reduces the need to remember many ports.',
@@ -1495,11 +1509,11 @@ data:
               'pill.accessExternal': '<b>访问</b> 外网域名',
               'pill.bestEntryInternal': '<b>最佳入口</b> 直连 IP:Port',
               'pill.bestEntryExternal': '<b>最佳入口</b> 公网 HTTPS',
-              'pill.curated': '<b>Portal 收口时间</b> 2026-04-07',
+              'pill.curated': '<b>Portal 收口时间</b> 2026-04-08',
               'cards.app': '<small>应用</small><strong>WebApp Lab</strong><span>当前 lab 入口，走共享 ingress。</span>',
               'cards.portal': '<small>门户</small><strong>实验室导航页</strong><span>就是当前这张导航页。</span>',
               'cards.observer': '<small>兜底观察</small><strong>Lab Observer</strong><span>集群外开关机观察页，适合在 Portal 还没起来或即将跟着 node2 下线时继续看状态。</span>',
-              'cards.ddns': '<small>DNS</small><strong>DDNS Go</strong><span>公网网关侧的 DDNS 控制台，维护 lab.saurick.space 及其 CNAME 入口。</span>',
+              'cards.ddns': '<small>边界</small><strong>DDNS Go</strong><span>公网边界机的动态 DNS 控制台；当 lab.saurick.space 需要跟随当前 edge IPv6 时看这里。</span>',
               'cards.registry': '<small>镜像仓库</small><strong>Harbor</strong><span>容器镜像仓库界面。</span>',
               'cards.grafana': '<small>监控</small><strong>Grafana</strong><span>仪表盘与可观测性入口。</span>',
               'cards.k8s': '<small>K8s</small><strong>K8s 工作负载</strong><span>节点、工作负载、HPA、Pod 重启与 ingress 错误信号。</span>',
@@ -1508,6 +1522,7 @@ data:
               'cards.data': '<small>数据</small><strong>数据与存储</strong><span>数据库、Harbor、Longhorn、SeaweedFS 与 PVC 健康视图。</span>',
               'cards.database': '<small>数据库</small><strong>PostgreSQL 与备份</strong><span>主从角色、复制延迟、库大小与 Velero 备份信号。</span>',
               'cards.delivery': '<small>交付</small><strong>WebApp GitOps 与发布</strong><span>WebApp Lab 同步，以及 WebApp Prod-Trial active/preview 发布信号。</span>',
+              'cards.publicGateway': '<small>边界</small><strong>公网网关</strong><span>lab-edge 上 Caddy 的域名映射、证书续签路径和 live 同步 runbook。</span>',
               'cards.prodTrialActive': '<small>发布验证</small><strong>WebApp Prod-Trial Active</strong><span>当前对外生效的正式侧入口。</span>',
               'cards.prodTrialPreview': '<small>发布验证</small><strong>WebApp Prod-Trial Preview</strong><span>上线前验新的预发布入口。</span>',
               'cards.runLoadtest': '<small>测试</small><strong>运行压测</strong><span>直接由 Portal 触发安全的 system 场景，并给出最近一轮报告入口。</span>',
@@ -1647,6 +1662,7 @@ data:
               'quickNotes.seaweedfsS3': '30333 仅提供 API，浏览器看到 AccessDenied 属于预期。',
               'quickNotes.filerUi': '人工访问与基础对象检查请使用 Filer UI 卡片。',
               'quickNotes.gitops': '当前实验部署路径已由 GitLab CI + Argo CD 驱动；WebApp Lab 走日常同步，WebApp Prod-Trial 蓝绿发布状态统一看发布看板。',
+              'quickNotes.edgeGateway': 'DDNS Go 是 live 控制台；Public Gateway runbook 才是 Caddy 域名映射和 ACME 续签口径。',
               'notes.purposeTitle': 'Portal 的用途',
               'notes.purpose1': '作为实验室所有系统的统一落地页。',
               'notes.purpose2': '减少记忆大量端口的成本。',

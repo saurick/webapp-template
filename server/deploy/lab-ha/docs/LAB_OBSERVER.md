@@ -11,6 +11,8 @@
 - 三台节点当前是否可达
 - `22/TCP` 是否已经恢复，能否视为进入稳定启动阶段
 - `K8s API VIP`、`Portal`、`WebApp Lab /readyz` 是否已经回绿
+- 当前推荐顺序里每台节点处于“已就绪 / 下一台 / 等待中”还是“已退出 Ready / 保持运行”
+- 当前阶段 gate 是否已经过线，例如节点、固定入口、核心服务、入口检测或外部关键探针
 - 当集群内 `Portal` live API 可用时，当前开机 / 关机状态是否已经由集群内页面接管
 
 它不负责替代：
@@ -24,12 +26,14 @@
 - 页面（当前正式入口）：`https://observer.saurick.space`
 - 页面（内网直连备用入口）：`http://192.168.0.156:30088`
 - SSH：`root@192.168.0.156`
+- 当前 live SSH 密码：`123456`
 - 主机名：`lab-observer`
 
 补充说明：
 
 - `observer.saurick.space` 当前采用 `CNAME -> lab.saurick.space`
-- 现有 `ddns-go` 继续只维护 `lab.saurick.space` 的公网解析，不需要额外迁到 `lab-observer`
+- 当前 `ddns-go + 公网 Caddy` 已迁到 `lab-edge / 192.168.0.9`
+- `lab-observer` 继续只负责开关机观察页，不承载公网入口或 DDNS 真源
 
 ## 当前资源基线
 
@@ -56,7 +60,7 @@
 所以这台页会自动分两种模式：
 
 - `集群外探针`：当集群内 Portal 还没起来，或已经跟着 `node2` 一起下线
-- `集群内 Portal live`：当 `192.168.0.108:30088` 已经接管开关机状态
+- `集群内 Portal live`：当 `192.168.0.108:30088` 已经接管开关机状态；此时外置页会直接展开和 Portal 同源的步骤列表与 gate 计数，而不是只留一句摘要
 
 ## 为什么还要保留集群内 Portal
 

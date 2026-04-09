@@ -1,0 +1,15 @@
+[Unit]
+Description=DDNS-Go for lab-edge public DNS sync
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/ddns-go -c /etc/ddns-go/lab-saurick.yaml -f 300 -l 192.168.0.9:9876
+WorkingDirectory=/var/lib/ddns-go
+Restart=always
+RestartSec=5
+User=root
+
+[Install]
+WantedBy=multi-user.target
