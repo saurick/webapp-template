@@ -34,11 +34,20 @@ make all
 # 数据模型与迁移
 make data
 make migrate_apply
+make print_db_url
+make migrate_status
 
 # 测试与构建
 go test ./...
 make build
 ```
+
+## 数据库迁移说明
+
+- `make migrate_apply` 默认优先读取 `server/configs/dev/config.yaml`，并允许 `config.local.yaml` 覆盖私有 DSN。
+- 若 shell 里残留了历史 `DB_URL`，默认不会直接生效；只有显式设置 `USE_ENV_DB_URL=1` 才会改用环境变量。
+- 可先执行 `make print_db_url` 确认当前真正命中的开发库，再执行 `make migrate_status` / `make migrate_apply`。
+- `server/cmd/dburl` 只是迁移辅助命令，用来统一解析当前仓库默认 DSN，不属于服务运行时入口。
 
 ## 目录结构（简版）
 

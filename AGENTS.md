@@ -71,7 +71,7 @@
 ## 数据库迁移执行边界
 
 - 若问题已经明确定位为“当前开发库 schema 落后于仓库中已存在的迁移”，且目标库来自当前仓库的开发配置（如 `server/configs/dev/config.yaml`、`server/configs/dev/config.local.yaml`）或用户明确指定的非生产库，AI 应直接执行 `cd /Users/simon/projects/webapp-template/server && make migrate_apply`，随后执行仓库当前实际提供的 schema 校验；若仓库没有固定 `db_schema_check` 目标，则至少用 `migrate_apply` 成功输出加只读 schema 查询确认结果。这类“补齐现有迁移”的动作默认不需要再次征求确认。
-- 执行前必须先确认本次命中的数据库来源，避免把本地 shell 里的历史 `DB_URL`、`USE_ENV_DB_URL=1` 或其他环境变量误当成当前开发库；若仓库和环境变量同时存在连接配置，应先按仓库既有规则判断实际优先级，再执行迁移。
+- 执行前必须先确认本次命中的数据库来源，避免把本地 shell 里的历史 `DB_URL`、`USE_ENV_DB_URL=1` 或其他环境变量误当成当前开发库；当前仓库默认应优先使用 `server/configs/dev/config.yaml` / `config.local.yaml` 解析出的 DSN，只有显式设置 `USE_ENV_DB_URL=1` 才切到环境变量。
 - 只有在“迁移文件已经存在于仓库、当前任务只是把开发库补到代码所需 schema”这一类场景下，才允许默认直接 apply；若需要新生成 migration、手改 SQL、回滚迁移、清库、删数据，或需要做大规模数据回填，仍应先说明方案与风险。
 - 若目标库可能是生产库、共享测试库、多人共用环境，或者当前无法从配置明确判断数据库归属，必须先向用户说明将命中的库和潜在影响，再等待确认；不要在库归属不清时凭感觉直接迁移。
 - 若迁移包含删除列、重命名列、修改约束、重写默认值、锁表时间不可忽略等高风险变更，即使目标是开发库，也应先在回复里说明风险点，再决定是否继续。
@@ -89,7 +89,8 @@
 - 改动前必须先确认：当前到底是哪条规则在生效、改完准备由哪条规则接管、会影响哪些相邻 box、父子容器、兄弟节点或响应式断点。
 - 遇到遮挡、溢出、重叠、误隐藏、错位时，必须显式检查 box 关系，而不只看当前节点自己：至少确认父子包含、兄弟相邻、`overflow`、`min/max-size`、`flex-shrink`、`white-space`、`word-break`、`object-fit`、`position`、`z-index`、`transform` 和关键 `gap/padding/margin`。
 - 不能只验证默认内容。若区域内有长文本、大数字、标签、图片或其他 media，至少补一组边界样本，确认不会把容器撑爆、裁切相邻区域或被相邻布局挤到不可见。
-- 本仓库目前没有固定的 `style:l1/l2/l3` 浏览器脚本入口；因此前端样式任务默认要同时做两件事：1) 浏览器级手工/自动回归，确认默认态、交互态、恢复态和相邻区域；2) 执行当前已有质量命令 `cd /Users/simon/projects/webapp-template/web && pnpm lint && pnpm css && pnpm test`。
+- 本仓库当前已提供最小浏览器级样式回归入口：`cd /Users/simon/projects/webapp-template/web && pnpm style:l1`。该脚本默认覆盖首页、用户登录、注册、管理员登录和未登录访问后台时的重定向；若本轮改动超出这些场景，仍需继续补对应页面的浏览器回归。
+- 前端样式任务默认要同时做两件事：1) 运行 `cd /Users/simon/projects/webapp-template/web && pnpm style:l1` 或等价浏览器级回归，确认默认态、交互态、恢复态和相邻区域；2) 执行当前已有质量命令 `cd /Users/simon/projects/webapp-template/web && pnpm lint && pnpm css && pnpm test`。
 - 名词不要混用：这里说的“回归”是验证某次改动没有把既有页面、状态、相邻区域和关键交互带坏；这里说的“冒烟”只保留给更粗粒度的主路径可用性确认。当前仓库里，`bash /Users/simon/projects/webapp-template/scripts/qa/fast.sh` 更接近“粗粒度冒烟/快速检查”，`bash /Users/simon/projects/webapp-template/scripts/qa/full.sh` 是仓库级全量 QA，都不能替代浏览器级样式回归。
 - 若某个高频页面的样式问题反复出现，应优先在该仓库补固定浏览器 fixture 或自动化脚本，而不是长期依赖人工口头回归。
 
@@ -139,6 +140,12 @@
   - 相关测试与文档
   - `progress.md`
 - 必须保持“一码一义”，禁止复用已有错误码表达新语义。
+- 登录态与权限语义固定约定：
+  - `40302` = 未登录
+  - `40304` = 权限不足
+  - `40303` = 管理员已禁用
+  - `10005` = 登录过期
+  - `10006` = 登录无效
 - 前端只有统一函数 `isAuthFailureCode(...)` 可以触发自动登出；权限不足不得触发登出。
 - 提交前若涉及错误码相关改动，应执行 `bash scripts/qa/error-code-sync.sh` 与 `bash scripts/qa/error-codes.sh`。
 

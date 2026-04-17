@@ -13,10 +13,13 @@ cd /Users/simon/projects/webapp-template/web
 pnpm lint
 pnpm css
 pnpm test
+pnpm playwright:install
+pnpm style:l1
 pnpm build
 ```
 
-- 当前仓库还没有固定的 `style:l1/l2/l3` 浏览器脚本入口；若本轮是前端样式、布局、图片、图标或表格展示任务，默认仍要补浏览器级回归，不能只跑 `lint/css/test`。
+- `pnpm style:l1` 是当前仓库最小浏览器级样式回归，会自动拉起本地 Vite 并覆盖首页、用户登录、注册、管理员登录，以及未登录访问 `/admin-menu` 的重定向。
+- 若本轮改动触达更复杂的后台页面、弹窗、表格或更多响应式状态，仍需在 `style:l1` 之外继续补针对性浏览器回归。
 - `pnpm test` 当前只负责验证错误码常量与登录态错误分类这类最小前端基线；它不替代浏览器里的样式 / box 模型验收。
 
 ## 环境变量
@@ -30,4 +33,4 @@ pnpm build
 - `/Users/simon/projects/webapp-template/web/.env.development`
 - `/Users/simon/projects/webapp-template/web/.env.production`
 
-说明：当前可执行 `cd /Users/simon/projects/webapp-template/web && pnpm test`，验证错误码常量与鉴权分类基线未被破坏；若任务涉及样式 / 布局，仍应配合真实浏览器做页面级回归。
+说明：当前可执行 `cd /Users/simon/projects/webapp-template/web && pnpm test` 验证错误码常量与鉴权分类基线，执行 `pnpm style:l1` 验证首页与登录链路的最小浏览器级样式回归；若任务涉及更复杂页面，仍应继续补页面级回归。

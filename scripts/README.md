@@ -25,6 +25,8 @@
 | `scripts/loadtest/run.sh` | 运行最小 `k6` 压测场景 | 需要验证健康检查 / JSON-RPC / 登录链路时 |
 | `scripts/git-hooks/commit-msg.sh` | 校验提交信息规范 | commit-msg hook 自动执行 |
 
+补充说明：前端浏览器级样式回归入口不在 `scripts/qa` 下，而是 `cd /Users/simon/projects/webapp-template/web && pnpm style:l1`。它负责验证首页、用户登录、注册、管理员登录和未登录访问后台时的重定向这些高频视觉场景。
+
 ## Hook 对应关系
 
 - `pre-commit` -> `scripts/git-hooks/pre-commit.sh`
@@ -211,6 +213,7 @@ bash scripts/qa/fast.sh
 - web：`pnpm lint && pnpm css`
 - server：优先执行 `go test ./internal/... ./pkg/...`（目录存在才执行）
 - 适合在开发中频繁执行，快速发现明显问题；它更接近“粗粒度冒烟/快速检查”，不替代前端浏览器级样式回归。
+- 前端样式/布局任务至少应额外执行 `cd /Users/simon/projects/webapp-template/web && pnpm style:l1`。
 
 ## 15) full
 
@@ -235,6 +238,7 @@ bash scripts/loadtest/run.sh mixed
   - web：`lint -> css -> (若定义 test 则执行) -> build`
   - server：`go test ./... -> make build`
 - 适合在提交前/推送前做最终兜底检查。
+- 若本轮确实触达前端样式链路，应在 `full` 之外补跑 `cd /Users/simon/projects/webapp-template/web && pnpm style:l1`，因为 `full` 不会自动打开浏览器验证 box 模型与重定向页面。
 
 ## 16) strict
 

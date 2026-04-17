@@ -1,3 +1,17 @@
+## 2026-04-17 16:39
+- 完成：补齐 `/Users/simon/projects/webapp-template/server/cmd/dburl/main.go` 的最小源码注释，明确它的职责是“统一解析当前仓库默认 PostgreSQL DSN，供迁移状态检查和打印当前命中库共用”；同时更新 `/Users/simon/projects/webapp-template/server/README.md`，明确 `server/cmd/dburl` 只是迁移辅助命令，不属于服务运行时入口。
+- 验证：`git diff --check` 通过；本轮仅补充注释与文档，没有改动 `dburl` 的解析逻辑与迁移命令行为。
+- 下一步：若后续还要继续降低阅读成本，可再把 `make print_db_url` / `make migrate_status` 的输出示例补到 `server/README.md`，但当前已经足够说明 `dburl` 的定位。
+- 阻塞/风险：无；本轮为文档和注释补充，不改变运行时行为。
+
+## 2026-04-17 16:28
+- 完成：把适合从 `trade-erp` 回抽到模板仓库的公共基线真正同步到 `/Users/simon/projects/webapp-template`。已新增 `/Users/simon/projects/webapp-template/server/cmd/dburl/main.go`，并更新 `/Users/simon/projects/webapp-template/server/Makefile` / `server/README.md`：`make migrate_apply`、`make migrate_status`、`make print_db_url` 现在默认优先读取 `server/configs/dev/config.yaml` 与 `config.local.yaml`，只有显式设置 `USE_ENV_DB_URL=1` 才切到环境变量，避免把 shell 里的历史 `DB_URL` 误当成当前开发库。
+- 完成：同步补强模板级协作约束与文档。已更新 `/Users/simon/projects/webapp-template/AGENTS.md`、`scripts/README.md`、`web/README.md`，把“错误码固定语义”“模板现在已有最小浏览器级 `pnpm style:l1` 回归入口”“前端样式任务默认需要浏览器回归”这些公共规则写回模板真源，不再继续保留“模板没有固定样式回归入口”的旧口径。
+- 完成：补齐模板前端的最小浏览器级样式回归能力。已更新 `/Users/simon/projects/webapp-template/web/package.json` 与 `web/pnpm-lock.yaml`，新增 `playwright`、`pnpm playwright:install`、`pnpm style:l1`；新增 `/Users/simon/projects/webapp-template/web/scripts/styleL1.mjs`，自动拉起本地 Vite 并回归首页、用户登录、注册、管理员登录和未登录访问 `/admin-menu` 的重定向；同时把 `/Users/simon/projects/webapp-template/web/src/common/components/loading/index.jsx` 的全局 loading 文案收口为中文，并补强 `/Users/simon/projects/webapp-template/web/src/common/consts/errorCodes.test.mjs` 对 `40302/40303/40304/10005/10006` 语义边界的断言。
+- 验证：`cd /Users/simon/projects/webapp-template/server && go test ./...` 通过；`cd /Users/simon/projects/webapp-template/server && go run ./cmd/dburl -conf ./configs/dev/config.yaml` 已输出当前 dev 配置解析出的 DSN；`cd /Users/simon/projects/webapp-template/web && pnpm test` 通过；`cd /Users/simon/projects/webapp-template/web && pnpm build` 通过；`cd /Users/simon/projects/webapp-template/web && pnpm playwright:install` 完成；`cd /Users/simon/projects/webapp-template/web && pnpm style:l1` 通过，已验证 6 个场景；`cd /Users/simon/projects/webapp-template && git diff --check` 通过。
+- 下一步：若后续还想继续从 `trade-erp` 回抽公共能力，优先考虑把 `server/deploy/compose/prod/README.md` 的 auto smoke / migration 门禁说明继续补完整；ERP 专项的字段联动、testdata、打印模板和 Excel 验收规则仍不要直接反向塞回模板。
+- 阻塞/风险：这轮只回抽了模板级公共能力，没有把 `trade-erp` 的 ERP 业务错误翻译、专项 Playwright 回归、字段联动覆盖页、testdata 刷新流程等业务特例一起带回模板；`pnpm style:l1` 当前也只覆盖首页与登录链路，不代表后台复杂表格、弹窗或业务页面已经具备同等级别的固定浏览器回归。
+
 ## 2026-04-09 09:24
 - 完成：按要求撤销刚加到 Portal 里的 `Public Gateway Snapshot` 状态卡，不再在首页展示 `Caddy / Public Gateway` 的状态视图。已从 `/Users/simon/projects/webapp-template/server/deploy/lab-ha/charts/lab-platform/files/raw/platform-portal.yaml` 与 `/Users/simon/projects/webapp-template/server/deploy/lab-ha/manifests/platform-portal.yaml` 删除对应卡片、前端状态逻辑、i18n 文案和 `nginx` 的 `/gateway-probe/*` 显式代理入口；原本就存在的 `DDNS Go` / `Public Gateway` 导航卡保留不动。
 - 完成：无代理环境下重新执行 `SKIP_REPO_UPDATE=1 ONLY=lab-platform bash /Users/simon/projects/webapp-template/server/deploy/lab-ha/scripts/helm-release.sh apply`，`lab-platform` 已升级到 `REVISION=38`，`alert-webhook-receiver` 新 Pod `1/1 Running`，Portal live 已同步回滚。

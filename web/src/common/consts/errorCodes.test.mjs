@@ -66,7 +66,10 @@ test('errorCodes: 仅登录态失效错误触发重新登录', () => {
     ]
   )
   assert.equal(isAuthFailureCode(RpcErrorCode.AUTH_REQUIRED), true)
+  assert.equal(isAuthFailureCode(RpcErrorCode.AUTH_EXPIRED), true)
+  assert.equal(isAuthFailureCode(RpcErrorCode.AUTH_INVALID), true)
   assert.equal(isAuthFailureCode(RpcErrorCode.PERMISSION_DENIED), false)
+  assert.equal(isAuthFailureCode(RpcErrorCode.ADMIN_DISABLED), false)
 })
 
 test('errorCodes: 默认文案覆盖核心鉴权错误', () => {

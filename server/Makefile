@@ -136,13 +136,33 @@ endif
 .PHONY: migrate_apply
 # 将 migration 执行到数据库（需要你确认）
 migrate_apply:
-	@if [ -z "$$DB_URL" ]; then \
-		echo "ERROR: DB_URL is not set. Use: export DB_URL=..."; \
-		exit 1; \
-	fi
+	@URL=$$(go run ./cmd/dburl -conf ./configs/dev/config.yaml); \
+	if [ "$$USE_ENV_DB_URL" = "1" ] && [ -n "$$DB_URL" ]; then \
+		URL="$$DB_URL"; \
+		echo "USE_ENV_DB_URL=1, use DB_URL from environment"; \
+	elif [ -n "$$DB_URL" ]; then \
+		echo "DB_URL is set but ignored by default. Set USE_ENV_DB_URL=1 to use it."; \
+	fi; \
+	echo "using DB_URL=$$URL"; \
 	atlas migrate apply \
 		--dir "file://internal/data/model/migrate" \
-		--url "$$DB_URL"
+		--url "$$URL"
+
+.PHONY: print_db_url
+print_db_url:
+	@go run ./cmd/dburl -conf ./configs/dev/config.yaml && echo
+
+.PHONY: migrate_status
+migrate_status:
+	@URL=$$(go run ./cmd/dburl -conf ./configs/dev/config.yaml); \
+	if [ "$$USE_ENV_DB_URL" = "1" ] && [ -n "$$DB_URL" ]; then \
+		URL="$$DB_URL"; \
+		echo "USE_ENV_DB_URL=1, use DB_URL from environment"; \
+	elif [ -n "$$DB_URL" ]; then \
+		echo "DB_URL is set but ignored by default. Set USE_ENV_DB_URL=1 to use it."; \
+	fi; \
+	echo "using DB_URL=$$URL"; \
+	atlas migrate status --dir "file://internal/data/model/migrate" --url "$$URL"
 
 .PHONY: migrate_set
 # 标记某个 migration 已应用（用于修复已手动执行但迁移状态未记录的情况）
