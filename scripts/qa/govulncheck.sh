@@ -12,6 +12,7 @@ print_help() {
 环境变量:
   SKIP_GOVULNCHECK=1   跳过检查
   GOVULNCHECK_STRICT=1 非 0 退出码时阻断（默认仅提示）
+  GOTOOLCHAIN=<value>  显式覆盖 Go 工具链；未设置时默认跟随 server/go.mod 的 toolchain
 USAGE
 }
 
@@ -42,6 +43,17 @@ fi
 if [[ ! -d "$ROOT_DIR/server" ]]; then
 	echo "[qa:govulncheck] 未找到 server 目录，跳过"
 	exit 0
+fi
+
+if [[ -z "${GOTOOLCHAIN:-}" ]]; then
+	server_toolchain="$(
+		awk '$1 == "toolchain" { print $2; exit }' "$ROOT_DIR/server/go.mod"
+	)"
+	if [[ -n "$server_toolchain" ]]; then
+		# 关键收口：漏洞扫描默认跟随仓库声明工具链，避免本机 Go 版本漂移把标准库告警扫偏。
+		export GOTOOLCHAIN="$server_toolchain"
+		echo "[qa:govulncheck] 使用 server/go.mod 声明工具链：$GOTOOLCHAIN"
+	fi
 fi
 
 if [[ $# -gt 0 ]]; then

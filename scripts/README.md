@@ -176,9 +176,11 @@ bash scripts/qa/govulncheck.sh
 ```
 
 - 在 `server` 目录执行 `govulncheck`（默认 `./...`）。
+- 默认跟随 `server/go.mod` 中声明的 `toolchain` 扫描，减少本机 Go 版本漂移导致的标准库误报；如需覆盖可自行设置 `GOTOOLCHAIN`。
 - 常用环境变量：
   - `SKIP_GOVULNCHECK=1`
   - `GOVULNCHECK_STRICT=1`（非 0 退出码时阻断）
+  - `GOTOOLCHAIN=<value>`
 
 ## 12) error-code-sync
 

@@ -316,7 +316,7 @@ image_gc:
 # 部署时就可以一直写 webapp-template-server:dev（或 :latest）
 FIXED_TAG ?= dev
 NODE_BUILDER_IMAGE ?= node:24.14.0
-GO_BUILDER_IMAGE ?= golang:1.24.1
+GO_BUILDER_IMAGE ?= golang:1.25.9
 RUNTIME_BASE_IMAGE ?= alpine:3.21
 
 # 构建服务器镜像（在 server/ 目录执行）
