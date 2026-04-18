@@ -6,10 +6,14 @@ Web 全后端单体模板项目，提供前端管理台、Kratos 后端与本地
 
 ## 目录结构
 
-- `web/`：前端项目（Vite + React）
-- `server/`：后端项目（Kratos + Ent + Atlas）
-- `scripts/`：本地质量门禁与 Git hooks
-- `docs/`：根目录文档与说明
+| 路径 | 职责 |
+| --- | --- |
+| `web/` | 前端项目（Vite + React），内部目录职责见 [`web/README.md`](web/README.md) |
+| `server/` | 后端项目（Kratos + Ent + Atlas），内部目录职责见 [`server/README.md`](server/README.md) |
+| `scripts/` | 本地质量门禁与 Git hooks，详见 [`scripts/README.md`](scripts/README.md) |
+| `docs/` | 根目录文档与说明，阅读入口见 [`docs/README.md`](docs/README.md) |
+
+若需要查看 `web/` 或 `server/` 的内部目录，不在根 README 继续展开，以各自子目录 README 为准，避免同一份结构说明在多处漂移。
 
 ## 快速开始
 

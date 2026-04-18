@@ -1,3 +1,9 @@
+## 2026-04-18 16:25
+- 完成：按“根目录导航 + 子目录各自内部结构”补齐模板仓库的目录说明。`/Users/simon/projects/webapp-template/README.md` 已把仓库级目录结构改成表格并直接链接到 `web/README.md`、`server/README.md`、`scripts/README.md`、`docs/README.md`；`/Users/simon/projects/webapp-template/web/README.md` 已新增前端内部目录职责简表，明确 `src/common`、`src/pages`、`src/mocks`、`src/assets`、`public`、`scripts`、`build` 的职责边界；`/Users/simon/projects/webapp-template/server/README.md` 则在现有目录树下补了 `api/cmd/configs/internal/*/pkg/deploy/docs/third_party` 的职责说明。
+- 验证：本轮仅改 README 与 `progress.md`，未触达运行时代码；目录说明的当前真源已收口为“仓库级导航看根 README，子系统内部结构分别看 `web/README.md` 与 `server/README.md`”，避免继续把同一份细节目录树散写在多处。
+- 下一步：若模板目录继续演进，优先只更新对应子系统 README；只有仓库一级目录或职责发生变化时，再同步改根 README 的导航表。
+- 阻塞/风险：本轮没有新增自动化文档校验，目录说明仍依赖后续改目录时同步维护；不过职责已按层拆开，漂移风险比“把全部内部结构堆在根 README”更低。
+
 ## 2026-04-17 16:39
 - 完成：补齐 `/Users/simon/projects/webapp-template/server/cmd/dburl/main.go` 的最小源码注释，明确它的职责是“统一解析当前仓库默认 PostgreSQL DSN，供迁移状态检查和打印当前命中库共用”；同时更新 `/Users/simon/projects/webapp-template/server/README.md`，明确 `server/cmd/dburl` 只是迁移辅助命令，不属于服务运行时入口。
 - 验证：`git diff --check` 通过；本轮仅补充注释与文档，没有改动 `dburl` 的解析逻辑与迁移命令行为。

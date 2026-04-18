@@ -65,6 +65,22 @@ server/
 └── Makefile
 ```
 
+| 路径 | 职责 |
+| --- | --- |
+| `api/` | 协议定义与生成入口，目前包含 JSON-RPC 相关接口描述 |
+| `cmd/` | 服务启动、迁移辅助、排障与运维命令入口 |
+| `configs/` | 按环境拆分的配置文件 |
+| `internal/server/` | HTTP/gRPC/JSON-RPC 接入、中间件与路由装配 |
+| `internal/service/` | 接口适配层，负责 DTO 转换与调用编排 |
+| `internal/biz/` | 业务规约与 UseCase 真源 |
+| `internal/data/` | 数据访问、外部依赖与持久化实现 |
+| `internal/conf/` | 配置结构定义与加载相关代码 |
+| `internal/errcode/` | 服务端错误码目录真源 |
+| `pkg/` | 可复用基础设施组件，如日志、JWT、任务编排与 Telegram 辅助 |
+| `deploy/` | Compose、K8s、lab-ha 与相关部署模板 |
+| `docs/` | 后端专题文档索引与 runbook |
+| `third_party/` | 第三方 proto / OpenAPI 依赖 |
+
 ## 文档索引
 
 - 文档索引：`/Users/simon/projects/webapp-template/server/docs/README.md`
