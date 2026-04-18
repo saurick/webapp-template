@@ -1,4 +1,10 @@
 ## 2026-04-18 16:25
+- 完成：把“目录结构变化时同步更新目录说明文档”的规则写回模板仓库的正式协作约定。`/Users/simon/projects/webapp-template/AGENTS.md` 已新增 `目录结构文档同步约定`，明确：只有仓库一级目录或需要长期维护的关键子系统目录发生变化时，才要求同步检查并按需更新 `README / docs`；根 `README.md` 负责仓库级导航，`web/README.md`、`server/README.md` 等子目录 `README` 负责各自内部结构；`build/output/tmp/node_modules/bin` 这类生成物、缓存或临时目录默认不纳入强制更新范围。
+- 验证：本轮仅更新协作文档与 `progress.md`，未触达模板运行时代码、部署脚本、初始化逻辑或 QA runner；目录说明文档的同步边界已进入正式 AGENTS，不再只是本轮对话口头规则。
+- 下一步：后续若模板继续增删仓库级目录，或新增新的长期维护子系统目录，可直接按这条 AGENTS 规则判断是否需要同步更新根 `README` 与子系统 `README`。
+- 阻塞/风险：本轮没有新增自动化守卫；目录结构调整后是否需要更新 README，仍需要执行改动的人按“关键目录变化”这条口径主动判断。
+
+## 2026-04-18 16:25
 - 完成：按“根目录导航 + 子目录各自内部结构”补齐模板仓库的目录说明。`/Users/simon/projects/webapp-template/README.md` 已把仓库级目录结构改成表格并直接链接到 `web/README.md`、`server/README.md`、`scripts/README.md`、`docs/README.md`；`/Users/simon/projects/webapp-template/web/README.md` 已新增前端内部目录职责简表，明确 `src/common`、`src/pages`、`src/mocks`、`src/assets`、`public`、`scripts`、`build` 的职责边界；`/Users/simon/projects/webapp-template/server/README.md` 则在现有目录树下补了 `api/cmd/configs/internal/*/pkg/deploy/docs/third_party` 的职责说明。
 - 验证：本轮仅改 README 与 `progress.md`，未触达运行时代码；目录说明的当前真源已收口为“仓库级导航看根 README，子系统内部结构分别看 `web/README.md` 与 `server/README.md`”，避免继续把同一份细节目录树散写在多处。
 - 下一步：若模板目录继续演进，优先只更新对应子系统 README；只有仓库一级目录或职责发生变化时，再同步改根 README 的导航表。
