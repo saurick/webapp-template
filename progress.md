@@ -1418,3 +1418,8 @@
 - 验证：`bash /Users/simon/projects/webapp-template/scripts/qa/shfmt.sh` 通过；`cd /Users/simon/projects/webapp-template/server && go test ./...` 通过；`cd /Users/simon/projects/webapp-template/server && GOTOOLCHAIN=local govulncheck -show verbose ./...` 已确认本轮修掉了 `grpc` 可达漏洞 `GO-2026-4762`，模块级 `x/net/x/crypto` 告警也已清零。当前 `GOTOOLCHAIN=local bash /Users/simon/projects/webapp-template/scripts/qa/govulncheck.sh` 仍会报 5 条 Go `1.26.1` 标准库可达漏洞（修复版本 `go1.26.2`）和 3 条包级告警。
 - 下一步：在开发机或 CI 上把本地 Go 从 `1.26.1` 升到 `1.26.2`，并重新执行 `bash /Users/simon/projects/webapp-template/scripts/qa/govulncheck.sh` / `GOVULNCHECK_STRICT=1 bash /Users/simon/projects/webapp-template/scripts/qa/govulncheck.sh`，确认脚本默认走 `toolchain go1.25.9` 时已不再命中标准库告警；若后续仍残留 `github.com/jackc/pgx/v5` 的 `GO-2026-4771`，再单独决定是继续关注上游修复，还是为这条“官方暂时无 fix”的包级告警补明确的已知风险口径。
 - 阻塞/风险：本轮没有直接改系统 Go，因此在当前机器 `go1.26.1` 下使用 `GOTOOLCHAIN=local` 扫描时，标准库 5 条可达漏洞仍会继续出现；此外 `GO-2026-4771` 在 Go 官方漏洞库里当前仍是 `all versions, no known fixed`，即使 `pgx` 已升级到 `v5.9.0` 也只能视为待上游处理的已知风险，不能在仓库内简单“修代码”消掉。
+
+## 2026-04-19 18:40
+- 完成：更新 `/Users/simon/projects/webapp-template/AGENTS.md` 的 Git 推送约定，补上“默认不要用 `git stash` 隐藏主工作区现场；若误用 stash，必须同轮盘点、恢复唯一内容并清理”。这条规则与当前仓库“推送默认同时发 `origin`、`gitlab`”并列，后续若为局部提交或镜像发布隔离现场，优先 `git worktree` 或按路径精确提交/检查。
+- 下一步：若后续该仓库真出现“主工作区很脏，但只想给 `origin/gitlab` 推一小段修复”的场景，直接按这次新规则处理，不再先造 stash 再回头猜里面有没有唯一现场。
+- 阻塞/风险：本轮只更新协作文档，没有触达运行时代码、部署脚本或测试；剩余风险主要是执行层是否严格遵守，不是文案本身。
