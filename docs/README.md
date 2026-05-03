@@ -11,3 +11,10 @@
 - 脚本文档：`/Users/simon/projects/webapp-template/scripts/README.md`
 - 初始化指南与 AI 输入模板：`/Users/simon/projects/webapp-template/docs/project-init.md`
 - 部署真源约定：`/Users/simon/projects/webapp-template/docs/deployment-conventions.md`
+- 过程流水归档：`/Users/simon/projects/webapp-template/docs/archive`
+
+## 过程流水归档
+
+1. 先看根目录 `progress.md` 顶部归档索引与近期记录。
+2. 如需追溯更早过程，再按索引进入 `docs/archive/progress-*.md`。
+3. 归档记录只作历史线索，不覆盖当前模板真源、部署口径或代码实现。
