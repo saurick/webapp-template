@@ -2,6 +2,11 @@
 - 2026-03 及更早历史流水：`docs/archive/progress-2026-03.md`。
 - 当前文件保留 `2026-04-01` 以来的近期事项、未完成风险和后续新增记录；归档文件只作追溯线索，不作为当前正式真源。
 
+## 2026-05-03 18:41
+- 完成：收紧 `/Users/simon/projects/webapp-template/AGENTS.md` 中的 `progress.md` 归档规则，明确每次更新前先检查规模；达到或超过 `600` 行或 `80KB` 时，必须先显式归档旧记录再追加本轮记录，并禁止通过 pre-commit、pre-push 或后台脚本静默自动改写。本轮只更新协作规则和本进度记录，不改变模板正式规则、部署口径、运行时代码或既有归档文件。
+- 下一步：后续更新 `progress.md` 时按 `600` 行 / `80KB` 双阈值执行；阶段完成或历史内容影响查找时，可提前人工归档。
+- 阻塞/风险：本轮未新增检查脚本或提交钩子，避免自动改写工作区；归档仍由当前执行者按规则显式完成。
+
 ## 2026-05-03 18:05
 - 完成：写入 `progress.md` 人工归档规则，并按规则归档历史流水。当前 `progress.md` 保留 `2026-04-01` 以来的近期事项；`2026-03-31` 及以前历史流水已移动到 `/Users/simon/projects/webapp-template/docs/archive/progress-2026-03.md`。同步更新 `/Users/simon/projects/webapp-template/docs/README.md`，把 `docs/archive` 作为过程流水归档入口。
 - 下一步：后续继续按阶段或文件明显变大时人工归档；ignored 的 `output/`、`web/output/`、`.playwright-cli/`、`tmp/`、`server/bin/` 等本地产物另按产物清理处理，不纳入正式文档归档。
