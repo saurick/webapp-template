@@ -21,6 +21,7 @@
 
 - 这是单机或单宿主机的 `Docker Compose` 主路径。
 - 不适用本文件里的 `Helm` 真源规则，也不要求迁移到 Helm。
+- 单机目标默认按低配服务器处理：不要在服务器上构建镜像或前后端产物；先在本地或 CI 完成构建、打包和上传，再由服务器加载镜像并启动。
 - 若当前项目选择 Compose 部署，应继续按 `/Users/simon/projects/webapp-template/server/deploy/compose/prod/README.md` 执行。
 
 ### 1. `server/deploy/dev`、`server/deploy/prod`

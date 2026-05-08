@@ -43,6 +43,8 @@ sh deploy_server.sh /data/release/app-server.tar
 
 ## 本地一键发布
 
+目标服务器配置低时，不要在服务器上构建镜像或前后端产物。本模板的 Compose 发布主路径是本地或 CI 构建、`docker save`、上传镜像包，再由远端执行 `docker load`、`docker compose up`、migration 和部署后检查。
+
 ```bash
 cd /path/to/your-project/server/deploy/compose/prod
 sh publish_server.sh

@@ -136,6 +136,7 @@
 ## 部署真源约定
 
 - `server/deploy/compose/prod` 继续是单机/单宿主机的 `Compose` 主路径，不适用 `lab-ha` 这套 Helm 规则；不要因为看到项目级部署约定文档，就反推 Compose 也需要 Helm 化。
+- 单机/单宿主机目标默认按低配服务器处理：部署时必须在本地或 CI 构建并打包镜像，再上传到服务器；服务器只负责 `docker load`、`docker compose up`、migration 与部署后检查，禁止在服务器上执行 `docker build`、`pnpm build`、`go build`、`make build_server` 等重构建步骤。
 - 先判断当前改动目标的主路径：模板默认骨架走 `Kustomize`，`server/deploy/lab-ha` 的第三方平台组件与实验业务部署走 `Helm`。
 - `server/deploy/lab-ha` 内同一资源禁止长期并存 `Helm / Kustomize / 裸 YAML / 现场 patch` 多个主路径；应急 patch 允许先止血，但同一轮必须回收到仓库真源，并更新 `progress.md`。
 - `lab-ha` 的第三方组件统一通过 `/Users/simon/projects/webapp-template/server/deploy/lab-ha/scripts/helm-release.sh` 管理；新增或修改 release 时，优先补 values / chart / Argo source，而不是继续堆新的手工 apply 路径。

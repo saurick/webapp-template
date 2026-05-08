@@ -2,6 +2,8 @@
 
 `server/deploy` 提供两套主模板和一套实验室高可用落地目录，方便派生项目按实际环境二选一或按需裁剪：
 
+Compose 单机部署默认面向低配服务器：服务器只负责加载已构建镜像、启动服务、执行 migration 与部署后检查；镜像应在本地开发机或 CI 构建并上传，禁止在服务器上执行 `docker build`、`pnpm build`、`go build`、`make build_server` 等重构建步骤。
+
 - `compose/prod/`：单机或单宿主机的 Docker Compose 模板
 - `dev/`、`prod/`：Kubernetes 环境模板，分别对应开发与生产基线
 - `dashboard/`：可选的 Kubernetes Dashboard 辅助清单

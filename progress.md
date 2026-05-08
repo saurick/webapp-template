@@ -2,6 +2,13 @@
 - 2026-03 及更早历史流水：`docs/archive/progress-2026-03.md`。
 - 当前文件保留 `2026-04-01` 以来的近期事项、未完成风险和后续新增记录；归档文件只作追溯线索，不作为当前正式真源。
 
+## 2026-05-08 23:59
+
+- 完成：按低配服务器发布口径补充模板部署构建边界，更新 `AGENTS.md`、`docs/deployment-conventions.md`、`server/deploy/README.md` 和 `server/deploy/compose/prod/README.md`，明确 Compose 单机部署默认本地或 CI 构建、打包、上传，服务器只负责加载镜像、启动服务、migration 与部署后检查。
+- 验证：本轮为部署文档和协作规则改动，未触达运行时代码、schema、模板脚本或 live 环境；更新前已检查 `progress.md` 规模，未达到归档阈值。
+- 下一步：派生项目复用 Compose 发布模板时，继续保留 `publish_server.sh` 的本地构建主路径，不把低配服务器作为构建机。
+- 阻塞/风险：本轮未新增脚本级强制校验；约束先落在模板正式文档和 AGENTS，防止后续派生项目误把服务器构建当默认流程。
+
 ## 2026-05-03 18:41
 - 完成：收紧 `/Users/simon/projects/webapp-template/AGENTS.md` 中的 `progress.md` 归档规则，明确每次更新前先检查规模；达到或超过 `600` 行或 `80KB` 时，必须先显式归档旧记录再追加本轮记录，并禁止通过 pre-commit、pre-push 或后台脚本静默自动改写。本轮只更新协作规则和本进度记录，不改变模板正式规则、部署口径、运行时代码或既有归档文件。
 - 下一步：后续更新 `progress.md` 时按 `600` 行 / `80KB` 双阈值执行；阶段完成或历史内容影响查找时，可提前人工归档。
