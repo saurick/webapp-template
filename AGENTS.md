@@ -137,6 +137,7 @@
 
 - `server/deploy/compose/prod` 继续是单机/单宿主机的 `Compose` 主路径，不适用 `lab-ha` 这套 Helm 规则；不要因为看到项目级部署约定文档，就反推 Compose 也需要 Helm 化。
 - 单机/单宿主机目标默认按低配服务器处理：部署时必须在本地或 CI 构建并打包镜像，再上传到服务器；服务器只负责 `docker load`、`docker compose up`、migration 与部署后检查，禁止在服务器上执行 `docker build`、`pnpm build`、`go build`、`make build_server` 等重构建步骤。
+- 多项目低配 Docker 宿主机发布完成、健康检查和必要回归通过后，应清理未被任何容器使用的旧镜像和构建缓存：优先执行 `docker image prune -a -f` 与 `docker builder prune -f`；清理前后记录 `df -h /`、`docker system df`、`docker ps --format '{{.Names}} {{.Status}} {{.Image}}'`。禁止在发布清理中执行 `docker system prune --volumes`、`docker volume prune`，也禁止删除 `/data`、数据库目录、compose `.env`、上传目录或运行中容器依赖的镜像。若需要保留回滚能力，应至少保留当前运行版本，磁盘允许时再额外保留上一版镜像。
 - 先判断当前改动目标的主路径：模板默认骨架走 `Kustomize`，`server/deploy/lab-ha` 的第三方平台组件与实验业务部署走 `Helm`。
 - `server/deploy/lab-ha` 内同一资源禁止长期并存 `Helm / Kustomize / 裸 YAML / 现场 patch` 多个主路径；应急 patch 允许先止血，但同一轮必须回收到仓库真源，并更新 `progress.md`。
 - `lab-ha` 的第三方组件统一通过 `/Users/simon/projects/webapp-template/server/deploy/lab-ha/scripts/helm-release.sh` 管理；新增或修改 release 时，优先补 values / chart / Argo source，而不是继续堆新的手工 apply 路径。
