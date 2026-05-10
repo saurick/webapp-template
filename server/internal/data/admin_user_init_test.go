@@ -6,6 +6,7 @@ import (
 	"regexp"
 	"testing"
 
+	"server/internal/biz"
 	"server/internal/conf"
 
 	"github.com/DATA-DOG/go-sqlmock"
@@ -30,6 +31,7 @@ func TestInitAdminUsersIfNeededCreatesAdminOnce(t *testing.T) {
 	)).
 		WithArgs("trialadmin", sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg()).
 		WillReturnResult(sqlmock.NewResult(0, 1))
+	expectAdminRBACDefaults(mock)
 	mock.ExpectClose()
 
 	err = InitAdminUsersIfNeeded(context.Background(), &Data{sqldb: db}, testAdminInitConfig(), log.NewHelper(log.NewStdLogger(io.Discard)))
@@ -54,6 +56,7 @@ func TestInitAdminUsersIfNeededSkipsWhenAdminAlreadyExists(t *testing.T) {
 	)).
 		WithArgs("trialadmin", sqlmock.AnyArg(), sqlmock.AnyArg(), sqlmock.AnyArg()).
 		WillReturnResult(sqlmock.NewResult(0, 0))
+	expectAdminRBACDefaults(mock)
 	mock.ExpectClose()
 
 	err = InitAdminUsersIfNeeded(context.Background(), &Data{sqldb: db}, testAdminInitConfig(), log.NewHelper(log.NewStdLogger(io.Discard)))
@@ -65,6 +68,29 @@ func TestInitAdminUsersIfNeededSkipsWhenAdminAlreadyExists(t *testing.T) {
 	if err := mock.ExpectationsWereMet(); err != nil {
 		t.Fatalf("ExpectationsWereMet() error = %v", err)
 	}
+}
+
+func expectAdminRBACDefaults(mock sqlmock.Sqlmock) {
+	for _, p := range biz.DefaultAdminPermissions {
+		mock.ExpectExec("INSERT INTO admin_permissions").
+			WithArgs(p.Key, p.Name, p.Group, p.Description, sqlmock.AnyArg(), sqlmock.AnyArg()).
+			WillReturnResult(sqlmock.NewResult(0, 1))
+	}
+	mock.ExpectExec("INSERT INTO admin_roles").
+		WithArgs(
+			biz.SuperAdminRoleKey,
+			"超级管理员",
+			"模板内置最高权限角色，初始化管理员默认绑定",
+			sqlmock.AnyArg(),
+			sqlmock.AnyArg(),
+		).
+		WillReturnResult(sqlmock.NewResult(0, 1))
+	mock.ExpectExec("INSERT INTO admin_role_permissions").
+		WithArgs(sqlmock.AnyArg(), biz.SuperAdminRoleKey).
+		WillReturnResult(sqlmock.NewResult(0, int64(len(biz.DefaultAdminPermissions))))
+	mock.ExpectExec("INSERT INTO admin_user_roles").
+		WithArgs(sqlmock.AnyArg(), "trialadmin", biz.SuperAdminRoleKey).
+		WillReturnResult(sqlmock.NewResult(0, 1))
 }
 
 func TestInitAdminUsersIfNeededSkipsWhenCredentialsMissing(t *testing.T) {

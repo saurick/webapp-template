@@ -60,46 +60,46 @@ export default function AdminLoginPage() {
 
   return (
     <AppShell className="flex items-center justify-center px-4 py-6 sm:py-8 md:py-10">
-      <div className="w-full max-w-[520px]">
+      <div className="w-full max-w-[660px]">
         <div className="mb-4">
           <Link
             to="/"
-            className="inline-flex items-center text-sm text-slate-300 transition hover:text-slate-100"
+            className="inline-flex items-center text-sm font-medium text-[#6d7780] transition hover:text-[#173957]"
           >
             返回首页
           </Link>
         </div>
 
-        <div className="mb-4 text-center sm:mb-6">
-          <div className="inline-flex rounded-full border border-amber-300/30 bg-amber-300/10 px-3 py-1 text-xs font-medium uppercase tracking-[0.24em] text-amber-100">
-            管理登录
+        <SurfacePanel className="px-6 py-7 sm:px-8 sm:py-9">
+          <div className="mb-6">
+            <div className="inline-flex rounded-md border border-[#f0dfb8] bg-[#fff8e8] px-3 py-1 text-xs font-medium text-[#b7791f]">
+              管理登录
+            </div>
+            <div className="mt-5 text-[32px] font-extrabold leading-tight tracking-normal text-[#173957] sm:text-[42px]">
+              管理控制台登录
+            </div>
+            <div className="mt-3 text-sm leading-6 text-[#6d7780]">
+              用于访问账号目录和角色权限页。默认管理员可由服务端在启动时自动创建。
+            </div>
           </div>
-          <div className="mt-4 text-xl font-semibold tracking-tight text-slate-50 sm:text-2xl">
-            管理控制台登录
-          </div>
-          <div className="mt-2 text-sm leading-6 text-slate-300">
-            用于访问后台账号目录和项目说明页。默认管理员可由服务端在启动时自动创建。
-          </div>
-        </div>
 
-        <SurfacePanel className="p-3 sm:p-4 md:p-6">
-          <form onSubmit={onSubmit} className="p-3 sm:p-4 md:p-6">
-            <div className="space-y-3 sm:space-y-4">
+          <form onSubmit={onSubmit}>
+            <div className="space-y-4">
               <div>
-                <label className="mb-1 block text-xs text-slate-200/90 sm:text-sm">
+                <label className="mb-2 block text-sm font-medium text-[#172b3f]">
                   管理员账号
                 </label>
                 <input
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   autoComplete="username"
-                  className="w-full rounded-2xl border border-white/10 bg-white/[0.04] px-3 py-2 text-base text-slate-100 outline-none transition focus:border-amber-300/60 focus:ring-2 focus:ring-amber-300/20 sm:px-4 sm:py-3 sm:text-base"
+                  className="w-full rounded-xl border border-[#d6dadd] bg-white px-4 py-3 text-base text-[#172b3f] outline-none transition placeholder:text-[#a4acb3] focus:border-[#2f9348] focus:ring-2 focus:ring-[#2f9348]/15"
                   placeholder="输入管理员账号"
                 />
               </div>
 
               <div>
-                <label className="mb-1 block text-xs text-slate-200/90 sm:text-sm">
+                <label className="mb-2 block text-sm font-medium text-[#172b3f]">
                   密码
                 </label>
                 <input
@@ -107,13 +107,13 @@ export default function AdminLoginPage() {
                   onChange={(e) => setPassword(e.target.value)}
                   type="password"
                   autoComplete="current-password"
-                  className="w-full rounded-2xl border border-white/10 bg-white/[0.04] px-3 py-2 text-base text-slate-100 outline-none transition focus:border-amber-300/60 focus:ring-2 focus:ring-amber-300/20 sm:px-4 sm:py-3 sm:text-base"
+                  className="w-full rounded-xl border border-[#d6dadd] bg-white px-4 py-3 text-base text-[#172b3f] outline-none transition placeholder:text-[#a4acb3] focus:border-[#2f9348] focus:ring-2 focus:ring-[#2f9348]/15"
                   placeholder="输入密码"
                 />
               </div>
 
               {errMsg ? (
-                <div className="rounded-2xl border border-rose-400/40 bg-rose-500/10 px-3 py-2 text-xs text-rose-100 sm:px-4 sm:py-3 sm:text-sm">
+                <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
                   {errMsg}
                 </div>
               ) : null}
@@ -121,10 +121,10 @@ export default function AdminLoginPage() {
               <button
                 type="submit"
                 disabled={!canSubmit}
-                className={`w-full rounded-2xl px-4 py-2.5 text-sm font-semibold tracking-wide transition sm:py-3 sm:text-base ${
+                className={`w-full rounded-xl px-4 py-3 text-sm font-semibold tracking-wide transition sm:text-base ${
                   canSubmit
-                    ? 'bg-amber-300 text-slate-950 hover:bg-amber-200 active:bg-amber-400'
-                    : 'cursor-not-allowed bg-amber-300/20 text-slate-400'
+                    ? 'bg-[#2f9348] text-white shadow-[0_10px_22px_rgba(47,147,72,0.2)] hover:bg-[#267d3c] active:bg-[#236f36]'
+                    : 'cursor-not-allowed bg-[#d8e5dc] text-[#8d9a92]'
                 }`}
               >
                 {submitting ? '登录中…' : '登录'}

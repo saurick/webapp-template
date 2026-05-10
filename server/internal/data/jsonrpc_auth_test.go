@@ -59,6 +59,46 @@ func TestJsonrpcData_AuthLogin_OK(t *testing.T) {
 	}
 }
 
+func TestJsonrpcData_AdminLogin_OKReturnsTokenAndPermissions(t *testing.T) {
+	repo := newMemAdminAuthRepoForData()
+	_ = repo.putAdmin("admin", "adminadmin", false, []string{"super_admin"}, []string{"admin.access", "admin.user.read"})
+
+	logger := log.NewStdLogger(io.Discard)
+	tp := tracesdk.NewTracerProvider()
+	adminAuthUC := biz.NewAdminAuthUsecase(repo, func(userID int, username string, role int8) (string, time.Time, error) {
+		return "admin-tok", time.Now().Add(time.Hour), nil
+	}, logger, tp)
+
+	j := &JsonrpcData{
+		log:         log.NewHelper(log.With(logger, "module", "data.jsonrpc.test")),
+		adminAuthUC: adminAuthUC,
+	}
+
+	params, _ := structpb.NewStruct(map[string]any{
+		"username": "admin",
+		"password": "adminadmin",
+	})
+
+	_, res, err := j.handleAuth(context.Background(), "admin_login", "1", params)
+	if err != nil {
+		t.Fatalf("expected nil err, got %v", err)
+	}
+	if res == nil || res.Code != 0 {
+		t.Fatalf("expected code=0, got %+v", res)
+	}
+	if res.Data == nil {
+		t.Fatalf("expected data not nil")
+	}
+	m := res.Data.AsMap()
+	if m["access_token"] != "admin-tok" {
+		t.Fatalf("expected access_token=admin-tok, got %v", m["access_token"])
+	}
+	permissions, ok := m["permissions"].([]any)
+	if !ok || len(permissions) != 2 {
+		t.Fatalf("expected permissions array, got %#v", m["permissions"])
+	}
+}
+
 func TestJsonrpcData_AuthRegister_Success(t *testing.T) {
 	repo := newMemAuthRepoForData()
 
@@ -312,6 +352,56 @@ func (r *memAuthRepoForData) CreateUser(ctx context.Context, u *biz.User) (*biz.
 }
 
 func (r *memAuthRepoForData) UpdateUserLastLogin(ctx context.Context, id int, t time.Time) error {
+	// 测试中不需要实现
+	return nil
+}
+
+type memAdminAuthRepoForData struct {
+	mu     sync.Mutex
+	admins map[string]*biz.AdminUser
+	nextID int
+}
+
+func newMemAdminAuthRepoForData() *memAdminAuthRepoForData {
+	return &memAdminAuthRepoForData{
+		admins: make(map[string]*biz.AdminUser),
+		nextID: 1,
+	}
+}
+
+func (r *memAdminAuthRepoForData) putAdmin(username, password string, disabled bool, roles, permissions []string) error {
+	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if err != nil {
+		return err
+	}
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.admins[username] = &biz.AdminUser{
+		ID:           r.nextID,
+		Username:     username,
+		PasswordHash: string(hash),
+		Disabled:     disabled,
+		Roles:        append([]string(nil), roles...),
+		Permissions:  append([]string(nil), permissions...),
+	}
+	r.nextID++
+	return nil
+}
+
+func (r *memAdminAuthRepoForData) GetAdminByUsername(ctx context.Context, username string) (*biz.AdminUser, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	u := r.admins[username]
+	if u == nil {
+		return nil, errors.New("not found")
+	}
+	cp := *u
+	cp.Roles = append([]string(nil), u.Roles...)
+	cp.Permissions = append([]string(nil), u.Permissions...)
+	return &cp, nil
+}
+
+func (r *memAdminAuthRepoForData) UpdateAdminLastLogin(ctx context.Context, id int, t time.Time) error {
 	// 测试中不需要实现
 	return nil
 }

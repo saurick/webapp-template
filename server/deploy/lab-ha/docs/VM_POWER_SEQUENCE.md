@@ -42,7 +42,7 @@
 
 先看集群外 `lab-observer`，再按阶段切回集群内 `Portal`：
 
-- `https://observer.saurick.space`
+- `https://observer.saurick.me`
 - `http://192.168.0.156:30088`
 - `http://192.168.0.108:30088`
 - `lab-observer` 负责“开机初期 Portal 还没起来”和“关机晚期 Portal 已下线”这两个时段的不断线观察

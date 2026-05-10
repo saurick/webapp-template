@@ -12,8 +12,16 @@ import (
 // Tx is a transactional client that is created by calling Client.Tx().
 type Tx struct {
 	config
+	// AdminPermission is the client for interacting with the AdminPermission builders.
+	AdminPermission *AdminPermissionClient
+	// AdminRole is the client for interacting with the AdminRole builders.
+	AdminRole *AdminRoleClient
+	// AdminRolePermission is the client for interacting with the AdminRolePermission builders.
+	AdminRolePermission *AdminRolePermissionClient
 	// AdminUser is the client for interacting with the AdminUser builders.
 	AdminUser *AdminUserClient
+	// AdminUserRole is the client for interacting with the AdminUserRole builders.
+	AdminUserRole *AdminUserRoleClient
 	// User is the client for interacting with the User builders.
 	User *UserClient
 
@@ -147,7 +155,11 @@ func (tx *Tx) Client() *Client {
 }
 
 func (tx *Tx) init() {
+	tx.AdminPermission = NewAdminPermissionClient(tx.config)
+	tx.AdminRole = NewAdminRoleClient(tx.config)
+	tx.AdminRolePermission = NewAdminRolePermissionClient(tx.config)
 	tx.AdminUser = NewAdminUserClient(tx.config)
+	tx.AdminUserRole = NewAdminUserRoleClient(tx.config)
 	tx.User = NewUserClient(tx.config)
 }
 
@@ -158,7 +170,7 @@ func (tx *Tx) init() {
 // of them in order to commit or rollback the transaction.
 //
 // If a closed transaction is embedded in one of the generated entities, and the entity
-// applies a query, for example: AdminUser.QueryXXX(), the query will be executed
+// applies a query, for example: AdminPermission.QueryXXX(), the query will be executed
 // through the driver which created this transaction.
 //
 // Note that txDriver is not goroutine safe.

@@ -25,6 +25,8 @@ type AdminUser struct {
 	Username     string
 	PasswordHash string
 	Disabled     bool
+	Roles        []string
+	Permissions  []string
 }
 
 type AdminAuthUsecase struct {

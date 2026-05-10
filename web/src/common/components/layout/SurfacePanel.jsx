@@ -1,17 +1,12 @@
 import React from 'react'
 
-// 通用内容容器：保留深色控制台质感，但去掉模板特定视觉隐喻。
+// 通用表单容器保持白底薄边，和后台卡片共用同一套轻量层级。
 export default function SurfacePanel({ children, className = '' }) {
   return (
     <div
-      className={`border-white/12 relative overflow-hidden rounded-[32px] border bg-slate-950/75 shadow-[0_24px_80px_rgba(15,23,42,0.45)] backdrop-blur ${className}`}
+      className={`relative overflow-hidden rounded-2xl border border-[#d8e5e8] bg-white shadow-[0_14px_34px_rgba(28,56,82,0.12)] ${className}`}
     >
-      <div className="pointer-events-none absolute inset-x-6 top-0 h-px bg-gradient-to-r from-transparent via-cyan-300/50 to-transparent" />
-      <div className="pointer-events-none absolute -left-10 bottom-0 h-40 w-40 rounded-full bg-amber-300/10 blur-3xl" />
-      <div className="bg-cyan-300/12 pointer-events-none absolute -right-12 top-0 h-40 w-40 rounded-full blur-3xl" />
-      <div className="border-white/6 from-white/6 relative h-full w-full rounded-[32px] border bg-gradient-to-b via-transparent to-transparent">
-        {children}
-      </div>
+      {children}
     </div>
   )
 }

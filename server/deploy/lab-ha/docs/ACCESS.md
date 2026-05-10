@@ -5,19 +5,19 @@
 说明：当前实验室同时保留两套人类访问入口：
 
 - 内网入口：`192.168.0.108` 的直连 `IP:Port`
-- 公网入口：`*.saurick.space` 的 `HTTPS` 子域名，由集群外 `lab-edge / 192.168.0.9` 统一反代到内网服务
+- 公网入口：`*.saurick.me` 的 `HTTPS` 子域名，由集群外 `lab-edge / 192.168.0.9` 统一反代到内网服务
 
 Portal 现在内置“内网 / 外网”访问模式切换：
 
 - 通过内网 `IP:Port` 打开 Portal 时，默认优先使用内网链接
-- 通过公网 `portal.saurick.space` 打开 Portal 时，默认优先使用外网链接
+- 通过公网 `portal.saurick.me` 打开 Portal 时，默认优先使用外网链接
 - 页面右上角可以手动切换，并记住当前浏览器上次选择
 - Portal 主页上方现在还会显示“当前开机进度 / 当前关机进度”两块 live 区域，用来回答“已经恢复到哪一步 / 下一台能不能继续开”以及“现在能不能继续关下一台”
 - 关机 live 卡片只覆盖到 `node2 / 192.168.0.108` 下电前；因为 Portal 自己就挂在这台节点上，轮到关闭 `node2` 时卡片会明确提示“这是最后一个可视步骤”，之后请改到虚拟化控制台继续确认
 - 当前集群外公网边界机是 `lab-edge / 192.168.0.9`：它负责 `ddns-go + 公网 Caddy`，不是 `lab-observer`
 - 公网 `HTTPS` 证书当前由 `lab-edge` 上的 `Caddy` 直接通过 `ACME + Let's Encrypt` 自动申请与续期，不再额外并行维护 `acme.sh`
-- 现在额外有一台集群外观察页 `Lab Observer`：正式公网入口是 `https://observer.saurick.space`，内网直连备用入口是 `http://192.168.0.156:30088`。开机初期 Portal 还没起来、或关机晚期 Portal 已跟着 `node2` 下线时，先看这台外置页；它现在也会展开每台节点的当前步骤状态与 gate 计数。等 `192.168.0.108:30088` 恢复后，再切回集群内 Portal 看更细的 live 状态
-- `ddns-go` 现在已经迁到 `lab-edge`，公网控制台入口恢复为 `https://ddns.saurick.space`，内网直连入口是 `http://192.168.0.9:9876`
+- 现在额外有一台集群外观察页 `Lab Observer`：正式公网入口是 `https://observer.saurick.me`，内网直连备用入口是 `http://192.168.0.156:30088`。开机初期 Portal 还没起来、或关机晚期 Portal 已跟着 `node2` 下线时，先看这台外置页；它现在也会展开每台节点的当前步骤状态与 gate 计数。等 `192.168.0.108:30088` 恢复后，再切回集群内 Portal 看更细的 live 状态
+- `ddns-go` 现在已经迁到 `lab-edge`，公网控制台入口恢复为 `https://ddns.saurick.me`，内网直连入口是 `http://192.168.0.9:9876`
 - 当前本地 Mac 已不再承载 `ddns-go` 或公网 `Caddy`；笔记本睡眠不会再直接带掉这组 lab 公网入口
 - 推荐顺序与最终验收口径仍以 `VM_POWER_SEQUENCE.md` 和 `check-ha-lab-cold-start.sh` 为准
 
@@ -50,36 +50,37 @@ Portal 现在内置“内网 / 外网”访问模式切换：
 
 ### 公网入口
 
-- DDNS Go: `https://ddns.saurick.space`
-- Lab Observer: `https://observer.saurick.space`
-- WebApp Lab: `https://app.saurick.space`
-- WebApp Prod-Trial Active: `https://lab.saurick.space`
-- WebApp Prod-Trial Preview: `https://preview.saurick.space`
-- Portal: `https://portal.saurick.space`
-- Harbor: `https://harbor.saurick.space`
-- Grafana: `https://grafana.saurick.space`
-- Headlamp: `https://headlamp.saurick.space`
-- Jaeger: `https://jaeger.saurick.space`
-- Grafana Ops Dashboard: `https://grafana.saurick.space/d/lab-ha-overview/ha-lab-ops-overview`
-- Grafana K8s Workloads Dashboard: `https://grafana.saurick.space/d/lab-ha-service-governance/ha-lab-service-governance`
-- Grafana Data Dashboard: `https://grafana.saurick.space/d/lab-ha-data/ha-lab-data-and-storage`
-- Grafana PostgreSQL Dashboard: `https://grafana.saurick.space/d/lab-ha-postgres/ha-lab-postgresql-and-backup`
-- Grafana GitOps Dashboard: `https://grafana.saurick.space/d/lab-ha-gitops/ha-lab-gitops-and-delivery`
-- Prometheus: `https://prometheus.saurick.space`
-- Alertmanager: `https://alertmanager.saurick.space`
-- Argo CD: `https://argocd.saurick.space`
-- Hubble UI: `https://hubble.saurick.space`
-- Longhorn UI: `https://longhorn.saurick.space`
-- SeaweedFS Filer UI: `https://seaweedfs.saurick.space`
-- Alert Sink: `https://alertsink.saurick.space`
-- SeaweedFS S3: `https://s3.saurick.space`
-- GitLab: `https://gitlab.saurick.space`
+- DDNS Go: `https://ddns.saurick.me`
+- Lab Observer: `https://observer.saurick.me`
+- WebApp Lab: `https://app.saurick.me`
+- WebApp Prod-Trial Active: `https://lab.saurick.me`
+- WebApp Prod-Trial Preview: `https://preview.saurick.me`
+- Portal: `https://portal.saurick.me`
+- Harbor: `https://harbor.saurick.me`
+- Grafana: `https://lab-grafana.saurick.me`
+- Headlamp: `https://headlamp.saurick.me`
+- Jaeger: `https://lab-jaeger.saurick.me`
+- Grafana Ops Dashboard: `https://lab-grafana.saurick.me/d/lab-ha-overview/ha-lab-ops-overview`
+- Grafana K8s Workloads Dashboard: `https://lab-grafana.saurick.me/d/lab-ha-service-governance/ha-lab-service-governance`
+- Grafana Data Dashboard: `https://lab-grafana.saurick.me/d/lab-ha-data/ha-lab-data-and-storage`
+- Grafana PostgreSQL Dashboard: `https://lab-grafana.saurick.me/d/lab-ha-postgres/ha-lab-postgresql-and-backup`
+- Grafana GitOps Dashboard: `https://lab-grafana.saurick.me/d/lab-ha-gitops/ha-lab-gitops-and-delivery`
+- Prometheus: `https://lab-prometheus.saurick.me`
+- Alertmanager: `https://alertmanager.saurick.me`
+- Argo CD: `https://argocd.saurick.me`
+- Hubble UI: `https://hubble.saurick.me`
+- Longhorn UI: `https://longhorn.saurick.me`
+- SeaweedFS Filer UI: `https://seaweedfs.saurick.me`
+- Alert Sink: `https://alertsink.saurick.me`
+- SeaweedFS S3: `https://s3.saurick.me`
+- GitLab: `https://lab-gitlab.saurick.me`
 
 说明：
 
-- 公网 `gitlab.saurick.space` 当前由 `lab-edge` 网关补写 `Set-Cookie: Domain=.saurick.space`
-- 因此同一浏览器先在 `gitlab.saurick.space` 登录后，`portal.saurick.space` 下的 GitLab 代理请求现在可以复用这份登录态，不必再额外登录一次
-- 若后续这条体验再次退化，先执行 `curl --noproxy '*' -I https://gitlab.saurick.space/users/sign_in`，确认 `_gitlab_session` 响应头里仍然带有 `Domain=.saurick.space`
+- 公网 `lab-gitlab.saurick.me` 当前由 `lab-edge` 网关补写 `Set-Cookie: Domain=.saurick.me`
+- 因此同一浏览器先在 `lab-gitlab.saurick.me` 登录后，`portal.saurick.me` 下的 GitLab 代理请求现在可以复用这份登录态，不必再额外登录一次
+- 若后续这条体验再次退化，先执行 `curl --noproxy '*' -I https://lab-gitlab.saurick.me/users/sign_in`，确认 `_gitlab_session` 响应头里仍然带有 `Domain=.saurick.me`
+- `gitlab / grafana / jaeger / prometheus.saurick.me` 当前被另一套 `saurick.me` DDNS 链路占用，HA lab 对应入口固定使用 `lab-` 前缀；不要把 Portal 外链改回无前缀主机名。
 - 当前 GitLab 管理基线默认关闭公开注册与 `usage/service ping`；若重装或手工改动后又出现首页横幅，直接执行：
 
 ```bash

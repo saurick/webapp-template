@@ -621,7 +621,7 @@ data:
                 <small>Fallback</small><strong>Lab Observer</strong><span>Cluster-external boot and shutdown observer for the periods when Portal is still down or already going away.</span>
               </a>
               <a class="card" href="http://192.168.0.9:9876" target="_blank" rel="noreferrer" data-i18n-html="cards.ddns">
-                <small>Edge</small><strong>DDNS Go</strong><span>Dynamic DNS console for the public edge host. Use it when lab.saurick.space needs to follow the current edge IPv6.</span>
+                <small>Edge</small><strong>DDNS Go</strong><span>Dynamic DNS console for the public edge host. Use it when lab.saurick.me needs to follow the current edge IPv6.</span>
               </a>
               <a class="card" href="http://192.168.0.108:30002" target="_blank" rel="noreferrer" data-i18n-html="cards.registry">
                 <small>Registry</small><strong>Harbor</strong><span>Container registry UI.</span>
@@ -1222,26 +1222,26 @@ data:
           const PORTAL_ACCESS_MODE_STORAGE_KEY = 'labPortalAccessMode';
           const ACCESS_MODE_INTERNAL = 'internal';
           const ACCESS_MODE_EXTERNAL = 'external';
-          const PUBLIC_DOMAIN_SUFFIX = 'saurick.space';
+          const PUBLIC_DOMAIN_SUFFIX = 'saurick.me';
           const URL_BASE_MAPPINGS = [
-            { internal: 'https://192.168.0.108:30443', external: 'https://argocd.saurick.space' },
-            { internal: 'http://192.168.0.108:30686', external: 'https://jaeger.saurick.space' },
-            { internal: 'http://192.168.0.108:8929', external: 'https://gitlab.saurick.space' },
-            { internal: 'http://192.168.0.108:30888', external: 'https://seaweedfs.saurick.space' },
-            { internal: 'http://192.168.0.108:32668', external: 'https://app.saurick.space' },
-            { internal: 'http://192.168.0.108:30093', external: 'https://alertmanager.saurick.space' },
-            { internal: 'http://192.168.0.108:30090', external: 'https://prometheus.saurick.space' },
-            { internal: 'http://192.168.0.108:30089', external: 'https://lab.saurick.space' },
-            { internal: 'http://192.168.0.108:30088', external: 'https://portal.saurick.space' },
-            { internal: 'http://192.168.0.156:30088', external: 'https://observer.saurick.space' },
-            { internal: 'http://192.168.0.9:9876', external: 'https://ddns.saurick.space' },
-            { internal: 'http://192.168.0.108:30087', external: 'https://headlamp.saurick.space' },
-            { internal: 'http://192.168.0.108:30086', external: 'https://alertsink.saurick.space' },
-            { internal: 'http://192.168.0.108:30085', external: 'https://hubble.saurick.space' },
-            { internal: 'http://192.168.0.108:30084', external: 'https://longhorn.saurick.space' },
-            { internal: 'http://192.168.0.108:30081', external: 'https://grafana.saurick.space' },
-            { internal: 'http://192.168.0.108:30002', external: 'https://harbor.saurick.space' },
-            { internal: 'http://192.168.0.108:30091', external: 'https://preview.saurick.space' },
+            { internal: 'https://192.168.0.108:30443', external: 'https://argocd.saurick.me' },
+            { internal: 'http://192.168.0.108:30686', external: 'https://lab-jaeger.saurick.me' },
+            { internal: 'http://192.168.0.108:8929', external: 'https://lab-gitlab.saurick.me' },
+            { internal: 'http://192.168.0.108:30888', external: 'https://seaweedfs.saurick.me' },
+            { internal: 'http://192.168.0.108:32668', external: 'https://app.saurick.me' },
+            { internal: 'http://192.168.0.108:30093', external: 'https://alertmanager.saurick.me' },
+            { internal: 'http://192.168.0.108:30090', external: 'https://lab-prometheus.saurick.me' },
+            { internal: 'http://192.168.0.108:30089', external: 'https://lab.saurick.me' },
+            { internal: 'http://192.168.0.108:30088', external: 'https://portal.saurick.me' },
+            { internal: 'http://192.168.0.156:30088', external: 'https://observer.saurick.me' },
+            { internal: 'http://192.168.0.9:9876', external: 'https://ddns.saurick.me' },
+            { internal: 'http://192.168.0.108:30087', external: 'https://headlamp.saurick.me' },
+            { internal: 'http://192.168.0.108:30086', external: 'https://alertsink.saurick.me' },
+            { internal: 'http://192.168.0.108:30085', external: 'https://hubble.saurick.me' },
+            { internal: 'http://192.168.0.108:30084', external: 'https://longhorn.saurick.me' },
+            { internal: 'http://192.168.0.108:30081', external: 'https://lab-grafana.saurick.me' },
+            { internal: 'http://192.168.0.108:30002', external: 'https://harbor.saurick.me' },
+            { internal: 'http://192.168.0.108:30091', external: 'https://preview.saurick.me' },
           ];
           const GITLAB_LOGIN_REQUIRED_HEADER = 'x-portal-login-required';
           const LOADTEST_PROJECT_PATH = 'root/webapp-template-lab';
@@ -1326,7 +1326,7 @@ data:
               'cards.app': '<small>App</small><strong>WebApp Lab</strong><span>Current lab entry via the shared ingress.</span>',
               'cards.portal': '<small>Portal</small><strong>Lab Portal</strong><span>This navigation page itself.</span>',
               'cards.observer': '<small>Fallback</small><strong>Lab Observer</strong><span>Cluster-external boot and shutdown observer for the periods when Portal is still down or already going away.</span>',
-              'cards.ddns': '<small>Edge</small><strong>DDNS Go</strong><span>Dynamic DNS console for the public edge host. Use it when lab.saurick.space needs to follow the current edge IPv6.</span>',
+              'cards.ddns': '<small>Edge</small><strong>DDNS Go</strong><span>Dynamic DNS console for the public edge host. Use it when lab.saurick.me needs to follow the current edge IPv6.</span>',
               'cards.registry': '<small>Registry</small><strong>Harbor</strong><span>Container registry UI.</span>',
               'cards.grafana': '<small>Metrics</small><strong>Grafana</strong><span>Dashboards and observability.</span>',
               'cards.k8s': '<small>K8s</small><strong>K8s Workloads</strong><span>Nodes, workloads, HPA, pod restarts, and ingress error signals.</span>',
@@ -1513,7 +1513,7 @@ data:
               'cards.app': '<small>应用</small><strong>WebApp Lab</strong><span>当前 lab 入口，走共享 ingress。</span>',
               'cards.portal': '<small>门户</small><strong>实验室导航页</strong><span>就是当前这张导航页。</span>',
               'cards.observer': '<small>兜底观察</small><strong>Lab Observer</strong><span>集群外开关机观察页，适合在 Portal 还没起来或即将跟着 node2 下线时继续看状态。</span>',
-              'cards.ddns': '<small>边界</small><strong>DDNS Go</strong><span>公网边界机的动态 DNS 控制台；当 lab.saurick.space 需要跟随当前 edge IPv6 时看这里。</span>',
+              'cards.ddns': '<small>边界</small><strong>DDNS Go</strong><span>公网边界机的动态 DNS 控制台；当 lab.saurick.me 需要跟随当前 edge IPv6 时看这里。</span>',
               'cards.registry': '<small>镜像仓库</small><strong>Harbor</strong><span>容器镜像仓库界面。</span>',
               'cards.grafana': '<small>监控</small><strong>Grafana</strong><span>仪表盘与可观测性入口。</span>',
               'cards.k8s': '<small>K8s</small><strong>K8s 工作负载</strong><span>节点、工作负载、HPA、Pod 重启与 ingress 错误信号。</span>',
@@ -3560,7 +3560,7 @@ data:
         <script>
           const params = new URLSearchParams(window.location.search);
           const jobId = (params.get('job_id') || '').trim();
-          const isPublicPortalHost = window.location.hostname === 'saurick.space' || window.location.hostname.endsWith('.saurick.space');
+          const isPublicPortalHost = window.location.hostname === 'saurick.me' || window.location.hostname.endsWith('.saurick.me');
           const statusNode = document.getElementById('status');
           const subtitleNode = document.getElementById('subtitle');
           const frameNode = document.getElementById('report-frame');
@@ -3573,7 +3573,7 @@ data:
             openJobLink.href = jobUrl(jobId);
             subtitleNode.textContent = `Job #${jobId} 的在线报告预览`;
           }
-          loginLink.href = isPublicPortalHost ? 'https://gitlab.saurick.space/users/sign_in' : 'http://192.168.0.108:8929/users/sign_in';
+          loginLink.href = isPublicPortalHost ? 'https://lab-gitlab.saurick.me/users/sign_in' : 'http://192.168.0.108:8929/users/sign_in';
 
           const showStatus = (text, isError = false) => {
             statusNode.textContent = text;

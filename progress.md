@@ -97,3 +97,19 @@
 - 验证：`cd /Users/simon/projects/webapp-template/web && pnpm lint && pnpm css && pnpm test && pnpm style:l1` 通过；另用 Playwright 生成并查看临时截图，覆盖桌面/移动主页、管理员登录、已登录后台控制台，注入超长管理员名和长密码，检查 `scrollWidth`、关键 box 尺寸、用户名省略、后台退出弹窗打开/取消，结果无横向溢出；临时截图和指标文件已移入废纸篓。
 - 下一步：如果后续要更贴近具体品牌，可再替换真实 logo、品牌名和后台业务导航；本轮只做风格层，不引入行业内容。
 - 阻塞/风险：内置浏览器可读取 DOM，但截图接口本轮超时，因此视觉截图与盒模型断言使用仓库 Playwright fallback 完成；未单独覆盖账号目录/RBAC 的全部表格数据状态，仍由 `style:l1` 的既有场景负责最小回归。
+
+## 2026-05-10 23:59
+
+- 完成：把 `lab-ha` 公网入口从 `saurick.space` 迁到 `saurick.me`。已更新 Cloudflare `saurick.me` DNS：`lab.saurick.me` 维护到 `lab-edge / 192.168.0.9` 当前 IPv6，`portal / observer / ddns / app / preview / harbor / headlamp / alertmanager / longhorn / hubble / seaweedfs / alertsink / s3 / argocd` 等入口通过 `CNAME -> lab.saurick.me` 复用同一条链路。
+- 完成：已 SSH 到 `lab-edge` 修改 live `/etc/ddns-go/lab-saurick.yaml`，让 `ddns-go` 维护 `lab.saurick.me`；修改并重启 live `/etc/caddy/Caddyfile`，Caddy 已为新域名签发 Let's Encrypt 证书。由于 `gitlab / grafana / jaeger / prometheus.saurick.me` 被另一套 `saurick.me` DDNS 自动改回旧 IPv6，本轮将 HA lab 对应入口收口为 `lab-gitlab / lab-grafana / lab-jaeger / lab-prometheus.saurick.me`，避免和现有服务抢同名记录。
+- 完成：同步仓库真源和 runbook：更新 `server/deploy/lab-ha/manifests/lab-public-caddy.Caddyfile`、`server/deploy/lab-ha/manifests/platform-portal.yaml`、`server/deploy/lab-ha/charts/lab-platform/files/raw/platform-portal.yaml`、`server/deploy/lab-ha/docs/ACCESS.md`、`DDNS_GO.md`、`LAB_EDGE.md`、`LAB_OBSERVER.md`、`PUBLIC_GATEWAY.md`、`README.md`、`VM_POWER_SEQUENCE.md` 和 `scripts/loadtest/README.md`，并明确 `lab-` 前缀入口的冲突原因。
+- 验证：Cloudflare API 已确认 `saurick.me` zone 可访问；`caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile` 通过；`systemctl restart caddy` 后 `caddy` 与 `lab-edge-ddns-go` 均为 `active`；Caddy 日志显示 `portal/app/preview/ddns/observer/lab-gitlab/lab-grafana/lab-jaeger/lab-prometheus` 等证书已签发。`curl -6 --noproxy '*'` 验证 `portal/app/preview/observer/healthz/ddns/lab-gitlab/lab-grafana/lab-prometheus` 均返回 `200` 且 TLS 校验为 `0`；`lab-gitlab` 响应头已带 `_gitlab_session ... Domain=.saurick.me`；`lab-jaeger` 强制解析到 edge 时返回 `200` 且 TLS 正常，公共解析仍在本机 resolver 侧传播。
+- 下一步：若要让 Portal live 页面立即使用新外链，需要发布 `lab-platform`；本轮已更新 Helm raw 与 manifest 真源，但未执行 Argo/Helm 发布。后续若另一套 `saurick.me` DDNS 停用，可再评估是否把 `lab-gitlab/lab-grafana/lab-jaeger/lab-prometheus` 改回无前缀主机名。
+- 阻塞/风险：`gitlab/grafana/jaeger/prometheus.saurick.me` 当前仍被外部 DDNS 占用，不能作为 HA lab 稳定入口；`lab-jaeger.saurick.me` 在 Cloudflare DoH/API 和强制 edge 验证正常，但本机普通 resolver 暂时仍解析不到，需等 DNS 缓存传播或刷新本机 DNS。
+
+## 2026-05-11 00:06
+
+- 完成：补齐 `lab-edge` Caddy 更新口径。`PUBLIC_GATEWAY.md` 已明确说明 live Caddyfile 顶部配置 `admin off`，因此 `systemctl reload caddy` 会因为本地 admin API 关闭而失败；更新 host map、反代目标或证书入口时固定走 `caddy validate` 后 `systemctl restart caddy`。`LAB_EDGE.md` 也新增“更新 Caddy 配置”小节，写清 `validate / restart / is-active` 三步。
+- 验证：`rg` 已确认 `reload caddy` 只作为“不要使用”的说明出现，正式命令口径均为 `systemctl restart caddy`；`git diff --check -- server/deploy/lab-ha/docs/PUBLIC_GATEWAY.md server/deploy/lab-ha/docs/LAB_EDGE.md` 通过。
+- 下一步：若要让 Portal live 页面显示新 `saurick.me` 外链，继续按 `lab-platform` Helm/Argo 主路径发布；本轮只修正文档和 runbook，不动 live 服务。
+- 阻塞/风险：无新增 live 风险；当前仍保留上一条记录里的 `lab-jaeger.saurick.me` 本机 resolver 传播盲区，以及无前缀 `gitlab/grafana/jaeger/prometheus.saurick.me` 被另一套 DDNS 占用的边界。

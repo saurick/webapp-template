@@ -67,7 +67,7 @@
 - `manifests/blackbox-values.yaml`: Blackbox Exporter 探测配置
 - `manifests/metrics-server-values.yaml`: Metrics Server 值文件，给 HPA 提供资源指标
 - `manifests/gateway-api-v1.4.1-standard-install.yaml`: Gateway API CRD 真源，供 Cilium Gateway Controller 使用
-- `manifests/lab-public-caddy.Caddyfile`: `lab-edge` 公网 `Caddy` 网关模板，包含 GitLab `Domain=.saurick.space` cookie 共享配置
+- `manifests/lab-public-caddy.Caddyfile`: `lab-edge` 公网 `Caddy` 网关模板，包含 GitLab `Domain=.saurick.me` cookie 共享配置
 - `manifests/lab-edge-ddns-go.service`: `lab-edge` 上 `ddns-go` 的 systemd 真源
 - `manifests/headlamp-values.yaml`: Headlamp 值文件，固定当前实验室 K8s UI 入口
 - `manifests/alert-webhook-receiver.yaml`: 实验室默认 webhook 告警接收页，可查看最近 payload
@@ -103,8 +103,8 @@
 - `Portal` 已作为默认起始页，包含入口导航、默认账号、Headlamp 10 年 token 复制卡、文档直达链接，以及面向值班的“当前开机进度 / 当前关机进度”live 区域；当前也已显式补出 `DDNS Go + Public Gateway` 两条 `lab-edge` 相关入口，避免再把边界机职责误认到别的机器上
 - `Portal` 当前既会展示“当前开机进度 / 当前关机进度 / 下一台建议”，也会展示最近一次冷启动验收、最近一次 HA 演练、最近一次备份检查、最近一次烟雾检查；最近结果摘要继续复用 Alert Sink 已持久化的轻量存储，避免重启后整块上下文直接清空
 - `Portal` 的关机进度卡片只负责回答“现在能不能继续关下一台”；由于 Portal 自己固定在 `node2 / 192.168.0.108`，当下一步轮到关闭 `node2` 时，卡片会明确提示“这是最后一个可视步骤”，后续最终关机仍以虚拟化平台电源状态为准
-- 现在额外有一台集群外 `lab-observer / 192.168.0.156` 负责“开关机前后不断线”的外部观察页；当前正式公网入口是 `https://observer.saurick.space`，内网直连备用入口是 `http://192.168.0.156:30088`：它不替代集群内 Portal，但会在 Portal 尚未恢复或已经跟着 `node2` 一起下线时，继续给出节点可达性、固定入口恢复情况和开/关机下一步建议
-- 当前公网边界已经迁到 `lab-edge / 192.168.0.9`：`ddns-go` 继续维护 `lab.saurick.space` 动态 IPv6，`Caddy` 继续承接当前显式声明在 `manifests/lab-public-caddy.Caddyfile` 里的那组公网 HTTPS 入口；不是所有 `*.saurick.space` 域名都会自动经过 `09`，本地 Mac 也已不再承载这条公网链路
+- 现在额外有一台集群外 `lab-observer / 192.168.0.156` 负责“开关机前后不断线”的外部观察页；当前正式公网入口是 `https://observer.saurick.me`，内网直连备用入口是 `http://192.168.0.156:30088`：它不替代集群内 Portal，但会在 Portal 尚未恢复或已经跟着 `node2` 一起下线时，继续给出节点可达性、固定入口恢复情况和开/关机下一步建议
+- 当前公网边界已经迁到 `lab-edge / 192.168.0.9`：`ddns-go` 继续维护 `lab.saurick.me` 动态 IPv6，`Caddy` 继续承接当前显式声明在 `manifests/lab-public-caddy.Caddyfile` 里的那组公网 HTTPS 入口；不是所有 `*.saurick.me` 域名都会自动经过 `09`，本地 Mac 也已不再承载这条公网链路
 - `Portal` 现在也会显式给出 `K8s Workloads` 与 `Headlamp` 两类 K8s 入口，避免值班人员在“看趋势”与“看对象细节”之间来回猜测
 - 面向人操作的日常巡检、值班和恢复，默认先看 `Portal + Grafana Ops + K8s Workloads + Headlamp + Alert Sink + Alertmanager + Argo CD` 这些 live 页面，再决定是否执行脚本
 - 当前对人展示统一口径：`WebApp Lab`、`WebApp Prod-Trial Active`、`WebApp Prod-Trial Preview`

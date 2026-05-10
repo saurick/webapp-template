@@ -55,20 +55,20 @@ export default function LoginPage() {
         <div className="mb-4">
           <Link
             to="/"
-            className="inline-flex items-center text-sm text-slate-300 transition hover:text-slate-100"
+            className="inline-flex items-center text-sm font-medium text-[#6d7780] transition hover:text-[#173957]"
           >
             返回首页
           </Link>
         </div>
 
         <div className="mb-6 text-center sm:mb-8">
-          <div className="inline-flex rounded-full border border-cyan-300/30 bg-cyan-300/10 px-3 py-1 text-xs font-medium uppercase tracking-[0.24em] text-cyan-100">
+          <div className="inline-flex rounded-md border border-[#d7e5df] bg-[#f4faf6] px-3 py-1 text-xs font-medium text-[#2b8a4b]">
             用户登录
           </div>
-          <div className="mt-4 text-3xl font-semibold tracking-tight text-slate-50">
+          <div className="mt-4 text-3xl font-semibold tracking-tight text-[#173957]">
             欢迎登录
           </div>
-          <div className="mt-2 text-sm leading-6 text-slate-300">
+          <div className="mt-2 text-sm leading-6 text-[#6d7780]">
             使用已有账号继续访问当前项目；如果是首次使用，请先注册普通用户账号。
           </div>
         </div>
@@ -77,20 +77,20 @@ export default function LoginPage() {
           <form onSubmit={onSubmit} className="p-4 sm:p-6">
             <div className="space-y-4">
               <div>
-                <label className="mb-1 block text-sm text-slate-200/90">
+                <label className="mb-2 block text-sm font-medium text-[#172b3f]">
                   用户名
                 </label>
                 <input
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   autoComplete="username"
-                  className="w-full rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 text-slate-100 outline-none transition focus:border-cyan-300/60 focus:ring-2 focus:ring-cyan-300/20"
+                  className="w-full rounded-xl border border-[#d6dadd] bg-white px-4 py-3 text-[#172b3f] outline-none transition placeholder:text-[#a4acb3] focus:border-[#2f9348] focus:ring-2 focus:ring-[#2f9348]/15"
                   placeholder="输入用户名"
                 />
               </div>
 
               <div>
-                <label className="mb-1 block text-sm text-slate-200/90">
+                <label className="mb-2 block text-sm font-medium text-[#172b3f]">
                   密码
                 </label>
                 <input
@@ -98,13 +98,13 @@ export default function LoginPage() {
                   onChange={(e) => setPassword(e.target.value)}
                   type="password"
                   autoComplete="current-password"
-                  className="w-full rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 text-slate-100 outline-none transition focus:border-cyan-300/60 focus:ring-2 focus:ring-cyan-300/20"
+                  className="w-full rounded-xl border border-[#d6dadd] bg-white px-4 py-3 text-[#172b3f] outline-none transition placeholder:text-[#a4acb3] focus:border-[#2f9348] focus:ring-2 focus:ring-[#2f9348]/15"
                   placeholder="输入密码"
                 />
               </div>
 
               {errMsg ? (
-                <div className="rounded-2xl border border-rose-400/40 bg-rose-500/10 px-4 py-3 text-sm text-rose-100">
+                <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
                   {errMsg}
                 </div>
               ) : null}
@@ -112,20 +112,20 @@ export default function LoginPage() {
               <button
                 type="submit"
                 disabled={!canSubmit}
-                className={`w-full rounded-2xl px-4 py-3 text-sm font-semibold tracking-wide transition sm:text-base ${
+                className={`w-full rounded-xl px-4 py-3 text-sm font-semibold tracking-wide transition sm:text-base ${
                   canSubmit
-                    ? 'bg-cyan-300 text-slate-950 hover:bg-cyan-200 active:bg-cyan-400'
-                    : 'cursor-not-allowed bg-cyan-300/20 text-slate-400'
+                    ? 'bg-[#2f9348] text-white shadow-[0_10px_22px_rgba(47,147,72,0.2)] hover:bg-[#267d3c] active:bg-[#236f36]'
+                    : 'cursor-not-allowed bg-[#d8e5dc] text-[#8d9a92]'
                 }`}
               >
                 {submitting ? '登录中…' : '登录'}
               </button>
 
-              <div className="flex items-center justify-between pt-1 text-sm text-slate-300">
+              <div className="flex items-center justify-between pt-1 text-sm text-[#6d7780]">
                 <div>
                   模板默认不预置普通用户。{' '}
                   <Link
-                    className="font-medium text-cyan-200 underline underline-offset-4 transition hover:text-cyan-100"
+                    className="font-medium text-[#2f9348] underline underline-offset-4 transition hover:text-[#267d3c]"
                     to="/register"
                   >
                     先去注册

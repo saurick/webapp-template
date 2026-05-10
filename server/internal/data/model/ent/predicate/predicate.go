@@ -6,8 +6,20 @@ import (
 	"entgo.io/ent/dialect/sql"
 )
 
+// AdminPermission is the predicate function for adminpermission builders.
+type AdminPermission func(*sql.Selector)
+
+// AdminRole is the predicate function for adminrole builders.
+type AdminRole func(*sql.Selector)
+
+// AdminRolePermission is the predicate function for adminrolepermission builders.
+type AdminRolePermission func(*sql.Selector)
+
 // AdminUser is the predicate function for adminuser builders.
 type AdminUser func(*sql.Selector)
+
+// AdminUserRole is the predicate function for adminuserrole builders.
+type AdminUserRole func(*sql.Selector)
 
 // User is the predicate function for user builders.
 type User func(*sql.Selector)

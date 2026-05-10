@@ -288,6 +288,16 @@ report_advisory \
 	"模板主干已移除积分 / 订阅 / 管理员层级 / 邀请码等业务模块；若扫描再次命中，请确认这是当前项目的真实需求，而不是模板残留回流。" \
 	"$ADMIN_MODULE_HITS"
 
+report_existing_paths \
+	"仓库保留了 antd admin preset / basic RBAC 骨架" \
+	"若当前项目不是后台项目，可按 docs/admin-preset.md 裁掉后台页面、antd 依赖和 RBAC 表；若是后台项目，应替换默认菜单、角色权限说明和管理员配置。" \
+	web/src/common/components/admin \
+	web/src/pages/AdminMenu \
+	web/src/pages/AdminUsers \
+	web/src/pages/AdminRBAC \
+	server/internal/biz/rbac.go \
+	docs/admin-preset.md
+
 JAEGER_HITS="$(
 	scan_pattern 'jaeger|OTLP|TraceName|traceName' \
 		server/deploy/compose/prod/compose.yml \

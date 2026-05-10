@@ -26,8 +26,10 @@ go run ./cmd/server -conf ./configs/dev/config.yaml
 
 ## 默认端口
 
-- HTTP：`8000`
-- gRPC：`9000`
+- HTTP：`8200`
+- gRPC：`9200`
+
+说明：`8200/9200` 是当前模板的本地开发默认端口。若多个派生仓库同时运行，应让其他项目改用不同端口，或同步调整当前项目的 `configs/dev/config.yaml` 与前端 `VITE_API_PROXY_TARGET`。
 
 配置来源：
 

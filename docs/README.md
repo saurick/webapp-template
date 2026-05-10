@@ -10,6 +10,7 @@
 - 部署模板：`/Users/simon/projects/webapp-template/server/deploy/README.md`
 - 脚本文档：`/Users/simon/projects/webapp-template/scripts/README.md`
 - 初始化指南与 AI 输入模板：`/Users/simon/projects/webapp-template/docs/project-init.md`
+- Admin preset 与 basic RBAC：`/Users/simon/projects/webapp-template/docs/admin-preset.md`
 - 部署真源约定：`/Users/simon/projects/webapp-template/docs/deployment-conventions.md`
 - 过程流水归档：`/Users/simon/projects/webapp-template/docs/archive`
 

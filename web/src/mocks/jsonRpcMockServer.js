@@ -2,6 +2,26 @@
 
 let originalFetch = null
 
+const MOCK_ADMIN_PERMISSIONS = [
+  'admin.access',
+  'admin.user.read',
+  'admin.user.write',
+  'admin.rbac.read',
+]
+
+function makeMockJwt({ uid = 1, uname = 'admin', role = 1 } = {}) {
+  const header = btoa(JSON.stringify({ alg: 'none', typ: 'JWT' }))
+  const payload = btoa(
+    JSON.stringify({
+      uid,
+      uname,
+      role,
+      exp: Math.floor(Date.now() / 1000) + 3600,
+    })
+  )
+  return `${header}.${payload}.mock`
+}
+
 // 构造一个 JSON-RPC 成功响应
 function makeJsonRpcSuccess(id, payload = {}) {
   return {
@@ -124,16 +144,48 @@ export function setupJsonRpcMockServer() {
           responseBody = makeJsonRpcBizError(id, 401, 'invalid username')
         } else {
           responseBody = makeJsonRpcSuccess(id, {
-            login: {
-              userId: 'mock-user-001',
-              nickname: params.username || 'mock-nickname',
+            data: {
+              user_id: 101,
+              username: params.username || 'mock-user',
+              access_token: makeMockJwt({
+                uid: 101,
+                uname: params.username || 'mock-user',
+                role: 0,
+              }),
+              expires_at: Math.floor(Date.now() / 1000) + 3600,
+              token_type: 'Bearer',
             },
           })
         }
+      } else if (method === 'admin_login') {
+        responseBody = makeJsonRpcSuccess(id, {
+          data: {
+            user_id: 1,
+            username: params.username || 'admin',
+            roles: ['super_admin'],
+            permissions: MOCK_ADMIN_PERMISSIONS,
+            access_token: makeMockJwt({
+              uid: 1,
+              uname: params.username || 'admin',
+              role: 1,
+            }),
+            expires_at: Math.floor(Date.now() / 1000) + 3600,
+            token_type: 'Bearer',
+          },
+        })
       } else if (method === 'logout') {
         responseBody = makeJsonRpcSuccess(id, {
-          logout: {
-            success: true,
+          data: { success: true },
+        })
+      } else if (method === 'me') {
+        responseBody = makeJsonRpcSuccess(id, {
+          data: {
+            id: 1,
+            username: 'admin',
+            role: 1,
+            disabled: false,
+            roles: ['super_admin'],
+            permissions: MOCK_ADMIN_PERMISSIONS,
           },
         })
       } else {
@@ -141,6 +193,70 @@ export function setupJsonRpcMockServer() {
           id,
           400,
           `unknown auth method: ${method}`
+        )
+      }
+    } else if (domain === 'user') {
+      if (method === 'list') {
+        responseBody = makeJsonRpcSuccess(id, {
+          data: {
+            users: [
+              {
+                id: 101,
+                username: 'demo_user',
+                disabled: false,
+                created_at: Math.floor(Date.now() / 1000) - 86400,
+                last_login_at: Math.floor(Date.now() / 1000) - 1200,
+              },
+            ],
+            total: 1,
+            limit: params.limit || 30,
+            offset: params.offset || 0,
+            search: params.search || '',
+          },
+        })
+      } else if (method === 'set_disabled') {
+        responseBody = makeJsonRpcSuccess(id, {
+          data: {
+            success: true,
+            user_id: params.user_id,
+            disabled: !!params.disabled,
+          },
+        })
+      } else {
+        responseBody = makeJsonRpcBizError(
+          id,
+          40020,
+          `unknown user method: ${method}`
+        )
+      }
+    } else if (domain === 'rbac') {
+      if (method === 'overview') {
+        responseBody = makeJsonRpcSuccess(id, {
+          data: {
+            roles: [
+              {
+                id: 1,
+                key: 'super_admin',
+                name: '超级管理员',
+                description: '模板内置最高权限角色，初始化管理员默认绑定',
+                builtin: true,
+                admin_count: 1,
+              },
+            ],
+            permissions: MOCK_ADMIN_PERMISSIONS.map((key) => ({
+              key,
+              name: key,
+              group: key.includes('user') ? '账号' : '系统',
+              description: 'mock 权限码',
+              builtin: true,
+            })),
+          },
+        })
+      } else {
+        responseBody = makeJsonRpcBizError(
+          id,
+          40020,
+          `unknown rbac method: ${method}`
         )
       }
     } else {

@@ -23,7 +23,7 @@
 
 ## 当前默认入口
 
-- 页面（当前正式入口）：`https://observer.saurick.space`
+- 页面（当前正式入口）：`https://observer.saurick.me`
 - 页面（内网直连备用入口）：`http://192.168.0.156:30088`
 - SSH：`root@192.168.0.156`
 - 当前 live SSH 密码：`123456`
@@ -31,7 +31,7 @@
 
 补充说明：
 
-- `observer.saurick.space` 当前采用 `CNAME -> lab.saurick.space`
+- `observer.saurick.me` 当前采用 `CNAME -> lab.saurick.me`
 - 当前 `ddns-go + 公网 Caddy` 已迁到 `lab-edge / 192.168.0.9`
 - `lab-observer` 继续只负责开关机观察页，不承载公网入口或 DDNS 真源
 
@@ -114,8 +114,8 @@ ssh root@192.168.0.156 'curl -fsS http://127.0.0.1:30088/healthz'
 ### 外部连通性
 
 ```bash
-curl --noproxy '*' -fsS https://observer.saurick.space/healthz
-curl --noproxy '*' -fsS https://observer.saurick.space/api/status | jq .
+curl --noproxy '*' -fsS https://observer.saurick.me/healthz
+curl --noproxy '*' -fsS https://observer.saurick.me/api/status | jq .
 
 # 内网直连备用入口
 curl -fsS http://192.168.0.156:30088/healthz

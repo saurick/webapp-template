@@ -3,7 +3,11 @@
 package ent
 
 import (
+	"server/internal/data/model/ent/adminpermission"
+	"server/internal/data/model/ent/adminrole"
+	"server/internal/data/model/ent/adminrolepermission"
 	"server/internal/data/model/ent/adminuser"
+	"server/internal/data/model/ent/adminuserrole"
 	"server/internal/data/model/ent/user"
 	"server/internal/data/model/schema"
 	"time"
@@ -13,6 +17,134 @@ import (
 // (default values, validators, hooks and policies) and stitches it
 // to their package variables.
 func init() {
+	adminpermissionFields := schema.AdminPermission{}.Fields()
+	_ = adminpermissionFields
+	// adminpermissionDescKey is the schema descriptor for key field.
+	adminpermissionDescKey := adminpermissionFields[0].Descriptor()
+	// adminpermission.KeyValidator is a validator for the "key" field. It is called by the builders before save.
+	adminpermission.KeyValidator = func() func(string) error {
+		validators := adminpermissionDescKey.Validators
+		fns := [...]func(string) error{
+			validators[0].(func(string) error),
+			validators[1].(func(string) error),
+		}
+		return func(key string) error {
+			for _, fn := range fns {
+				if err := fn(key); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
+	// adminpermissionDescName is the schema descriptor for name field.
+	adminpermissionDescName := adminpermissionFields[1].Descriptor()
+	// adminpermission.NameValidator is a validator for the "name" field. It is called by the builders before save.
+	adminpermission.NameValidator = func() func(string) error {
+		validators := adminpermissionDescName.Validators
+		fns := [...]func(string) error{
+			validators[0].(func(string) error),
+			validators[1].(func(string) error),
+		}
+		return func(name string) error {
+			for _, fn := range fns {
+				if err := fn(name); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
+	// adminpermissionDescGroup is the schema descriptor for group field.
+	adminpermissionDescGroup := adminpermissionFields[2].Descriptor()
+	// adminpermission.DefaultGroup holds the default value on creation for the group field.
+	adminpermission.DefaultGroup = adminpermissionDescGroup.Default.(string)
+	// adminpermission.GroupValidator is a validator for the "group" field. It is called by the builders before save.
+	adminpermission.GroupValidator = adminpermissionDescGroup.Validators[0].(func(string) error)
+	// adminpermissionDescDescription is the schema descriptor for description field.
+	adminpermissionDescDescription := adminpermissionFields[3].Descriptor()
+	// adminpermission.DefaultDescription holds the default value on creation for the description field.
+	adminpermission.DefaultDescription = adminpermissionDescDescription.Default.(string)
+	// adminpermission.DescriptionValidator is a validator for the "description" field. It is called by the builders before save.
+	adminpermission.DescriptionValidator = adminpermissionDescDescription.Validators[0].(func(string) error)
+	// adminpermissionDescBuiltin is the schema descriptor for builtin field.
+	adminpermissionDescBuiltin := adminpermissionFields[4].Descriptor()
+	// adminpermission.DefaultBuiltin holds the default value on creation for the builtin field.
+	adminpermission.DefaultBuiltin = adminpermissionDescBuiltin.Default.(bool)
+	// adminpermissionDescCreatedAt is the schema descriptor for created_at field.
+	adminpermissionDescCreatedAt := adminpermissionFields[5].Descriptor()
+	// adminpermission.DefaultCreatedAt holds the default value on creation for the created_at field.
+	adminpermission.DefaultCreatedAt = adminpermissionDescCreatedAt.Default.(func() time.Time)
+	// adminpermissionDescUpdatedAt is the schema descriptor for updated_at field.
+	adminpermissionDescUpdatedAt := adminpermissionFields[6].Descriptor()
+	// adminpermission.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	adminpermission.DefaultUpdatedAt = adminpermissionDescUpdatedAt.Default.(func() time.Time)
+	// adminpermission.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	adminpermission.UpdateDefaultUpdatedAt = adminpermissionDescUpdatedAt.UpdateDefault.(func() time.Time)
+	adminroleFields := schema.AdminRole{}.Fields()
+	_ = adminroleFields
+	// adminroleDescKey is the schema descriptor for key field.
+	adminroleDescKey := adminroleFields[0].Descriptor()
+	// adminrole.KeyValidator is a validator for the "key" field. It is called by the builders before save.
+	adminrole.KeyValidator = func() func(string) error {
+		validators := adminroleDescKey.Validators
+		fns := [...]func(string) error{
+			validators[0].(func(string) error),
+			validators[1].(func(string) error),
+		}
+		return func(key string) error {
+			for _, fn := range fns {
+				if err := fn(key); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
+	// adminroleDescName is the schema descriptor for name field.
+	adminroleDescName := adminroleFields[1].Descriptor()
+	// adminrole.NameValidator is a validator for the "name" field. It is called by the builders before save.
+	adminrole.NameValidator = func() func(string) error {
+		validators := adminroleDescName.Validators
+		fns := [...]func(string) error{
+			validators[0].(func(string) error),
+			validators[1].(func(string) error),
+		}
+		return func(name string) error {
+			for _, fn := range fns {
+				if err := fn(name); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
+	// adminroleDescDescription is the schema descriptor for description field.
+	adminroleDescDescription := adminroleFields[2].Descriptor()
+	// adminrole.DefaultDescription holds the default value on creation for the description field.
+	adminrole.DefaultDescription = adminroleDescDescription.Default.(string)
+	// adminrole.DescriptionValidator is a validator for the "description" field. It is called by the builders before save.
+	adminrole.DescriptionValidator = adminroleDescDescription.Validators[0].(func(string) error)
+	// adminroleDescBuiltin is the schema descriptor for builtin field.
+	adminroleDescBuiltin := adminroleFields[3].Descriptor()
+	// adminrole.DefaultBuiltin holds the default value on creation for the builtin field.
+	adminrole.DefaultBuiltin = adminroleDescBuiltin.Default.(bool)
+	// adminroleDescCreatedAt is the schema descriptor for created_at field.
+	adminroleDescCreatedAt := adminroleFields[4].Descriptor()
+	// adminrole.DefaultCreatedAt holds the default value on creation for the created_at field.
+	adminrole.DefaultCreatedAt = adminroleDescCreatedAt.Default.(func() time.Time)
+	// adminroleDescUpdatedAt is the schema descriptor for updated_at field.
+	adminroleDescUpdatedAt := adminroleFields[5].Descriptor()
+	// adminrole.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	adminrole.DefaultUpdatedAt = adminroleDescUpdatedAt.Default.(func() time.Time)
+	// adminrole.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	adminrole.UpdateDefaultUpdatedAt = adminroleDescUpdatedAt.UpdateDefault.(func() time.Time)
+	adminrolepermissionFields := schema.AdminRolePermission{}.Fields()
+	_ = adminrolepermissionFields
+	// adminrolepermissionDescCreatedAt is the schema descriptor for created_at field.
+	adminrolepermissionDescCreatedAt := adminrolepermissionFields[2].Descriptor()
+	// adminrolepermission.DefaultCreatedAt holds the default value on creation for the created_at field.
+	adminrolepermission.DefaultCreatedAt = adminrolepermissionDescCreatedAt.Default.(func() time.Time)
 	adminuserFields := schema.AdminUser{}.Fields()
 	_ = adminuserFields
 	// adminuserDescUsername is the schema descriptor for username field.
@@ -51,6 +183,12 @@ func init() {
 	adminuser.DefaultUpdatedAt = adminuserDescUpdatedAt.Default.(func() time.Time)
 	// adminuser.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
 	adminuser.UpdateDefaultUpdatedAt = adminuserDescUpdatedAt.UpdateDefault.(func() time.Time)
+	adminuserroleFields := schema.AdminUserRole{}.Fields()
+	_ = adminuserroleFields
+	// adminuserroleDescCreatedAt is the schema descriptor for created_at field.
+	adminuserroleDescCreatedAt := adminuserroleFields[2].Descriptor()
+	// adminuserrole.DefaultCreatedAt holds the default value on creation for the created_at field.
+	adminuserrole.DefaultCreatedAt = adminuserroleDescCreatedAt.Default.(func() time.Time)
 	userFields := schema.User{}.Fields()
 	_ = userFields
 	// userDescUsername is the schema descriptor for username field.

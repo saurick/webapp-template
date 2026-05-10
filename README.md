@@ -2,7 +2,7 @@
 
 ## 项目简介
 
-Web 全后端单体模板项目，提供前端管理台、Kratos 后端与本地质量门禁脚本。
+Web 全后端单体模板项目，提供用户端基础页面、可选 antd admin preset、Kratos 后端与本地质量门禁脚本。
 
 ## 目录结构
 
@@ -25,7 +25,7 @@ pnpm install
 pnpm start
 ```
 
-默认地址：`http://localhost:5173`
+默认地址：`http://localhost:5177`。该端口只用于本地 Vite 开发服务，避免与其他本机项目互抢 `5173-5176`。
 
 ### 2) 启动后端
 
@@ -34,6 +34,8 @@ cd /Users/simon/projects/webapp-template/server
 make init
 make run
 ```
+
+本地后端默认监听 `http://127.0.0.1:8200`，前端开发代理也默认指向这个端口。若同时运行其他派生项目，应让其他项目避开 `8200`，或显式调整各自端口配置。
 
 ### 3) 数据迁移（Ent + Atlas）
 
@@ -92,7 +94,8 @@ bash /Users/simon/projects/webapp-template/scripts/qa/full.sh
 - `init-project.sh` 会扫描模板残留、默认密钥、部署主机、页面标题、模块裁剪点等初始化必改项。
 - 初始化专项说明与“给 AI 的标准输入模板”见：`/Users/simon/projects/webapp-template/docs/project-init.md`
 - 部署模板总览见：`/Users/simon/projects/webapp-template/server/deploy/README.md`
-- 当前模板后台默认只保留账号目录和项目收口说明页；积分 / 订阅 / 邀请码 / 层级等业务模块已从模板主干移除，具体项目若需要，应在派生仓库按需新增。
+- 当前模板后台按 admin preset 保留 antd 简约后台、账号目录、角色权限概览和 basic RBAC 服务端校验；积分 / 订阅 / 邀请码 / 层级等业务模块已从模板主干移除，具体项目若需要，应在派生仓库按需新增。
+- 如果派生项目不是后台项目，可按 `/Users/simon/projects/webapp-template/docs/admin-preset.md` 的边界裁掉 admin preset。
 - 若当前项目明确只用 `compose`，可按需移除 K8s 清单与相关文档；删除文件默认移动到系统回收站。
 
 ## 模板健康检查基线
@@ -133,6 +136,7 @@ bash /Users/simon/projects/webapp-template/scripts/qa/full.sh
 - 前端说明：`/Users/simon/projects/webapp-template/web/README.md`
 - 根级 docs 说明：`/Users/simon/projects/webapp-template/docs/README.md`
 - 新项目初始化：`/Users/simon/projects/webapp-template/docs/project-init.md`
+- Admin preset 与 basic RBAC：`/Users/simon/projects/webapp-template/docs/admin-preset.md`
 
 ### 专题文档
 

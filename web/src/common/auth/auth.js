@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import { jwtDecode } from 'jwt-decode'
 
 export const AUTH_SCOPE = {
@@ -11,6 +12,8 @@ const TOKEN_KEYS = {
   [AUTH_SCOPE.ADMIN]: 'admin_access_token',
 }
 const META_KEYS = ['expires_at', 'token_type', 'user_id', 'username']
+const JSON_META_KEYS = ['roles', 'permissions']
+const AUTH_CHANGED_EVENT = 'webapp-template:auth-changed'
 
 function normalizeScope(scope = AUTH_SCOPE.USER) {
   return scope === AUTH_SCOPE.ADMIN ? AUTH_SCOPE.ADMIN : AUTH_SCOPE.USER
@@ -63,12 +66,42 @@ function setScopedMeta(scope, data) {
       localStorage.removeItem(getScopedMetaKey(scope, key))
     }
   })
+  JSON_META_KEYS.forEach((key) => {
+    const value = data?.[key]
+    if (Array.isArray(value)) {
+      localStorage.setItem(getScopedMetaKey(scope, key), JSON.stringify(value))
+    } else {
+      localStorage.removeItem(getScopedMetaKey(scope, key))
+    }
+  })
 }
 
 function clearScopedMeta(scope) {
   META_KEYS.forEach((key) => {
     localStorage.removeItem(getScopedMetaKey(scope, key))
   })
+  JSON_META_KEYS.forEach((key) => {
+    localStorage.removeItem(getScopedMetaKey(scope, key))
+  })
+}
+
+function notifyAuthChanged(scope) {
+  window.dispatchEvent(
+    new CustomEvent(AUTH_CHANGED_EVENT, {
+      detail: { scope: normalizeScope(scope) },
+    })
+  )
+}
+
+function getScopedJsonMeta(scope, key) {
+  const raw = localStorage.getItem(getScopedMetaKey(scope, key))
+  if (!raw) return []
+  try {
+    const value = JSON.parse(raw)
+    return Array.isArray(value) ? value.map(String) : []
+  } catch {
+    return []
+  }
 }
 
 export function persistAuth(data, scope = AUTH_SCOPE.USER) {
@@ -78,6 +111,14 @@ export function persistAuth(data, scope = AUTH_SCOPE.USER) {
   const normalizedScope = normalizeScope(scope)
   setToken(String(token), normalizedScope)
   setScopedMeta(normalizedScope, data || {})
+  notifyAuthChanged(normalizedScope)
+}
+
+export function updateAuthMeta(data, scope = AUTH_SCOPE.USER) {
+  const normalizedScope = normalizeScope(scope)
+  if (!getToken(normalizedScope)) return
+  setScopedMeta(normalizedScope, data || {})
+  notifyAuthChanged(normalizedScope)
 }
 
 export function getLoginPath(scope = AUTH_SCOPE.USER) {
@@ -91,6 +132,7 @@ export function logout(scope = AUTH_SCOPE.USER) {
   if (normalizedScope === AUTH_SCOPE.USER) {
     localStorage.removeItem(LEGACY_TOKEN_KEY)
   }
+  notifyAuthChanged(normalizedScope)
 
   try {
     sessionStorage.clear()
@@ -118,6 +160,8 @@ export function getCurrentUser(scope = AUTH_SCOPE.USER) {
       id: claims.uid,
       username: claims.uname,
       role: Number(claims.role) === 1 ? 'admin' : 'user',
+      roles: getScopedJsonMeta(normalizedScope, 'roles'),
+      permissions: getScopedJsonMeta(normalizedScope, 'permissions'),
       exp: claims.exp, // 秒级时间戳
     }
   } catch {
@@ -128,4 +172,25 @@ export function getCurrentUser(scope = AUTH_SCOPE.USER) {
 
 export function isLoggedIn(scope = AUTH_SCOPE.USER) {
   return !!getCurrentUser(scope)
+}
+
+export function useCurrentUser(scope = AUTH_SCOPE.USER) {
+  const normalizedScope = normalizeScope(scope)
+  const [user, setUser] = useState(() => getCurrentUser(normalizedScope))
+
+  useEffect(() => {
+    const refresh = (event) => {
+      if (event?.detail?.scope && event.detail.scope !== normalizedScope) return
+      setUser(getCurrentUser(normalizedScope))
+    }
+
+    window.addEventListener(AUTH_CHANGED_EVENT, refresh)
+    window.addEventListener('storage', refresh)
+    return () => {
+      window.removeEventListener(AUTH_CHANGED_EVENT, refresh)
+      window.removeEventListener('storage', refresh)
+    }
+  }, [normalizedScope])
+
+  return user
 }

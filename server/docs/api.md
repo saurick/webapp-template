@@ -1,6 +1,6 @@
 # JSON-RPC API 说明
 
-当前模板默认只保留一套最小的 JSON-RPC 入口，用于承载通用鉴权和后台账号管理能力。
+当前模板默认只保留一套最小的 JSON-RPC 入口，用于承载通用鉴权、后台账号管理和 basic RBAC 基线能力。
 
 ## 统一入口
 
@@ -15,7 +15,7 @@ HTTP 路由：
 
 其中：
 
-- `{url}` 表示业务域，例如 `system`、`auth`、`user`
+- `{url}` 表示业务域，例如 `system`、`auth`、`user`、`rbac`
 - `method` 表示具体动作，例如 `login`、`me`、`list`
 
 ## 当前默认保留的业务域
@@ -44,13 +44,21 @@ HTTP 路由：
 
 用途：管理员查看账号目录，以及启用/禁用用户。
 
+### `rbac`
+
+- `overview`
+
+用途：管理员查看模板内置角色、权限码和 basic RBAC 默认绑定。
+
 ## 鉴权规则
 
 - `system.*` 默认是公开方法
 - 其他业务域默认要求已登录
-- `user.*` 额外要求管理员登录态
+- `user.list` 要求 `admin.user.read`
+- `user.set_disabled` 要求 `admin.user.write`
+- `rbac.overview` 要求 `admin.rbac.read`
 
-说明：管理员鉴权依赖 token 里的角色信息，而不是前端页面路径。
+说明：管理员身份依赖 token 里的角色信息；具体后台操作权限以服务端 RBAC 权限码校验为准，前端页面路径和菜单隐藏不作为授权边界。
 
 ## 默认返回结构
 
@@ -80,10 +88,16 @@ HTTP 路由：
 - `expires_at`
 - `token_type`
 - `issued_at`
+- 管理员登录额外返回 `roles` 与 `permissions`
 
 ### `auth.me`
 
 返回当前用户或当前管理员的最小信息，用于前端恢复登录态。
+
+管理员返回会包含：
+
+- `roles`
+- `permissions`
 
 ### `user.list`
 
@@ -94,6 +108,13 @@ HTTP 路由：
 - `disabled`
 - `created_at`
 - `last_login_at`
+
+### `rbac.overview`
+
+返回：
+
+- `roles`
+- `permissions`
 
 ## 不再属于模板主干的业务能力
 

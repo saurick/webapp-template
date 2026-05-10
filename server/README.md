@@ -24,6 +24,8 @@ make init
 make run
 ```
 
+本地开发默认端口：HTTP `8200`、gRPC `9200`。端口口径以 `configs/dev/config.yaml` 为准。
+
 ## 常用命令
 
 ```bash

@@ -8,6 +8,42 @@ import (
 	"server/internal/data/model/ent"
 )
 
+// The AdminPermissionFunc type is an adapter to allow the use of ordinary
+// function as AdminPermission mutator.
+type AdminPermissionFunc func(context.Context, *ent.AdminPermissionMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f AdminPermissionFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.AdminPermissionMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.AdminPermissionMutation", m)
+}
+
+// The AdminRoleFunc type is an adapter to allow the use of ordinary
+// function as AdminRole mutator.
+type AdminRoleFunc func(context.Context, *ent.AdminRoleMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f AdminRoleFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.AdminRoleMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.AdminRoleMutation", m)
+}
+
+// The AdminRolePermissionFunc type is an adapter to allow the use of ordinary
+// function as AdminRolePermission mutator.
+type AdminRolePermissionFunc func(context.Context, *ent.AdminRolePermissionMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f AdminRolePermissionFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.AdminRolePermissionMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.AdminRolePermissionMutation", m)
+}
+
 // The AdminUserFunc type is an adapter to allow the use of ordinary
 // function as AdminUser mutator.
 type AdminUserFunc func(context.Context, *ent.AdminUserMutation) (ent.Value, error)
@@ -18,6 +54,18 @@ func (f AdminUserFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, e
 		return f(ctx, mv)
 	}
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.AdminUserMutation", m)
+}
+
+// The AdminUserRoleFunc type is an adapter to allow the use of ordinary
+// function as AdminUserRole mutator.
+type AdminUserRoleFunc func(context.Context, *ent.AdminUserRoleMutation) (ent.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f AdminUserRoleFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.AdminUserRoleMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.AdminUserRoleMutation", m)
 }
 
 // The UserFunc type is an adapter to allow the use of ordinary

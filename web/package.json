@@ -4,6 +4,8 @@
   "description": "A modern React web application template with Vite, MobX, and more",
   "license": "MIT",
   "dependencies": {
+    "@ant-design/icons": "^6.1.0",
+    "antd": "^6.3.3",
     "axios": "^1.7.7",
     "crypto-js": "^4.2.0",
     "jwt-decode": "^4.0.0",

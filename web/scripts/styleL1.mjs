@@ -65,7 +65,7 @@ const scenarios = [
     verify: async (page) => {
       await expectText(page, '管理控制台登录')
       await expectRole(page, 'button', '登录')
-      await expectText(page, '用于访问后台账号目录和项目说明页')
+      await expectText(page, '用于访问账号目录和角色权限页')
     },
   },
   {
@@ -76,6 +76,56 @@ const scenarios = [
     verify: async (page) => {
       await expectText(page, '管理控制台登录')
       await expectRole(page, 'button', '登录')
+    },
+  },
+  {
+    name: 'admin-menu-auth-desktop',
+    path: '/admin-menu',
+    viewport: { width: 1280, height: 800 },
+    setup: seedAdminAuth,
+    verify: async (page) => {
+      await expectText(page, 'Admin Preset')
+      await expectText(page, '管理控制台')
+      await expectText(page, '账号目录')
+      await expectText(page, '角色权限')
+    },
+  },
+  {
+    name: 'admin-menu-stale-auth-recovers',
+    path: '/admin-menu',
+    viewport: { width: 1280, height: 800 },
+    setup: seedStaleAdminAuth,
+    verify: async (page) => {
+      await expectText(page, 'super_admin')
+      await expectText(page, '账号目录')
+      await expectText(page, '角色权限')
+      const permissions = await page.evaluate(() =>
+        JSON.parse(window.localStorage.getItem('admin_permissions') || '[]')
+      )
+      assert(permissions.includes('admin.user.read'))
+      assert(permissions.includes('admin.rbac.read'))
+    },
+  },
+  {
+    name: 'admin-accounts-auth-desktop',
+    path: '/admin-accounts',
+    viewport: { width: 1366, height: 900 },
+    setup: seedAdminAuth,
+    verify: async (page) => {
+      await expectText(page, '账号目录')
+      await expectText(page, 'demo_user')
+      await expectText(page, '共 1 条')
+    },
+  },
+  {
+    name: 'admin-rbac-auth-mobile',
+    path: '/admin-rbac',
+    viewport: { width: 390, height: 844 },
+    setup: seedAdminAuth,
+    verify: async (page) => {
+      await expectText(page, '角色权限')
+      await expectText(page, 'super_admin')
+      await expectText(page, 'admin.user.read')
     },
   },
 ]
@@ -121,6 +171,7 @@ function startDevServer() {
       env: {
         ...process.env,
         BROWSER: 'none',
+        VITE_ENABLE_RPC_MOCK: 'true',
       },
       stdio: ['ignore', 'pipe', 'pipe'],
     }
@@ -200,6 +251,9 @@ async function runScenario(browser, scenario) {
   })
 
   try {
+    if (scenario.setup) {
+      await scenario.setup(page)
+    }
     await page.goto(new URL(scenario.path, `${baseURL}/`).toString(), {
       waitUntil: 'domcontentloaded',
     })
@@ -248,6 +302,48 @@ async function expectRole(page, role, name) {
 async function expectText(page, text) {
   const locator = page.getByText(text, { exact: false })
   await locator.first().waitFor({ state: 'visible', timeout: 10_000 })
+}
+
+async function seedAdminAuth(page) {
+  await page.addInitScript(() => {
+    const payload = {
+      uid: 1,
+      uname: 'admin',
+      role: 1,
+      exp: Math.floor(Date.now() / 1000) + 3600,
+    }
+    const token = `${window.btoa(JSON.stringify({ alg: 'none', typ: 'JWT' }))}.${window.btoa(JSON.stringify(payload))}.mock`
+    window.localStorage.setItem('admin_access_token', token)
+    window.localStorage.setItem('admin_user_id', '1')
+    window.localStorage.setItem('admin_username', 'admin')
+    window.localStorage.setItem('admin_roles', JSON.stringify(['super_admin']))
+    window.localStorage.setItem(
+      'admin_permissions',
+      JSON.stringify([
+        'admin.access',
+        'admin.user.read',
+        'admin.user.write',
+        'admin.rbac.read',
+      ])
+    )
+  })
+}
+
+async function seedStaleAdminAuth(page) {
+  await page.addInitScript(() => {
+    const payload = {
+      uid: 1,
+      uname: 'admin',
+      role: 1,
+      exp: Math.floor(Date.now() / 1000) + 3600,
+    }
+    const token = `${window.btoa(JSON.stringify({ alg: 'none', typ: 'JWT' }))}.${window.btoa(JSON.stringify(payload))}.mock`
+    window.localStorage.setItem('admin_access_token', token)
+    window.localStorage.setItem('admin_user_id', '1')
+    window.localStorage.setItem('admin_username', 'admin')
+    window.localStorage.removeItem('admin_roles')
+    window.localStorage.removeItem('admin_permissions')
+  })
 }
 
 async function assertNoHorizontalOverflow(page, scenarioName) {

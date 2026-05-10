@@ -7,7 +7,11 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"server/internal/data/model/ent/adminpermission"
+	"server/internal/data/model/ent/adminrole"
+	"server/internal/data/model/ent/adminrolepermission"
 	"server/internal/data/model/ent/adminuser"
+	"server/internal/data/model/ent/adminuserrole"
 	"server/internal/data/model/ent/user"
 	"sync"
 
@@ -74,8 +78,12 @@ var (
 func checkColumn(t, c string) error {
 	initCheck.Do(func() {
 		columnCheck = sql.NewColumnCheck(map[string]func(string) bool{
-			adminuser.Table: adminuser.ValidColumn,
-			user.Table:      user.ValidColumn,
+			adminpermission.Table:     adminpermission.ValidColumn,
+			adminrole.Table:           adminrole.ValidColumn,
+			adminrolepermission.Table: adminrolepermission.ValidColumn,
+			adminuser.Table:           adminuser.ValidColumn,
+			adminuserrole.Table:       adminuserrole.ValidColumn,
+			user.Table:                user.ValidColumn,
 		})
 	})
 	return columnCheck(t, c)

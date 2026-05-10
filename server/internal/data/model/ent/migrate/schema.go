@@ -8,6 +8,78 @@ import (
 )
 
 var (
+	// AdminPermissionsColumns holds the columns for the "admin_permissions" table.
+	AdminPermissionsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "key", Type: field.TypeString, Size: 96},
+		{Name: "name", Type: field.TypeString, Size: 64},
+		{Name: "group", Type: field.TypeString, Nullable: true, Size: 64, Default: ""},
+		{Name: "description", Type: field.TypeString, Nullable: true, Size: 255, Default: ""},
+		{Name: "builtin", Type: field.TypeBool, Default: false},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+	}
+	// AdminPermissionsTable holds the schema information for the "admin_permissions" table.
+	AdminPermissionsTable = &schema.Table{
+		Name:       "admin_permissions",
+		Columns:    AdminPermissionsColumns,
+		PrimaryKey: []*schema.Column{AdminPermissionsColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "adminpermission_key",
+				Unique:  true,
+				Columns: []*schema.Column{AdminPermissionsColumns[1]},
+			},
+		},
+	}
+	// AdminRolesColumns holds the columns for the "admin_roles" table.
+	AdminRolesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "key", Type: field.TypeString, Size: 64},
+		{Name: "name", Type: field.TypeString, Size: 64},
+		{Name: "description", Type: field.TypeString, Nullable: true, Size: 255, Default: ""},
+		{Name: "builtin", Type: field.TypeBool, Default: false},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+	}
+	// AdminRolesTable holds the schema information for the "admin_roles" table.
+	AdminRolesTable = &schema.Table{
+		Name:       "admin_roles",
+		Columns:    AdminRolesColumns,
+		PrimaryKey: []*schema.Column{AdminRolesColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "adminrole_key",
+				Unique:  true,
+				Columns: []*schema.Column{AdminRolesColumns[1]},
+			},
+		},
+	}
+	// AdminRolePermissionsColumns holds the columns for the "admin_role_permissions" table.
+	AdminRolePermissionsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "admin_role_id", Type: field.TypeInt},
+		{Name: "admin_permission_id", Type: field.TypeInt},
+		{Name: "created_at", Type: field.TypeTime},
+	}
+	// AdminRolePermissionsTable holds the schema information for the "admin_role_permissions" table.
+	AdminRolePermissionsTable = &schema.Table{
+		Name:       "admin_role_permissions",
+		Columns:    AdminRolePermissionsColumns,
+		PrimaryKey: []*schema.Column{AdminRolePermissionsColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "adminrolepermission_admin_role_id_admin_permission_id",
+				Unique:  true,
+				Columns: []*schema.Column{AdminRolePermissionsColumns[1], AdminRolePermissionsColumns[2]},
+			},
+			{
+				Name:    "adminrolepermission_admin_permission_id",
+				Unique:  false,
+				Columns: []*schema.Column{AdminRolePermissionsColumns[2]},
+			},
+		},
+	}
 	// AdminUsersColumns holds the columns for the "admin_users" table.
 	AdminUsersColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
@@ -28,6 +100,31 @@ var (
 				Name:    "adminuser_username",
 				Unique:  true,
 				Columns: []*schema.Column{AdminUsersColumns[1]},
+			},
+		},
+	}
+	// AdminUserRolesColumns holds the columns for the "admin_user_roles" table.
+	AdminUserRolesColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "admin_user_id", Type: field.TypeInt},
+		{Name: "admin_role_id", Type: field.TypeInt},
+		{Name: "created_at", Type: field.TypeTime},
+	}
+	// AdminUserRolesTable holds the schema information for the "admin_user_roles" table.
+	AdminUserRolesTable = &schema.Table{
+		Name:       "admin_user_roles",
+		Columns:    AdminUserRolesColumns,
+		PrimaryKey: []*schema.Column{AdminUserRolesColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "adminuserrole_admin_user_id_admin_role_id",
+				Unique:  true,
+				Columns: []*schema.Column{AdminUserRolesColumns[1], AdminUserRolesColumns[2]},
+			},
+			{
+				Name:    "adminuserrole_admin_role_id",
+				Unique:  false,
+				Columns: []*schema.Column{AdminUserRolesColumns[2]},
 			},
 		},
 	}
@@ -56,7 +153,11 @@ var (
 	}
 	// Tables holds all the tables in the schema.
 	Tables = []*schema.Table{
+		AdminPermissionsTable,
+		AdminRolesTable,
+		AdminRolePermissionsTable,
 		AdminUsersTable,
+		AdminUserRolesTable,
 		UsersTable,
 	}
 )

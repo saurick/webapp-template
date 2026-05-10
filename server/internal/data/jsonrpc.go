@@ -120,6 +120,8 @@ func (d *JsonrpcData) Handle(
 		return d.handleAuth(ctx, method, id, params)
 	case "user":
 		return d.handleUser(ctx, method, id, params)
+	case "rbac":
+		return d.handleRBAC(ctx, method, id, params)
 	default:
 		return id, &v1.JsonrpcResult{
 			Code:    errcode.JSONRPCUnknownURL.Code,
@@ -212,6 +214,8 @@ func (d *JsonrpcData) handleAuth(
 			Data: newDataStruct(map[string]any{
 				"user_id":      admin.ID,
 				"username":     admin.Username,
+				"roles":        admin.Roles,
+				"permissions":  admin.Permissions,
 				"access_token": token,
 				"expires_at":   expireAt.Unix(),
 				"token_type":   "Bearer",
@@ -281,10 +285,12 @@ func (d *JsonrpcData) handleAuth(
 				Code:    errcode.OK.Code,
 				Message: errcode.OK.Message,
 				Data: newDataStruct(map[string]any{
-					"id":       admin.ID,
-					"username": admin.Username,
-					"role":     int(biz.RoleAdmin),
-					"disabled": admin.Disabled,
+					"id":          admin.ID,
+					"username":    admin.Username,
+					"role":        int(biz.RoleAdmin),
+					"disabled":    admin.Disabled,
+					"roles":       admin.Roles,
+					"permissions": admin.Permissions,
 				}),
 			}, nil
 		}
@@ -425,11 +431,53 @@ func newDataStruct(m map[string]any) *structpb.Struct {
 	if m == nil {
 		return nil
 	}
-	s, err := structpb.NewStruct(m)
+	normalized := make(map[string]any, len(m))
+	for k, v := range m {
+		normalized[k] = normalizeStructValue(v)
+	}
+	s, err := structpb.NewStruct(normalized)
 	if err != nil {
 		return nil
 	}
 	return s
+}
+
+func normalizeStructValue(v any) any {
+	switch x := v.(type) {
+	case []string:
+		// structpb 不接受 []string，统一转成 []any，避免局部接口返回 data=null。
+		out := make([]any, 0, len(x))
+		for _, item := range x {
+			out = append(out, item)
+		}
+		return out
+	case []int:
+		out := make([]any, 0, len(x))
+		for _, item := range x {
+			out = append(out, item)
+		}
+		return out
+	case []int64:
+		out := make([]any, 0, len(x))
+		for _, item := range x {
+			out = append(out, item)
+		}
+		return out
+	case []bool:
+		out := make([]any, 0, len(x))
+		for _, item := range x {
+			out = append(out, item)
+		}
+		return out
+	case map[string]any:
+		out := make(map[string]any, len(x))
+		for k, item := range x {
+			out[k] = normalizeStructValue(item)
+		}
+		return out
+	default:
+		return v
+	}
 }
 
 func (d *JsonrpcData) requireLogin(ctx context.Context) (*biz.AuthClaims, *v1.JsonrpcResult) {
@@ -473,6 +521,30 @@ func (d *JsonrpcData) requireAdmin(ctx context.Context) (*biz.AuthClaims, *v1.Js
 	}
 
 	return c, nil
+}
+
+func (d *JsonrpcData) requireAdminPermission(ctx context.Context, permission string) (*biz.AuthClaims, *v1.JsonrpcResult) {
+	c, res := d.requireAdmin(ctx)
+	if res != nil {
+		return nil, res
+	}
+	if permission == "" {
+		return c, nil
+	}
+
+	admin, err := d.getCurrentAdmin(ctx, c)
+	if err != nil {
+		d.log.WithContext(ctx).Errorf("[auth] requireAdminPermission load admin failed permission=%s err=%v", permission, err)
+		return nil, &v1.JsonrpcResult{Code: errcode.Internal.Code, Message: errcode.Internal.Message}
+	}
+	for _, p := range admin.Permissions {
+		if p == permission {
+			return c, nil
+		}
+	}
+
+	d.log.WithContext(ctx).Warnf("[auth] permission denied admin_id=%d permission=%s", c.UserID, permission)
+	return nil, &v1.JsonrpcResult{Code: errcode.PermissionDenied.Code, Message: errcode.PermissionDenied.Message}
 }
 
 var errAdminUsernameMismatch = errors.New("admin username mismatch")
@@ -532,7 +604,11 @@ func (d *JsonrpcData) handleUser(
 		method, id, opUID, opUname, opRole,
 	)
 
-	if _, res := d.requireAdmin(ctx); res != nil {
+	requiredPermission := map[string]string{
+		"list":         biz.PermissionUserRead,
+		"set_disabled": biz.PermissionUserWrite,
+	}[method]
+	if _, res := d.requireAdminPermission(ctx, requiredPermission); res != nil {
 		l.Warnf("[user] requireAdmin denied method=%s id=%s operator_uid=%d code=%d msg=%s",
 			method, id, opUID, res.Code, res.Message,
 		)
@@ -637,6 +713,123 @@ func (d *JsonrpcData) handleUser(
 			Message: fmt.Sprintf("未知用户接口 method=%s", method),
 		}, nil
 	}
+}
+
+func (d *JsonrpcData) handleRBAC(
+	ctx context.Context,
+	method, id string,
+	_ *structpb.Struct,
+) (string, *v1.JsonrpcResult, error) {
+	l := d.log.WithContext(ctx)
+
+	if _, res := d.requireAdminPermission(ctx, biz.PermissionRBACRead); res != nil {
+		l.Warnf("[rbac] require permission denied method=%s id=%s code=%d msg=%s", method, id, res.Code, res.Message)
+		return id, res, nil
+	}
+
+	switch method {
+	case "overview":
+		roles, permissions, err := d.loadRBACOverview(ctx)
+		if err != nil {
+			l.Errorf("[rbac] overview failed id=%s err=%v", id, err)
+			return id, &v1.JsonrpcResult{Code: errcode.Internal.Code, Message: errcode.Internal.Message}, nil
+		}
+		return id, &v1.JsonrpcResult{
+			Code:    errcode.OK.Code,
+			Message: errcode.OK.Message,
+			Data: newDataStruct(map[string]any{
+				"roles":       roles,
+				"permissions": permissions,
+			}),
+		}, nil
+	default:
+		l.Warnf("[rbac] unknown method=%s id=%s", method, id)
+		return id, &v1.JsonrpcResult{
+			Code:    errcode.UnknownMethod.Code,
+			Message: fmt.Sprintf("未知权限接口 method=%s", method),
+		}, nil
+	}
+}
+
+func (d *JsonrpcData) loadRBACOverview(ctx context.Context) ([]any, []any, error) {
+	roleRows, err := d.data.sqldb.QueryContext(
+		ctx,
+		`SELECT ar.id, ar.key, ar.name, ar.description, ar.builtin, COUNT(aur.admin_user_id) AS admin_count
+		 FROM admin_roles ar
+		 LEFT JOIN admin_user_roles aur ON aur.admin_role_id = ar.id
+		 GROUP BY ar.id, ar.key, ar.name, ar.description, ar.builtin
+		 ORDER BY ar.builtin DESC, ar.key ASC`,
+	)
+	if err != nil {
+		return nil, nil, err
+	}
+	defer func() {
+		if err := roleRows.Close(); err != nil {
+			d.log.WithContext(ctx).Warnf("[rbac] close role rows failed err=%v", err)
+		}
+	}()
+
+	roles := make([]any, 0)
+	for roleRows.Next() {
+		var (
+			roleID      int
+			key         string
+			name        string
+			description string
+			builtin     bool
+			adminCount  int
+		)
+		if err := roleRows.Scan(&roleID, &key, &name, &description, &builtin, &adminCount); err != nil {
+			return nil, nil, err
+		}
+		roles = append(roles, map[string]any{
+			"id":          roleID,
+			"key":         key,
+			"name":        name,
+			"description": description,
+			"builtin":     builtin,
+			"admin_count": adminCount,
+		})
+	}
+	if err := roleRows.Err(); err != nil {
+		return nil, nil, err
+	}
+
+	permissionRows, err := d.data.sqldb.QueryContext(
+		ctx,
+		`SELECT key, name, "group", description, builtin
+		 FROM admin_permissions
+		 ORDER BY "group" ASC, key ASC`,
+	)
+	if err != nil {
+		return nil, nil, err
+	}
+	defer func() {
+		if err := permissionRows.Close(); err != nil {
+			d.log.WithContext(ctx).Warnf("[rbac] close permission rows failed err=%v", err)
+		}
+	}()
+
+	permissions := make([]any, 0)
+	for permissionRows.Next() {
+		var key, name, group, description string
+		var builtin bool
+		if err := permissionRows.Scan(&key, &name, &group, &description, &builtin); err != nil {
+			return nil, nil, err
+		}
+		permissions = append(permissions, map[string]any{
+			"key":         key,
+			"name":        name,
+			"group":       group,
+			"description": description,
+			"builtin":     builtin,
+		})
+	}
+	if err := permissionRows.Err(); err != nil {
+		return nil, nil, err
+	}
+
+	return roles, permissions, nil
 }
 
 func (d *JsonrpcData) mapUserAdminError(ctx context.Context, err error) *v1.JsonrpcResult {

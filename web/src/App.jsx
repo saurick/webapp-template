@@ -1,5 +1,5 @@
 // web/src/App.jsx
-import React, { Suspense, useEffect } from 'react'
+import React, { lazy, Suspense, useEffect } from 'react'
 import { Navigate, Route, Routes, useNavigate } from 'react-router-dom'
 import { Helmet } from 'react-helmet-async'
 import { Loading } from '@/common/components/loading'
@@ -9,14 +9,15 @@ import AuthGuard from '@/common/auth/AuthGuard'
 import HomePage from '@/pages/Home'
 import { authBus } from '@/common/auth/authBus'
 import { appAlert } from '@/common/components/modal/alertBridge'
-import AdminUsersPage from '@/pages/AdminUsers'
 import AdminLoginPage from '@/pages/AdminLogin'
-import AdminMenuPage from '@/pages/AdminMenu'
-import AdminGuidePage from '@/pages/AdminGuide/index.jsx'
+import { ADMIN_PERMISSIONS } from '@/common/consts/adminPermissions'
 
 import 'normalize.css/normalize.css'
 
 // const Index = lazy(() => import('@/pages'))
+const AdminMenuPage = lazy(() => import('@/pages/AdminMenu'))
+const AdminUsersPage = lazy(() => import('@/pages/AdminUsers'))
+const AdminRBACPage = lazy(() => import('@/pages/AdminRBAC'))
 
 const App = () => {
   const navigate = useNavigate()
@@ -69,18 +70,22 @@ const App = () => {
           <Route
             path="/admin-accounts"
             element={
-              <AuthGuard requireAdmin>
+              <AuthGuard requireAdmin permission={ADMIN_PERMISSIONS.USER_READ}>
                 <AdminUsersPage />
               </AuthGuard>
             }
           />
           <Route
-            path="/admin-guide"
+            path="/admin-rbac"
             element={
-              <AuthGuard requireAdmin>
-                <AdminGuidePage />
+              <AuthGuard requireAdmin permission={ADMIN_PERMISSIONS.RBAC_READ}>
+                <AdminRBACPage />
               </AuthGuard>
             }
+          />
+          <Route
+            path="/admin-guide"
+            element={<Navigate to="/admin-rbac" replace />}
           />
           <Route
             path="/admin-users"

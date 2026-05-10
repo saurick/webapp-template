@@ -32,7 +32,7 @@ bash scripts/init-project.sh
 - 远端发布主机、目录、compose 文件名
 - `server/deploy/` 下 Compose / K8s 部署模板里的占位符、域名、镜像仓库和命名空间
 - 是否保留 K8s / Jaeger / 远端 SSH 发布脚本
-- 后台默认现仅保留账号目录和项目收口说明页；积分、订阅、层级管理、邀请码等业务模块已从模板主干移除，若项目需要，应在派生项目按真实需求新增
+- 后台默认按 admin preset 保留 antd 简约后台、账号目录、角色权限概览和 basic RBAC 服务端权限校验；积分、订阅、层级管理、邀请码等业务模块已从模板主干移除，若项目需要，应在派生项目按真实需求新增
 
 说明：
 
@@ -56,6 +56,7 @@ bash scripts/qa/full.sh
 - 错误码统一治理与同步校验
 - `pre-commit` / `pre-push` / `doctor` / `fast` / `full` / `strict`
 - 登录、注册、管理员登录、账号目录与通用鉴权骨架
+- antd admin preset 与 basic RBAC 骨架；若当前项目不是后台项目，应按需裁掉后台页面和 admin preset 文案
 - 基本日志 / trace 约束
 
 ## 模板里通常按需裁剪的能力
@@ -99,6 +100,7 @@ bash scripts/qa/full.sh
 前端需求：
 - 是否保留普通用户注册：
 - 是否保留管理员后台：
+- 是否启用 antd admin preset / basic RBAC：
 - 首页要改成什么：
 - 需要哪些主要页面：
 - 登录页 / 注册页 / 后台首页是否重做：

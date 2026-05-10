@@ -6,8 +6,8 @@
 
 它的职责只有两类：
 
-- `ddns-go`：维护 `lab.saurick.space` 的动态 IPv6 真源
-- `Caddy`：统一承接 `*.saurick.space` 的公网 HTTPS 入口，再反代到内网 `Portal / GitLab / Grafana / Observer / ...`
+- `ddns-go`：维护 `lab.saurick.me` 的动态 IPv6 真源
+- `Caddy`：统一承接 `*.saurick.me` 的公网 HTTPS 入口，再反代到内网 `Portal / GitLab / Grafana / Observer / ...`
 
 ## 证书口径
 
@@ -41,6 +41,16 @@
 ssh root@192.168.0.9 'systemctl status --no-pager lab-edge-ddns-go caddy'
 ssh root@192.168.0.9 'ss -ltnp | grep -E ":80|:443|:9876"'
 ssh root@192.168.0.9 'journalctl -u caddy -n 100 --no-pager'
-curl --noproxy '*' -I https://portal.saurick.space
-curl --noproxy '*' -I https://ddns.saurick.space/login
+curl --noproxy '*' -I https://portal.saurick.me
+curl --noproxy '*' -I https://ddns.saurick.me/login
+```
+
+## 更新 Caddy 配置
+
+`/etc/caddy/Caddyfile` 当前关闭了 Caddy admin API（`admin off`），所以不要使用 `systemctl reload caddy`。变更 host map、反代目标或证书入口后，固定按下面顺序执行：
+
+```bash
+ssh root@192.168.0.9 'caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile'
+ssh root@192.168.0.9 'systemctl restart caddy'
+ssh root@192.168.0.9 'systemctl is-active caddy'
 ```

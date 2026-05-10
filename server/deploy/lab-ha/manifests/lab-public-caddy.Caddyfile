@@ -11,135 +11,135 @@
 	}
 }
 
-lab.saurick.space {
+lab.saurick.me {
 	import common_headers
 	reverse_proxy http://192.168.0.108:30089 {
 		header_up Host {host}
 	}
 }
 
-preview.saurick.space {
+preview.saurick.me {
 	import common_headers
 	reverse_proxy http://192.168.0.108:30091 {
 		header_up Host {host}
 	}
 }
 
-portal.saurick.space {
+portal.saurick.me {
 	import common_headers
 	reverse_proxy http://192.168.0.108:30088 {
 		header_up Host {host}
 	}
 }
 
-observer.saurick.space {
+observer.saurick.me {
 	import common_headers
 	reverse_proxy http://192.168.0.156:30088 {
 		header_up Host {host}
 	}
 }
 
-ddns.saurick.space {
+ddns.saurick.me {
 	import common_headers
 	reverse_proxy http://192.168.0.9:9876 {
 		header_up Host {host}
 	}
 }
 
-harbor.saurick.space {
+harbor.saurick.me {
 	import common_headers
 	reverse_proxy http://192.168.0.108:30002 {
 		header_up Host {host}
 	}
 }
 
-grafana.saurick.space {
+lab-grafana.saurick.me {
 	import common_headers
 	reverse_proxy http://192.168.0.108:30081 {
 		header_up Host {host}
 	}
 }
 
-headlamp.saurick.space {
+headlamp.saurick.me {
 	import common_headers
 	reverse_proxy http://192.168.0.108:30087 {
 		header_up Host {host}
 	}
 }
 
-jaeger.saurick.space {
+lab-jaeger.saurick.me {
 	import common_headers
 	reverse_proxy http://192.168.0.108:30686 {
 		header_up Host {host}
 	}
 }
 
-prometheus.saurick.space {
+lab-prometheus.saurick.me {
 	import common_headers
 	reverse_proxy http://192.168.0.108:30090 {
 		header_up Host {host}
 	}
 }
 
-alertmanager.saurick.space {
+alertmanager.saurick.me {
 	import common_headers
 	reverse_proxy http://192.168.0.108:30093 {
 		header_up Host {host}
 	}
 }
 
-longhorn.saurick.space {
+longhorn.saurick.me {
 	import common_headers
 	reverse_proxy http://192.168.0.108:30084 {
 		header_up Host {host}
 	}
 }
 
-hubble.saurick.space {
+hubble.saurick.me {
 	import common_headers
 	reverse_proxy http://192.168.0.108:30085 {
 		header_up Host {host}
 	}
 }
 
-seaweedfs.saurick.space {
+seaweedfs.saurick.me {
 	import common_headers
 	reverse_proxy http://192.168.0.108:30888 {
 		header_up Host {host}
 	}
 }
 
-alertsink.saurick.space {
+alertsink.saurick.me {
 	import common_headers
 	reverse_proxy http://192.168.0.108:30086 {
 		header_up Host {host}
 	}
 }
 
-gitlab.saurick.space {
+lab-gitlab.saurick.me {
 	import common_headers
 	reverse_proxy http://192.168.0.108:8929 {
 		header_up Host {host}
 		# GitLab 需要把 session cookie 扩到父域，Portal 才能复用同一浏览器登录态。
-		header_down Set-Cookie "$" "; Domain=.saurick.space"
+		header_down Set-Cookie "$" "; Domain=.saurick.me"
 	}
 }
 
-s3.saurick.space {
+s3.saurick.me {
 	import common_headers
 	reverse_proxy http://192.168.0.108:30333 {
 		header_up Host {host}
 	}
 }
 
-app.saurick.space {
+app.saurick.me {
 	import common_headers
 	reverse_proxy http://192.168.0.108:32668 {
 		header_up Host app.192.168.0.108.nip.io
 	}
 }
 
-argocd.saurick.space {
+argocd.saurick.me {
 	import common_headers
 	reverse_proxy https://192.168.0.108:30443 {
 		transport http {

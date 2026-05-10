@@ -6,6 +6,7 @@ import { resolve } from 'path'
 export default defineConfig(({ command, mode }) => {
   // 读取 .env.* 文件
   const env = loadEnv(mode, process.cwd(), '')
+  const apiProxyTarget = env.VITE_API_PROXY_TARGET || 'http://127.0.0.1:8200'
 
   const isProd = mode === 'production'
   const isDev = mode === 'development'
@@ -48,11 +49,16 @@ export default defineConfig(({ command, mode }) => {
           chunkFileNames: 'assets/[name].[hash].js',
           assetFileNames: 'assets/[name].[hash].[ext]',
 
-          // 粗粒度拆分：react 等进 vendors，其余 node_modules 进 vendor
+          // 后台 preset 的 antd 体积较大，单独拆包，避免用户端首屏默认加载后台依赖。
           manualChunks(id) {
             if (id.includes('node_modules')) {
               if (
-                /[\\/]node_modules[\\/](react|react-dom|react-router|react-router-dom|antd|mobx)/.test(
+                /[\\/]node_modules[\\/](antd|@ant-design|rc-[^\\/]+)/.test(id)
+              ) {
+                return 'admin-vendor'
+              }
+              if (
+                /[\\/]node_modules[\\/](react|react-dom|react-router|react-router-dom|mobx)/.test(
                   id
                 )
               ) {
@@ -89,12 +95,13 @@ export default defineConfig(({ command, mode }) => {
 
     server: {
       host: '0.0.0.0', // 监听所有地址，方便局域网测试
-      port: 5175,
+      port: 5177,
+      strictPort: true,
       open: true,
       proxy: {
-        // 本地需与 simulator/trade 并行开发，模板 dev 后端口径固定到 8200，避免继续撞占 8000。
+        // 默认跟随模板后端 8200；多项目并行时可用 VITE_API_PROXY_TARGET 显式覆盖。
         '/rpc': {
-          target: 'http://localhost:8200',
+          target: apiProxyTarget,
           changeOrigin: true,
         },
       },
