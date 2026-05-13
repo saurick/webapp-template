@@ -95,6 +95,7 @@
 
 - 只要本轮变更触达 `server/internal/data/model/migrate/*`、`server/internal/data/model/schema/*`、`server/internal/data/model/ent/*`，或服务端新逻辑开始依赖新表 / 新列 / 新索引，发布前必须核对目标环境 migration 状态，不能只看代码已经生成了 migration 文件。
 - 仅有 migration 文件纳入版本管理还不够；若目标库仍有 pending migration，默认禁止继续发布依赖该 schema 的服务版本，除非同一轮先完成 apply。
+- 线上 / 低配服务器执行 Atlas migration 时，Atlas 是宿主机级运维工具，固定使用 `/usr/local/bin/atlas`；禁止用 `arigaio/atlas:*` 临时容器执行 migration，也不要把 Atlas 写进业务 Compose。migration 目录随 release 上传，执行时使用宿主机可达 DSN 并用 `flock /tmp/atlas-migrate.lock` 串行化。
 - 模板仓库的 `publish_server.sh` 若已提供线上 migration 检查或 apply 能力，优先走脚本默认门禁；不要把“先发代码、再手工补库”的高风险流程继续留给派生项目。
 - 发布后 smoke 不能只停留在 `healthz/readyz/首页`；若本轮功能依赖新 schema，至少补一条命中新表 / 新列链路的真实业务 RPC、页面回归或只读查询，确认不是“服务活着，但业务一进来就因缺表报错”。
 
@@ -137,6 +138,7 @@
 
 - `server/deploy/compose/prod` 继续是单机/单宿主机的 `Compose` 主路径，不适用 `lab-ha` 这套 Helm 规则；不要因为看到项目级部署约定文档，就反推 Compose 也需要 Helm 化。
 - 单机/单宿主机目标默认按低配服务器处理：部署时必须在本地或 CI 构建并打包镜像，再上传到服务器；服务器只负责 `docker load`、`docker compose up`、migration 与部署后检查，禁止在服务器上执行 `docker build`、`pnpm build`、`go build`、`make build_server` 等重构建步骤。
+- Compose 模板的线上 migration 主路径是宿主机 `/usr/local/bin/atlas`，不是 Atlas Docker 镜像；派生项目不得把 `arigaio/atlas:*` 加回发布脚本或 Compose。
 - 多项目低配 Docker 宿主机发布完成、健康检查和必要回归通过后，应清理未被任何容器使用的旧镜像和构建缓存：优先执行 `docker image prune -a -f` 与 `docker builder prune -f`；清理前后记录 `df -h /`、`docker system df`、`docker ps --format '{{.Names}} {{.Status}} {{.Image}}'`。禁止在发布清理中执行 `docker system prune --volumes`、`docker volume prune`，也禁止删除 `/data`、数据库目录、compose `.env`、上传目录或运行中容器依赖的镜像。若需要保留回滚能力，应至少保留当前运行版本，磁盘允许时再额外保留上一版镜像。
 - 先判断当前改动目标的主路径：模板默认骨架走 `Kustomize`，`server/deploy/lab-ha` 的第三方平台组件与实验业务部署走 `Helm`。
 - `server/deploy/lab-ha` 内同一资源禁止长期并存 `Helm / Kustomize / 裸 YAML / 现场 patch` 多个主路径；应急 patch 允许先止血，但同一轮必须回收到仓库真源，并更新 `progress.md`。

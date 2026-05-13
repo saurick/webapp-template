@@ -4,6 +4,13 @@
 - 2026-04 到 2026-05-03 早前流水快照：`docs/archive/progress-2026-04-to-2026-05-03-pre-admin-preset.md`。
 - 当前文件只保留近期活跃事项和后续新增记录；归档文件只作追溯线索，不作为当前正式真源。
 
+## 2026-05-13 22:14
+
+- 完成：将 Compose 模板的线上 Atlas migration 规则收口到 `AGENTS.md`、`docs/deployment-conventions.md`、`server/deploy/README.md` 和 `server/deploy/compose/prod/README.md`：低配服务器使用宿主机 `/usr/local/bin/atlas` 与 `flock /tmp/atlas-migrate.lock`，禁止 `arigaio/atlas:*` 临时容器和 Compose 内 Atlas。
+- 完成：`server/deploy/compose/prod/migrate_online.sh` 已从 Docker Atlas 容器改为宿主机 Atlas 执行，默认从 PostgreSQL 容器端口绑定推导宿主机端口，支持 `ATLAS_BIN / POSTGRES_HOST_PORT / MIGRATION_LOCK_FILE` 覆盖，后续派生项目不会继续生成 Atlas Docker 迁移主路径。
+- 下一步：如继续完善模板发布脚本，可把远端 Atlas 版本检测、端口可达性和 migration lock 纳入 `publish_server.sh` preflight。
+- 阻塞/风险：本轮未连接任何线上库执行 migration，只更新模板规则、runbook 和脚本主路径；已派生出去但未同步模板更新的老项目仍需单独收口。
+
 ## 2026-05-10 00:30
 
 - 完成：补充 `AGENTS.md` 的多项目低配 Docker 宿主机发布后清理约束，明确发布完成、健康检查和必要回归通过后，只清理未被任何容器使用的旧镜像与构建缓存，优先使用 `docker image prune -a -f` 与 `docker builder prune -f`；清理前后记录磁盘、Docker 占用和运行容器状态，并禁止清理 volume、数据库目录、compose `.env`、上传目录或运行中容器依赖镜像。

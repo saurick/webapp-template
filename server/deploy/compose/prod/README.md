@@ -8,7 +8,7 @@
 - `.env.example`：路径、端口、镜像和数据库参数占位
 - `deploy_server.sh`：远端宿主机增量发布脚本
 - `publish_server.sh`：本地 build + save + rsync + 远端部署串联脚本
-- `migrate_online.sh`：通过临时 Atlas 容器执行迁移
+- `migrate_online.sh`：通过宿主机 `/usr/local/bin/atlas` 执行迁移
 
 ## 快速开始
 
@@ -148,8 +148,11 @@ sh migrate_online.sh --apply
 export COMPOSE_FILE=/path/to/compose.yml
 export MIG_DIR=/path/to/server/internal/data/model/migrate
 export POSTGRES_SERVICE=postgres
-export DB_URL='postgres://postgres:***@postgres:5432/test_database_atlas?sslmode=disable'
-export ATLAS_IMAGE=arigaio/atlas:latest
+export POSTGRES_HOST=127.0.0.1
+export POSTGRES_HOST_PORT=5433
+export DB_URL='postgres://postgres:***@127.0.0.1:5433/test_database_atlas?sslmode=disable'
+export ATLAS_BIN=/usr/local/bin/atlas
+export MIGRATION_LOCK_FILE=/tmp/atlas-migrate.lock
 ```
 
 ## 说明
@@ -159,5 +162,5 @@ export ATLAS_IMAGE=arigaio/atlas:latest
 - 模板默认预算按 4G 单机收口：`PostgreSQL 512m + Jaeger 128m + App 192m`；如果派生项目更重，再通过 `.env` 抬高对应内存变量。
 - `POSTGRES_DSN`、`TRACE_ENDPOINT` 默认应保持 `postgres:5432`、`jaeger:4318`；只有接外部中间件或迁移排障时才建议改为外部地址。
 - `Jaeger` 仅作为可选模板依赖保留；若项目不需要自带 tracing 存储，可直接删掉该服务和对应端口。
-- `migrate_online.sh` 通过临时 Atlas 容器执行迁移，不依赖业务容器内安装 `atlas`。
+- `migrate_online.sh` 通过宿主机 Atlas 执行迁移，不依赖业务容器内安装 `atlas`，也不拉取 Atlas Docker 镜像；生产 / 低配服务器应预装 `/usr/local/bin/atlas`。
 - 这套模板更偏“单项目单机 / 单台服务器”场景；如果派生项目走 K8s，请优先使用 `server/deploy/dev`、`server/deploy/prod` 下的清单模板。

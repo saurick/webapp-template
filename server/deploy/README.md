@@ -4,6 +4,8 @@
 
 Compose 单机部署默认面向低配服务器：服务器只负责加载已构建镜像、启动服务、执行 migration 与部署后检查；镜像应在本地开发机或 CI 构建并上传，禁止在服务器上执行 `docker build`、`pnpm build`、`go build`、`make build_server` 等重构建步骤。
 
+Compose 线上 migration 默认使用宿主机 `/usr/local/bin/atlas`，并通过 `flock /tmp/atlas-migrate.lock` 串行化；不要拉起 `arigaio/atlas:*` 临时容器，也不要把 Atlas 加进业务 Compose。派生项目如果沿用 `compose/prod`，应把 Atlas 作为服务器基础运维依赖预装。
+
 - `compose/prod/`：单机或单宿主机的 Docker Compose 模板
 - `dev/`、`prod/`：Kubernetes 环境模板，分别对应开发与生产基线
 - `dashboard/`：可选的 Kubernetes Dashboard 辅助清单
