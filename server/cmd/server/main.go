@@ -127,14 +127,6 @@ func overrideFromEnv(dataCfg *conf.Data, baseLogger log.Logger) {
 	if dataCfg.Auth.Admin == nil {
 		dataCfg.Auth.Admin = &conf.Data_Auth_Admin{}
 	}
-	if v := strings.TrimSpace(os.Getenv("WEBAPP_ADMIN_USERNAME")); v != "" {
-		dataCfg.Auth.Admin.Username = v
-		helper.Info("admin username overridden from env")
-	}
-	if v := strings.TrimSpace(os.Getenv("WEBAPP_ADMIN_PASSWORD")); v != "" {
-		dataCfg.Auth.Admin.Password = v
-		helper.Info("admin password overridden from env")
-	}
 }
 
 func buildConfigSources(confPath string) []config.Source {

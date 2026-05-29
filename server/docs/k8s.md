@@ -55,7 +55,7 @@ kubectl apply -k /Users/simon/projects/webapp-template/server/deploy/prod
 
 ## 配置和密钥建议
 
-- `configmap.yaml` 里当前保留的是模板级最小配置骨架；初始化后要替换 DSN、JWT 密钥、管理员密码和 traceName。
+- `configmap.yaml` 里当前保留的是模板级最小配置骨架；初始化后要替换 DSN、JWT 密钥和 traceName。默认管理员用户名和密码只从配置文件读取，不要用运行时环境变量随机覆盖。
 - 生产环境不要长期把敏感配置直接留在 `ConfigMap`，应尽快迁移到 `Secret`、`ExternalSecret` 或你的密钥管理方案。
 - `secret.yaml` 当前只放了镜像仓库凭据占位；请替换成真实 `.dockerconfigjson`。
 

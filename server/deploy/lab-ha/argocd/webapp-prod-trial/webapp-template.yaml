@@ -43,8 +43,8 @@ stringData:
         jwtSecret: REPLACE_ME_FROM_ENV
         jwtExpireSeconds: 604800
         admin:
-          username: REPLACE_ME_FROM_ENV
-          password: REPLACE_ME_FROM_ENV
+          username: admin
+          password: adminadmin
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -100,16 +100,6 @@ spec:
                 secretKeyRef:
                   name: webapp-template-prod-trial-runtime
                   key: jwt_secret
-            - name: WEBAPP_ADMIN_USERNAME
-              valueFrom:
-                secretKeyRef:
-                  name: webapp-template-prod-trial-runtime
-                  key: admin_username
-            - name: WEBAPP_ADMIN_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: webapp-template-prod-trial-runtime
-                  key: admin_password
             - name: TRACE_ENDPOINT
               valueFrom:
                 secretKeyRef:

@@ -45,9 +45,9 @@
 
 - `postgres_dsn`
 - `jwt_secret`
-- `admin_username`
-- `admin_password`
 - `trace_endpoint`（可空；留空时默认走集群内 `jaeger.monitoring.svc.cluster.local:4318`）
+
+管理员用户名和密码来自应用配置里的 `data.auth.admin`，不要在 runtime Secret 里额外设置随机密码覆盖配置。
 
 ## 部署步骤
 

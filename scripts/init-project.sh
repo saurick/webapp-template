@@ -220,8 +220,8 @@ SECRET_HITS="$(
 		server/cmd/gen-password/main.go
 )"
 report_required \
-	"默认密钥 / 管理员密码仍是模板值" \
-	"派生项目必须替换 JWT 密钥、数据库密码、默认管理员密码、镜像仓库凭据与任何示例凭据；这些值只适合模板演示，不应直接进入交付项目。" \
+	"默认密钥 / 配置凭据仍是模板值" \
+	"派生项目必须替换 JWT 密钥、数据库密码、镜像仓库凭据与任何示例凭据；管理员用户名和密码以 config.yaml / config.local.yaml 为唯一真源，若需要改密码只能改配置并明确交付口径，不要新增随机环境变量覆盖。" \
 	"$SECRET_HITS"
 
 DEPLOY_HITS="$(

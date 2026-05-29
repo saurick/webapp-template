@@ -4,7 +4,7 @@ metadata:
   name: your-project-server-config
   namespace: your-project-dev
 data:
-  # 初始化项目后请替换 traceName、DSN、JWT 密钥和默认管理员密码。
+  # 初始化项目后请替换 traceName、DSN 和 JWT 密钥；默认管理员密码只从配置文件读取。
   config.yaml: |
     server:
       http:
