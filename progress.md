@@ -4,6 +4,13 @@
 - 2026-04 到 2026-05-03 早前流水快照：`docs/archive/progress-2026-04-to-2026-05-03-pre-admin-preset.md`。
 - 当前文件只保留近期活跃事项和后续新增记录；归档文件只作追溯线索，不作为当前正式真源。
 
+## 2026-06-04 Go 漏洞依赖升级
+
+- 完成：修复 `govulncheck` 可达漏洞告警，升级 `server/go.mod` 的 Go patch 指令到 `1.25.11` 并显式固定 `toolchain go1.26.4`，同步升级 `go.opentelemetry.io/otel/*` 到 `v1.43.0`、`golang.org/x/net` 到 `v0.53.0` 及相关间接依赖。未改模板初始化规则、部署路径、schema、迁移、前端页面或可观测性代码逻辑。
+- 验证：已执行 `bash scripts/qa/govulncheck.sh`，结果为 0 个可达漏洞；已执行 `cd server && go test ./...`，通过。
+- 下一步：后续模板派生项目可继承当前安全依赖基线；若项目需要继续保守 Go 语言版本，可保留 `go 1.25.11` 并通过 `toolchain` 固定扫描和构建工具链。
+- 阻塞/风险：本轮只处理服务端 Go 依赖安全更新；未运行前端 `style:l1`，因为未触达前端样式、页面或浏览器交互。
+
 ## 2026-05-29 23:07
 
 - 完成：收口派生项目初始化时的默认管理员密码真源。服务端移除 `WEBAPP_ADMIN_USERNAME` / `WEBAPP_ADMIN_PASSWORD` 运行时覆盖入口，prod-trial Helm values、Argo 清单、runtime Secret 示例和 SealedSecret 不再注入管理员账号密码；管理员登录口径回到 `config.yaml` / `config.local.yaml` 的 `data.auth.admin`。同步更新 `docs/project-init.md`、`scripts/init-project.sh`、`server/docs/config.md`、`server/docs/k8s.md`、`server/deploy/dev/configmap.yaml` 和 `server/deploy/lab-ha/docs/PROD_TRIAL.md`，明确初始化时不要生成随机环境变量覆盖管理员密码。
