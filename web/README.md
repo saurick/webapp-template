@@ -14,6 +14,12 @@
 
 日常开发入口优先关注 `src/`、`scripts/` 与 `public/`；`build/`、`output/` 更偏本地产物，不建议当成业务实现入口。
 
+## 前后台入口边界
+
+- 前台普通用户：`/`、`/login`、`/register`，只展示普通用户工作台、登录和注册，不提供后台登录或管理控制台入口。
+- 后台管理员：`/admin-login`、`/admin-menu`、`/admin-accounts`、`/admin-rbac`，使用 antd admin preset 与独立管理员登录态。
+- 两套登录态分别使用 `AUTH_SCOPE.USER` 与 `AUTH_SCOPE.ADMIN`，页面文案和导航也应保持分离，避免把普通用户入口和管理员入口放到同一页面。
+
 ## 启动与构建
 
 ```bash

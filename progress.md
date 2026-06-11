@@ -139,3 +139,18 @@
 - 验证：`rg` 已确认 `reload caddy` 只作为“不要使用”的说明出现，正式命令口径均为 `systemctl restart caddy`；`git diff --check -- server/deploy/lab-ha/docs/PUBLIC_GATEWAY.md server/deploy/lab-ha/docs/LAB_EDGE.md` 通过。
 - 下一步：若要让 Portal live 页面显示新 `saurick.me` 外链，继续按 `lab-platform` Helm/Argo 主路径发布；本轮只修正文档和 runbook，不动 live 服务。
 - 阻塞/风险：无新增 live 风险；当前仍保留上一条记录里的 `lab-jaeger.saurick.me` 本机 resolver 传播盲区，以及无前缀 `gitlab/grafana/jaeger/prometheus.saurick.me` 被另一套 DDNS 占用的边界。
+
+## 2026-06-11 13:47
+
+- 完成：按 Product Design 分离版视觉目标重做前端原型。`/`、`/login`、`/register` 收口为普通用户工作台与前台登录注册，不再展示管理员入口；`/admin-login`、`/admin-menu`、`/admin-accounts`、`/admin-rbac` 收口为独立后台原型，后台控制台集中展示账号目录、RBAC、健康检查、错误码治理、QA 命令和 Compose / lab-ha 部署边界。
+- 完成：保留真实认证与 RPC 主路径，只补强 `VITE_ENABLE_RPC_MOCK=true` 下的本地 dev mock 数据，方便原型预览看到完整账号表和 RBAC 数据；同步更新 `README.md`、`web/README.md`、`docs/admin-preset.md` 里的前后台入口边界，并新增 `design-qa.md` 记录 Product Design QA 结论。
+- 验证：`cd /Users/simon/projects/webapp-template/web && pnpm lint && pnpm css && pnpm test && pnpm style:l1 && pnpm build` 通过；`style:l1` 已覆盖 10 个场景，并新增前后台入口负向断言；浏览器实测 `/admin-login` 通过表单登录进入 `/admin-menu`，前台页面无 `管理员登录`，后台页面无 `注册账号`，1440px 下关键页面无横向溢出，后台卡片标题无裁切。
+- 下一步：若后续要继续提升产品化展示，可按真实派生项目的品牌、业务首页和后台菜单替换当前模板级 mock 文案与静态模块。
+- 阻塞/风险：本轮只重做前端原型与本地 mock 数据，不新增后端业务接口、不改变服务端权限真源，也未发布到线上环境；运行中的本地预览使用 `VITE_ENABLE_RPC_MOCK=true`，仅用于查看原型。
+
+## 2026-06-11 14:09 CST
+
+- 完成：按“极简设计”反馈继续收口前台和后台原型，删除后台状态条、环境标签、说明型模块和菜单页附加描述；用户登录、用户注册、管理员登录继续保持独立页面。
+- 验证：`cd /Users/simon/projects/webapp-template/web && pnpm lint && pnpm css && pnpm test && pnpm style:l1 && pnpm build` 通过；`style:l1` 覆盖 10 个浏览器场景并重新生成原型截图。
+- 下一步：基于当前极简版截图继续做少量删减或视觉微调。
+- 阻塞/风险：当前预览仍使用 dev mock RPC，不代表真实生产数据。

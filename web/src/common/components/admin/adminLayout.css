@@ -1,32 +1,34 @@
 .admin-shell {
   min-height: 100vh;
   color: #172b3f;
-  background: #f4f8f6;
+  background: #f7f9f8;
 }
 
 .admin-shell__sider {
-  background: #f3fbf6;
-  border-right: 1px solid #d8e8df;
+  background: #fff;
+  border-right: 1px solid #dfe7e3;
 }
 
 .admin-shell__brand {
   display: flex;
   gap: 12px;
   align-items: center;
-  height: 88px;
-  padding: 0 16px;
-  color: #173957;
-  background: #f7fcf9;
-  border-bottom: 1px solid #d8e8df;
+  min-height: 84px;
+  padding: 0 18px;
+  color: #172b3f;
+  background: #fff;
+  border-bottom: 1px solid #dfe7e3;
 }
 
 .admin-shell__brand-mark {
   display: grid;
   width: 36px;
   height: 36px;
+  font-size: 20px;
   font-weight: 700;
-  color: #173957;
-  background: #dba640;
+  color: #147a42;
+  background: #eef6f1;
+  border: 1px solid #d3e6da;
   border-radius: 6px;
   place-items: center;
 }
@@ -34,21 +36,19 @@
 .admin-shell__brand-name {
   font-size: 16px;
   font-weight: 800;
-  line-height: 18px;
-  text-transform: uppercase;
+  line-height: 20px;
 }
 
 .admin-shell__brand-subtitle {
-  font-size: 10px;
-  font-weight: 700;
-  line-height: 14px;
-  color: #173957;
-  text-transform: uppercase;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 16px;
+  color: #6d7780;
 }
 
 .admin-shell__main {
   min-width: 0;
-  background: #f4f8f6;
+  background: #f7f9f8;
 }
 
 .admin-shell .ant-layout,
@@ -63,35 +63,36 @@
 }
 
 .admin-shell .ant-layout-sider-children {
-  background: #f3fbf6;
+  background: #fff;
 }
 
 .admin-shell .ant-menu {
-  padding: 18px 14px;
+  padding: 14px 10px;
   color: #172b3f;
   background: transparent;
   border-inline-end: 0;
 }
 
 .admin-shell .ant-menu-item {
-  height: 42px;
-  margin: 5px 0;
+  height: 44px;
+  margin: 6px 0;
   padding-inline: 16px;
   color: #172b3f;
-  border-radius: 8px;
+  border-radius: 6px;
 }
 
 .admin-shell .ant-menu-item .ant-menu-item-icon {
-  color: #172b3f;
+  color: #6d7780;
 }
 
+.admin-shell .ant-menu-item:hover,
 .admin-shell .ant-menu-item-selected {
-  color: #2f9348;
-  background: #c4d0c2;
+  color: #147a42;
+  background: #eef6f1;
 }
 
 .admin-shell .ant-menu-item-selected .ant-menu-item-icon {
-  color: #2f9348;
+  color: #147a42;
 }
 
 .admin-shell__header {
@@ -100,20 +101,15 @@
   align-items: center;
   justify-content: space-between;
   height: auto;
-  min-height: 88px;
-  padding: 16px 28px;
+  min-height: 76px;
+  padding: 14px 24px;
   line-height: 1.4;
   background: #fff;
-  border-bottom: 1px solid #d8e5e8;
+  border-bottom: 1px solid #d8e5df;
 }
 
 .admin-shell__title-block {
   min-width: 0;
-}
-
-.admin-shell__header > .ant-space {
-  min-width: 0;
-  max-width: 100%;
 }
 
 .admin-shell__title-block .ant-typography {
@@ -121,43 +117,29 @@
   color: #172b3f;
 }
 
+.admin-shell__header > .ant-space {
+  min-width: 0;
+  max-width: 100%;
+}
+
 .admin-shell__user {
   display: inline-block;
   max-width: 180px;
   overflow: hidden;
+  font-weight: 700;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .admin-shell__content {
   min-width: 0;
-  padding: 24px;
-}
-
-.admin-shell__page-heading {
-  padding: 28px;
-  margin-bottom: 18px;
-  background: #fff;
-  border: 1px solid #d8e5e8;
-  border-radius: 12px;
-  box-shadow: 0 8px 18px rgb(31 58 77 / 6%);
-}
-
-.admin-shell__page-heading .ant-typography {
-  margin: 0;
-  color: #172b3f;
-}
-
-.admin-shell__page-heading .ant-typography-secondary {
-  display: block;
-  margin-top: 10px;
-  color: #6d7780;
+  padding: 18px 20px 24px;
 }
 
 .admin-shell .ant-card {
-  border-color: #d8e5e8;
-  border-radius: 12px;
-  box-shadow: 0 8px 18px rgb(31 58 77 / 6%);
+  border-color: #d8e5df;
+  border-radius: 8px;
+  box-shadow: none;
 }
 
 .admin-shell .ant-card-head {
@@ -185,17 +167,28 @@
 }
 
 .admin-shell .ant-btn-primary {
-  background: #2f9348;
-  box-shadow: 0 8px 18px rgb(47 147 72 / 16%);
+  background: #147a42;
+  box-shadow: 0 8px 18px rgb(20 122 66 / 16%);
 }
 
 .admin-shell .ant-btn-primary:not(:disabled):hover {
-  background: #267d3c;
+  background: #106d3a;
 }
 
 .admin-page-stack {
   display: grid;
-  gap: 16px;
+  gap: 14px;
+}
+
+.admin-section-title {
+  margin: 0 0 14px;
+  font-size: 18px;
+  font-weight: 700;
+  color: #172b3f;
+}
+
+.admin-muted {
+  color: #6d7780;
 }
 
 @media (max-width: 640px) {
@@ -216,9 +209,5 @@
 
   .admin-shell__content {
     padding: 16px;
-  }
-
-  .admin-shell__page-heading {
-    padding: 20px;
   }
 }

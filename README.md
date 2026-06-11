@@ -94,6 +94,7 @@ bash /Users/simon/projects/webapp-template/scripts/qa/full.sh
 - `init-project.sh` 会扫描模板残留、默认密钥、部署主机、页面标题、模块裁剪点等初始化必改项。
 - 初始化专项说明与“给 AI 的标准输入模板”见：`/Users/simon/projects/webapp-template/docs/project-init.md`
 - 部署模板总览见：`/Users/simon/projects/webapp-template/server/deploy/README.md`
+- 当前模板前台与后台入口分离：`/`、`/login`、`/register` 只承载普通用户工作台与注册登录；后台从 `/admin-login` 进入，登录后访问 `/admin-menu`、`/admin-accounts`、`/admin-rbac`。
 - 当前模板后台按 admin preset 保留 antd 简约后台、账号目录、角色权限概览和 basic RBAC 服务端校验；积分 / 订阅 / 邀请码 / 层级等业务模块已从模板主干移除，具体项目若需要，应在派生仓库按需新增。
 - 如果派生项目不是后台项目，可按 `/Users/simon/projects/webapp-template/docs/admin-preset.md` 的边界裁掉 admin preset。
 - 若当前项目明确只用 `compose`，可按需移除 K8s 清单与相关文档；删除文件默认移动到系统回收站。

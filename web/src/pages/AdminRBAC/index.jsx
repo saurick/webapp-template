@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
-import { Card, Col, Row, Table, Tag, Typography } from 'antd'
+import { Card, Table, Tag, Typography } from 'antd'
 import AdminLayout from '@/common/components/admin/AdminLayout'
 import { JsonRpc } from '@/common/utils/jsonRpc'
 import { ADMIN_BASE_PATH } from '@/common/utils/adminRpc'
@@ -71,6 +71,7 @@ export default function AdminRBACPage() {
     {
       title: '说明',
       dataIndex: 'description',
+      minWidth: 260,
     },
   ]
 
@@ -95,14 +96,12 @@ export default function AdminRBACPage() {
     {
       title: '说明',
       dataIndex: 'description',
+      minWidth: 260,
     },
   ]
 
   return (
-    <AdminLayout
-      title="角色权限"
-      description="basic RBAC 只提供通用角色、权限码和服务端权限校验，业务数据权限由派生项目扩展。"
-    >
+    <AdminLayout title="角色权限">
       <div className="admin-page-stack">
         {errMsg ? (
           <Card size="small">
@@ -110,24 +109,7 @@ export default function AdminRBACPage() {
           </Card>
         ) : null}
 
-        <Row gutter={[16, 16]}>
-          <Col xs={24} md={12}>
-            <Card>
-              <Typography.Title level={5}>角色总数</Typography.Title>
-              <Typography.Title level={2}>{roles.length}</Typography.Title>
-            </Card>
-          </Col>
-          <Col xs={24} md={12}>
-            <Card>
-              <Typography.Title level={5}>权限码总数</Typography.Title>
-              <Typography.Title level={2}>
-                {permissions.length}
-              </Typography.Title>
-            </Card>
-          </Col>
-        </Row>
-
-        <Card title="后台角色">
+        <Card title="角色">
           <Table
             rowKey="key"
             columns={roleColumns}

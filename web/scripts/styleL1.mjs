@@ -23,9 +23,10 @@ const scenarios = [
     path: '/',
     viewport: { width: 1440, height: 900 },
     verify: async (page) => {
-      await expectHeading(page, '清晰的账号入口，从这里开始')
-      await expectRole(page, 'link', '用户登录')
-      await expectRole(page, 'link', '管理员登录')
+      await expectHeading(page, '欢迎回来，访客')
+      await expectRole(page, 'link', '登录')
+      await expectRole(page, 'link', '注册')
+      await expectNoText(page, '管理员登录')
     },
   },
   {
@@ -33,9 +34,10 @@ const scenarios = [
     path: '/',
     viewport: { width: 390, height: 844 },
     verify: async (page) => {
-      await expectHeading(page, '清晰的账号入口，从这里开始')
-      await expectRole(page, 'link', '用户登录')
-      await expectRole(page, 'link', '管理员登录')
+      await expectHeading(page, '欢迎回来，访客')
+      await expectRole(page, 'link', '登录')
+      await expectRole(page, 'link', '注册')
+      await expectNoText(page, '管理员登录')
     },
   },
   {
@@ -43,9 +45,10 @@ const scenarios = [
     path: '/login',
     viewport: { width: 1280, height: 800 },
     verify: async (page) => {
-      await expectText(page, '欢迎登录')
+      await expectText(page, '用户登录')
       await expectRole(page, 'button', '登录')
-      await expectText(page, '使用已有账号继续访问当前项目')
+      await expectRole(page, 'link', '注册')
+      await expectNoText(page, '管理员登录')
     },
   },
   {
@@ -53,9 +56,9 @@ const scenarios = [
     path: '/register',
     viewport: { width: 390, height: 844 },
     verify: async (page) => {
-      await expectText(page, '创建账号')
+      await expectText(page, '用户注册')
       await expectRole(page, 'button', '注册并登录')
-      await expectText(page, '这里只保留最小注册流程')
+      await expectNoText(page, '管理员登录')
     },
   },
   {
@@ -63,9 +66,10 @@ const scenarios = [
     path: '/admin-login',
     viewport: { width: 390, height: 844 },
     verify: async (page) => {
-      await expectText(page, '管理控制台登录')
-      await expectRole(page, 'button', '登录')
-      await expectText(page, '用于访问账号目录和角色权限页')
+      await expectText(page, '管理员登录')
+      await expectRole(page, 'button', '管理员登录')
+      await expectText(page, '普通用户账号不可登录后台')
+      await expectNoText(page, '用户注册')
     },
   },
   {
@@ -74,8 +78,9 @@ const scenarios = [
     viewport: { width: 1280, height: 800 },
     expectPath: '/admin-login',
     verify: async (page) => {
-      await expectText(page, '管理控制台登录')
-      await expectRole(page, 'button', '登录')
+      await expectText(page, '管理员登录')
+      await expectRole(page, 'button', '管理员登录')
+      await expectNoText(page, '用户注册')
     },
   },
   {
@@ -96,7 +101,7 @@ const scenarios = [
     viewport: { width: 1280, height: 800 },
     setup: seedStaleAdminAuth,
     verify: async (page) => {
-      await expectText(page, 'super_admin')
+      await expectText(page, 'admin')
       await expectText(page, '账号目录')
       await expectText(page, '角色权限')
       const permissions = await page.evaluate(() =>
@@ -114,7 +119,7 @@ const scenarios = [
     verify: async (page) => {
       await expectText(page, '账号目录')
       await expectText(page, 'demo_user')
-      await expectText(page, '共 1 条')
+      await expectText(page, '共 8 条')
     },
   },
   {
@@ -295,13 +300,18 @@ async function expectHeading(page, text) {
 }
 
 async function expectRole(page, role, name) {
-  const locator = page.getByRole(role, { name })
+  const locator = page.getByRole(role, { name }).first()
   await locator.waitFor({ state: 'visible', timeout: 10_000 })
 }
 
 async function expectText(page, text) {
   const locator = page.getByText(text, { exact: false })
   await locator.first().waitFor({ state: 'visible', timeout: 10_000 })
+}
+
+async function expectNoText(page, text) {
+  const count = await page.getByText(text, { exact: false }).count()
+  assert.equal(count, 0, `不应出现文本：${text}`)
 }
 
 async function seedAdminAuth(page) {

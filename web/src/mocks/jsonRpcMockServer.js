@@ -9,6 +9,55 @@ const MOCK_ADMIN_PERMISSIONS = [
   'admin.rbac.read',
 ]
 
+const nowTs = () => Math.floor(Date.now() / 1000)
+
+const MOCK_USERS = [
+  ['admin', false, 3600, 120],
+  ['ops01', false, 7200, 180],
+  ['dev01', false, 86400, 2400],
+  ['dev02', false, 93600, 5400],
+  ['qa01', false, 120000, 9000],
+  ['readonly', true, 220000, 60000],
+  ['demo_user', false, 260000, 1200],
+  ['alice', false, 300000, 8200],
+]
+
+const MOCK_ROLES = [
+  {
+    id: 1,
+    key: 'super_admin',
+    name: '超级管理员',
+    description: '模板内置最高权限角色，初始化管理员默认绑定',
+    builtin: true,
+    admin_count: 1,
+  },
+  {
+    id: 2,
+    key: 'ops_admin',
+    name: '运营管理员',
+    description: '可查看账号目录并执行基础账号操作',
+    builtin: true,
+    admin_count: 2,
+  },
+  {
+    id: 3,
+    key: 'readonly_auditor',
+    name: '只读审计',
+    description: '可查看后台信息，不具备写操作权限',
+    builtin: true,
+    admin_count: 1,
+  },
+]
+
+const MOCK_PERMISSIONS = [
+  ['admin.access', '后台访问', '系统', '允许进入后台控制台'],
+  ['admin.user.read', '查看账号', '账号', '查看普通用户账号目录'],
+  ['admin.user.write', '管理账号', '账号', '启用或禁用普通用户账号'],
+  ['admin.rbac.read', '查看 RBAC', '权限', '查看角色与权限码概览'],
+  ['admin.health.read', '查看健康检查', '运维', '查看 healthz / readyz 状态'],
+  ['admin.deploy.read', '查看部署基线', '部署', '查看 Compose 与 lab-ha 边界'],
+]
+
 function makeMockJwt({ uid = 1, uname = 'admin', role = 1 } = {}) {
   const header = btoa(JSON.stringify({ alg: 'none', typ: 'JWT' }))
   const payload = btoa(
@@ -157,6 +206,20 @@ export function setupJsonRpcMockServer() {
             },
           })
         }
+      } else if (method === 'register') {
+        responseBody = makeJsonRpcSuccess(id, {
+          data: {
+            user_id: 202,
+            username: params.username || 'new-user',
+            access_token: makeMockJwt({
+              uid: 202,
+              uname: params.username || 'new-user',
+              role: 0,
+            }),
+            expires_at: nowTs() + 3600,
+            token_type: 'Bearer',
+          },
+        })
       } else if (method === 'admin_login') {
         responseBody = makeJsonRpcSuccess(id, {
           data: {
@@ -169,7 +232,7 @@ export function setupJsonRpcMockServer() {
               uname: params.username || 'admin',
               role: 1,
             }),
-            expires_at: Math.floor(Date.now() / 1000) + 3600,
+            expires_at: nowTs() + 3600,
             token_type: 'Bearer',
           },
         })
@@ -197,18 +260,19 @@ export function setupJsonRpcMockServer() {
       }
     } else if (domain === 'user') {
       if (method === 'list') {
+        const users = MOCK_USERS.map(
+          ([username, disabled, createdAgo, loginAgo], index) => ({
+            id: index + 1,
+            username,
+            disabled,
+            created_at: nowTs() - createdAgo,
+            last_login_at: nowTs() - loginAgo,
+          })
+        )
         responseBody = makeJsonRpcSuccess(id, {
           data: {
-            users: [
-              {
-                id: 101,
-                username: 'demo_user',
-                disabled: false,
-                created_at: Math.floor(Date.now() / 1000) - 86400,
-                last_login_at: Math.floor(Date.now() / 1000) - 1200,
-              },
-            ],
-            total: 1,
+            users,
+            total: users.length,
             limit: params.limit || 30,
             offset: params.offset || 0,
             search: params.search || '',
@@ -233,23 +297,16 @@ export function setupJsonRpcMockServer() {
       if (method === 'overview') {
         responseBody = makeJsonRpcSuccess(id, {
           data: {
-            roles: [
-              {
-                id: 1,
-                key: 'super_admin',
-                name: '超级管理员',
-                description: '模板内置最高权限角色，初始化管理员默认绑定',
+            roles: MOCK_ROLES,
+            permissions: MOCK_PERMISSIONS.map(
+              ([key, name, group, description]) => ({
+                key,
+                name,
+                group,
+                description,
                 builtin: true,
-                admin_count: 1,
-              },
-            ],
-            permissions: MOCK_ADMIN_PERMISSIONS.map((key) => ({
-              key,
-              name: key,
-              group: key.includes('user') ? '账号' : '系统',
-              description: 'mock 权限码',
-              builtin: true,
-            })),
+              })
+            ),
           },
         })
       } else {

@@ -50,7 +50,7 @@ function getSelectedKey(pathname) {
   return '/admin-menu'
 }
 
-export default function AdminLayout({ title, description, children }) {
+export default function AdminLayout({ title, children }) {
   const navigate = useNavigate()
   const location = useLocation()
   const [logoutOpen, setLogoutOpen] = useState(false)
@@ -118,7 +118,9 @@ export default function AdminLayout({ title, description, children }) {
         width={276}
       >
         <div className="admin-shell__brand">
-          <div className="admin-shell__brand-mark">W</div>
+          <div className="admin-shell__brand-mark">
+            <SafetyOutlined />
+          </div>
           <div>
             <div className="admin-shell__brand-name">Admin Preset</div>
             <div className="admin-shell__brand-subtitle">basic RBAC</div>
@@ -149,15 +151,7 @@ export default function AdminLayout({ title, description, children }) {
             </Button>
           </Space>
         </Header>
-        <Content className="admin-shell__content">
-          <div className="admin-shell__page-heading">
-            <Typography.Title level={3}>{title}</Typography.Title>
-            {description ? (
-              <Typography.Text type="secondary">{description}</Typography.Text>
-            ) : null}
-          </div>
-          {children}
-        </Content>
+        <Content className="admin-shell__content">{children}</Content>
       </Layout>
       <Modal
         title="退出管理员登录"

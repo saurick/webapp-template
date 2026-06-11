@@ -142,6 +142,17 @@ export default function AdminUsersPage() {
       render: (value) => <Typography.Text strong>{value}</Typography.Text>,
     },
     {
+      title: '角色',
+      dataIndex: 'role',
+      width: 110,
+      render: (_, row) => {
+        const name = String(row.username || '')
+        if (name.includes('admin')) return <Tag color="green">管理员</Tag>
+        if (name.includes('ops')) return <Tag color="blue">运维</Tag>
+        return <Tag>用户</Tag>
+      },
+    },
+    {
       title: '状态',
       dataIndex: 'disabled',
       width: 110,
@@ -178,10 +189,7 @@ export default function AdminUsersPage() {
   ]
 
   return (
-    <AdminLayout
-      title="账号目录"
-      description="查看普通用户账号，并按权限启用或禁用账号。"
-    >
+    <AdminLayout title="账号目录">
       <div className="admin-page-stack">
         {errMsg ? (
           <Card size="small">
@@ -189,27 +197,9 @@ export default function AdminUsersPage() {
           </Card>
         ) : null}
 
-        <Card>
-          <Space wrap>
-            <Input
-              allowClear
-              value={searchInput}
-              onChange={(e) => setSearchInput(e.target.value)}
-              onPressEnter={onSearch}
-              placeholder="输入用户名关键字"
-              style={{ width: 260 }}
-            />
-            <Button
-              type="primary"
-              icon={<SearchOutlined />}
-              loading={loading}
-              onClick={onSearch}
-            >
-              搜索
-            </Button>
-            <Button onClick={onClearSearch} disabled={loading}>
-              清空
-            </Button>
+        <Card
+          title="账号列表"
+          extra={
             <Button
               icon={<ReloadOutlined />}
               loading={loading}
@@ -217,16 +207,37 @@ export default function AdminUsersPage() {
             >
               刷新
             </Button>
-          </Space>
-        </Card>
-
-        <Card>
+          }
+        >
+          <div className="mb-4">
+            <Space wrap>
+              <Input
+                allowClear
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+                onPressEnter={onSearch}
+                placeholder="搜索用户名"
+                style={{ width: 240 }}
+              />
+              <Button
+                type="primary"
+                icon={<SearchOutlined />}
+                loading={loading}
+                onClick={onSearch}
+              >
+                搜索
+              </Button>
+              <Button onClick={onClearSearch} disabled={loading}>
+                清空
+              </Button>
+            </Space>
+          </div>
           <Table
             rowKey="id"
             columns={columns}
             dataSource={items}
             loading={loading}
-            scroll={{ x: 920 }}
+            scroll={{ x: 1040 }}
             pagination={{
               current: page,
               pageSize: PAGE_SIZE,
