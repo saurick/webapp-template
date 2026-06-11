@@ -305,8 +305,36 @@ async function expectRole(page, role, name) {
 }
 
 async function expectText(page, text) {
-  const locator = page.getByText(text, { exact: false })
-  await locator.first().waitFor({ state: 'visible', timeout: 10_000 })
+  await page.waitForFunction(
+    (needle) => {
+      const isVisible = (element) => {
+        if (!element) return false
+        const style = window.getComputedStyle(element)
+        const rect = element.getBoundingClientRect()
+        return (
+          style.display !== 'none' &&
+          style.visibility !== 'hidden' &&
+          rect.width > 0 &&
+          rect.height > 0
+        )
+      }
+
+      const walker = document.createTreeWalker(
+        document.body,
+        NodeFilter.SHOW_TEXT
+      )
+      let node = walker.nextNode()
+      while (node) {
+        if (node.nodeValue.includes(needle) && isVisible(node.parentElement)) {
+          return true
+        }
+        node = walker.nextNode()
+      }
+      return false
+    },
+    text,
+    { timeout: 10_000 }
+  )
 }
 
 async function expectNoText(page, text) {

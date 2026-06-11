@@ -13,8 +13,8 @@
   display: flex;
   gap: 12px;
   align-items: center;
-  min-height: 84px;
-  padding: 0 18px;
+  min-height: 76px;
+  padding: 0 16px;
   color: #172b3f;
   background: #fff;
   border-bottom: 1px solid #dfe7e3;
@@ -66,8 +66,15 @@
   background: #fff;
 }
 
+.admin-shell .ant-layout-sider-zero-width-trigger {
+  top: 88px;
+  color: #fff;
+  background: #147a42;
+  border-radius: 0 8px 8px 0;
+}
+
 .admin-shell .ant-menu {
-  padding: 14px 10px;
+  padding: 14px 8px;
   color: #172b3f;
   background: transparent;
   border-inline-end: 0;
@@ -75,7 +82,7 @@
 
 .admin-shell .ant-menu-item {
   height: 44px;
-  margin: 6px 0;
+  margin: 4px 0;
   padding-inline: 16px;
   color: #172b3f;
   border-radius: 6px;
@@ -95,6 +102,11 @@
   color: #147a42;
 }
 
+.admin-shell .ant-layout-sider-collapsed .admin-shell__brand,
+.admin-shell .ant-layout-sider-collapsed .ant-menu {
+  display: none;
+}
+
 .admin-shell__header {
   display: flex;
   gap: 16px;
@@ -102,7 +114,7 @@
   justify-content: space-between;
   height: auto;
   min-height: 76px;
-  padding: 14px 24px;
+  padding: 12px 22px;
   line-height: 1.4;
   background: #fff;
   border-bottom: 1px solid #d8e5df;
@@ -133,7 +145,7 @@
 
 .admin-shell__content {
   min-width: 0;
-  padding: 18px 20px 24px;
+  padding: 20px 22px 26px;
 }
 
 .admin-shell .ant-card {
@@ -144,6 +156,10 @@
 
 .admin-shell .ant-card-head {
   border-color: #edf1ef;
+}
+
+.admin-shell .ant-card-head-title {
+  font-weight: 700;
 }
 
 .admin-shell .ant-statistic-title,
@@ -177,7 +193,45 @@
 
 .admin-page-stack {
   display: grid;
+  gap: 16px;
+}
+
+.admin-entry-card .ant-card-body {
+  position: relative;
+  display: grid;
+  min-height: 120px;
+  grid-template-columns: auto 1fr auto;
   gap: 14px;
+  align-items: center;
+  padding: 24px;
+  overflow: hidden;
+}
+
+.admin-entry-card__icon {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  color: #147a42;
+  background: #eef6f1;
+  border: 1px solid #d3e6da;
+  border-radius: 8px;
+  place-items: center;
+}
+
+.admin-entry-card .ant-typography {
+  margin: 0;
+}
+
+.admin-entry-card__arrow {
+  color: #8a9690;
+}
+
+.admin-table-card .ant-card-body {
+  padding: 20px 24px 18px;
+}
+
+.admin-table-card .ant-table {
+  font-size: 13px;
 }
 
 .admin-section-title {

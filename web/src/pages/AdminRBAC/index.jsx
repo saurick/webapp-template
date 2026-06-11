@@ -60,18 +60,15 @@ export default function AdminRBACPage() {
       title: '管理员数',
       dataIndex: 'admin_count',
       width: 120,
+      responsive: ['md'],
     },
     {
       title: '类型',
       dataIndex: 'builtin',
       width: 110,
+      responsive: ['md'],
       render: (builtin) =>
         builtin ? <Tag color="blue">内置</Tag> : <Tag>自定义</Tag>,
-    },
-    {
-      title: '说明',
-      dataIndex: 'description',
-      minWidth: 260,
     },
   ]
 
@@ -86,17 +83,14 @@ export default function AdminRBACPage() {
       title: '名称',
       dataIndex: 'name',
       width: 160,
+      responsive: ['md'],
     },
     {
       title: '分组',
       dataIndex: 'group',
       width: 120,
+      responsive: ['md'],
       render: (value) => <Tag>{value || '默认'}</Tag>,
-    },
-    {
-      title: '说明',
-      dataIndex: 'description',
-      minWidth: 260,
     },
   ]
 
@@ -112,22 +106,24 @@ export default function AdminRBACPage() {
         <Card title="角色">
           <Table
             rowKey="key"
+            size="middle"
             columns={roleColumns}
             dataSource={roles}
             loading={loading}
             pagination={false}
-            scroll={{ x: 760 }}
+            scroll={{ x: 320 }}
           />
         </Card>
 
         <Card title="权限码">
           <Table
             rowKey="key"
+            size="middle"
             columns={permissionColumns}
             dataSource={permissions}
             loading={loading}
             pagination={false}
-            scroll={{ x: 860 }}
+            scroll={{ x: 320 }}
           />
         </Card>
       </div>

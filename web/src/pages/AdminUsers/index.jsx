@@ -26,7 +26,8 @@ function fmtTs(ts) {
   if (!ts) return '-'
   const d = new Date(Number(ts) * 1000)
   if (Number.isNaN(d.getTime())) return String(ts)
-  return d.toLocaleString()
+  const pad = (value) => String(value).padStart(2, '0')
+  return `${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`
 }
 
 function clampInt(v, fallback = 0) {
@@ -133,18 +134,18 @@ export default function AdminUsersPage() {
     {
       title: 'ID',
       dataIndex: 'id',
-      width: 90,
+      width: 64,
     },
     {
       title: '用户名',
       dataIndex: 'username',
-      minWidth: 180,
+      width: 150,
       render: (value) => <Typography.Text strong>{value}</Typography.Text>,
     },
     {
       title: '角色',
       dataIndex: 'role',
-      width: 110,
+      width: 96,
       render: (_, row) => {
         const name = String(row.username || '')
         if (name.includes('admin')) return <Tag color="green">管理员</Tag>
@@ -155,27 +156,26 @@ export default function AdminUsersPage() {
     {
       title: '状态',
       dataIndex: 'disabled',
-      width: 110,
+      width: 90,
       render: (disabled) =>
         disabled ? <Tag color="red">禁用</Tag> : <Tag color="green">启用</Tag>,
     },
     {
       title: '创建时间',
       dataIndex: 'created_at',
-      width: 190,
+      width: 130,
       render: fmtTs,
     },
     {
       title: '最近登录',
       dataIndex: 'last_login_at',
-      width: 190,
+      width: 130,
       render: fmtTs,
     },
     {
       title: '操作',
       dataIndex: 'disabled',
-      width: 130,
-      fixed: 'right',
+      width: 110,
       render: (disabled, row) => (
         <Switch
           checked={!disabled}
@@ -198,6 +198,7 @@ export default function AdminUsersPage() {
         ) : null}
 
         <Card
+          className="admin-table-card"
           title="账号列表"
           extra={
             <Button
@@ -234,10 +235,11 @@ export default function AdminUsersPage() {
           </div>
           <Table
             rowKey="id"
+            size="middle"
             columns={columns}
             dataSource={items}
             loading={loading}
-            scroll={{ x: 1040 }}
+            scroll={{ x: 820 }}
             pagination={{
               current: page,
               pageSize: PAGE_SIZE,

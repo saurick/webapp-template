@@ -154,3 +154,10 @@
 - 验证：`cd /Users/simon/projects/webapp-template/web && pnpm lint && pnpm css && pnpm test && pnpm style:l1 && pnpm build` 通过；`style:l1` 覆盖 10 个浏览器场景并重新生成原型截图。
 - 下一步：基于当前极简版截图继续做少量删减或视觉微调。
 - 阻塞/风险：当前预览仍使用 dev mock RPC，不代表真实生产数据。
+
+## 2026-06-11 15:34 CST
+
+- 完成：在保持极简文案和前后台分离的前提下优化布局比例。前台首页改为桌面双栏节奏，登录/注册/管理员登录卡片调整宽度、位置和控件间距；后台菜单入口增加清晰图标与箭头，账号表收窄日期和列宽，移动端 RBAC 隐藏非核心列并调整侧栏触发按钮。
+- 验证：`cd /Users/simon/projects/webapp-template/web && pnpm lint && pnpm css && pnpm test && pnpm style:l1 && pnpm build` 通过；已查看桌面首页、用户登录、后台菜单、账号表和移动端 RBAC 截图。
+- 下一步：用户可基于新截图继续指定哪个页面还要更紧凑或更精致。
+- 阻塞/风险：当前仍是 dev mock 原型，未接真实业务数据；本轮未提交推送。

@@ -49,16 +49,17 @@ export default function LoginPage() {
   }
 
   return (
-    <AppShell className="flex items-center justify-center px-5 py-10">
-      <main className="w-full max-w-sm">
-        <Link to="/" className="text-sm text-[#6d7780] hover:text-[#172b3f]">
-          返回首页
-        </Link>
+    <AppShell className="flex items-start justify-center px-5 pb-10 pt-[12vh]">
+      <main className="w-full max-w-[400px]">
+        <section className="rounded-lg border border-[#dfe7e3] bg-white p-8">
+          <Link to="/" className="text-sm text-[#6d7780] hover:text-[#172b3f]">
+            返回首页
+          </Link>
+          <h1 className="mt-8 text-3xl font-semibold text-[#172b3f]">
+            用户登录
+          </h1>
 
-        <section className="mt-5 rounded-md border border-[#dfe7e3] bg-white p-6">
-          <h1 className="text-2xl font-semibold text-[#172b3f]">用户登录</h1>
-
-          <form onSubmit={onSubmit} className="mt-6 space-y-4">
+          <form onSubmit={onSubmit} className="mt-7 space-y-5">
             <div>
               <label className="mb-2 block text-sm font-medium text-[#172b3f]">
                 用户名
@@ -67,7 +68,7 @@ export default function LoginPage() {
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 autoComplete="username"
-                className="w-full rounded-md border border-[#ccd8d2] px-3 py-2.5 text-[#172b3f] outline-none focus:border-[#147a42]"
+                className="w-full rounded-md border border-[#ccd8d2] px-3.5 py-3 text-[#172b3f] outline-none focus:border-[#147a42]"
                 placeholder="请输入用户名"
               />
             </div>
@@ -81,7 +82,7 @@ export default function LoginPage() {
                 onChange={(e) => setPassword(e.target.value)}
                 type="password"
                 autoComplete="current-password"
-                className="w-full rounded-md border border-[#ccd8d2] px-3 py-2.5 text-[#172b3f] outline-none focus:border-[#147a42]"
+                className="w-full rounded-md border border-[#ccd8d2] px-3.5 py-3 text-[#172b3f] outline-none focus:border-[#147a42]"
                 placeholder="请输入密码"
               />
             </div>
@@ -95,7 +96,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={!canSubmit}
-              className={`w-full rounded-md px-4 py-2.5 text-sm font-medium ${
+              className={`w-full rounded-md px-4 py-3 text-sm font-medium ${
                 canSubmit
                   ? 'bg-[#147a42] text-white hover:bg-[#106d3a]'
                   : 'cursor-not-allowed bg-[#dfe7e3] text-[#7d8b84]'
@@ -105,7 +106,7 @@ export default function LoginPage() {
             </button>
           </form>
 
-          <div className="mt-5 text-sm text-[#6d7780]">
+          <div className="mt-6 text-sm text-[#6d7780]">
             没有账号？{' '}
             <Link to="/register" className="font-medium text-[#147a42]">
               注册

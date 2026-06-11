@@ -115,7 +115,7 @@ export default function AdminLayout({ title, children }) {
         className="admin-shell__sider"
         breakpoint="lg"
         collapsedWidth={0}
-        width={276}
+        width={248}
       >
         <div className="admin-shell__brand">
           <div className="admin-shell__brand-mark">
