@@ -164,3 +164,26 @@ export MIGRATION_LOCK_FILE=/tmp/atlas-migrate.lock
 - `Jaeger` 仅作为可选模板依赖保留；若项目不需要自带 tracing 存储，可直接删掉该服务和对应端口。
 - `migrate_online.sh` 通过宿主机 Atlas 执行迁移，不依赖业务容器内安装 `atlas`，也不拉取 Atlas Docker 镜像；生产 / 低配服务器应预装 `/usr/local/bin/atlas`。
 - 这套模板更偏“单项目单机 / 单台服务器”场景；如果派生项目走 K8s，请优先使用 `server/deploy/dev`、`server/deploy/prod` 下的清单模板。
+
+## 发布前门禁
+
+正式发布前先在准备好的运行时 `.env` 上执行产品级 preflight；该命令只检查配置、Compose、migration 脚本和低配部署边界，不执行 migration：
+
+```bash
+cd /Users/simon/projects/webapp-template
+bash scripts/deploy/production-preflight.sh --env-file server/deploy/compose/prod/.env
+```
+
+等价 Make 入口：
+
+```bash
+cd /Users/simon/projects/webapp-template/server
+make production_preflight
+```
+
+部署后可追加运行态检查：
+
+```bash
+cd /Users/simon/projects/webapp-template
+bash scripts/deploy/production-preflight.sh --env-file server/deploy/compose/prod/.env --runtime
+```

@@ -82,6 +82,10 @@ api:
 build:
 	mkdir -p bin/ && go build -ldflags "-X main.Version=$(VERSION)" -o ./bin/ ./...
 
+.PHONY: production_preflight
+production_preflight:
+	@cd "$(GIT_ROOT)" && bash scripts/deploy/production-preflight.sh --env-file server/deploy/compose/prod/.env
+
 .PHONY: build_linux
 build_linux:
 	mkdir -p bin/ && GOOS=linux GOARCH=amd64 go build -ldflags "-X main.Version=$(VERSION)" -o ./bin/ ./...
@@ -316,8 +320,9 @@ image_gc:
 # 部署时就可以一直写 webapp-template-server:dev（或 :latest）
 FIXED_TAG ?= dev
 NODE_BUILDER_IMAGE ?= node:24.14.0
-GO_BUILDER_IMAGE ?= golang:1.25.9
+GO_BUILDER_IMAGE ?= golang:1.25.11
 RUNTIME_BASE_IMAGE ?= alpine:3.21
+PNPM_VERSION ?= 10.13.1
 
 # 构建服务器镜像（在 server/ 目录执行）
 build_server:
@@ -325,6 +330,7 @@ build_server:
 		--build-arg NODE_BUILDER_IMAGE="$(NODE_BUILDER_IMAGE)" \
 		--build-arg GO_BUILDER_IMAGE="$(GO_BUILDER_IMAGE)" \
 		--build-arg RUNTIME_BASE_IMAGE="$(RUNTIME_BASE_IMAGE)" \
+		--build-arg PNPM_VERSION="$(PNPM_VERSION)" \
 		--build-arg GIT_SHA="$(GIT_SHA)" \
 		--build-arg GIT_SHA_SHORT="$(GIT_SHA_SHORT)" \
 		--build-arg BUILD_TIME="$(BUILD_TIME)" \

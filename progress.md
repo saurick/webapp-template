@@ -4,6 +4,35 @@
 - 2026-04 到 2026-05-03 早前流水快照：`docs/archive/progress-2026-04-to-2026-05-03-pre-admin-preset.md`。
 - 当前文件只保留近期活跃事项和后续新增记录；归档文件只作追溯线索，不作为当前正式真源。
 
+## 2026-06-15 21:50 CST
+
+- 完成：新增 `scripts/deploy/production-preflight.sh` 和 `server/Makefile` 的 `production_preflight` 入口，作为 Compose 单机发布前门禁；检查运行时 `.env`、占位 secret、镜像 tag、Compose 禁止 `build:`、Jaeger loopback、宿主机 Atlas migration 和可选运行态 `/healthz` / `/readyz`。
+- 完成：将 prod Compose 的 Jaeger 端口默认收口到 `JAEGER_BIND_ADDR=127.0.0.1`，并把 `WEBAPP_JWT_SECRET` 纳入运行时 env 注入和 `.env.example`。
+- 完成：同步 `scripts/README.md` 与 `server/deploy/compose/prod/README.md` 的 preflight 入口说明。
+- 验证：`bash scripts/deploy/production-preflight.sh --example` 通过；`.env.example` 作为生产 env 被 placeholder 门禁阻断；临时非占位 env 通过静态 preflight；`make -n production_preflight`、`bash scripts/qa/secrets.sh`、`git diff --check` 通过。
+- 下一步：真实发布前先替换 `server/deploy/compose/prod/.env` 并执行 `cd server && make production_preflight`；部署后追加 `--runtime` 留存运行态证据。
+- 阻塞/风险：本轮未连接真实生产 `.env` 或运行中 Compose，因此没有执行 `--runtime`。
+
+## 2026-06-11 saurick demo 白屏修复
+
+- 完成：修复 `https://webapp-template.saurick.me/` 首页空白页。根因是 `web/vite.config.mjs` 的手动 `manualChunks` 产生 `vendors -> vendor -> admin-vendor -> vendors` 循环依赖，`admin-vendor` 在 React exports 初始化前执行 `createContext` 导致首屏启动失败；已删除这段手动分包，让 Vite/Rollup 按真实依赖图拆包。
+- 完成：同步修正 Docker web-builder 未复制 `web/.env.production` 的问题，避免镜像内 `index.html` 保留 `%VITE_APP_TITLE%` 占位标题；重新构建并部署镜像 `webapp-template-server:20260611T165112-2b036589-local` 到 133，当前 `webapp-template-demo-server` 已使用该版本运行。
+- 验证：本地执行 `cd web && pnpm build`，产物首页不再 preload 旧的 `admin-vendor/vendor/vendors` 三角依赖；`cd web && pnpm style:l1` 通过 10 个浏览器场景；`cd web && pnpm lint && pnpm css && pnpm test` 通过；`git diff --check` 与 `bash scripts/qa/fast.sh` 通过。
+- 验证：133 上 `curl http://127.0.0.1:8500/healthz` 返回 `ok`，`/readyz` 返回 `ready`；公网 `https://webapp-template.saurick.me/` 返回新 `index.html` 与 `Project Workspace` 标题；in-app Browser 打开公网首页已渲染“项目工作台 / 欢迎回来，访客”，console error/warn 为空。
+- 验证：发布后执行 `docker image prune -a -f` 与 `docker builder prune -f`，回收旧 `20260611T154843` 镜像约 `42.14MB`；清理后 `/` 分区仍为 `98G/24G/70G/26%`，`docker system df` 显示镜像 `19/19 active`、可回收 `0B`，`webapp-template-demo-*` 与 `home-nav` 容器状态正常。
+- 下一步：如需把本轮部署修复纳入版本库，等待用户确认后再提交 / 推送；home-nav 的 `sun-64-webapp-template` runtime 配置仍在 133 的 `/opt/home-nav/services.yaml`，未写入本仓。
+- 阻塞/风险：未使用真实管理员账号完整回归后台登录后的表格页面；本轮已通过生产构建、首页浏览器回归和本地 `style:l1` 覆盖默认页、登录页、注册页与未登录后台重定向。
+
+## 2026-06-11 133 demo 部署
+
+- 完成：将 `webapp-template` 作为隔离 demo 实例部署到 `192.168.0.133`，远端目录为 `/opt/webapp-template-demo`，数据目录为 `/data/webapp-template-demo/postgres`，容器组为 `webapp-template-demo-{server,postgres,jaeger}`；应用端口使用 `8500/9500`，PostgreSQL 使用 `5436`，Jaeger 使用独立端口组，避免和现有 `openai-oauth-api-service / plush-toy-erp / trade-erp / home-nav` 冲突。
+- 完成：本地构建并上传镜像 `webapp-template-server:20260611T154843-2b036589-local`，远端只执行 `docker load`、Compose 启动、宿主机 Atlas migration 与健康检查；未在 133 上执行构建命令。部署过程中修正 `server/Dockerfile` 与 `server/Makefile` 的构建基线：Go builder 从 `golang:1.25.9` 同步到 `golang:1.25.11`，并固定 `PNPM_VERSION=10.13.1`，避免 Docker build 漂到最新 pnpm 后阻断 `esbuild` build script。
+- 完成：133 新增 `frpc-saurick-webapp-template`，映射 `127.0.0.1:8500 -> 8.218.4.199:18224`；8.218.4.199 的 active `/etc/frp/frps.toml` 已允许 `18224`，`/etc/nginx/conf.d/saurick-tools.conf` 已新增 `webapp-template.saurick.me -> saurick_18224`，共享证书覆盖 `*.saurick.me`。
+- 验证：`BUILD_TIME=20260611T154843 FIXED_TAG=saurick-demo make build_server` 通过；133 上 `migrate_online.sh --apply` 已应用到 `20260503143604`；`curl http://127.0.0.1:8500/healthz` 返回 `ok`，`/readyz` 返回 `ready`，首页返回 `200`；强制解析 `webapp-template.saurick.me:443 -> 8.218.4.199` 时，严格 TLS 校验通过，`/healthz` 返回 `ok`，`/readyz` 返回 `ready`，首页返回 `200`，HTTP 80 会 301 到 HTTPS；Cloudflare DoH 已返回 `webapp-template.saurick.me A 8.218.4.199`；`git diff --check` 与 `bash scripts/qa/fast.sh` 通过。
+- 验证：发布后按低配宿主机约定执行 `docker image prune -a -f` 与 `docker builder prune -f`，清理前后 `/` 分区均为 `98G/24G/70G/26%`，`docker system df` 显示镜像 `19/19 active`、可回收 `0B`，builder cache `0B`，运行容器未受影响。
+- 下一步：部署入口已接入 home-nav；若后续需要长期保留 demo，应再决定是否提交本仓构建修复和是否把 home-nav runtime 配置同步回其代码仓。
+- 阻塞/风险：首次部署后的白屏问题已在同日后续记录修复；当前仍未把 133 的 home-nav runtime 配置写入本仓。
+
 ## 2026-06-04 Go 漏洞依赖升级
 
 - 完成：修复 `govulncheck` 可达漏洞告警，升级 `server/go.mod` 的 Go patch 指令到 `1.25.11` 并显式固定 `toolchain go1.26.4`，同步升级 `go.opentelemetry.io/otel/*` 到 `v1.43.0`、`golang.org/x/net` 到 `v0.53.0` 及相关间接依赖。未改模板初始化规则、部署路径、schema、迁移、前端页面或可观测性代码逻辑。
@@ -161,3 +190,10 @@
 - 验证：`cd /Users/simon/projects/webapp-template/web && pnpm lint && pnpm css && pnpm test && pnpm style:l1 && pnpm build` 通过；已查看桌面首页、用户登录、后台菜单、账号表和移动端 RBAC 截图。
 - 下一步：用户可基于新截图继续指定哪个页面还要更紧凑或更精致。
 - 阻塞/风险：当前仍是 dev mock 原型，未接真实业务数据；本轮未提交推送。
+
+## 2026-06-15 17:40 CST
+
+- 完成：先在模板项目验证“JSON-RPC 从 data 层迁出”。已将 JSON-RPC 协议分发、权限检查和结果映射从 `server/internal/data/jsonrpc.go` 迁到 `server/internal/service/jsonrpc_dispatch.go`；`JsonrpcService` 直接持有 service 层 dispatcher，不再通过旧 `biz.JsonrpcUsecase -> data.JsonrpcData` pass-through。`data` 层只保留 repo / DB 访问，新增 `rbacRepo` 承担 RBAC overview 查询；`biz/rbac.go` 在保留原权限码真源的基础上新增最小 `RBACUsecase`。同步更新 Wire、service/data README 和 `scripts/init-project.sh` 扫描路径。
+- 验证：`cd /Users/simon/projects/webapp-template/server && go generate ./cmd/server` 通过；`cd /Users/simon/projects/webapp-template/server && go test ./...` 通过；`cd /Users/simon/projects/webapp-template && bash scripts/init-project.sh --template-source --strict` 通过；`cd /Users/simon/projects/webapp-template && bash scripts/qa/fast.sh` 通过。
+- 下一步：用户先查看模板项目效果；若确认这条分层迁移方式合适，再评估是否按同样分层口径迁移 `plush-toy-erp`，但 ERP 需要单独拆任务和扩大 JSON-RPC/RBAC 回归范围。
+- 阻塞/风险：本轮未提交推送；工作区存在非本轮既有改动（如部署脚本、Dockerfile、Vite 配置等），本轮只隔离修改 JSON-RPC 分层相关路径。`bash scripts/qa/fast.sh` 会执行前端 `eslint --fix`，本次未发现新增前端文件进入本轮 diff。
