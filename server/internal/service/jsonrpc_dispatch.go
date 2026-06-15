@@ -1,5 +1,5 @@
-// server/internal/data/jsonrpc.go
-package data
+// server/internal/service/jsonrpc_dispatch.go
+package service
 
 import (
 	"context"
@@ -13,84 +13,63 @@ import (
 
 	v1 "server/api/jsonrpc/v1"
 	"server/internal/biz"
-	"server/internal/conf"
 	"server/internal/errcode"
 
 	"github.com/go-kratos/kratos/v2/log"
-	tracesdk "go.opentelemetry.io/otel/sdk/trace"
 	"google.golang.org/protobuf/types/known/structpb"
 )
 
-type adminAccountReader interface {
-	GetAdminByID(ctx context.Context, id int) (*biz.AdminUser, error)
-}
-
-// JsonrpcData 是 JSON-RPC 的唯一业务入口，模板默认只保留通用鉴权和账号目录能力。
-type JsonrpcData struct {
-	data *Data
-	log  *log.Helper
-	cfg  *conf.Data
+// jsonrpcDispatcher 只做协议分发、权限检查和结果映射，业务规则继续下沉到 biz usecase。
+type jsonrpcDispatcher struct {
+	log *log.Helper
 
 	authUC      *biz.AuthUsecase
 	adminAuthUC *biz.AdminAuthUsecase
 	userAdminUC *biz.UserAdminUsecase
+	rbacUC      *biz.RBACUsecase
 
-	adminReader adminAccountReader
+	adminReader biz.AdminAccountReader
 }
 
-// NewJsonrpcData：由 wire 注入底层 repo，再在入口层组装 usecase，保持模板的“入口聚合”风格。
-func NewJsonrpcData(
-	data *Data,
-	c *conf.Data,
+func newJSONRPCDispatcher(
 	logger log.Logger,
-	authRepo *authRepo,
-	adminAuthRepo *adminAuthRepo,
-	tokenGenerator biz.TokenGenerator,
-	adminTokenGenerator biz.AdminTokenGenerator,
-	userAdminRepo biz.UserAdminRepo,
-	tracerProvider *tracesdk.TracerProvider,
-) *JsonrpcData {
-	helper := log.NewHelper(log.With(logger, "module", "data.jsonrpc"))
+	authUC *biz.AuthUsecase,
+	adminAuthUC *biz.AdminAuthUsecase,
+	userAdminUC *biz.UserAdminUsecase,
+	rbacUC *biz.RBACUsecase,
+	adminReader biz.AdminAccountReader,
+) *jsonrpcDispatcher {
+	helper := log.NewHelper(log.With(logger, "module", "service.jsonrpc.dispatcher"))
 
-	if authRepo == nil {
-		panic("NewJsonrpcData: authRepo is nil")
+	if authUC == nil {
+		panic("newJSONRPCDispatcher: authUC is nil")
 	}
-	if adminAuthRepo == nil {
-		panic("NewJsonrpcData: adminAuthRepo is nil")
+	if adminAuthUC == nil {
+		panic("newJSONRPCDispatcher: adminAuthUC is nil")
 	}
-	if userAdminRepo == nil {
-		panic("NewJsonrpcData: userAdminRepo is nil")
+	if userAdminUC == nil {
+		panic("newJSONRPCDispatcher: userAdminUC is nil")
 	}
-	if tokenGenerator == nil {
-		panic("NewJsonrpcData: tokenGenerator is nil")
+	if rbacUC == nil {
+		panic("newJSONRPCDispatcher: rbacUC is nil")
 	}
-	if adminTokenGenerator == nil {
-		panic("NewJsonrpcData: adminTokenGenerator is nil")
-	}
-	if tracerProvider == nil {
-		panic("NewJsonrpcData: tracerProvider is nil")
+	if adminReader == nil {
+		panic("newJSONRPCDispatcher: adminReader is nil")
 	}
 
-	authUC := biz.NewAuthUsecase(authRepo, tokenGenerator, logger, tracerProvider)
-	adminAuthUC := biz.NewAdminAuthUsecase(adminAuthRepo, adminTokenGenerator, logger, tracerProvider)
-	userAdminUC := biz.NewUserAdminUsecase(userAdminRepo, logger, tracerProvider)
+	helper.Info("jsonrpcDispatcher created")
 
-	helper.Info("JsonrpcData created (auth/admin auth/user admin usecases constructed inside)")
-
-	return &JsonrpcData{
-		data:        data,
+	return &jsonrpcDispatcher{
 		log:         helper,
-		cfg:         c,
 		authUC:      authUC,
 		adminAuthUC: adminAuthUC,
 		userAdminUC: userAdminUC,
-		adminReader: adminAuthRepo,
+		rbacUC:      rbacUC,
+		adminReader: adminReader,
 	}
 }
 
-var _ biz.JsonrpcRepo = (*JsonrpcData)(nil)
-
-func (d *JsonrpcData) Handle(
+func (d *jsonrpcDispatcher) Handle(
 	ctx context.Context,
 	url, jsonrpc, method, id string,
 	params *structpb.Struct,
@@ -130,7 +109,7 @@ func (d *JsonrpcData) Handle(
 	}
 }
 
-func (r *JsonrpcData) handleSystem(
+func (r *jsonrpcDispatcher) handleSystem(
 	ctx context.Context,
 	id, method string,
 	_ *structpb.Struct,
@@ -156,7 +135,7 @@ func (r *JsonrpcData) handleSystem(
 	}
 }
 
-func (d *JsonrpcData) handleAuth(
+func (d *jsonrpcDispatcher) handleAuth(
 	ctx context.Context,
 	method, id string,
 	params *structpb.Struct,
@@ -326,7 +305,7 @@ func (d *JsonrpcData) handleAuth(
 	}
 }
 
-func (d *JsonrpcData) mapAuthError(ctx context.Context, err error) *v1.JsonrpcResult {
+func (d *jsonrpcDispatcher) mapAuthError(ctx context.Context, err error) *v1.JsonrpcResult {
 	logger := d.log.WithContext(ctx)
 
 	switch err {
@@ -480,7 +459,7 @@ func normalizeStructValue(v any) any {
 	}
 }
 
-func (d *JsonrpcData) requireLogin(ctx context.Context) (*biz.AuthClaims, *v1.JsonrpcResult) {
+func (d *jsonrpcDispatcher) requireLogin(ctx context.Context) (*biz.AuthClaims, *v1.JsonrpcResult) {
 	if c, ok := biz.GetClaimsFromContext(ctx); ok && c != nil {
 		return c, nil
 	}
@@ -495,7 +474,7 @@ func (d *JsonrpcData) requireLogin(ctx context.Context) (*biz.AuthClaims, *v1.Js
 	}
 }
 
-func (d *JsonrpcData) requireAdmin(ctx context.Context) (*biz.AuthClaims, *v1.JsonrpcResult) {
+func (d *jsonrpcDispatcher) requireAdmin(ctx context.Context) (*biz.AuthClaims, *v1.JsonrpcResult) {
 	c, res := d.requireLogin(ctx)
 	if res != nil {
 		return nil, res
@@ -523,7 +502,7 @@ func (d *JsonrpcData) requireAdmin(ctx context.Context) (*biz.AuthClaims, *v1.Js
 	return c, nil
 }
 
-func (d *JsonrpcData) requireAdminPermission(ctx context.Context, permission string) (*biz.AuthClaims, *v1.JsonrpcResult) {
+func (d *jsonrpcDispatcher) requireAdminPermission(ctx context.Context, permission string) (*biz.AuthClaims, *v1.JsonrpcResult) {
 	c, res := d.requireAdmin(ctx)
 	if res != nil {
 		return nil, res
@@ -549,7 +528,7 @@ func (d *JsonrpcData) requireAdminPermission(ctx context.Context, permission str
 
 var errAdminUsernameMismatch = errors.New("admin username mismatch")
 
-func (d *JsonrpcData) getCurrentAdmin(ctx context.Context, claims *biz.AuthClaims) (*biz.AdminUser, error) {
+func (d *jsonrpcDispatcher) getCurrentAdmin(ctx context.Context, claims *biz.AuthClaims) (*biz.AdminUser, error) {
 	if claims == nil {
 		return nil, errors.New("missing auth claims")
 	}
@@ -571,7 +550,7 @@ func (d *JsonrpcData) getCurrentAdmin(ctx context.Context, claims *biz.AuthClaim
 	return admin, nil
 }
 
-func (d *JsonrpcData) isPublic(url, method string) bool {
+func (d *jsonrpcDispatcher) isPublic(url, method string) bool {
 	if url == "system" && (method == "ping" || method == "version") {
 		return true
 	}
@@ -581,7 +560,7 @@ func (d *JsonrpcData) isPublic(url, method string) bool {
 	return false
 }
 
-func (d *JsonrpcData) handleUser(
+func (d *jsonrpcDispatcher) handleUser(
 	ctx context.Context,
 	method, id string,
 	params *structpb.Struct,
@@ -715,7 +694,7 @@ func (d *JsonrpcData) handleUser(
 	}
 }
 
-func (d *JsonrpcData) handleRBAC(
+func (d *jsonrpcDispatcher) handleRBAC(
 	ctx context.Context,
 	method, id string,
 	_ *structpb.Struct,
@@ -729,7 +708,7 @@ func (d *JsonrpcData) handleRBAC(
 
 	switch method {
 	case "overview":
-		roles, permissions, err := d.loadRBACOverview(ctx)
+		overview, err := d.rbacUC.Overview(ctx)
 		if err != nil {
 			l.Errorf("[rbac] overview failed id=%s err=%v", id, err)
 			return id, &v1.JsonrpcResult{Code: errcode.Internal.Code, Message: errcode.Internal.Message}, nil
@@ -738,8 +717,8 @@ func (d *JsonrpcData) handleRBAC(
 			Code:    errcode.OK.Code,
 			Message: errcode.OK.Message,
 			Data: newDataStruct(map[string]any{
-				"roles":       roles,
-				"permissions": permissions,
+				"roles":       rbacRoleResults(overview.Roles),
+				"permissions": rbacPermissionResults(overview.Permissions),
 			}),
 		}, nil
 	default:
@@ -751,88 +730,36 @@ func (d *JsonrpcData) handleRBAC(
 	}
 }
 
-func (d *JsonrpcData) loadRBACOverview(ctx context.Context) ([]any, []any, error) {
-	roleRows, err := d.data.sqldb.QueryContext(
-		ctx,
-		`SELECT ar.id, ar.key, ar.name, ar.description, ar.builtin, COUNT(aur.admin_user_id) AS admin_count
-		 FROM admin_roles ar
-		 LEFT JOIN admin_user_roles aur ON aur.admin_role_id = ar.id
-		 GROUP BY ar.id, ar.key, ar.name, ar.description, ar.builtin
-		 ORDER BY ar.builtin DESC, ar.key ASC`,
-	)
-	if err != nil {
-		return nil, nil, err
-	}
-	defer func() {
-		if err := roleRows.Close(); err != nil {
-			d.log.WithContext(ctx).Warnf("[rbac] close role rows failed err=%v", err)
-		}
-	}()
-
-	roles := make([]any, 0)
-	for roleRows.Next() {
-		var (
-			roleID      int
-			key         string
-			name        string
-			description string
-			builtin     bool
-			adminCount  int
-		)
-		if err := roleRows.Scan(&roleID, &key, &name, &description, &builtin, &adminCount); err != nil {
-			return nil, nil, err
-		}
-		roles = append(roles, map[string]any{
-			"id":          roleID,
-			"key":         key,
-			"name":        name,
-			"description": description,
-			"builtin":     builtin,
-			"admin_count": adminCount,
+func rbacRoleResults(roles []biz.RBACRoleSummary) []any {
+	out := make([]any, 0, len(roles))
+	for _, role := range roles {
+		out = append(out, map[string]any{
+			"id":          role.ID,
+			"key":         role.Key,
+			"name":        role.Name,
+			"description": role.Description,
+			"builtin":     role.Builtin,
+			"admin_count": role.AdminCount,
 		})
 	}
-	if err := roleRows.Err(); err != nil {
-		return nil, nil, err
-	}
-
-	permissionRows, err := d.data.sqldb.QueryContext(
-		ctx,
-		`SELECT key, name, "group", description, builtin
-		 FROM admin_permissions
-		 ORDER BY "group" ASC, key ASC`,
-	)
-	if err != nil {
-		return nil, nil, err
-	}
-	defer func() {
-		if err := permissionRows.Close(); err != nil {
-			d.log.WithContext(ctx).Warnf("[rbac] close permission rows failed err=%v", err)
-		}
-	}()
-
-	permissions := make([]any, 0)
-	for permissionRows.Next() {
-		var key, name, group, description string
-		var builtin bool
-		if err := permissionRows.Scan(&key, &name, &group, &description, &builtin); err != nil {
-			return nil, nil, err
-		}
-		permissions = append(permissions, map[string]any{
-			"key":         key,
-			"name":        name,
-			"group":       group,
-			"description": description,
-			"builtin":     builtin,
-		})
-	}
-	if err := permissionRows.Err(); err != nil {
-		return nil, nil, err
-	}
-
-	return roles, permissions, nil
+	return out
 }
 
-func (d *JsonrpcData) mapUserAdminError(ctx context.Context, err error) *v1.JsonrpcResult {
+func rbacPermissionResults(permissions []biz.RBACPermissionSummary) []any {
+	out := make([]any, 0, len(permissions))
+	for _, permission := range permissions {
+		out = append(out, map[string]any{
+			"key":         permission.Key,
+			"name":        permission.Name,
+			"group":       permission.Group,
+			"description": permission.Description,
+			"builtin":     permission.Builtin,
+		})
+	}
+	return out
+}
+
+func (d *jsonrpcDispatcher) mapUserAdminError(ctx context.Context, err error) *v1.JsonrpcResult {
 	l := d.log.WithContext(ctx)
 
 	switch err {

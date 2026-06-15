@@ -1,4 +1,4 @@
-package data
+package service
 
 import (
 	"context"
@@ -20,9 +20,9 @@ func (s stubAdminAccountReader) GetAdminByID(_ context.Context, _ int) (*biz.Adm
 	return s.admin, s.err
 }
 
-func TestJsonrpcData_AuthMe_UnauthorizedUsesAuthRequired(t *testing.T) {
-	j := &JsonrpcData{
-		log: log.NewHelper(log.With(log.NewStdLogger(io.Discard), "module", "data.jsonrpc.test")),
+func TestJsonrpcDispatcher_AuthMe_UnauthorizedUsesAuthRequired(t *testing.T) {
+	j := &jsonrpcDispatcher{
+		log: log.NewHelper(log.With(log.NewStdLogger(io.Discard), "module", "service.jsonrpc.test")),
 	}
 
 	_, res, err := j.handleAuth(context.Background(), "me", "1", nil)
@@ -37,9 +37,9 @@ func TestJsonrpcData_AuthMe_UnauthorizedUsesAuthRequired(t *testing.T) {
 	}
 }
 
-func TestJsonrpcData_ErrorMappers_NoPermissionUsesPermissionDenied(t *testing.T) {
-	j := &JsonrpcData{
-		log: log.NewHelper(log.With(log.NewStdLogger(io.Discard), "module", "data.jsonrpc.test")),
+func TestJsonrpcDispatcher_ErrorMappers_NoPermissionUsesPermissionDenied(t *testing.T) {
+	j := &jsonrpcDispatcher{
+		log: log.NewHelper(log.With(log.NewStdLogger(io.Discard), "module", "service.jsonrpc.test")),
 	}
 
 	userRes := j.mapUserAdminError(context.Background(), biz.ErrNoPermission)
@@ -51,9 +51,9 @@ func TestJsonrpcData_ErrorMappers_NoPermissionUsesPermissionDenied(t *testing.T)
 	}
 }
 
-func TestJsonrpcData_RequireAdmin_DisabledAdminUsesAdminDisabled(t *testing.T) {
-	j := &JsonrpcData{
-		log:         log.NewHelper(log.With(log.NewStdLogger(io.Discard), "module", "data.jsonrpc.test")),
+func TestJsonrpcDispatcher_RequireAdmin_DisabledAdminUsesAdminDisabled(t *testing.T) {
+	j := &jsonrpcDispatcher{
+		log:         log.NewHelper(log.With(log.NewStdLogger(io.Discard), "module", "service.jsonrpc.test")),
 		adminReader: stubAdminAccountReader{admin: &biz.AdminUser{ID: 1, Username: "admin", Disabled: true}},
 	}
 

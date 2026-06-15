@@ -15,14 +15,21 @@ import (
 type JsonrpcService struct {
 	v1.UnimplementedJsonrpcServer
 
-	uc  *biz.JsonrpcUsecase
-	log *log.Helper
+	dispatcher *jsonrpcDispatcher
+	log        *log.Helper
 }
 
-func NewJsonrpcService(uc *biz.JsonrpcUsecase, logger log.Logger) *JsonrpcService {
+func NewJsonrpcService(
+	authUC *biz.AuthUsecase,
+	adminAuthUC *biz.AdminAuthUsecase,
+	userAdminUC *biz.UserAdminUsecase,
+	rbacUC *biz.RBACUsecase,
+	adminReader biz.AdminAccountReader,
+	logger log.Logger,
+) *JsonrpcService {
 	return &JsonrpcService{
-		uc:  uc,
-		log: log.NewHelper(logger),
+		dispatcher: newJSONRPCDispatcher(logger, authUC, adminAuthUC, userAdminUC, rbacUC, adminReader),
+		log:        log.NewHelper(logger),
 	}
 }
 
@@ -33,7 +40,7 @@ func (s *JsonrpcService) GetJsonrpc(ctx context.Context, req *v1.GetJsonrpcReque
 		req.GetUrl(), req.GetJsonrpc(), req.GetMethod(), req.GetId(),
 	)
 
-	id, result, bizErr := s.uc.Handle(
+	id, result, bizErr := s.dispatcher.Handle(
 		ctx,
 		req.GetUrl(),
 		req.GetJsonrpc(),
@@ -70,7 +77,7 @@ func (s *JsonrpcService) PostJsonrpc(ctx context.Context, req *v1.PostJsonrpcReq
 		req.GetUrl(), req.GetJsonrpc(), req.GetMethod(), req.GetId(),
 	)
 
-	id, result, bizErr := s.uc.Handle(
+	id, result, bizErr := s.dispatcher.Handle(
 		ctx,
 		req.GetUrl(),
 		req.GetJsonrpc(),

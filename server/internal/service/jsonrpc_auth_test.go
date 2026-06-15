@@ -1,5 +1,5 @@
-// server/internal/data/jsonrpc_auth_test.go
-package data
+// server/internal/service/jsonrpc_auth_test.go
+package service
 
 import (
 	"context"
@@ -18,7 +18,7 @@ import (
 	"google.golang.org/protobuf/types/known/structpb"
 )
 
-func TestJsonrpcData_AuthLogin_OK(t *testing.T) {
+func TestJsonrpcDispatcher_AuthLogin_OK(t *testing.T) {
 	repo := newMemAuthRepoForData()
 	_ = repo.putUser("alice", "p@ss", false)
 
@@ -30,8 +30,8 @@ func TestJsonrpcData_AuthLogin_OK(t *testing.T) {
 	}
 	authUC := biz.NewAuthUsecase(repo, genTok, logger, tp)
 
-	j := &JsonrpcData{
-		log:    log.NewHelper(log.With(logger, "module", "data.jsonrpc.test")),
+	j := &jsonrpcDispatcher{
+		log:    log.NewHelper(log.With(logger, "module", "service.jsonrpc.test")),
 		authUC: authUC,
 	}
 
@@ -59,7 +59,7 @@ func TestJsonrpcData_AuthLogin_OK(t *testing.T) {
 	}
 }
 
-func TestJsonrpcData_AdminLogin_OKReturnsTokenAndPermissions(t *testing.T) {
+func TestJsonrpcDispatcher_AdminLogin_OKReturnsTokenAndPermissions(t *testing.T) {
 	repo := newMemAdminAuthRepoForData()
 	_ = repo.putAdmin("admin", "adminadmin", false, []string{"super_admin"}, []string{"admin.access", "admin.user.read"})
 
@@ -69,8 +69,8 @@ func TestJsonrpcData_AdminLogin_OKReturnsTokenAndPermissions(t *testing.T) {
 		return "admin-tok", time.Now().Add(time.Hour), nil
 	}, logger, tp)
 
-	j := &JsonrpcData{
-		log:         log.NewHelper(log.With(logger, "module", "data.jsonrpc.test")),
+	j := &jsonrpcDispatcher{
+		log:         log.NewHelper(log.With(logger, "module", "service.jsonrpc.test")),
 		adminAuthUC: adminAuthUC,
 	}
 
@@ -99,7 +99,7 @@ func TestJsonrpcData_AdminLogin_OKReturnsTokenAndPermissions(t *testing.T) {
 	}
 }
 
-func TestJsonrpcData_AuthRegister_Success(t *testing.T) {
+func TestJsonrpcDispatcher_AuthRegister_Success(t *testing.T) {
 	repo := newMemAuthRepoForData()
 
 	logger := log.NewStdLogger(io.Discard)
@@ -108,8 +108,8 @@ func TestJsonrpcData_AuthRegister_Success(t *testing.T) {
 		return "tok-reg", time.Now().Add(time.Hour), nil
 	}, logger, tp)
 
-	j := &JsonrpcData{
-		log:    log.NewHelper(log.With(logger, "module", "data.jsonrpc.test")),
+	j := &jsonrpcDispatcher{
+		log:    log.NewHelper(log.With(logger, "module", "service.jsonrpc.test")),
 		authUC: authUC,
 	}
 
@@ -134,7 +134,7 @@ func TestJsonrpcData_AuthRegister_Success(t *testing.T) {
 	}
 }
 
-func TestJsonrpcData_AuthRegister_MissingArgs(t *testing.T) {
+func TestJsonrpcDispatcher_AuthRegister_MissingArgs(t *testing.T) {
 	repo := newMemAuthRepoForData()
 
 	logger := log.NewStdLogger(io.Discard)
@@ -143,8 +143,8 @@ func TestJsonrpcData_AuthRegister_MissingArgs(t *testing.T) {
 		return "tok", time.Now().Add(time.Hour), nil
 	}, logger, tp)
 
-	j := &JsonrpcData{
-		log:    log.NewHelper(log.With(logger, "module", "data.jsonrpc.test")),
+	j := &jsonrpcDispatcher{
+		log:    log.NewHelper(log.With(logger, "module", "service.jsonrpc.test")),
 		authUC: authUC,
 	}
 
@@ -164,7 +164,7 @@ func TestJsonrpcData_AuthRegister_MissingArgs(t *testing.T) {
 	}
 }
 
-func TestJsonrpcData_AuthLogin_UserNotFound(t *testing.T) {
+func TestJsonrpcDispatcher_AuthLogin_UserNotFound(t *testing.T) {
 	repo := newMemAuthRepoForData()
 
 	logger := log.NewStdLogger(io.Discard)
@@ -173,8 +173,8 @@ func TestJsonrpcData_AuthLogin_UserNotFound(t *testing.T) {
 		return "tok", time.Now().Add(time.Hour), nil
 	}, logger, tp)
 
-	j := &JsonrpcData{
-		log:    log.NewHelper(log.With(logger, "module", "data.jsonrpc.test")),
+	j := &jsonrpcDispatcher{
+		log:    log.NewHelper(log.With(logger, "module", "service.jsonrpc.test")),
 		authUC: authUC,
 	}
 
@@ -195,7 +195,7 @@ func TestJsonrpcData_AuthLogin_UserNotFound(t *testing.T) {
 	}
 }
 
-func TestJsonrpcData_AuthLogin_InvalidPassword(t *testing.T) {
+func TestJsonrpcDispatcher_AuthLogin_InvalidPassword(t *testing.T) {
 	repo := newMemAuthRepoForData()
 	_ = repo.putUser("alice", "p@ss", false)
 
@@ -205,8 +205,8 @@ func TestJsonrpcData_AuthLogin_InvalidPassword(t *testing.T) {
 		return "tok", time.Now().Add(time.Hour), nil
 	}, logger, tp)
 
-	j := &JsonrpcData{
-		log:    log.NewHelper(log.With(logger, "module", "data.jsonrpc.test")),
+	j := &jsonrpcDispatcher{
+		log:    log.NewHelper(log.With(logger, "module", "service.jsonrpc.test")),
 		authUC: authUC,
 	}
 
@@ -227,7 +227,7 @@ func TestJsonrpcData_AuthLogin_InvalidPassword(t *testing.T) {
 	}
 }
 
-func TestJsonrpcData_AuthLogout(t *testing.T) {
+func TestJsonrpcDispatcher_AuthLogout(t *testing.T) {
 	repo := newMemAuthRepoForData()
 
 	logger := log.NewStdLogger(io.Discard)
@@ -236,8 +236,8 @@ func TestJsonrpcData_AuthLogout(t *testing.T) {
 		return "tok", time.Now().Add(time.Hour), nil
 	}, logger, tp)
 
-	j := &JsonrpcData{
-		log:    log.NewHelper(log.With(logger, "module", "data.jsonrpc.test")),
+	j := &jsonrpcDispatcher{
+		log:    log.NewHelper(log.With(logger, "module", "service.jsonrpc.test")),
 		authUC: authUC,
 	}
 
@@ -252,7 +252,7 @@ func TestJsonrpcData_AuthLogout(t *testing.T) {
 	}
 }
 
-func TestJsonrpcData_AuthUnknownMethod(t *testing.T) {
+func TestJsonrpcDispatcher_AuthUnknownMethod(t *testing.T) {
 	repo := newMemAuthRepoForData()
 
 	logger := log.NewStdLogger(io.Discard)
@@ -261,8 +261,8 @@ func TestJsonrpcData_AuthUnknownMethod(t *testing.T) {
 		return "tok", time.Now().Add(time.Hour), nil
 	}, logger, tp)
 
-	j := &JsonrpcData{
-		log:    log.NewHelper(log.With(logger, "module", "data.jsonrpc.test")),
+	j := &jsonrpcDispatcher{
+		log:    log.NewHelper(log.With(logger, "module", "service.jsonrpc.test")),
 		authUC: authUC,
 	}
 
@@ -280,7 +280,7 @@ func TestJsonrpcData_AuthUnknownMethod(t *testing.T) {
 	}
 }
 
-// ====== 内部：最小 mem repo（data 包里实现 biz.AuthRepo）======
+// ====== 内部：最小 mem repo（service 包里实现 biz.AuthRepo）======
 
 type memAuthRepoForData struct {
 	mu         sync.Mutex
@@ -399,6 +399,20 @@ func (r *memAdminAuthRepoForData) GetAdminByUsername(ctx context.Context, userna
 	cp.Roles = append([]string(nil), u.Roles...)
 	cp.Permissions = append([]string(nil), u.Permissions...)
 	return &cp, nil
+}
+
+func (r *memAdminAuthRepoForData) GetAdminByID(ctx context.Context, id int) (*biz.AdminUser, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	for _, u := range r.admins {
+		if u.ID == id {
+			cp := *u
+			cp.Roles = append([]string(nil), u.Roles...)
+			cp.Permissions = append([]string(nil), u.Permissions...)
+			return &cp, nil
+		}
+	}
+	return nil, errors.New("not found")
 }
 
 func (r *memAdminAuthRepoForData) UpdateAdminLastLogin(ctx context.Context, id int, t time.Time) error {

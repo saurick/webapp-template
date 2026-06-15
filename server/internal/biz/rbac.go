@@ -1,5 +1,7 @@
 package biz
 
+import "context"
+
 type AdminPermission struct {
 	Key         string
 	Name        string
@@ -49,4 +51,42 @@ func DefaultAdminPermissionKeys() []string {
 		out = append(out, p.Key)
 	}
 	return out
+}
+
+type RBACRoleSummary struct {
+	ID          int
+	Key         string
+	Name        string
+	Description string
+	Builtin     bool
+	AdminCount  int
+}
+
+type RBACPermissionSummary struct {
+	Key         string
+	Name        string
+	Group       string
+	Description string
+	Builtin     bool
+}
+
+type RBACOverview struct {
+	Roles       []RBACRoleSummary
+	Permissions []RBACPermissionSummary
+}
+
+type RBACRepo interface {
+	Overview(ctx context.Context) (*RBACOverview, error)
+}
+
+type RBACUsecase struct {
+	repo RBACRepo
+}
+
+func NewRBACUsecase(repo RBACRepo) *RBACUsecase {
+	return &RBACUsecase{repo: repo}
+}
+
+func (uc *RBACUsecase) Overview(ctx context.Context) (*RBACOverview, error) {
+	return uc.repo.Overview(ctx)
 }

@@ -277,10 +277,10 @@ report_existing_paths \
 ADMIN_MODULE_HITS="$(
 	scan_pattern 'subscription|points\.|invite_code|AdminLevel|transfer_to_admin_id|UserPoints|Subscription|user_expiry_warning_days' \
 		server/internal/biz/user_admin.go \
-		server/internal/data/jsonrpc.go \
 		server/internal/data/model/schema/invitecode.go \
 		server/internal/data/model/schema/user.go \
 		server/internal/data/model/schema/admin_user.go \
+		server/internal/service/jsonrpc_dispatch.go \
 		server/internal/errcode/catalog.go
 )"
 report_advisory \

@@ -30,23 +30,23 @@ var ProviderSet = wire.NewSet(
 	NewAuthRepo,
 	wire.Bind(new(biz.AuthRepo), new(*authRepo)),
 	NewTokenGenerator,
-	biz.NewAuthUsecase,
 
 	// admin auth / manage
 	NewAdminAuthRepo,
 	wire.Bind(new(biz.AdminAuthRepo), new(*adminAuthRepo)),
+	wire.Bind(new(biz.AdminAccountReader), new(*adminAuthRepo)),
 	NewAdminTokenGenerator,
 
 	// user admin
 	NewUserAdminRepo,
 	wire.Bind(new(biz.UserAdminRepo), new(*userAdminRepo)),
 
-	// jsonrpc
-	NewJsonrpcData,
-	wire.Bind(new(biz.JsonrpcRepo), new(*JsonrpcData)),
+	// rbac
+	NewRBACRepo,
+	wire.Bind(new(biz.RBACRepo), new(*rbacRepo)),
 )
 
-// Data 聚合所有外部资源（DB、JsonrpcData 等）。
+// Data 聚合所有外部资源（DB、Ent client、SQL DB 等）。
 type Data struct {
 	log      *log.Helper
 	postgres *ent.Client
