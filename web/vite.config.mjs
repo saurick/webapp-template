@@ -48,25 +48,6 @@ export default defineConfig(({ command, mode }) => {
           entryFileNames: 'assets/[name].[hash].js',
           chunkFileNames: 'assets/[name].[hash].js',
           assetFileNames: 'assets/[name].[hash].[ext]',
-
-          // 后台 preset 的 antd 体积较大，单独拆包，避免用户端首屏默认加载后台依赖。
-          manualChunks(id) {
-            if (id.includes('node_modules')) {
-              if (
-                /[\\/]node_modules[\\/](antd|@ant-design|rc-[^\\/]+)/.test(id)
-              ) {
-                return 'admin-vendor'
-              }
-              if (
-                /[\\/]node_modules[\\/](react|react-dom|react-router|react-router-dom|mobx)/.test(
-                  id
-                )
-              ) {
-                return 'vendors'
-              }
-              return 'vendor'
-            }
-          },
         },
       },
     },

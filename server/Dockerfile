@@ -6,19 +6,21 @@ ARG RUNTIMEPLATFORM=linux/amd64
 ARG GO_TARGETOS=linux
 ARG GO_TARGETARCH=amd64
 ARG NODE_BUILDER_IMAGE=node:24.14.0
-ARG GO_BUILDER_IMAGE=golang:1.25.9
+ARG GO_BUILDER_IMAGE=golang:1.25.11
 ARG RUNTIME_BASE_IMAGE=alpine:3.21
+ARG PNPM_VERSION=10.13.1
 
 # ======================
 # 1) 构建前端静态文件
 # ======================
 # 与根目录 .n-node-version 对齐，避免容器与本地 Node 小版本漂移；同时保留 build arg，便于在受限网络下切换镜像源。
 FROM --platform=$BUILDPLATFORM ${NODE_BUILDER_IMAGE} AS web-builder
+ARG PNPM_VERSION
 
 WORKDIR /web
 
 COPY web/package.json web/pnpm-lock.yaml ./
-RUN npm install -g pnpm && \
+RUN npm install -g "pnpm@${PNPM_VERSION}" && \
     pnpm config set store-dir /web/.pnpm-store && \
     pnpm config set registry https://registry.npmmirror.com && \
     pnpm install --frozen-lockfile
@@ -26,6 +28,7 @@ RUN npm install -g pnpm && \
 COPY web/src ./src
 COPY web/public ./public
 COPY web/index.html ./
+COPY web/.env.production ./
 COPY web/vite.config.mjs ./
 COPY web/tailwind.config.js ./
 COPY web/postcss.config.js ./
