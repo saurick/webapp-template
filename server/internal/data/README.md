@@ -10,6 +10,8 @@
 - 后台账号目录 repo
 - RBAC overview repo
 
+JSON-RPC 协议分发不属于 `data` 层。新增 RPC 能力时，应先在 `service` 层的 dispatcher 接收 `url/method/params`，再调用 `biz` usecase；只有数据库、Ent、SQL 查询或外部依赖访问才进入 `data` repo。不要重新新增 `data/jsonrpc*.go` 作为协议入口。
+
 数据库变更前，必须先读：
 
 - [`AI_DB_WORKFLOW.md`](./AI_DB_WORKFLOW.md)

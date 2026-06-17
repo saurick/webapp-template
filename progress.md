@@ -197,3 +197,18 @@
 - 验证：`cd /Users/simon/projects/webapp-template/server && go generate ./cmd/server` 通过；`cd /Users/simon/projects/webapp-template/server && go test ./...` 通过；`cd /Users/simon/projects/webapp-template && bash scripts/init-project.sh --template-source --strict` 通过；`cd /Users/simon/projects/webapp-template && bash scripts/qa/fast.sh` 通过。
 - 下一步：用户先查看模板项目效果；若确认这条分层迁移方式合适，再评估是否按同样分层口径迁移 `plush-toy-erp`，但 ERP 需要单独拆任务和扩大 JSON-RPC/RBAC 回归范围。
 - 阻塞/风险：本轮未提交推送；工作区存在非本轮既有改动（如部署脚本、Dockerfile、Vite 配置等），本轮只隔离修改 JSON-RPC 分层相关路径。`bash scripts/qa/fast.sh` 会执行前端 `eslint --fix`，本次未发现新增前端文件进入本轮 diff。
+
+## 2026-06-15 18:05 CST
+
+- 完成：补齐 JSON-RPC dispatcher 分层链路文档。`server/internal/service/README.md` 明确 `/rpc/{url} -> JsonrpcService -> jsonrpcDispatcher -> biz usecase -> data repo`，并说明 dispatcher 只做协议分发、登录态 / 权限检查和结果映射；`server/internal/data/README.md` 明确不要新增 `data/jsonrpc*.go` 作为协议入口；`server/README.md` 增加后端分层总览链路。
+- 验证：`git diff --check -- server/README.md server/internal/service/README.md server/internal/data/README.md progress.md` 通过。
+- 下一步：若后续迁移 `plush-toy-erp`，沿用这条文档口径先写清链路，再迁移代码与测试。
+- 阻塞/风险：本轮仅补正式文档，不改运行时代码、不提交推送。
+
+## 2026-06-17 13:13 CST
+
+- 完成：补充模板 JSON-RPC dispatcher 拆分触发线。当前模板仍保持 `system / auth / user / rbac` 通用域集中在 `jsonrpc_dispatch.go`，不按业务 ERP 项目提前拆成多文件；只有新增真实业务域、dispatcher 超过约 1000 行、单域超过约 250-300 行、职责互相穿插或 helper 重复明显时再拆。
+- 完成：触发线写入 `server/internal/service/README.md`，继续保持 `service -> biz -> data` 边界，不恢复 `data/jsonrpc*.go` 协议入口。
+- 验证：`git diff --check -- server/internal/service/README.md progress.md` 通过。
+- 下一步：后续派生项目新增真实业务 RPC 域时，先按触发线判断是继续单文件维护，还是拆为 `jsonrpc_dispatch_<domain>.go` / helper 文件。
+- 阻塞/风险：本轮只改模板文档和过程记录，不改运行时代码；当前工作区已有部署 / Dockerfile / Vite 等非本轮未提交改动，本轮未回退或纳入这些现场。

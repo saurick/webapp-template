@@ -16,6 +16,8 @@
 - `biz`：业务规约与 UseCase
 - `data`：数据库/缓存/外部依赖访问
 
+JSON-RPC 的具体链路是 `/rpc/{url} -> JsonrpcService -> jsonrpcDispatcher -> biz usecase -> data repo`。协议分发、权限检查和结果映射留在 `service`，业务规则留在 `biz`，数据库和外部依赖访问留在 `data`。
+
 ## 快速开始
 
 ```bash
