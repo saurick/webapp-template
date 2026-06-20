@@ -1,0 +1,4 @@
+interface:
+  display_name: "Webapp Template Page Design Governance"
+  short_description: "webapp-template 页面设计与交互审查流程"
+  default_prompt: "Use $webapp-template-page-design-governance to review webapp-template pages for clear, low-density, tested UI."

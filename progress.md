@@ -212,3 +212,18 @@
 - 验证：`git diff --check -- server/internal/service/README.md progress.md` 通过。
 - 下一步：后续派生项目新增真实业务 RPC 域时，先按触发线判断是继续单文件维护，还是拆为 `jsonrpc_dispatch_<domain>.go` / helper 文件。
 - 阻塞/风险：本轮只改模板文档和过程记录，不改运行时代码；当前工作区已有部署 / Dockerfile / Vite 等非本轮未提交改动，本轮未回退或纳入这些现场。
+
+## 2026-06-20 Codex 项目 skills 补充
+
+- 完成：新增 `.agents/skills/webapp-template-docs-governance/`、`.agents/skills/webapp-template-page-design-governance/`、`.agents/skills/webapp-template-code-review-governance/`，分别收口模板文档治理、页面设计治理和独立代码审查；项目 skill 均以仓库内 `.agents/skills/` 为 canonical。
+- 完成：同步根 `README.md` 目录结构，登记 `.agents/skills/` 为 Codex 项目专属 skills 入口；本轮未更新 `docs/README.md`，因为没有新增、删除或重命名 `docs/` 文档，也未改变根级 docs 分层或推荐阅读顺序。
+- 验证：追加前 `progress.md` 为 214 行、36639 字节，未达到归档阈值；已执行 `quick_validate.py`（通过临时 PyYAML 路径）验证 `code-review-governance` 与三份 webapp-template 项目 skill 均通过；已执行 Ruby YAML 解析、TODO / 默认提示扫描、`git diff --check -- .agents/skills README.md progress.md`，通过。
+- 下一步：维护模板文档、页面或代码 review 时优先使用对应项目 skill；基于模板初始化派生项目时仍以 `docs/project-init.md` 和 `docs/current-source-of-truth.md` 为真源。
+- 阻塞/风险：本轮只新增 Codex skill 和入口说明，不改运行时代码、schema、migration、RBAC、部署主路径、前端页面实现或质量脚本行为。
+
+## 2026-06-20 Codex skill UI 名称英文化
+
+- 完成：将 `.agents/skills/webapp-template-docs-governance/agents/openai.yaml`、`.agents/skills/webapp-template-page-design-governance/agents/openai.yaml`、`.agents/skills/webapp-template-code-review-governance/agents/openai.yaml` 的 `display_name` 改为英文，分别为 `Webapp Template Docs Governance`、`Webapp Template Page Design Governance`、`Webapp Template Code Review Governance`。
+- 验证：追加前 `progress.md` 为 222 行、38016 字节，未达到归档阈值；已扫描相关 skills 的 `display_name`，确认无中文命中；后续以 skill 正文保持中英结合，UI chip 名称保持英文。
+- 下一步：如 Codex UI 仍显示旧名称，重新打开会话或等待 skill metadata 刷新。
+- 阻塞/风险：本轮只改 skill UI metadata，不改 `SKILL.md` 规则正文、运行时代码、schema、RBAC、部署主路径、前端页面或质量脚本。

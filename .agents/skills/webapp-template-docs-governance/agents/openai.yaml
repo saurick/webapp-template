@@ -1,0 +1,4 @@
+interface:
+  display_name: "Webapp Template Docs Governance"
+  short_description: "webapp-template 文档治理与阅读体验流程"
+  default_prompt: "Use $webapp-template-docs-governance to improve webapp-template docs with source-grounded, readable structure."

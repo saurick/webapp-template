@@ -1,0 +1,4 @@
+interface:
+  display_name: "Webapp Template Code Review Governance"
+  short_description: "webapp-template 独立代码审查与风险检查流程"
+  default_prompt: "Use $webapp-template-code-review-governance to review webapp-template changes without editing code."
