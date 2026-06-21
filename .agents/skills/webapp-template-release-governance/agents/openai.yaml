@@ -1,0 +1,4 @@
+interface:
+  display_name: "Webapp Template Release Governance"
+  short_description: "Govern release, deploy, version, rollback, and evidence"
+  default_prompt: "Use $webapp-template-release-governance to handle this webapp-template task with project truth, validation, and risk reporting."

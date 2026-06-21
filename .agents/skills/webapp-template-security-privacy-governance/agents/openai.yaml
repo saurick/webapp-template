@@ -1,0 +1,4 @@
+interface:
+  display_name: "Webapp Template Security Privacy Governance"
+  short_description: "Handle auth, secrets, permissions, privacy, and safe data use"
+  default_prompt: "Use $webapp-template-security-privacy-governance to handle this webapp-template task with project truth, validation, and risk reporting."

@@ -67,6 +67,12 @@ $relevant-webapp-template-skill
 | 代码 review | `$webapp-template-code-review-governance` |
 | 测试选择 / 验证范围 | `$webapp-template-test-governance` |
 | 通用提示词整理 | `$prompt-governance` |
+| 发布/部署/版本 | `$webapp-template-release-governance` |
+| 领域边界/实现前评估 | `$webapp-template-domain-boundary-governance` |
+| 运行故障诊断 | `$webapp-template-runtime-diagnostics` |
+| seed/import/fixture | `$webapp-template-seed-import-governance` |
+| 可观测/错误提示 | `$webapp-template-observability-error-governance` |
+| 安全/隐私/权限 | `$webapp-template-security-privacy-governance` |
 
 ## Prompt Patterns
 

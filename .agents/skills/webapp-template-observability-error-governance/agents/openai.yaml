@@ -1,0 +1,4 @@
+interface:
+  display_name: "Webapp Template Observability Error Governance"
+  short_description: "Design logs, traces, metrics, errors, and user messages"
+  default_prompt: "Use $webapp-template-observability-error-governance to handle this webapp-template task with project truth, validation, and risk reporting."

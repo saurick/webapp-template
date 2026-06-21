@@ -1,0 +1,4 @@
+interface:
+  display_name: "Webapp Template Seed Import Governance"
+  short_description: "Govern seed data, fixtures, dry-runs, imports, and cleanup"
+  default_prompt: "Use $webapp-template-seed-import-governance to handle this webapp-template task with project truth, validation, and risk reporting."
