@@ -1,0 +1,4 @@
+interface:
+  display_name: "Webapp Template Prompt Governance"
+  short_description: "Draft webapp template prompts"
+  default_prompt: "Use $webapp-template-prompt-governance to turn this webapp-template request into an executable task prompt."
