@@ -227,3 +227,11 @@
 - 验证：追加前 `progress.md` 为 222 行、38016 字节，未达到归档阈值；已扫描相关 skills 的 `display_name`，确认无中文命中；后续以 skill 正文保持中英结合，UI chip 名称保持英文。
 - 下一步：如 Codex UI 仍显示旧名称，重新打开会话或等待 skill metadata 刷新。
 - 阻塞/风险：本轮只改 skill UI metadata，不改 `SKILL.md` 规则正文、运行时代码、schema、RBAC、部署主路径、前端页面或质量脚本。
+
+## 2026-06-21 Codex 测试治理 skill 补充
+
+- 完成：新增 `.agents/skills/webapp-template-test-governance/`，作为 webapp-template 项目专属测试治理入口，覆盖模板初始化、server、web、migration、health/ready、deploy preflight、style:l1、smoke/full/strict 和 loadtest 边界；同步根 `README.md` 中 `.agents/skills/` 职责为文档治理、页面治理、代码审查和测试治理。
+- 完成：同步新增通用 `~/.codex/skills/test-governance/`，用于跨项目测试分类和验证范围选择；项目内仍以 `.agents/skills/webapp-template-test-governance/` 承载模板专属命令与边界。
+- 验证：追加前 `progress.md` 为 229 行、38964 字节，未达到归档阈值；已执行 `quick_validate.py` 验证通用 `test-governance` 与项目 `webapp-template-test-governance` 均通过；已执行 Ruby YAML 解析、TODO 扫描、中文 `display_name` 扫描、默认提示扫描和 `git diff --check`，均通过。
+- 下一步：后续涉及测试选择、模板初始化验证、页面回归、migration/deploy 或 loadtest 边界时优先使用 `$webapp-template-test-governance`；只需要通用测试分类时可用 `$test-governance`。
+- 阻塞/风险：本轮只新增 Codex skill、README 入口和过程记录，不改运行时代码、schema、migration、RBAC、部署主路径、前端页面或真实测试脚本；因此未运行 server/web/full/strict、`style:l1`、loadtest 或远端部署验证。
