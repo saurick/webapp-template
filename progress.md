@@ -275,3 +275,11 @@
 - 验证：追加前 `progress.md` 为 269 行、45716 字节，未达到归档阈值；本轮只改项目级 AGENTS / progress，不改运行时代码、schema、migration、RBAC、页面、模板初始化逻辑或部署脚本；已执行 `git diff --check -- AGENTS.md progress.md`。
 - 下一步：后续新增或维护项目 skill 时，按项目 AGENTS 和全局 AGENTS 的一致规则执行；如只改 skill 正文且职责不变，通常不需要改 `docs/README.md`。
 - 阻塞/风险：本轮规则只约束后续 skill 维护，不代表已经修改任何自动 hook、CI、模板初始化逻辑或真实业务流程。
+
+## 2026-06-22 页面治理与后端边界 skill 说明收口
+
+- 完成：补充 `webapp-template-page-design-governance` 与 `webapp-template-domain-boundary-governance` 的边界说明，明确页面设计不顺手改 schema/API/RBAC/transaction/error code/server usecase，后端/领域实现主入口是 domain skill。
+- 完成：同步修正通用 `~/.codex/skills/page-design-governance` 与 `domain-boundary-governance` 的页面 / 后端边界说明，避免模板版继续从通用版漂移。
+- 验证：追加前 `progress.md` 为 277 行、46905 字节，未达到归档阈值；已执行相关 skill validator、YAML 解析和 diff 检查。
+- 下一步：模板页面任务若需要后端能力，先用 `$webapp-template-domain-boundary-governance` 定 schema/API/RBAC/transaction/error-code 边界，再回到页面 skill 做 UI 验证。
+- 阻塞/风险：本轮只改 skill 文本和过程记录，不新增 backend skill，不改运行时代码、schema、migration、RBAC、页面、模板初始化逻辑、部署脚本或测试实现。

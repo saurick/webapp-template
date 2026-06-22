@@ -5,6 +5,8 @@ description: webapp-template 项目文档治理。Use when Codex reviews, create
 
 # Webapp Template 文档治理 Docs Governance
 
+阅读口径：正文默认中文主线 + English anchors；`name` / `display_name` 保持英文，`Workflow / Fact / RBAC / API / migration / runtime` 等术语按需保留，方便触发、检索和跨工具引用。
+
 用这个 skill 维护 `/Users/simon/projects/webapp-template` 的文档可读性和真源边界。它服务模板本身，不要把派生项目的业务需求写回模板通用规则。
 
 ## 工作流 Workflow

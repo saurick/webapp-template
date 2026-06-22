@@ -1,33 +1,35 @@
 ---
 name: webapp-template-release-governance
-description: Project-specific release, deployment, version, migration, rollback, and release-evidence governance for webapp-template. Use when Codex plans, performs, reviews, or explains webapp-template releases, deploys, version tags, image tags, migrations, release notes, changelog, rollback, production preflight, health checks, post-deploy verification, or target environment delivery.
+description: webapp-template 项目发布、部署、版本与回滚治理。Use when Codex plans, performs, reviews, or explains webapp-template releases, deploys, image tags, migrations, changelog, rollback, health checks, post-deploy verification, or target environment delivery.
 ---
 
-# Webapp Template Release Governance
+# Webapp Template 发布治理 Release Governance
 
-Use this skill for webapp-template release, deployment, and lightweight version governance. Version management is part of release evidence unless the project later needs a standalone customer-facing release program.
+阅读口径：正文默认中文主线 + English anchors；`name` / `display_name` 保持英文，`Workflow / Fact / RBAC / API / migration / runtime` 等术语按需保留，方便触发、检索和跨工具引用。
 
-## Truth Chain
+用这个 skill 处理 `webapp-template` 的 release、deploy、version、migration、rollback 和 release evidence。版本管理默认并入发布证据，不另起重流程。
 
-- Read project `AGENTS.md`, `README.md`, deployment docs, test strategy, and changed release scripts before action.
-- Check worktree and upstream before commit/push/deploy.
+## 真源链 Truth Chain
 
-## Project Rules
+- 先读 `AGENTS.md`、`docs/current-source-of-truth.md`、`docs/project-init.md`、README、server/web/scripts/deploy docs 和 tests。
+- 执行前检查 `git status -sb`、upstream state、unrelated dirty files。
+
+## 项目规则 Project Rules
 
 - 模板发布必须保持 derived project 可迁移：本地/CI 构建，低配服务器只 load 镜像、migration、启动和检查。
-- `production-preflight.sh`、`server/deploy/README.md` 和 compose prod docs 是发布门禁真源。
-- 版本证据绑定模板 commit、派生项目影响、image tag、migration/preflight、health/ready 和回滚点。
+- `production-preflight.sh`、`server/deploy/README.md` 和 compose prod docs 是发布门禁 truth。
+- 版本证据绑定模板 commit、派生项目影响、image tag、migration/preflight、health/ready 和 rollback point。
 
-## Workflow
+## 工作流 Workflow
 
-1. Define scope: target branch, target host/environment, service/container, migration, config/env, and rollback point.
-2. Bind version: commit hash, image/package tag, migration status, config/env version, and release note/changelog need.
-3. Run local/CI validation appropriate to changed surfaces before touching a target environment.
-4. Build artifacts off low-spec targets unless project docs explicitly allow target-side build.
-5. Deploy using the documented path; confirm the target is running the new version from runtime evidence.
-6. Check health/ready, logs, smoke/browser/API evidence, migration state, and disk/image cleanup boundaries.
-7. Update progress/docs when release behavior, versioning, deployment, config, or operational truth changes.
+1. 定义 scope：branch、host/environment、service/container、migration、config/env、rollback point。
+2. 绑定 version：commit hash、image/package tag、migration status、config/env version、release note/changelog need。
+3. 先跑本地/CI validation，再触碰目标环境。
+4. 低配目标默认不构建，只加载 artifacts、执行 migration、启动服务、做 health/smoke。
+5. 从目标 runtime evidence 确认新版本已运行，而不是从本地预期推断。
+6. 检查 health/ready、logs、smoke/browser/API、migration state、disk/image cleanup boundary。
+7. 发布行为、版本、部署、配置或 operational truth 改变时，同步 docs/progress。
 
-## Output
+## 输出 Output
 
-Report commit/tag/image, target environment, migration status, commands, health/smoke evidence, rollback point, cleanup, docs/progress updates, and remaining blind spots.
+汇报 commit/tag/image、target environment、migration status、commands、health/smoke evidence、rollback point、cleanup、docs/progress updates 和 remaining blind spots。

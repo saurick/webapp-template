@@ -5,6 +5,8 @@ description: webapp-template 项目页面设计治理。Use when Codex designs, 
 
 # Webapp Template 页面设计治理 Page Design Governance
 
+阅读口径：正文默认中文主线 + English anchors；`name` / `display_name` 保持英文，`Workflow / Fact / RBAC / API / migration / runtime` 等术语按需保留，方便触发、检索和跨工具引用。
+
 用这个 skill 把 `webapp-template` 的页面做成可复用、低心智负担、容易派生的模板基线。不要把某个派生项目的品牌、业务字段或客户口径写进模板主干。
 
 ## 工作流 Workflow
@@ -36,6 +38,7 @@ description: webapp-template 项目页面设计治理。Use when Codex designs, 
    - 优先复用现有组件、auth scope、request helper、error message helper、CSS 变量和 admin preset。
    - 样式局部收口，不滥用 `!important`。
    - 页面设计变更不要顺手改 schema、migration、部署主路径或后端业务规则。
+   - 如果页面设计要求新增或修改 schema、API、RBAC、transaction、error code、server usecase 或持久化语义，停止把它当页面任务，改用 `webapp-template-domain-boundary-governance` 收敛后端边界。
    - 若设计要求需要新业务能力，先停下来说明后端/API/RBAC/文档范围。
 
 6. 回归验证。

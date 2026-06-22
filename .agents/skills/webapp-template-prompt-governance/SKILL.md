@@ -1,9 +1,11 @@
 ---
 name: webapp-template-prompt-governance
-description: Project-specific prompt governance for /Users/simon/projects/webapp-template. Use when Codex writes, refines, evaluates, or converts a webapp-template request into an executable prompt for implementation, review, docs governance, page design, tests, project initialization, deployment, handoff, side chat, main chat, or commit/push work; when prompts need template genericity, project-init, health/ready, admin preset, load-test, deploy preflight, README/AGENTS/progress.md boundaries; or when the user wants positive "要做什么" wording instead of broad "不要" lists.
+description: webapp-template 项目提示词治理。Use when Codex writes, refines, evaluates, or converts a webapp-template request into an executable prompt for implementation, review, docs governance, page design, tests, project initialization, deployment, handoff, side chat, main chat, or commit/push work; when prompts need template genericity, project-init, health/ready, admin preset, load-test, deploy preflight, README/AGENTS/progress.md boundaries; or when the user wants positive "要做什么" wording instead of broad "不要" lists.
 ---
 
 # Webapp Template Prompt Governance
+
+阅读口径：正文默认中文主线 + English anchors；`name` / `display_name` 保持英文，`Workflow / Fact / RBAC / API / migration / runtime` 等术语按需保留，方便触发、检索和跨工具引用。
 
 Use this skill to draft prompts for webapp-template work. Prompts should preserve template genericity: explain the intended reusable template behavior, source docs, allowed paths, validation, and closeout. Use "不要 / 禁止" only for template-breaking or high-risk boundaries.
 

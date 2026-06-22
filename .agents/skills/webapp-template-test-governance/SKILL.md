@@ -1,9 +1,11 @@
 ---
 name: webapp-template-test-governance
-description: Project-specific test governance for /Users/simon/projects/webapp-template. Use when Codex chooses, runs, reviews, or explains validation scope for webapp-template changes, including Go tests, frontend lint/unit/style regression, migrations, project initialization, admin preset, health/ready checks, load-test boundaries, deploy preflight, smoke/full/strict QA scripts, or when the user asks 测试分类/测试治理/怎么测/要不要补测试.
+description: webapp-template 项目测试治理。Use when Codex chooses, runs, reviews, or explains validation scope for webapp-template changes, including Go tests, frontend lint/unit/style regression, migrations, project initialization, admin preset, health/ready checks, load-test boundaries, deploy preflight, smoke/full/strict QA scripts, or when the user asks 测试分类/测试治理/怎么测/要不要补测试.
 ---
 
 # Webapp Template Test Governance
+
+阅读口径：正文默认中文主线 + English anchors；`name` / `display_name` 保持英文，`Workflow / Fact / RBAC / API / migration / runtime` 等术语按需保留，方便触发、检索和跨工具引用。
 
 用这份 skill 把 webapp-template 的测试选择落到模板产品边界：初始化、默认管理端、迁移、健康检查、前端页面、部署脚本和负载测试要区分验证目的。
 
