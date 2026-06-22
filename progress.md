@@ -251,3 +251,27 @@
 - 验证：追加前 `progress.md` 为 245 行、41923 字节，未达到归档阈值；本轮只改 skill / README / progress，不改运行时代码、schema、migration、RBAC、部署脚本或生产配置；验证命令见本轮最终回复。
 - 下一步：后续涉及发布/部署/版本、运行报错、业务边界、seed/import、可观测错误或安全隐私任务时优先使用对应项目 skill；跨项目通用任务可用全局同名 skill。
 - 阻塞/风险：新 skill 是执行治理入口，不等于已经修改 release 脚本、监控系统、安全策略或真实导入流程；如需自动守卫仍需后续落到脚本、测试或 CI/hook。
+
+## 2026-06-21 Codex 高风险治理 skills 中英可读性修正
+
+- 完成：将项目专属 `webapp-template-release-governance`、`webapp-template-domain-boundary-governance`、`webapp-template-runtime-diagnostics`、`webapp-template-seed-import-governance`、`webapp-template-observability-error-governance`、`webapp-template-security-privacy-governance` 的 `SKILL.md` 改为中文主线 + English anchors；`name` 和 UI `display_name` 保持英文，`description` / `default_prompt` 改为中英结合。
+- 完成：同步更新通用 `~/.codex/skills/` 中 6 个同类高风险治理 skill 的中英可读性，保持跨项目触发名稳定。
+- 验证：追加前 `progress.md` 为 253 行、43259 字节，未达到归档阈值；已执行 29 个相关 skill 目录的 `quick_validate.py`，均通过。
+- 下一步：后续如继续发现旧治理 skill 正文过度英文，可按同一口径逐个补中文主线，不改 `$skill-name`。
+- 阻塞/风险：本轮只改 Codex skill 文本和 metadata，不改运行时代码、schema、migration、RBAC、部署脚本、模板初始化逻辑、监控系统或安全策略。
+
+## 2026-06-22 Codex 项目 skills metadata 中英化补全
+
+- 完成：统一修正项目内全部 `.agents/skills/*` 的 `SKILL.md` frontmatter `description`、`agents/openai.yaml` 的 `short_description` 和 `default_prompt`，避免 UI 摘要继续显示英文-only；`name`、目录名和 `display_name` 仍保持英文，方便 `$skill-name` 触发。
+- 完成：给项目和通用治理 skill 正文顶部补充中文主线 + English anchors 的阅读口径，并在 `/Users/simon/.codex/AGENTS.md` 写入全局规则，后续创建或维护项目相关 skill 时默认遵守同一口径。
+- 验证：追加前 `progress.md` 为 261 行、44399 字节，未达到归档阈值；已执行 54 个治理 skill 目录的 `quick_validate.py`，54 个 `agents/openai.yaml` Ruby YAML 解析通过；扫描确认 description 中文开头、`short_description` 含中文、`display_name` 无中文、`default_prompt` 包含 `$skill`。
+- 下一步：如 Codex UI 仍显示旧摘要，重新打开会话或等待 skill metadata 刷新；后续新增 skill 应先按全局 AGENTS 的中英规则写 metadata。
+- 阻塞/风险：本轮只改 Codex skill 文本、metadata 和全局 AGENTS 规则，不改运行时代码、schema、migration、RBAC、部署脚本、模板初始化逻辑、监控系统或安全策略。
+
+## 2026-06-22 项目 AGENTS skill 维护规则补充
+
+- 完成：在项目级 `AGENTS.md` 增加“项目专属 Skill 维护约定”，明确 `.agents/skills/<skill-name>/` 随项目 git 管理、全局 `~/.codex/skills/` 只放通用 skill、项目版 skill 需包含 Truth Chain / Project Rules / Workflow / Output / Validation 等约束。
+- 完成：同步写清 skill 命名与 metadata 口径：`name`、目录名、`display_name` 保持英文；`description`、正文、`short_description`、`default_prompt` 使用中文主体 + English anchors。
+- 验证：追加前 `progress.md` 为 269 行、45716 字节，未达到归档阈值；本轮只改项目级 AGENTS / progress，不改运行时代码、schema、migration、RBAC、页面、模板初始化逻辑或部署脚本；已执行 `git diff --check -- AGENTS.md progress.md`。
+- 下一步：后续新增或维护项目 skill 时，按项目 AGENTS 和全局 AGENTS 的一致规则执行；如只改 skill 正文且职责不变，通常不需要改 `docs/README.md`。
+- 阻塞/风险：本轮规则只约束后续 skill 维护，不代表已经修改任何自动 hook、CI、模板初始化逻辑或真实业务流程。
