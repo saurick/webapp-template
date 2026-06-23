@@ -283,3 +283,13 @@
 - 验证：追加前 `progress.md` 为 277 行、46905 字节，未达到归档阈值；已执行相关 skill validator、YAML 解析和 diff 检查。
 - 下一步：模板页面任务若需要后端能力，先用 `$webapp-template-domain-boundary-governance` 定 schema/API/RBAC/transaction/error-code 边界，再回到页面 skill 做 UI 验证。
 - 阻塞/风险：本轮只改 skill 文本和过程记录，不新增 backend skill，不改运行时代码、schema、migration、RBAC、页面、模板初始化逻辑、部署脚本或测试实现。
+
+## 2026-06-23 Codex skills 目录 README 入口补充
+
+- 完成：新增 `.agents/skills/README.md`，作为项目专属 Codex skills 的父目录薄入口，列出 `$webapp-template-*` skills、主要用途和维护规则。
+- 完成：明确单个 skill 子目录仍以 `SKILL.md` 为唯一入口，不给每个 skill 包再加 README / quick reference / changelog，避免违反 skill 包最小结构。
+- 完成：补充 `使用规则 / Rules` 小节，说明 `$skill-name` 触发、多 skill 组合、项目版优先、README 与 `SKILL.md` 的边界，以及 skill 修改时的 metadata 检查。
+- 完成：补充 `常用组合 / Pairings` 短表，列出 docs/page、page/domain、review/test、runtime/release、seed/security 等常见并用场景，便于一次会话同时 `$` 多个 skill。
+- 验证：追加前 `progress.md` 为 285 行、47964 字节，未达到归档阈值；本轮只新增并补充 skill 目录 README 和过程记录，不改运行时代码、schema、migration、RBAC、部署脚本、模板初始化逻辑、监控系统或安全策略。
+- 下一步：后续新增、删除、重命名项目 skill 时，同步更新 `.agents/skills/README.md`。
+- 阻塞/风险：README 只做目录路由，不替代各 skill 的 `SKILL.md`、项目 `AGENTS.md`、正式 docs 或自动化校验。
