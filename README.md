@@ -11,7 +11,7 @@ Web 全后端单体模板项目，提供用户端基础页面、可选 antd admi
 | `web/` | 前端项目（Vite + React），内部目录职责见 [`web/README.md`](web/README.md) |
 | `server/` | 后端项目（Kratos + Ent + Atlas），内部目录职责见 [`server/README.md`](server/README.md) |
 | `scripts/` | 本地质量门禁与 Git hooks，详见 [`scripts/README.md`](scripts/README.md) |
-| `.agents/skills/` | Codex 项目专属 skills，维护模板文档治理、页面治理、代码审查、测试治理、提示词治理、发布治理、模板边界、运行诊断、seed/import、可观测错误和安全隐私工作流；作为仓库内 canonical，不依赖个人本机 `~/.codex/skills` 副本 |
+| [`.agents/skills/`](.agents/skills/README.md) | Codex 项目专属 skills，维护模板文档治理、页面治理、代码审查、测试治理、提示词治理、发布治理、模板边界、运行诊断、seed/import、可观测错误和安全隐私工作流，并提供“按问题选 Skill”的使用场景速查；作为仓库内 canonical，不依赖个人本机 `~/.codex/skills` 副本 |
 | `docs/` | 根目录文档与说明，阅读入口见 [`docs/README.md`](docs/README.md) |
 
 若需要查看 `web/` 或 `server/` 的内部目录，不在根 README 继续展开，以各自子目录 README 为准，避免同一份结构说明在多处漂移。

@@ -293,3 +293,10 @@
 - 验证：追加前 `progress.md` 为 285 行、47964 字节，未达到归档阈值；本轮只新增并补充 skill 目录 README 和过程记录，不改运行时代码、schema、migration、RBAC、部署脚本、模板初始化逻辑、监控系统或安全策略。
 - 下一步：后续新增、删除、重命名项目 skill 时，同步更新 `.agents/skills/README.md`。
 - 阻塞/风险：README 只做目录路由，不替代各 skill 的 `SKILL.md`、项目 `AGENTS.md`、正式 docs 或自动化校验。
+
+## 2026-06-25 Codex skills 使用场景速查补充
+
+- 完成：补充根 `README.md` 的 `.agents/skills/` 导航，并完善 `.agents/skills/README.md` 的“按问题选 Skill / Scenario Matrix”，把选中文本分析、提示词、runtime 诊断、测试范围、代码 review、文档治理、页面治理、模板边界、发布、seed/import、可观测错误和安全隐私按常见提问方式映射到对应 skill。
+- 验证：追加前 `progress.md` 为 295 行、49288 字节，未达到归档阈值；本轮只改根 README、skill 目录 README 和过程记录，不改模板 runtime、schema、migration、RBAC、部署脚本、模板初始化逻辑、监控系统、真实测试脚本或远端环境。
+- 下一步：后续 webapp-template 任务先按当前问题选择一个主 skill；跨模板页面 / server / runtime / deploy / seed / security 边界时，再同时 `$` 相邻 skill。
+- 阻塞/风险：README 只负责选型导航，不替代各 skill 的 `SKILL.md`、项目 `AGENTS.md`、正式 docs、代码、runtime 证据或自动化校验。

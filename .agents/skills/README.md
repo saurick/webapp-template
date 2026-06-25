@@ -18,6 +18,23 @@
 | `$webapp-template-observability-error-governance` | logs/traces/metrics/error helper、health/ready、request_id 和派生项目可迁移性 |
 | `$webapp-template-security-privacy-governance` | 默认 secrets、admin preset、OAuth/API examples、cert、SealedSecret、env 示例和权限边界 |
 
+## 按问题选 Skill / Scenario Matrix
+
+| 你现在想做什么 | 优先使用 | 它解决什么 | 不负责什么 |
+| --- | --- | --- | --- |
+| 选中主会话一段话，简单问“是什么 / 为什么 / 合理吗 / 怎么办” | 全局 `$selected-context-analysis` | 片段理解、短问短答、上下文边界 | 不把片段当 webapp-template 当前真源 |
+| 写新主会话、side chat、review、测试、部署或提交推送提示词 | `$webapp-template-prompt-governance` | 把目标、真源、范围、验收和风险写成可执行 prompt | 不替代实际执行或验证 |
+| 模板运行、派生项目运行、init 输出、compose prod、lab-ha、health/ready 或 reverse proxy 异常 | `$webapp-template-runtime-diagnostics` | 分层排查 template / derived project / runtime / deploy 差异 | 不在定位前直接补代码 |
+| 判断测试是否通过、范围是否足够、要不要跑 style:l1、loadtest、deploy preflight | `$webapp-template-test-governance` | 选择 server/web/migration、project init、admin preset、health/ready 和部署检查 | 不替代代码审查结论 |
+| 实现后看问题是否真的解决、改动是否对、有没有 bug / 缺测试 | `$webapp-template-code-review-governance` | 独立审查模板残留、初始化、admin preset、RBAC、health/ready 和部署风险 | 不以实现总结为主 |
+| 模板文档、current source、project-init、deployment conventions、reader path 漂移 | `$webapp-template-docs-governance` | 文档真源、模板说明、派生项目读者路径和进度记录 | 不证明 runtime 行为正确 |
+| 模板页面、普通用户入口、admin preset、响应式、低心智负担或 L1 回归 | `$webapp-template-page-design-governance` | 页面语义、信息层级、响应式和视觉回归 | 不直接定义 server/runtime 后端边界 |
+| 模板自身、derived project、project-init、server/web/runtime、deploy/lab-ha 和 loadtest 边界 | `$webapp-template-domain-boundary-governance` | 模板职责、派生边界、真源和运行层级 | 不处理纯视觉或文案排版 |
+| 模板发布、派生项目影响、preflight、image tag、health/ready 和 rollback | `$webapp-template-release-governance` | 发布路径、派生项目影响、回滚和 release evidence | 不替代 runtime 故障定位 |
+| fixtures、admin preset、project-init 默认数据、import dry-run 和 cleanup | `$webapp-template-seed-import-governance` | 可逆默认数据、初始化数据边界和清理策略 | 不把模板样例写成派生项目私有事实 |
+| logs/traces/metrics/error helper、health/ready、request_id 和派生项目可迁移性 | `$webapp-template-observability-error-governance` | 可观测性、错误分类、用户提示和模板可迁移证据 | 不替代安全审查 |
+| 默认 secrets、admin preset、OAuth/API examples、cert、SealedSecret、env 示例和权限边界 | `$webapp-template-security-privacy-governance` | 安全与隐私边界、默认密钥和权限风险 | 不替代普通业务 review |
+
 ## 常用组合 / Pairings
 
 | 场景 | 建议同时使用 |
