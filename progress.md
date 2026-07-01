@@ -321,3 +321,18 @@
 - 完成：同步 `webapp-template-*` 项目治理 skills 的质量门禁。docs/page/domain/release/test/code-review 正文补齐质量门禁；runtime/observability/security/seed-import 等默认提示词补齐根因、可观测、安全、数据质量锚点，触发 `$webapp-template-*` 时默认关注模板可维护性、派生可扩展性、复用优先、初始化边界、发布证据、测试可信度和安全/数据边界。
 - 下一步：后续如果派生项目复制这些 skill，应在派生仓库重写项目事实，不能直接保留模板专属真源或部署口径。
 - 阻塞/风险：本组只改 `.agents/skills` 和 `progress.md`；不改 runtime、schema、RBAC、模板初始化脚本、部署或真实环境。
+
+## 2026-07-01 governance skills 结构质量门禁
+
+- 完成：补强 `webapp-template-*` 治理 skills 的结构质量检查，明确模块化、高内聚、低耦合、单一职责；页面、文档、发布、测试、运行时、可观测性、安全和 seed/import 都按模板可复用边界写短门禁。
+- 完成：同步 `agents/openai.yaml` 默认提示词，让 `$webapp-template-*` 默认把质量门禁理解为包含模块化、高内聚、低耦合和单一职责。
+- 验证：追加前 `progress.md` 为 323 行、53715 字节，未达到归档阈值；Ruby YAML 解析通过 88 个 `agents/openai.yaml`；结构/frontmatter 扫描通过 54 个目标 skill；`quick_validate.py` 因当前 Python 环境缺 `yaml`/PyYAML 失败，已按依赖缺口记录。
+- 下一步：后续模板 skill 继续优先保护派生项目可复用性，不把单个项目的业务事实写成模板主路径。
+- 阻塞/风险：本组只改 `.agents/skills` 和 `progress.md`；不改 runtime、schema、RBAC、模板初始化脚本、部署或真实环境。
+
+## 2026-07-01 governance skills 边界清晰与合理严谨门禁
+
+- 完成：在 `webapp-template-*` 项目治理 skills 的结构质量检查中补入一条短门禁：边界清晰、合理严谨；要求说明本轮管什么、不管什么、依赖哪个真源，以及为什么当前拆分、抽象和验证足够但不过度。
+- 完成：同步 `agents/openai.yaml` 默认提示词，让 `$webapp-template-*` 的质量门禁显式包含边界清晰、合理严谨、模块化、高内聚、低耦合、单一职责。
+- 下一步：后续模板 skill 继续以模板可复用和派生项目影响为边界，不把单个派生项目事实写回模板主路径。
+- 阻塞/风险：追加前 `progress.md` 为 331 行、54777 字节，未达到归档阈值。本组只改 `.agents/skills` 和 `progress.md`；不改 runtime、schema、RBAC、模板初始化脚本、部署或真实环境。

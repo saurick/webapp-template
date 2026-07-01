@@ -1,6 +1,6 @@
 ---
 name: webapp-template-page-design-governance
-description: webapp-template 项目页面设计治理。Use when Codex designs, reviews, simplifies, or implements webapp-template pages, frontend UI, landing/home pages, user login/register pages, admin-login, admin-menu, admin-accounts, admin-rbac, antd admin preset pages, forms, tables, cards, filters, empty/error/loading states, responsive layout, dark/light readability, page feature semantics, browser style regression, prototypes or screenshots, or when the user mentions webapp-template with 页面设计, 简洁易用, 美观, 心智负担, 信息密度, 一眼看不懂, 功能细节, 页面好看, 样式回归, style:l1, or 低密度.
+description: 项目页面设计治理（webapp-template）。Use when Codex designs, reviews, simplifies, or implements webapp-template pages, frontend UI, landing/home pages, user login/register pages, admin-login, admin-menu, admin-accounts, admin-rbac, antd admin preset pages, forms, tables, cards, filters, empty/error/loading states, responsive layout, dark/light readability, page feature semantics, browser style regression, prototypes or screenshots, or when the user mentions webapp-template with 页面设计, 简洁易用, 美观, 心智负担, 信息密度, 一眼看不懂, 功能细节, 页面好看, 样式回归, style:l1, or 低密度.
 ---
 
 # Webapp Template 页面设计治理 Page Design Governance
@@ -12,6 +12,14 @@ description: webapp-template 项目页面设计治理。Use when Codex designs, 
 ## Webapp Template 页面质量门禁 Page Quality Gate
 
 页面治理不能只追求好看或少一点。要把每个可见模块、字段、按钮、状态和文案压回真实业务意义。
+
+### 结构质量检查 Structure Quality Checks
+
+- 边界清晰、合理严谨：说明本轮管什么、不管什么、依赖哪个真源，以及为什么当前拆分、抽象和验证足够但不过度。
+- 模块化：页面按主任务、数据/动作 hook、表格、表单、详情、状态和反馈拆分；只有能降低理解、复用或回归成本时才拆。
+- 高内聚：同一字段展示、状态解释、操作入口、错误提示和布局规则尽量收口到共享组件/helper，不让相邻页面各写一套。
+- 低耦合：页面只提交用户意图并展示后端事实，不把 RBAC、业务事实、部署或客户配置硬编码进局部 UI。
+- 单一职责：一个组件不要同时承担布局、数据请求、权限裁决、业务派生、保存副作用和兜底；必要时先抽 hook/helper。
 
 - 每个元素都要支持明确角色、判断、动作或反馈；无决策价值、重复入口、假快捷方式和装饰性卡片应删除、合并或降级。
 - 页面不能补造后端事实、隐藏 API/RBAC/业务边界缺口、显示裸技术字段，或用页面私有映射替代共享 helper / API 合同。

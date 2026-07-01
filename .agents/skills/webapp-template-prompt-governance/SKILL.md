@@ -1,6 +1,6 @@
 ---
 name: webapp-template-prompt-governance
-description: webapp-template 项目提示词治理。Use when Codex writes, refines, evaluates, or converts a webapp-template request into an executable prompt for implementation, review, docs governance, page design, tests, project initialization, deployment, handoff, side chat, main chat, or commit/push work; when a complete copyable final prompt, prompt length control, Codex input limit, engineering quality gate, maintainability, extensibility, simplicity, complexity budget, or prompt boundary conditions are needed; when prompts need template genericity, project-init, health/ready, admin preset, load-test, deploy preflight, README/AGENTS/progress.md boundaries; or when the user wants positive "要做什么" wording instead of broad "不要" lists.
+description: 项目提示词治理（webapp-template）。Use when Codex writes, refines, evaluates, or converts a webapp-template request into an executable prompt for implementation, review, docs governance, page design, tests, project initialization, deployment, handoff, side chat, main chat, or commit/push work; when a complete copyable final prompt, prompt length control, Codex input limit, engineering quality gate, maintainability, extensibility, simplicity, complexity budget, or prompt boundary conditions are needed; when prompts need template genericity, project-init, health/ready, admin preset, load-test, deploy preflight, README/AGENTS/progress.md boundaries; or when the user wants positive "要做什么" wording instead of broad "不要" lists.
 ---
 
 # Webapp Template Prompt Governance
@@ -43,6 +43,14 @@ Use "不要 / 禁止" only for expensive mistakes:
 完整 webapp-template 提示词通常应包含：相关 `$webapp-template-*` skills、目标、先读真源、允许修改、本轮不做、验收、progress.md 要求、对派生项目的影响和收口要求。微型提示词可省略明显无关段落。
 
 ## Engineering Quality Gate
+
+Structure constraints to include when relevant:
+
+- 边界清晰、合理严谨：说明本轮管什么、不管什么、依赖哪个真源，以及为什么当前拆分、抽象和验证足够但不过度。
+- 模块化：提示词要要求按真实职责拆分，不做无意义拆文件，也不把多个阶段塞进一次大改。
+- 高内聚：同一规则、字段真源、权限判断、错误处理或文档口径要收口到同一 usecase/helper/config/test source。
+- 低耦合：要求页面、usecase、repo、schema、配置、部署和测试的依赖方向清楚，不跨层偷做逻辑。
+- 单一职责：要求输出说明新增抽象、fallback、API/schema/config 的理由、收益、验证方式和退出边界。
 
 webapp-template 提示词必须保护模板的长期可复用性。非平凡任务要把“可维护、可扩展、足够简洁”写成硬约束：
 
