@@ -1,6 +1,6 @@
 ---
 name: webapp-template-prompt-governance
-description: webapp-template 项目提示词治理。Use when Codex writes, refines, evaluates, or converts a webapp-template request into an executable prompt for implementation, review, docs governance, page design, tests, project initialization, deployment, handoff, side chat, main chat, or commit/push work; when a complete copyable final prompt, prompt length control, Codex input limit, or prompt boundary conditions are needed; when prompts need template genericity, project-init, health/ready, admin preset, load-test, deploy preflight, README/AGENTS/progress.md boundaries; or when the user wants positive "要做什么" wording instead of broad "不要" lists.
+description: webapp-template 项目提示词治理。Use when Codex writes, refines, evaluates, or converts a webapp-template request into an executable prompt for implementation, review, docs governance, page design, tests, project initialization, deployment, handoff, side chat, main chat, or commit/push work; when a complete copyable final prompt, prompt length control, Codex input limit, engineering quality gate, maintainability, extensibility, simplicity, complexity budget, or prompt boundary conditions are needed; when prompts need template genericity, project-init, health/ready, admin preset, load-test, deploy preflight, README/AGENTS/progress.md boundaries; or when the user wants positive "要做什么" wording instead of broad "不要" lists.
 ---
 
 # Webapp Template Prompt Governance
@@ -42,6 +42,16 @@ Use "不要 / 禁止" only for expensive mistakes:
 
 完整 webapp-template 提示词通常应包含：相关 `$webapp-template-*` skills、目标、先读真源、允许修改、本轮不做、验收、progress.md 要求、对派生项目的影响和收口要求。微型提示词可省略明显无关段落。
 
+## Engineering Quality Gate
+
+webapp-template 提示词必须保护模板的长期可复用性。非平凡任务要把“可维护、可扩展、足够简洁”写成硬约束：
+
+- 优先复用模板现有 init、server/web/deploy/scripts/docs 结构、health/ready 合同和配置命名。
+- 新增能力必须是模板级通用能力；不要为了单个派生项目、单个业务域或一次性演示污染模板核心。
+- 新增抽象、脚手架参数、migration、deploy step、loadtest、admin preset 或配置层前，必须说明为什么现有模板能力不足，以及对派生项目的影响。
+- 如果任务同时牵涉 project-init、runtime、docs、deploy 和 loadtest，先拆成可验证切片。
+- 收口必须说明复用点、模板通用性影响、复杂度变化、派生项目迁移风险、未验证项和剩余风险。
+
 ## Standard Webapp Template Prompt
 
 ```markdown
@@ -63,6 +73,11 @@ $relevant-webapp-template-skill
 
 本轮不做：
 - <only high-risk non-goals: project-specific hardcode, migration, deploy, loadtest, etc.>
+
+工程质量：
+- 优先复用 webapp-template 现有 init、server/web/deploy/scripts/docs 结构和 health/ready 合同。
+- 新增抽象、参数、migration、deploy step、loadtest 或配置层前，先说明模板级必要性和对派生项目的影响。
+- 收口时说明复杂度控制、复用点、模板通用性影响、迁移风险和剩余风险。
 
 验收：
 - 先按影响面选择测试形态。
@@ -107,6 +122,8 @@ $webapp-template-prompt-governance
 
 验收：
 - 检查项目名、服务名、默认密钥、health/ready、README/docs 口径和初始化脚本影响。
+工程质量：
+- 保持模板通用，不把派生项目的业务命名或流程写进核心。
 ```
 
 When asked to produce a prompt, deliver it as:
@@ -149,3 +166,4 @@ $webapp-template-test-governance
 - 要求 "全量测试" 但不区分 static、unit、style、deploy preflight 和 loadtest。
 - 把 docs、runtime、deployment、loadtest 和 project-init 迁移合并成一个过大的提示词。
 - 只讲提示词原则但不给最终可复制版本，或把完整聊天历史塞进一个超长 prompt。
+- 只要求“功能更强”，但不要求模板通用性、派生项目影响、复杂度预算和迁移风险说明。

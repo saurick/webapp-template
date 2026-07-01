@@ -308,3 +308,10 @@
 - 验证：追加前 `progress.md` 为 302 行、50366 字节，未达到归档阈值；已执行全局 skill 与 `webapp-template-release-governance` 的 `quick_validate.py`、`agents/openai.yaml` Ruby YAML 解析、TODO 扫描和限定 `git diff --check`，均通过。
 - 下一步：后续 webapp-template 提交推送相关 / 所有代码，尤其多会话、脏工作区、hook 反复失败或双 remote 同步时，先 `$git-closeout-coordination`，再按 `$webapp-template-release-governance` 和 `$webapp-template-test-governance` 选择项目命令。
 - 阻塞/风险：本轮只改全局 skill、项目 skill README、release skill 和过程记录，不改模板 runtime、schema、migration、RBAC、部署脚本、模板初始化逻辑、真实测试脚本或远端环境。
+
+## 2026-07-01 prompt skill 工程质量门禁
+
+- 完成：补强 `webapp-template-prompt-governance`，要求生成实现 / 模板初始化 / 页面 / 文档 / 测试 / 部署 / review 提示词时显式包含 Engineering Quality Gate：复用现有 init、server/web/deploy/scripts/docs、health/ready 合同和配置命名，新增抽象 / 脚手架参数 / migration / deploy step / loadtest / admin preset / 配置层前说明模板级必要性和对派生项目的影响。同步 UI metadata 加入工程质量门禁和复杂度预算。
+- 验证：追加前 `progress.md` 为 310 行、51786 字节，未达到归档阈值；本组已执行 YAML 解析、等价 skill metadata 校验和限定 `git diff --check`。
+- 下一步：后续 webapp-template 提示词把“通用 / 可扩展 / 做完整”落成模板通用性、派生项目影响、复杂度预算、迁移风险和验证命令，不把单个项目需求写进模板核心。
+- 阻塞/风险：本组只改 skill 文档、UI metadata 和过程记录，不改模板 runtime、schema、migration、RBAC、部署脚本、初始化逻辑、loadtest 或远端环境。
