@@ -11,6 +11,15 @@ description: webapp-template 项目业务边界与数据真源治理。Use when 
 
 它是模板后端/领域实现主治理入口，覆盖 schema、API、RBAC、transaction、error code、server usecase、repo、migration 和 persisted-data 语义。页面 skill 只负责判断 UI 是否清晰、可用、可回归；如果页面需要后端能力，先回到本 skill 定边界。
 
+## Webapp Template 工程质量门禁 Engineering Quality Gate
+
+业务边界治理必须守住最小必要复杂度和单一真源。
+
+- 新增 schema、migration、repo、usecase、API、RBAC 权限、状态、字段或配置前，先证明现有真源不能承接，并说明新增复杂度的收益和退出边界。
+- 优先主路径修复，不用页面私有逻辑、脚本补写、兼容 fallback、重复派生字段或宽松校验掩盖后端合同缺口。
+- 字段残值/缺值、幂等、事务、权限和客户/模板差异必须可测试、可解释、可回滚；不能只让当前 happy path 通过。
+- 若任务跨太多层，先收窄成一个可验证切片；不在一轮里无约束扩张到 schema、RBAC、UI、docs、deploy 全链路。
+
 ## 真源链 Truth Chain
 
 - 先读 `AGENTS.md`、`docs/current-source-of-truth.md`、`docs/project-init.md`、README、server/web/scripts/deploy docs 和 tests。

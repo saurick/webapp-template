@@ -315,3 +315,9 @@
 - 验证：追加前 `progress.md` 为 310 行、51786 字节，未达到归档阈值；本组已执行 YAML 解析、等价 skill metadata 校验和限定 `git diff --check`。
 - 下一步：后续 webapp-template 提示词把“通用 / 可扩展 / 做完整”落成模板通用性、派生项目影响、复杂度预算、迁移风险和验证命令，不把单个项目需求写进模板核心。
 - 阻塞/风险：本组只改 skill 文档、UI metadata 和过程记录，不改模板 runtime、schema、migration、RBAC、部署脚本、初始化逻辑、loadtest 或远端环境。
+
+## 2026-07-01 项目治理 skills 质量门禁同步
+
+- 完成：同步 `webapp-template-*` 项目治理 skills 的质量门禁。docs/page/domain/release/test/code-review 正文补齐质量门禁；runtime/observability/security/seed-import 等默认提示词补齐根因、可观测、安全、数据质量锚点，触发 `$webapp-template-*` 时默认关注模板可维护性、派生可扩展性、复用优先、初始化边界、发布证据、测试可信度和安全/数据边界。
+- 下一步：后续如果派生项目复制这些 skill，应在派生仓库重写项目事实，不能直接保留模板专属真源或部署口径。
+- 阻塞/风险：本组只改 `.agents/skills` 和 `progress.md`；不改 runtime、schema、RBAC、模板初始化脚本、部署或真实环境。

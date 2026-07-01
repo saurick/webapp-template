@@ -9,6 +9,15 @@ description: webapp-template 项目文档治理。Use when Codex reviews, create
 
 用这个 skill 维护 `/Users/simon/projects/webapp-template` 的文档可读性和真源边界。它服务模板本身，不要把派生项目的业务需求写回模板通用规则。
 
+## Webapp Template 文档质量门禁 Docs Quality Gate
+
+文档治理不能只追求写得多或排版整齐。要保护当前真源、降低心智负担、避免文档漂移，并控制文档体系复杂度。
+
+- 先确认代码、migration、测试、README、正式 docs 和 AGENTS 的优先级，不让过程记录覆盖当前真源。
+- 结论、适用范围、主路径、验收方式和风险边界前置；表格、Mermaid、链接和摘要只在减少查找成本时使用。
+- 行为、入口、配置、测试或部署口径变化时，同步相关索引、README 和 progress；只改措辞时不机械扩大同步面。
+- 不为普通说明引入重模板、重复负面清单或并行 metadata；能由现有脚本、索引或文档承接的规则，不再造一套真源。
+
 ## 工作流 Workflow
 
 1. Snapshot scope。
