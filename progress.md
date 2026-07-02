@@ -336,3 +336,11 @@
 - 完成：同步 `agents/openai.yaml` 默认提示词，让 `$webapp-template-*` 的质量门禁显式包含边界清晰、合理严谨、模块化、高内聚、低耦合、单一职责。
 - 下一步：后续模板 skill 继续以模板可复用和派生项目影响为边界，不把单个派生项目事实写回模板主路径。
 - 阻塞/风险：追加前 `progress.md` 为 331 行、54777 字节，未达到归档阈值。本组只改 `.agents/skills` 和 `progress.md`；不改 runtime、schema、RBAC、模板初始化脚本、部署或真实环境。
+
+## 2026-07-02 governance skills 语义清晰门禁
+
+- 完成：在 `webapp-template-*` 项目治理 skills 的结构质量检查中补入类型化短门禁：语义清晰；覆盖文档、页面、业务边界、代码审查、测试、提示词、运行时诊断、可观测错误、安全、发布和 seed/import，不改变 skill 名称、职责或触发边界。
+- 完成：同步 `agents/openai.yaml` 默认提示词，让 `$webapp-template-*` 的质量门禁显式包含语义清晰，避免字段、状态、按钮、错误、测试、图表、发布证据或模板边界被泛称掩盖。
+- 验证：追加前 `progress.md` 为 338 行、55674 字节，未达到归档阈值；已执行 54 个目标 skill 的语义门禁/metadata 扫描和 54 个 `agents/openai.yaml` Ruby YAML 解析，均通过。
+- 下一步：后续模板 skill 继续保持短门禁，不把“语义清晰”扩成大段口号；派生项目复制时应重写项目事实。
+- 阻塞/风险：本组只改 `.agents/skills` 和 `progress.md`；不改 runtime、schema、RBAC、模板初始化脚本、部署或真实环境。
