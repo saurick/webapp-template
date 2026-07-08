@@ -28,7 +28,7 @@ pnpm install
 pnpm start
 ```
 
-默认地址：`http://localhost:5177`。该端口只用于本地 Vite 开发服务。
+默认地址：`http://127.0.0.1:5177`。该端口只用于本地 Vite 开发服务；开发服务器会把 `http://localhost:5177` 自动规范到同一 IPv4 地址。
 
 本地开发默认代理到 `http://127.0.0.1:8200`。如需临时连接其他后端，可设置 `VITE_API_PROXY_TARGET`，例如：
 
