@@ -362,3 +362,15 @@
 - 完成：继续收口模板本地 Vite dev origin：`web/vite.config.mjs` 保留 `host: 0.0.0.0` 和局域网 `Network` 地址，但将自动打开地址、终端 `Local:` 打印和 `localhost:5177` 页面访问统一规范到 `http://127.0.0.1:5177`；同步更新 `web/README.md` 默认本地地址说明。
 - 下一步：后续派生项目如复制模板 Vite 配置，应保留本机 IPv4 origin 口径；如改端口，需同步改 `DEV_PORT`、HMR `clientPort` 和文档。
 - 阻塞/风险：追加前 `progress.md` 为 358 行、58358 字节，未达到 600 行或 80KB 归档阈值。本轮只改本地开发 Vite 配置和前端 README，不改模板初始化脚本、部署、schema、RBAC 或正式文档目录。
+
+## 2026-07-12 自定义 Skills 瘦身与 Operations 合并
+
+- 完成：项目 skills 从 11 个收敛为 6 个；新增 `$webapp-template-operations-governance` 统一模板/派生项目运行诊断、可迁移观测、安全、发布和回滚，删除项目 prompt、seed/import 及 4 个被替代 skill；默认数据规则由 domain/test 承接。保留代码审查、文档、模板边界、页面和测试专项 SOP，缩短 discovery description，并同步 `AGENTS.md`、根 README 和 skills 导航。提示词整理改用仅显式触发的全局 `$prompt-governance`。
+- 下一步：用模板初始化、派生项目诊断和发布任务验证新的 skill 边界；只在形成独立可复用 SOP 时新增 skill。
+- 阻塞/风险：本轮不改模板 runtime、初始化脚本、schema、RBAC、部署配置、lab-ha 现场或派生项目；更新前 `progress.md` 为 364 行 / 59,138 字节，未达到归档阈值。
+
+## 2026-07-12 项目 AGENTS 分层压缩
+
+- 完成：将项目 AGENTS 从 208 行 / 26,543 字节压缩为 84 行 / 5,962 字节，保留 current-source/project-init/deployment、模板与派生项目、Compose/lab-ha、migration、health、可迁移观测和双 remote 特例；通用工程、Git、样式和 GPT 规则回归全局 AGENTS，并与 6 个项目 skills 对齐。
+- 下一步：节点/runbook 和发布命令继续以正式部署文档与脚本为真源，不回填根 AGENTS。
+- 阻塞/风险：本轮不改模板 runtime、初始化、schema、部署现场或派生项目；更新前 370 行 / 60,071 字节，未达到归档阈值。

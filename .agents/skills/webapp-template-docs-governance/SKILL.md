@@ -1,6 +1,6 @@
 ---
 name: webapp-template-docs-governance
-description: 项目文档治理（webapp-template）。Use when Codex reviews, creates, renames, reorganizes, simplifies, or updates webapp-template Markdown docs, README files, docs/current-source-of-truth.md, docs/project-init.md, docs/deployment-conventions.md, server/docs, server/deploy docs, scripts docs, progress.md, AGENTS.md docs rules, tables, Mermaid diagrams, reader paths, conclusion-first structure, copyable commands, links, anchors, template initialization docs, deployment docs, or when the user mentions webapp-template with 文档治理, docs, 真源, 模板残留, 初始化, 部署真源, 信息密度, 心智负担, 表格, 流程图, 命令可复制, or 文档漂移.
+description: 项目文档治理（webapp-template）。Use when creating, reviewing, renaming, reorganizing, or updating template current-source, project-init, deployment, README, AGENTS, or progress docs.
 ---
 
 # Webapp Template 文档治理 Docs Governance

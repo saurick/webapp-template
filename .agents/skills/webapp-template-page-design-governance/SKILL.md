@@ -1,6 +1,6 @@
 ---
 name: webapp-template-page-design-governance
-description: 项目页面设计治理（webapp-template）。Use when Codex designs, reviews, simplifies, or implements webapp-template pages, frontend UI, landing/home pages, user login/register pages, admin-login, admin-menu, admin-accounts, admin-rbac, antd admin preset pages, forms, tables, cards, filters, empty/error/loading states, responsive layout, dark/light readability, page feature semantics, browser style regression, prototypes or screenshots, or when the user mentions webapp-template with 页面设计, 简洁易用, 美观, 心智负担, 信息密度, 一眼看不懂, 功能细节, 页面好看, 样式回归, style:l1, or 低密度.
+description: 项目页面治理（webapp-template）。Use when designing, reviewing, or changing reusable user/admin pages, presets, responsive behavior, accessibility, or browser regression scope.
 ---
 
 # Webapp Template 页面设计治理 Page Design Governance

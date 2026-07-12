@@ -1,6 +1,6 @@
 ---
 name: webapp-template-test-governance
-description: 项目测试治理（webapp-template）。Use when Codex chooses, runs, reviews, or explains validation scope for webapp-template changes, including Go tests, frontend lint/unit/style regression, migrations, project initialization, admin preset, health/ready checks, load-test boundaries, deploy preflight, smoke/full/strict QA scripts, or when the user asks 测试分类/测试治理/怎么测/要不要补测试.
+description: 项目测试治理（webapp-template）。Use when choosing, running, reviewing, or explaining server, web, migration, init, health, browser, loadtest, or preflight validation.
 ---
 
 # Webapp Template Test Governance

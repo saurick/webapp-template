@@ -1,6 +1,6 @@
 ---
 name: webapp-template-domain-boundary-governance
-description: 项目业务边界与数据真源治理（webapp-template）。Use when Codex implements or reviews webapp-template feature work that may affect data ownership, domain models, workflows, facts, schemas, APIs, permissions, frontend/backend responsibility, customer-specific behavior, source-of-truth fields, stale/missing field values, or cross-module boundaries.
+description: 项目模板边界治理（webapp-template）。Use when work may change template/derived-project responsibility, initialization, server/web runtime, deployment, lab-ha, loadtest, or default-data truth.
 ---
 
 # Webapp Template 业务边界治理 Domain Boundary Governance

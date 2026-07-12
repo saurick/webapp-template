@@ -1,6 +1,6 @@
 ---
 name: webapp-template-code-review-governance
-description: 项目代码审查治理（webapp-template）。Use when Codex reviews webapp-template code changes in any conversation, including side chats, new main chats, post-implementation reviews, pre-commit reviews, PR-style reviews, current worktree review, staged/unstaged diff review, commit review, or when the user mentions webapp-template with code review, 审查代码, 查 bug, 独立审查, 模板残留, 初始化, admin preset, RBAC, healthz, readyz, observability, deployment, style:l1, or 不要改只看.
+description: 项目代码审查治理（webapp-template）。Use when reviewing template diffs, commits, pull requests, or working-tree changes for genericity, initialization, health, deployment, and regression risks.
 ---
 
 # Webapp Template 代码审查治理 Code Review Governance
