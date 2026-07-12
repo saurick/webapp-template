@@ -2,6 +2,11 @@
 
 本文件只记录模板仓库特例。通用工程、Git、删除、浏览器和文档规则使用全局 AGENTS；模板当前事实回到 current-source、project-init、deployment docs、代码和测试。
 
+## AGENTS 体积治理
+
+- 本仓库所有 `AGENTS.md` 目标小于 16 KiB；达到 16 KiB 先去重，超过 24 KiB 必须按全局治理顺序精简，`bash scripts/qa/agents-size.sh` 负责预警和阻断。
+- 脚本只检查大小，不自动改写；模板/派生项目、迁移、部署和安全边界不得为过门禁被删除。
+
 ## 真源与阅读顺序
 
 1. `docs/current-source-of-truth.md`：当前模板真源与任务分流。

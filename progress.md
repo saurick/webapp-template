@@ -374,3 +374,9 @@
 - 完成：将项目 AGENTS 从 208 行 / 26,543 字节压缩为 84 行 / 5,962 字节，保留 current-source/project-init/deployment、模板与派生项目、Compose/lab-ha、migration、health、可迁移观测和双 remote 特例；通用工程、Git、样式和 GPT 规则回归全局 AGENTS，并与 6 个项目 skills 对齐。
 - 下一步：节点/runbook 和发布命令继续以正式部署文档与脚本为真源，不回填根 AGENTS。
 - 阻塞/风险：本轮不改模板 runtime、初始化、schema、部署现场或派生项目；更新前 370 行 / 60,071 字节，未达到归档阈值。
+
+## 2026-07-12 AGENTS 体积自动门禁
+
+- 完成：全局与项目 AGENTS 增加 16 KiB 预警、超过 24 KiB 阻断和固定治理优先级；新增 `scripts/qa/agents-size.sh` 并接入 fast QA，检查只报告/阻断，不自动改写。
+- 下一步：模板和派生项目新增规则时先判断应进入 AGENTS、docs、Skill 还是 QA。
+- 阻塞/风险：本轮不改模板 runtime、初始化、schema 或部署；大小门禁不能替代语义审查。

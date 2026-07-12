@@ -10,6 +10,7 @@
 | `scripts/init-project.sh` | 扫描模板残留、默认配置和模块裁剪点 | 新项目由模板初始化后 |
 | `scripts/doctor.sh` | 检查本机依赖、hooks 与关键脚本状态 | 新机器初始化 / 异常排查 |
 | `scripts/qa/db-guard.sh` | 检查 Ent schema/ent 变更是否附带 migration | 改动数据模型后 |
+| `scripts/qa/agents-size.sh` | 扫描全部 AGENTS.md；16 KiB 预警、超过 24 KiB 阻断，不自动改写 | 修改长期协作规则后 |
 | `scripts/deploy/production-preflight.sh` | 产品级生产发布前门禁，检查运行时 env、Compose、migration 脚本、Jaeger loopback 和低配部署边界 | 每次生产发布 / 部署后运行态复核前 |
 | `scripts/qa/secrets.sh` | 扫描变更文件中的疑似密钥泄露 | 提交前 / 推送前 |
 | `scripts/qa/shellcheck.sh` | 检查 shell 脚本静态问题 | 调整脚本后 |
