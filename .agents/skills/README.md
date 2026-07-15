@@ -6,7 +6,7 @@
 | --- | --- |
 | `$webapp-template-code-review-governance` | review 模板残留、初始化、admin preset、health/ready 和部署改动 |
 | `$webapp-template-docs-governance` | current source、project-init、deployment conventions 和读者路径 |
-| `$webapp-template-domain-boundary-governance` | template/derived project、init、server/web、deploy/lab-ha 和 loadtest 边界 |
+| `$webapp-template-domain-boundary-governance` | template/derived project、init、schema/API/RBAC、default data 和字段真源 |
 | `$webapp-template-page-design-governance` | 通用页面、admin preset、响应式和 L1 回归 |
 | `$webapp-template-test-governance` | server/web/migration、init、health/ready、style、loadtest 和 preflight |
 | `$webapp-template-operations-governance` | 模板/派生运行诊断、可迁移观测、安全、发布和回滚 |

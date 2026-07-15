@@ -380,3 +380,11 @@
 - 完成：全局与项目 AGENTS 增加 16 KiB 预警、超过 24 KiB 阻断和固定治理优先级；新增 `scripts/qa/agents-size.sh` 并接入 fast QA，检查只报告/阻断，不自动改写。
 - 下一步：模板和派生项目新增规则时先判断应进入 AGENTS、docs、Skill 还是 QA。
 - 阻塞/风险：本轮不改模板 runtime、初始化、schema 或部署；大小门禁不能替代语义审查。
+
+## 2026-07-15 项目 Skills 边界与健康门禁收口
+
+- 完成：删除项目 skills 重复的通用质量段，将 domain 触发收窄到 template/derived-project、初始化、schema/API/RBAC 与 default data；runtime/release/lab-ha 归 operations，loadtest 与部署渲染归 test。测试 skill 补齐 init-project、Helm/Kustomize/lab-ha render 和正确 production preflight 合同；页面 skill 与 `web/README.md` 改以 `styleL1.mjs` scenario list 为覆盖真源。
+- 完成：缩短 metadata 提示并补齐短描述规范；新增 `scripts/qa/skill-health.mjs`，检查 frontmatter、目录名、metadata、README 索引和相对引用，并接入 `fast.sh`、`full.sh`、`strict.sh`。
+- 验证：项目 skill health 6 / 6、官方 `quick_validate.py` 6 / 6、YAML/metadata、过期路径扫描与限定 `git diff --check` 通过。
+- 下一步：后续模板初始化或部署清单变化按当前真源运行适用的 init、helm/kustomize 和 server-side dry-run，不在 skill 中硬编码环境数量。
+- 阻塞/风险：本轮未运行模板初始化、集群 dry-run、loadtest 或目标发布；未改 schema、RBAC、运行时或 lab-ha 现场，也未提交或推送。

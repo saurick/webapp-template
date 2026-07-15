@@ -46,7 +46,7 @@ pnpm style:l1
 pnpm build
 ```
 
-- `pnpm style:l1` 是当前仓库最小浏览器级样式回归，会自动拉起本地 Vite 并覆盖首页、用户登录、注册、管理员登录，以及未登录访问 `/admin-menu` 的重定向。
+- `pnpm style:l1` 是当前仓库浏览器级样式回归入口，会自动拉起本地 Vite；覆盖范围以 `web/scripts/styleL1.mjs` 的 scenario list 为真源，当前包含公开入口、管理员登录/重定向、已登录菜单、stale-auth recovery、账号与 RBAC 页面。
 - 当前后台 preset 使用 antd；antd 只进入管理员后台页面，不作为用户端页面的默认设计体系。
 - 若本轮改动触达更复杂的后台页面、弹窗、表格或更多响应式状态，仍需在 `style:l1` 之外继续补针对性浏览器回归。
 - `pnpm test` 当前只负责验证错误码常量与登录态错误分类这类最小前端基线；它不替代浏览器里的样式 / box 模型验收。

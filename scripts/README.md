@@ -11,6 +11,7 @@
 | `scripts/doctor.sh` | 检查本机依赖、hooks 与关键脚本状态 | 新机器初始化 / 异常排查 |
 | `scripts/qa/db-guard.sh` | 检查 Ent schema/ent 变更是否附带 migration | 改动数据模型后 |
 | `scripts/qa/agents-size.sh` | 扫描全部 AGENTS.md；16 KiB 预警、超过 24 KiB 阻断，不自动改写 | 修改长期协作规则后 |
+| `scripts/qa/skill-health.mjs` | 检查项目 Skill frontmatter、目录名、metadata、README 索引和相对引用；不依赖 PyYAML，并由 fast/full/strict 调用 | 修改 `.agents/skills/**` 后 |
 | `scripts/deploy/production-preflight.sh` | 产品级生产发布前门禁，检查运行时 env、Compose、migration 脚本、Jaeger loopback 和低配部署边界 | 每次生产发布 / 部署后运行态复核前 |
 | `scripts/qa/secrets.sh` | 扫描变更文件中的疑似密钥泄露 | 提交前 / 推送前 |
 | `scripts/qa/shellcheck.sh` | 检查 shell 脚本静态问题 | 调整脚本后 |
@@ -27,7 +28,7 @@
 | `scripts/loadtest/run.sh` | 运行最小 `k6` 压测场景 | 需要验证健康检查 / JSON-RPC / 登录链路时 |
 | `scripts/git-hooks/commit-msg.sh` | 校验提交信息规范 | commit-msg hook 自动执行 |
 
-补充说明：前端浏览器级样式回归入口不在 `scripts/qa` 下，而是 `cd /Users/simon/projects/webapp-template/web && pnpm style:l1`。它负责验证首页、用户登录、注册、管理员登录和未登录访问后台时的重定向这些高频视觉场景。
+补充说明：前端浏览器级样式回归入口不在 `scripts/qa` 下，而是 `cd /Users/simon/projects/webapp-template/web && pnpm style:l1`。覆盖范围以 `web/scripts/styleL1.mjs` 的 scenario list 为真源，当前包含公开入口、管理员登录/重定向、已登录菜单、stale-auth recovery、账号与 RBAC 页面。
 
 ## Hook 对应关系
 
