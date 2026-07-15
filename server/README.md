@@ -26,7 +26,11 @@ make init
 make run
 ```
 
-本地开发默认端口：HTTP `8200`、gRPC `9200`。端口口径以 `configs/dev/config.yaml` 为准。
+本地开发端口真源是仓库根 `config/dev-ports.env` 的 `DEV_HTTP_PORT` / `DEV_GRPC_PORT`；可运行 `node ../scripts/dev-ports.mjs show` 查看。`make run` / `make dev` 会把该组端口应用到 dev server；`configs/dev/config.yaml` 保留直接启动服务时的同值 fallback，初始化分配器会同步两者，审计会阻断漂移。
+
+`make dev_stop` 只会停止 cwd 位于当前 `server/` 的监听进程；若端口属于其他项目会拒绝操作并报告 PID、端口和 cwd。
+
+临时联调可以显式整组覆盖 `DEV_HTTP_PORT` / `DEV_GRPC_PORT`；这不会改写 manifest，也不会触发自动顺延，调用者必须自行保证端口归属与冲突检查。
 
 ## 常用命令
 

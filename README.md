@@ -26,7 +26,7 @@ pnpm install
 pnpm start
 ```
 
-默认地址：`http://localhost:5177`。该端口只用于本地 Vite 开发服务，避免与其他本机项目互抢 `5173-5176`。
+前端地址由仓库根 `config/dev-ports.env` 的 `DEV_WEB_PORT` 决定。可在根目录运行 `node scripts/dev-ports.mjs show` 查看完整地址组；`pnpm start` 启用 `strictPort`，端口被占用时会直接失败，不会顺延到另一个项目的地址。
 
 ### 2) 启动后端
 
@@ -36,7 +36,17 @@ make init
 make run
 ```
 
-本地后端默认监听 `http://127.0.0.1:8200`，前端开发代理也默认指向这个端口。若同时运行其他派生项目，应让其他项目避开 `8200`，或显式调整各自端口配置。
+本地后端 HTTP / gRPC 分别使用 manifest 的 `DEV_HTTP_PORT` / `DEV_GRPC_PORT`。`make run` / `make dev` 会导出同一份端口组给服务端，前端代理也从该 manifest 推导 HTTP 端口。
+
+本地固定端口 bundle：
+
+| 用途 | manifest 字段 |
+| --- | --- |
+| Vite | `DEV_WEB_PORT` |
+| HTTP | `DEV_HTTP_PORT` |
+| gRPC | `DEV_GRPC_PORT` |
+| `style:l1` | `DEV_STYLE_PORT` |
+| 临时/预览保留区间 | 从 `DEV_AUX_PORT_START` 起的完整辅助块 |
 
 ### 3) 数据迁移（Ent + Atlas）
 
@@ -83,6 +93,7 @@ bash /Users/simon/projects/webapp-template/scripts/setup-git-hooks.sh
 
 ```bash
 bash /Users/simon/projects/webapp-template/scripts/init-project.sh
+bash scripts/init-project.sh --project --allocate-dev-ports --project-id <项目标识>
 bash /Users/simon/projects/webapp-template/scripts/bootstrap.sh
 bash /Users/simon/projects/webapp-template/scripts/doctor.sh
 bash /Users/simon/projects/webapp-template/scripts/init-project.sh --project --strict
@@ -93,6 +104,8 @@ bash /Users/simon/projects/webapp-template/scripts/qa/full.sh
 说明：
 
 - `init-project.sh` 会扫描模板残留、默认密钥、部署主机、页面标题、模块裁剪点等初始化必改项。
+- `--allocate-dev-ports` 会扫描 `/Users/simon/projects` 同级仓库的 `config/dev-ports.env`，只在项目创建时分配下一组固定端口和独占的 100 端口辅助区间，并同步直接启动使用的 dev YAML；日常主入口不会自动顺延。
+- 正式文档只引用 manifest 字段或 `node scripts/dev-ports.mjs show`，不复制端口数字；初始化审计会阻断 manifest、dev YAML 与文档真源漂移。
 - 初始化专项说明与“给 AI 的标准输入模板”见：`/Users/simon/projects/webapp-template/docs/project-init.md`
 - 部署模板总览见：`/Users/simon/projects/webapp-template/server/deploy/README.md`
 - 当前模板前台与后台入口分离：`/`、`/login`、`/register` 只承载普通用户工作台与注册登录；后台从 `/admin-login` 进入，登录后访问 `/admin-menu`、`/admin-accounts`、`/admin-rbac`。

@@ -5,6 +5,7 @@ print_help() {
 	cat <<'USAGE'
 用法:
   bash scripts/init-project.sh [--strict] [--project|--template-source]
+                               [--allocate-dev-ports --project-id <id>]
 
 作用:
   扫描“由模板初始化后的新项目”里仍需处理的模板残留、默认配置与模块裁剪点。
@@ -16,17 +17,23 @@ print_help() {
 
 参数:
   --strict           在派生项目模式下，命中“必须处理项”时返回非 0
+  --allocate-dev-ports
+                     为派生项目从兄弟仓 manifest 中顺序分配一组固定开发端口
+  --project-id <id>  分配端口时写入 DEV_PROJECT_ID；使用小写字母、数字、点、下划线或连字符
   -h, --help         显示帮助
 
 建议流程:
   1) 新项目初始化后先执行: bash scripts/init-project.sh
-  2) 完成项目名 / 配置 / 部署方式 / 文档收口
-  3) 再执行: bash scripts/init-project.sh --project --strict
+  2) 分配固定端口: bash scripts/init-project.sh --project --allocate-dev-ports --project-id <项目标识>
+  3) 完成项目名 / 配置 / 部署方式 / 文档收口
+  4) 再执行: bash scripts/init-project.sh --project --strict
 USAGE
 }
 
 STRICT=0
 MODE="auto"
+ALLOCATE_DEV_PORTS=0
+PROJECT_ID=""
 
 while [[ $# -gt 0 ]]; do
 	case "$1" in
@@ -38,6 +45,17 @@ while [[ $# -gt 0 ]]; do
 		;;
 	--template-source)
 		MODE="template-source"
+		;;
+	--allocate-dev-ports)
+		ALLOCATE_DEV_PORTS=1
+		;;
+	--project-id)
+		shift
+		if [[ $# -eq 0 ]]; then
+			echo "[init-project] --project-id 缺少值" >&2
+			exit 1
+		fi
+		PROJECT_ID="$1"
 		;;
 	-h | --help)
 		print_help
@@ -178,12 +196,45 @@ report_existing_paths() {
 	echo
 }
 
+if [[ "$ALLOCATE_DEV_PORTS" -eq 1 ]]; then
+	if [[ "$EFFECTIVE_MODE" != "project" ]]; then
+		echo "[init-project] --allocate-dev-ports 只能用于派生项目模式" >&2
+		exit 1
+	fi
+	if [[ -z "$PROJECT_ID" ]]; then
+		echo "[init-project] --allocate-dev-ports 必须同时提供 --project-id" >&2
+		exit 1
+	fi
+	node scripts/dev-ports.mjs allocate --root "$ROOT_DIR" --project-id "$PROJECT_ID"
+elif [[ -n "$PROJECT_ID" ]]; then
+	echo "[init-project] --project-id 只能与 --allocate-dev-ports 一起使用" >&2
+	exit 1
+fi
+
 echo "[init-project] 仓库根目录: $ROOT_DIR"
 echo "[init-project] 当前模式: $EFFECTIVE_MODE"
 if [[ "$EFFECTIVE_MODE" == "template-source" ]]; then
 	echo "[init-project] 提示: 当前仍是模板源仓库，下面的'派生项目必改'命中属于预期模板位。"
 fi
 echo
+
+PORT_MANIFEST_HITS=""
+if ! PORT_AUDIT_OUTPUT="$(node scripts/dev-ports.mjs audit --root "$ROOT_DIR" 2>&1)"; then
+	PORT_MANIFEST_HITS="$PORT_AUDIT_OUTPUT"
+else
+	echo "$PORT_AUDIT_OUTPUT"
+fi
+if [[ "$EFFECTIVE_MODE" == "project" ]]; then
+	if [[ ! -f config/dev-ports.env ]]; then
+		PORT_MANIFEST_HITS="${PORT_MANIFEST_HITS:+$PORT_MANIFEST_HITS$'\n'}config/dev-ports.env: missing"
+	elif grep -Eq '^DEV_PROJECT_ID=webapp-template$' config/dev-ports.env; then
+		PORT_MANIFEST_HITS="${PORT_MANIFEST_HITS:+$PORT_MANIFEST_HITS$'\n'}config/dev-ports.env: DEV_PROJECT_ID=webapp-template"
+	fi
+fi
+report_required \
+	"固定开发端口 manifest 缺失、仍属于模板或与兄弟仓冲突" \
+	"执行 bash scripts/init-project.sh --project --allocate-dev-ports --project-id <项目标识>；分配完成后端口固定，运行时遇到占用应失败而不是顺延。" \
+	"$PORT_MANIFEST_HITS"
 
 IDENTITY_HITS="$(
 	scan_pattern 'webapp-template|react-webapp-template|template-server|compose\.webapp-template|deploy_webapp_template|Project Workspace|Starter Workspace|new-task|your-project' \
@@ -312,12 +363,13 @@ report_advisory \
 
 echo "[init-project] 建议执行顺序:"
 echo "  1) bash scripts/init-project.sh"
-echo "  2) 完成项目名 / 配置 / 部署方式 / 页面文案收口"
-echo "  3) bash scripts/bootstrap.sh"
-echo "  4) bash scripts/doctor.sh"
-echo "  5) bash scripts/init-project.sh --project --strict"
-echo "  6) bash scripts/qa/fast.sh"
-echo "  7) bash scripts/qa/full.sh"
+echo "  2) bash scripts/init-project.sh --project --allocate-dev-ports --project-id <项目标识>"
+echo "  3) 完成项目名 / 配置 / 部署方式 / 页面文案收口"
+echo "  4) bash scripts/bootstrap.sh"
+echo "  5) bash scripts/doctor.sh"
+echo "  6) bash scripts/init-project.sh --project --strict"
+echo "  7) bash scripts/qa/fast.sh"
+echo "  8) bash scripts/qa/full.sh"
 echo
 
 if [[ "$EFFECTIVE_MODE" == "project" && "$STRICT" -eq 1 && "$REQUIRED_COUNT" -gt 0 ]]; then

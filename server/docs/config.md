@@ -5,6 +5,7 @@
 - `/Users/simon/projects/webapp-template/server/internal/conf/conf.proto`
 - `/Users/simon/projects/webapp-template/server/configs/dev/config.yaml`
 - `/Users/simon/projects/webapp-template/server/configs/prod/config.yaml`
+- `/Users/simon/projects/webapp-template/config/dev-ports.env`（本地开发端口 bundle）
 
 ## 顶层结构
 
@@ -24,10 +25,12 @@
 - `server.grpc.addr`
 - `server.grpc.timeout`
 
-模板默认值：
+模板本地开发监听值：
 
-- HTTP `0.0.0.0:8000`
-- gRPC `0.0.0.0:9000`
+- HTTP：`0.0.0.0:${DEV_HTTP_PORT}`
+- gRPC：`0.0.0.0:${DEV_GRPC_PORT}`
+
+`make run` / `make dev` 会把 manifest 的字段显式应用到 dev server；派生项目通过初始化分配自己的固定 bundle，并同步 `configs/dev/config.yaml` 的直接启动 fallback。实际数字只在 manifest / dev YAML 中维护。
 
 ## `log`
 

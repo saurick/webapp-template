@@ -3,6 +3,27 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd -- "${SCRIPT_DIR}/../.." && pwd)"
+DEV_PORTS_FILE="${REPO_ROOT}/config/dev-ports.env"
+
+if [[ ! -f "${DEV_PORTS_FILE}" ]]; then
+	printf '缺少开发端口清单: %s\n' "${DEV_PORTS_FILE}" >&2
+	exit 1
+fi
+manifest_dev_aux_port_start="$(awk -F= '$1 == "DEV_AUX_PORT_START" { print $2 }' "${DEV_PORTS_FILE}")"
+manifest_dev_http_port="$(awk -F= '$1 == "DEV_HTTP_PORT" { print $2 }' "${DEV_PORTS_FILE}")"
+dev_aux_port_start="${DEV_AUX_PORT_START:-${manifest_dev_aux_port_start}}"
+dev_http_port="${DEV_HTTP_PORT:-${manifest_dev_http_port}}"
+if [[ ! "${dev_aux_port_start}" =~ ^[0-9]+$ ]]; then
+	printf 'DEV_AUX_PORT_START 必须是数字端口: %s\n' "${dev_aux_port_start}" >&2
+	exit 1
+fi
+if [[ ! "${dev_http_port}" =~ ^[0-9]+$ ]]; then
+	printf 'DEV_HTTP_PORT 必须是数字端口: %s\n' "${dev_http_port}" >&2
+	exit 1
+fi
+dev_aux_port_start=$((10#${dev_aux_port_start}))
+dev_http_port=$((10#${dev_http_port}))
+k6_dashboard_default_port=$((dev_aux_port_start + 80))
 
 usage() {
 	cat <<'EOF'
@@ -10,7 +31,7 @@ usage() {
   bash scripts/loadtest/run.sh [health|system|auth|mixed] [k6 args...]
 
 常用环境变量：
-  BASE_URL=http://127.0.0.1:8200
+  BASE_URL=http://127.0.0.1:<DEV_HTTP_PORT>
   LOADTEST_HOST_HEADER=webapp-trial.lab.home.arpa
   LOADTEST_AUTH_MODE=register|login
   LOADTEST_USERNAME=alice
@@ -172,7 +193,7 @@ fi
 extra_args=("$@")
 apply_k6_flag_overrides "${extra_args[@]}"
 
-base_url="${BASE_URL:-http://127.0.0.1:8200}"
+base_url="${BASE_URL:-http://127.0.0.1:${dev_http_port}}"
 loadtest_run_id="${LOADTEST_RUN_ID:-lt-$(date +%Y%m%d-%H%M%S)}"
 output_dir="${REPO_ROOT}/server/deploy/lab-ha/artifacts/loadtest/${loadtest_run_id}"
 summary_path_host="${output_dir}/summary.json"
@@ -183,7 +204,7 @@ script_path_container="/workspace/scripts/loadtest/${scenario}.js"
 
 k6_dashboard="${K6_WEB_DASHBOARD:-true}"
 k6_dashboard_open="${K6_WEB_DASHBOARD_OPEN:-false}"
-k6_dashboard_port="${K6_WEB_DASHBOARD_PORT:-5665}"
+k6_dashboard_port="${K6_WEB_DASHBOARD_PORT:-${k6_dashboard_default_port}}"
 k6_image="${LOADTEST_K6_IMAGE:-grafana/k6:latest}"
 prometheus_rw_url="${LOADTEST_PROMETHEUS_RW_URL:-}"
 prometheus_rw_trend_stats="${LOADTEST_PROMETHEUS_RW_TREND_STATS:-p(95),p(99),avg,max,min}"

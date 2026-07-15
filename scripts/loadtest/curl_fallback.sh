@@ -10,7 +10,11 @@ if [[ -z "${scenario}" || -z "${summary_path}" || -z "${report_path}" ]]; then
 	exit 2
 fi
 
-base_url="${BASE_URL:-http://127.0.0.1:8200}"
+if [[ -z "${BASE_URL:-}" ]]; then
+	printf 'curl fallback 缺少 BASE_URL；请通过 scripts/loadtest/run.sh 调用\n' >&2
+	exit 2
+fi
+base_url="${BASE_URL}"
 run_id="${LOADTEST_RUN_ID:-lt-curl-fallback}"
 host_header="${LOADTEST_HOST_HEADER:-}"
 user_agent="${LOADTEST_USER_AGENT:-webapp-template-loadtest/0.1}"

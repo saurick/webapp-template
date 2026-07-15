@@ -1,4 +1,3 @@
-const DEFAULT_BASE_URL = 'http://127.0.0.1:8200'
 const DEFAULT_USER_AGENT = 'webapp-template-loadtest/0.1'
 const REGISTER_PASSWORD_FALLBACK = 'Passw0rd!123'
 
@@ -38,7 +37,13 @@ function resolveAuthMode() {
 export const runId = sanitize(
   __ENV.LOADTEST_RUN_ID || `lt_${new Date().toISOString().replace(/[-:.TZ]/g, '')}`
 )
-export const baseUrl = trimTrailingSlash(__ENV.BASE_URL || DEFAULT_BASE_URL)
+const configuredBaseUrl = (__ENV.BASE_URL || '').trim()
+if (!configuredBaseUrl) {
+  throw new Error(
+    'BASE_URL is required; use scripts/loadtest/run.sh so it follows config/dev-ports.env'
+  )
+}
+export const baseUrl = trimTrailingSlash(configuredBaseUrl)
 export const hostHeader = (__ENV.LOADTEST_HOST_HEADER || '').trim()
 export const userAgent = (__ENV.LOADTEST_USER_AGENT || DEFAULT_USER_AGENT).trim()
 export const thinkTimeMs = readInt('LOADTEST_THINK_TIME_MS', 500)

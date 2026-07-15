@@ -8,6 +8,7 @@
 | --- | --- | --- |
 | `scripts/bootstrap.sh` | 初始化依赖、启用 hooks、跑快速自检 | 首次拉仓库后 / 新机器环境 |
 | `scripts/init-project.sh` | 扫描模板残留、默认配置和模块裁剪点 | 新项目由模板初始化后 |
+| `scripts/dev-ports.mjs` | 读取、审计和初始化固定开发端口 bundle，同步 dev YAML 并守住文档真源 | 项目初始化 / 多项目端口排查 |
 | `scripts/doctor.sh` | 检查本机依赖、hooks 与关键脚本状态 | 新机器初始化 / 异常排查 |
 | `scripts/qa/db-guard.sh` | 检查 Ent schema/ent 变更是否附带 migration | 改动数据模型后 |
 | `scripts/qa/agents-size.sh` | 扫描全部 AGENTS.md；16 KiB 预警、超过 24 KiB 阻断，不自动改写 | 修改长期协作规则后 |
@@ -67,8 +68,18 @@ bash scripts/init-project.sh
   - `--project`：按派生项目模式执行
   - `--template-source`：按模板源仓库模式执行
   - `--strict`：派生项目模式下，命中必须处理项时返回非 0
+  - `--allocate-dev-ports --project-id <id>`：扫描兄弟仓 manifest，为派生项目顺序分配一组固定端口并同步 dev YAML fallback
 - 推荐二次校验：
   - `bash scripts/init-project.sh --project --strict`
+
+端口分配只在创建派生项目时执行：
+
+```bash
+bash scripts/init-project.sh --project --allocate-dev-ports --project-id my-project
+node scripts/dev-ports.mjs audit
+```
+
+日常 `pnpm start` / `make dev` 固定使用 `config/dev-ports.env`，端口占用时失败；不会为了“启动成功”静默顺延到别的项目端口。`DEV_AUX_PORT_START` 同时保留从该值起的 100 个端口，辅助进程只在这个项目区间内探测。
 
 ## 3) doctor
 

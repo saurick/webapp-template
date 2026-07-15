@@ -28,12 +28,12 @@ pnpm install
 pnpm start
 ```
 
-默认地址：`http://127.0.0.1:5177`。该端口只用于本地 Vite 开发服务；开发服务器会把 `http://localhost:5177` 自动规范到同一 IPv4 地址。
+默认地址使用仓库根 `config/dev-ports.env` 的 `DEV_WEB_PORT`；在根目录运行 `node scripts/dev-ports.mjs show` 可查看实际 URL。Vite 启用 `strictPort`，占用时直接失败，并把相同端口的 `localhost` 地址规范到 IPv4。`pnpm preview` 使用 `DEV_AUX_PORT_START + 90`，派生项目分配新 bundle 后自动跟随。
 
-本地开发默认代理到 `http://127.0.0.1:8200`。如需临时连接其他后端，可设置 `VITE_API_PROXY_TARGET`，例如：
+本地开发默认代理到 `http://127.0.0.1:${DEV_HTTP_PORT}`。如需临时连接其他后端，可显式设置目标，例如：
 
 ```bash
-VITE_API_PROXY_TARGET=http://127.0.0.1:8200 pnpm start
+VITE_API_PROXY_TARGET="$BACKEND_URL" pnpm start
 ```
 
 ```bash
@@ -56,7 +56,9 @@ pnpm build
 - `VITE_BASE_URL`：前端部署基础路径
 - `VITE_APP_TITLE`：页面标题，占位值建议在派生项目初始化时替换
 - `VITE_ENABLE_RPC_MOCK`：是否启用本地 RPC mock
-- `VITE_API_PROXY_TARGET`：本地 Vite `/rpc` 代理目标，默认 `http://127.0.0.1:8200`
+- `VITE_API_PROXY_TARGET`：本地 Vite `/rpc` 代理目标，默认从 manifest 的 `DEV_HTTP_PORT` 派生
+- `DEV_WEB_PORT` / `DEV_HTTP_PORT`：显式临时覆盖 manifest；常规开发应保留已分配的固定 bundle
+- `STYLE_L1_PORT`：只覆盖浏览器样式回归端口，默认使用 manifest 的 `DEV_STYLE_PORT`
 
 环境文件：
 

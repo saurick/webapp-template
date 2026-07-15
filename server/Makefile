@@ -23,6 +23,19 @@ else
   GIT_SHA_SHORT := $(shell sh -c 'cd "$(GIT_ROOT)" && git rev-parse --verify HEAD >/dev/null 2>&1 && git rev-parse --short=8 HEAD || echo local')$(GIT_DIRTY)
 endif
 
+# `make dev` 的固定端口 bundle 由仓库根 manifest 统一提供；环境或命令行变量仍可显式覆盖。
+DEV_HTTP_PORT_ENV_OVERRIDE := $(if $(filter environment,$(origin DEV_HTTP_PORT)),$(DEV_HTTP_PORT))
+DEV_GRPC_PORT_ENV_OVERRIDE := $(if $(filter environment,$(origin DEV_GRPC_PORT)),$(DEV_GRPC_PORT))
+DEV_PORTS_FILE ?= $(if $(GIT_ROOT),$(GIT_ROOT)/config/dev-ports.env,$(abspath ../config/dev-ports.env))
+include $(DEV_PORTS_FILE)
+ifneq ($(strip $(DEV_HTTP_PORT_ENV_OVERRIDE)),)
+DEV_HTTP_PORT := $(DEV_HTTP_PORT_ENV_OVERRIDE)
+endif
+ifneq ($(strip $(DEV_GRPC_PORT_ENV_OVERRIDE)),)
+DEV_GRPC_PORT := $(DEV_GRPC_PORT_ENV_OVERRIDE)
+endif
+export DEV_PROJECT_ID DEV_WEB_PORT DEV_HTTP_PORT DEV_GRPC_PORT DEV_STYLE_PORT DEV_AUX_PORT_START
+
 BUILD_TIME ?= $(shell date +"%Y%m%dT%H%M%S")
 IMAGE_TAG  := $(BUILD_TIME)-$(GIT_SHA_SHORT)
 # 镜像仓库地址先留空，export DOCKER_HOST=xxx，xxx为镜像仓库地址，后再执行 make build_server 即可
@@ -233,8 +246,8 @@ MAIN_PKG ?= ./cmd/server
 DEV_BIN ?= ./bin/server-dev
 ARGS ?=
 
-# 当前项目本地 dev 会占用的端口；dev_stop/dev_restart 只清理这些端口，避免误杀别的项目。
-DEV_PORTS ?= 8200 9200
+# 当前项目本地 dev 会占用的端口；端口来自仓库 manifest。
+DEV_PORTS := $(DEV_HTTP_PORT) $(DEV_GRPC_PORT)
 
 .PHONY: dev_build
 # build dev binary (stable path)
@@ -254,33 +267,37 @@ run: dev_build
 dev: run
 
 .PHONY: dev_stop
-# stop local dev process by known ports (兼容 macOS / Ubuntu)
+# stop local dev process only when every listener belongs to this server working directory
 dev_stop:
 	@echo ">>> stopping dev listeners on: $(DEV_PORTS)"
+	@command -v lsof >/dev/null 2>&1 || { echo "ERROR: lsof is required for ownership-safe dev_stop"; exit 1; }
 	@for p in $(DEV_PORTS); do \
-		if command -v lsof >/dev/null 2>&1; then \
-			pids="$$(lsof -tiTCP:$$p -sTCP:LISTEN 2>/dev/null || true)"; \
-			if [ -n "$$pids" ]; then \
-				echo ">>> kill port $$p via lsof: $$pids"; \
-				kill $$pids 2>/dev/null || true; \
-			fi; \
-		elif command -v fuser >/dev/null 2>&1; then \
-			echo ">>> kill port $$p via fuser"; \
-			fuser -k $$p/tcp >/dev/null 2>&1 || true; \
-		else \
-			echo "ERROR: neither lsof nor fuser is available; cannot stop port $$p"; \
-			exit 1; \
-		fi; \
+		for pid in $$(lsof -tiTCP:$$p -sTCP:LISTEN 2>/dev/null || true); do \
+			owner_cwd="$$(lsof -a -p $$pid -d cwd -Fn 2>/dev/null | sed -n 's/^n//p' | head -n 1)"; \
+			case "$$owner_cwd" in \
+				"$(CURDIR)"|"$(CURDIR)"/*) ;; \
+				*) echo "ERROR: refuse to kill foreign listener pid=$$pid port=$$p cwd=$${owner_cwd:-unknown}"; exit 1 ;; \
+			esac; \
+		done; \
+	done
+	@for p in $(DEV_PORTS); do \
+		for pid in $$(lsof -tiTCP:$$p -sTCP:LISTEN 2>/dev/null || true); do \
+			owner_cwd="$$(lsof -a -p $$pid -d cwd -Fn 2>/dev/null | sed -n 's/^n//p' | head -n 1)"; \
+			case "$$owner_cwd" in \
+				"$(CURDIR)"|"$(CURDIR)"/*) echo ">>> stop owned listener on port $$p: $$pid"; kill $$pid 2>/dev/null || true ;; \
+				*) echo "ERROR: listener ownership changed; refuse pid=$$pid port=$$p cwd=$${owner_cwd:-unknown}"; exit 1 ;; \
+			esac; \
+		done; \
 	done
 	@sleep 1
 	@for p in $(DEV_PORTS); do \
-		if command -v lsof >/dev/null 2>&1; then \
-			pids="$$(lsof -tiTCP:$$p -sTCP:LISTEN 2>/dev/null || true)"; \
-			if [ -n "$$pids" ]; then \
-				echo ">>> force kill port $$p: $$pids"; \
-				kill -9 $$pids 2>/dev/null || true; \
-			fi; \
-		fi; \
+		for pid in $$(lsof -tiTCP:$$p -sTCP:LISTEN 2>/dev/null || true); do \
+			owner_cwd="$$(lsof -a -p $$pid -d cwd -Fn 2>/dev/null | sed -n 's/^n//p' | head -n 1)"; \
+			case "$$owner_cwd" in \
+				"$(CURDIR)"|"$(CURDIR)"/*) echo ">>> force stop owned listener on port $$p: $$pid"; kill -9 $$pid 2>/dev/null || true ;; \
+				*) echo "ERROR: listener ownership changed; refuse pid=$$pid port=$$p cwd=$${owner_cwd:-unknown}"; exit 1 ;; \
+			esac; \
+		done; \
 	done
 
 .PHONY: dev_restart

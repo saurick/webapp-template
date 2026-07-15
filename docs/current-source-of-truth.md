@@ -8,6 +8,7 @@
 - 涉及“模板应该保留什么、删除什么、替换什么”时，当前正式真源是 `/Users/simon/projects/webapp-template/docs/project-init.md`。
 - 涉及部署路径、Compose 与 `lab-ha` 边界、`Helm / Kustomize / Argo CD` 主路径时，当前正式真源是 `/Users/simon/projects/webapp-template/docs/deployment-conventions.md`，以及对应的 `/Users/simon/projects/webapp-template/server/deploy/README.md`。
 - 涉及服务端运行、配置、接口、数据库迁移与可观测性时，优先从 `/Users/simon/projects/webapp-template/server/docs/README.md` 继续分流，而不是直接靠印象改某个目录。
+- 涉及本地 `pnpm start` / `make dev` 端口时，`config/dev-ports.env` 是固定 bundle 真源；Vite、前端代理、Make 与服务端环境覆盖共同消费它，派生分配器同步 dev YAML fallback，正式文档只引用字段或查询命令。
 - `progress.md`、临时 shell 命令、live 现场操作记录、局部注释和单份 runbook 只能补充演进原因与现场背景，不能越权覆盖这里定义的阅读顺序。
 
 ## 按任务分流的阅读顺序
@@ -41,6 +42,7 @@
 再执行：
 
 - `bash scripts/init-project.sh`
+- `bash scripts/init-project.sh --project --allocate-dev-ports --project-id <项目标识>`
 - `bash scripts/init-project.sh --project --strict`
 
 说明：

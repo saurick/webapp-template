@@ -44,12 +44,15 @@ bash scripts/init-project.sh
 ### 3. 跑本地环境与质量检查
 
 ```bash
+bash scripts/init-project.sh --project --allocate-dev-ports --project-id <项目标识>
 bash scripts/bootstrap.sh
 bash scripts/doctor.sh
 bash scripts/init-project.sh --project --strict
 bash scripts/qa/fast.sh
 bash scripts/qa/full.sh
 ```
+
+固定端口只在项目初始化时分配一次。分配器扫描父目录下兄弟仓库的 `config/dev-ports.env`，写入当前项目的 Vite、HTTP、gRPC、样式回归和独占 100 端口辅助区间，并同步 dev YAML 的直接启动 fallback；审计会阻断 manifest / YAML 漂移及正式文档复制端口数字。主入口后续遇到占用会失败，不会自动顺延，临时进程也只能在本项目区间内探测。
 
 ## 模板里通常建议保留的能力
 
@@ -129,7 +132,7 @@ bash scripts/qa/full.sh
 4. 前端展示层按本项目需求调整，但优先复用现有鉴权骨架、请求封装、错误码消费层和通用组件；
 5. 删除当前项目不需要的页面、业务模块、部署方式和示例文案，默认移动到系统回收站；
 6. 明确告诉我：保留了什么、替换了什么、删除了什么、还缺什么信息；
-7. 最后执行 bash scripts/init-project.sh --project --strict、bash scripts/qa/fast.sh、bash scripts/qa/full.sh，并汇报结果。
+7. 项目创建时先执行 bash scripts/init-project.sh --project --allocate-dev-ports --project-id <项目标识>，最后执行 bash scripts/init-project.sh --project --strict、bash scripts/qa/fast.sh、bash scripts/qa/full.sh，并汇报结果。
 ```
 
 ### 3. 信息不全时的最小版输入模板

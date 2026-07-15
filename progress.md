@@ -388,3 +388,11 @@
 - 验证：项目 skill health 6 / 6、官方 `quick_validate.py` 6 / 6、YAML/metadata、过期路径扫描与限定 `git diff --check` 通过。
 - 下一步：后续模板初始化或部署清单变化按当前真源运行适用的 init、helm/kustomize 和 server-side dry-run，不在 skill 中硬编码环境数量。
 - 阻塞/风险：本轮未运行模板初始化、集群 dry-run、loadtest 或目标发布；未改 schema、RBAC、运行时或 lab-ha 现场，也未提交或推送。
+
+## 2026-07-15 本地开发固定端口治理
+
+- 完成：新增 `config/dev-ports.env` 作为 Vite、前端代理、`make dev` 和后端 dev 监听的固定端口 bundle；Vite 保持 `strictPort`，`style:l1` 使用独立的 `6177` 并把实际端口传给 Vite，preview 固定使用 `15490`，辅助进程独占 `15400-15499`。压测 wrapper 的后端默认值改为 manifest HTTP `8200`，k6 dashboard 默认使用 `15480`，直接调用底层 k6/curl 脚本时必须显式提供 `BASE_URL`。
+- 完成：`scripts/dev-ports.mjs` 支持兄弟仓 manifest 冲突审计和派生项目顺序分配，并把 `DEV_AUX_PORT_START` 按完整 100 端口区间参与冲突检查；`init-project.sh --project --allocate-dev-ports --project-id <id>` 只在创建时写入 bundle，同时同步 `server/configs/dev/config.yaml` 的直接启动 fallback。审计会阻断 manifest / dev YAML 不一致，也禁止正式端口文档复制易漂移的数字；后续主入口不顺延。`dev_stop` 改为先校验 listener cwd，拒绝杀死其他项目进程。
+- 验证：`node --test scripts/dev-ports.test.mjs` 9 / 9 通过，覆盖完整辅助区间、环境覆盖、extra listener、backend-only manifest、dev YAML 同步与文档 parity；`bash scripts/init-project.sh --template-source`、7 个兄弟仓 manifest 审计、`make -C server -n dev/dev_stop`、`go test ./...`、目标文件 Prettier、`pnpm exec vite build` 与 `pnpm style:l1`（10 个场景，实际使用 `6177`）通过；preview 在 `15490` 实际监听并响应。loadtest 脚本通过系统 Bash 3.2 语法检查、ShellCheck 和 `--help` 启动检查，xtrace 确认默认读取 HTTP `8200` 与 dashboard `15480`。另确认 canonical `5177` 被占用及传入其他项目 runtime port 时 Vite 不顺延并直接失败，Go 的环境端口覆盖在 production config 下保持 no-op。
+- 下一步：派生新仓库时先分配项目 ID 与固定端口；若 canonical port 被占用，定位占用者或显式调整 manifest，不把运行时顺延当成长期方案。
+- 阻塞/风险：本轮未运行仓库级 `fast/full/strict` 或真实数据库启动；未提交或推送。

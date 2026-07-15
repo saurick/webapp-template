@@ -5,9 +5,74 @@ import (
 	"math"
 	"testing"
 
+	"server/internal/conf"
+
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
 	oteltrace "go.opentelemetry.io/otel/trace"
 )
+
+func TestReplaceAddressPort(t *testing.T) {
+	t.Parallel()
+
+	cases := []struct {
+		name    string
+		address string
+		port    string
+		want    string
+		wantErr bool
+	}{
+		{name: "ipv4", address: "0.0.0.0:8200", port: "8500", want: "0.0.0.0:8500"},
+		{name: "ipv6", address: "[::]:9200", port: "9500", want: "[::]:9500"},
+		{name: "empty override", address: "127.0.0.1:8200", want: "127.0.0.1:8200"},
+		{name: "invalid port", address: "127.0.0.1:8200", port: "80", wantErr: true},
+		{name: "invalid address", address: "8200", port: "8500", wantErr: true},
+	}
+	for _, tc := range cases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			got, err := replaceAddressPort(tc.address, tc.port)
+			if (err != nil) != tc.wantErr {
+				t.Fatalf("replaceAddressPort() error = %v, wantErr %v", err, tc.wantErr)
+			}
+			if got != tc.want {
+				t.Fatalf("replaceAddressPort() = %q, want %q", got, tc.want)
+			}
+		})
+	}
+}
+
+func TestOverrideDevServerPortsFromEnv(t *testing.T) {
+	t.Setenv("DEV_HTTP_PORT", "8500")
+	t.Setenv("DEV_GRPC_PORT", "9500")
+	serverCfg := &conf.Server{
+		Http: &conf.Server_HTTP{Addr: "0.0.0.0:8200"},
+		Grpc: &conf.Server_GRPC{Addr: "0.0.0.0:9200"},
+	}
+
+	if err := overrideDevServerPortsFromEnv("./configs/dev/config.yaml", serverCfg); err != nil {
+		t.Fatalf("overrideDevServerPortsFromEnv() error = %v", err)
+	}
+	if serverCfg.Http.Addr != "0.0.0.0:8500" || serverCfg.Grpc.Addr != "0.0.0.0:9500" {
+		t.Fatalf("unexpected overridden addresses: http=%q grpc=%q", serverCfg.Http.Addr, serverCfg.Grpc.Addr)
+	}
+}
+
+func TestOverrideDevServerPortsFromEnvIgnoresProductionConfig(t *testing.T) {
+	t.Setenv("DEV_HTTP_PORT", "8500")
+	t.Setenv("DEV_GRPC_PORT", "9500")
+	serverCfg := &conf.Server{
+		Http: &conf.Server_HTTP{Addr: "0.0.0.0:8200"},
+		Grpc: &conf.Server_GRPC{Addr: "0.0.0.0:9200"},
+	}
+
+	if err := overrideDevServerPortsFromEnv("./configs/prod/config.yaml", serverCfg); err != nil {
+		t.Fatalf("overrideDevServerPortsFromEnv() error = %v", err)
+	}
+	if serverCfg.Http.Addr != "0.0.0.0:8200" || serverCfg.Grpc.Addr != "0.0.0.0:9200" {
+		t.Fatalf("production addresses changed: http=%q grpc=%q", serverCfg.Http.Addr, serverCfg.Grpc.Addr)
+	}
+}
 
 func TestNormalizeTraceRatio(t *testing.T) {
 	t.Parallel()

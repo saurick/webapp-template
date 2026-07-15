@@ -101,7 +101,7 @@ bash /Users/simon/projects/webapp-template/scripts/loadtest/run.sh auth \
 - 当前脚本会给每个请求带 `X-Request-Id`
 - `request_id` 前缀使用 `LOADTEST_RUN_ID`
 - 现有服务端已支持透传 `X-Request-Id`，所以可以直接在日志里按 `request_id=<LOADTEST_RUN_ID...>` 过滤
-- 本地 `127.0.0.1:5665` 的 k6 dashboard 仍可作为单机临时调试入口，但只对发压机器本身可见
+- 本地 k6 dashboard 默认使用当前项目 `DEV_AUX_PORT_START + 80`（模板当前为 `127.0.0.1:15480`），仍只作为发压机器可见的单机临时调试入口
 - 团队默认统一看 Grafana 与 GitLab artifacts：`http://192.168.0.108:30081/d/lab-ha-loadtest/ha-lab-load-test` 作为实验室精简值班板，`http://192.168.0.108:30081/d/lab-ha-loadtest-official/ha-lab-load-test-official-k6` 作为官方 k6 指标板；GitLab 继续保留单次 `report.html` / `summary.json`
 
 建议同步观察：

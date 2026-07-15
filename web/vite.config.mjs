@@ -2,8 +2,30 @@ import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
 import { resolve } from 'path'
 
+import { loadDevPorts } from '../scripts/dev-ports.mjs'
+
 const DEV_HOST = '127.0.0.1'
-const DEV_PORT = 5177
+const devPorts = loadDevPorts({ rootDir: resolve(import.meta.dirname, '..') })
+const resolveRuntimeWebPort = (rawValue) => {
+  const normalized = String(rawValue || '').trim()
+  if (!normalized) return devPorts.webPort
+  const port = Number(normalized)
+  const auxEnd = devPorts.auxPortStart + 99
+  if (!Number.isInteger(port) || port < 1024 || port > 65535) {
+    throw new Error('DEV_WEB_RUNTIME_PORT 必须是 1024..65535 的整数端口')
+  }
+  if (
+    port !== devPorts.webPort &&
+    port !== devPorts.stylePort &&
+    (port < devPorts.auxPortStart || port > auxEnd)
+  ) {
+    throw new Error(
+      `DEV_WEB_RUNTIME_PORT=${port} 必须使用固定 Web/Style 端口或辅助区间 ${devPorts.auxPortStart}-${auxEnd}`
+    )
+  }
+  return port
+}
+const DEV_PORT = resolveRuntimeWebPort(process.env.DEV_WEB_RUNTIME_PORT)
 const DEV_ORIGIN = `http://${DEV_HOST}:${DEV_PORT}`
 
 const normalizeDevLocalUrl = (url) => {
@@ -45,7 +67,8 @@ const devLocalhostOriginNormalizer = () => ({
 export default defineConfig(({ command, mode }) => {
   // 读取 .env.* 文件
   const env = loadEnv(mode, process.cwd(), '')
-  const apiProxyTarget = env.VITE_API_PROXY_TARGET || 'http://127.0.0.1:8200'
+  const apiProxyTarget =
+    env.VITE_API_PROXY_TARGET || `http://127.0.0.1:${devPorts.httpPort}`
 
   const isProd = mode === 'production'
   const isDev = mode === 'development'
@@ -126,7 +149,7 @@ export default defineConfig(({ command, mode }) => {
         clientPort: DEV_PORT,
       },
       proxy: {
-        // 默认跟随模板后端 8200；多项目并行时可用 VITE_API_PROXY_TARGET 显式覆盖。
+        // 默认跟随当前项目 manifest；临时联调可用 VITE_API_PROXY_TARGET 显式覆盖。
         '/rpc': {
           target: apiProxyTarget,
           changeOrigin: true,
@@ -137,6 +160,12 @@ export default defineConfig(({ command, mode }) => {
       //   usePolling: true,
       //   interval: 100,
       // },
+    },
+
+    preview: {
+      host: '127.0.0.1',
+      port: devPorts.auxPortStart + 90,
+      strictPort: true,
     },
 
     optimizeDeps: {

@@ -24,17 +24,18 @@ go run ./cmd/server -conf ./configs/dev/config.yaml
 - `make run` 会先构建稳定路径的本地二进制，再启动它。
 - `cmd/server/main.go` 支持自动探测配置路径；未传 `-conf` 时，默认优先找 `configs/dev/config.yaml`。
 
-## 默认端口
+## 本地端口
 
-- HTTP：`8200`
-- gRPC：`9200`
+- HTTP：`DEV_HTTP_PORT`
+- gRPC：`DEV_GRPC_PORT`
 
-说明：`8200/9200` 是当前模板的本地开发默认端口。若多个派生仓库同时运行，应让其他项目改用不同端口，或同步调整当前项目的 `configs/dev/config.yaml` 与前端 `VITE_API_PROXY_TARGET`。
+实际数字以仓库根 `config/dev-ports.env` 为真源，可运行 `node scripts/dev-ports.mjs show` 查看。派生项目在初始化时通过 `init-project.sh --allocate-dev-ports` 获得自己的固定 bundle，并同步 dev YAML；日常运行不会自动顺延。
 
 配置来源：
 
 - `/Users/simon/projects/webapp-template/server/configs/dev/config.yaml`
 - `/Users/simon/projects/webapp-template/server/configs/prod/config.yaml`
+- `/Users/simon/projects/webapp-template/config/dev-ports.env`（本地 Make/Vite 固定端口真源）
 
 ## HTTP 入口
 
@@ -59,7 +60,7 @@ go run ./cmd/server -conf ./configs/dev/config.yaml
 ## gRPC 入口
 
 - gRPC 服务同样承载 `Jsonrpc` 服务定义
-- 默认监听 `0.0.0.0:9000`
+- 本地开发监听 `0.0.0.0:${DEV_GRPC_PORT}`
 
 说明：模板当前主要以 HTTP JSON-RPC 为默认入口，gRPC 更多是保留 Kratos 的统一接入能力。
 
@@ -92,6 +93,6 @@ go test ./...
 ## 初始化新项目时建议确认
 
 - 是否仍保留 JSON-RPC 作为主入口
-- HTTP / gRPC 端口是否需要调整
+- 是否已用 `--allocate-dev-ports` 分配项目自己的 HTTP / gRPC 固定端口
 - 是否需要静态资源托管，或改由独立前端服务提供
 - `/readyz` 是否需要新增 Redis、MQ、OSS 等真实项目依赖检查

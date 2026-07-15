@@ -7,9 +7,12 @@ import { setTimeout as delay } from 'node:timers/promises'
 
 import { chromium } from 'playwright'
 
+import { loadDevPorts } from '../../scripts/dev-ports.mjs'
+
 const webDir = path.resolve(import.meta.dirname, '..')
+const devPorts = loadDevPorts({ rootDir: path.resolve(webDir, '..') })
 const outputDir = path.resolve(webDir, 'output', 'playwright', 'style-l1')
-const devServerPort = Number(process.env.STYLE_L1_PORT || 4173)
+const devServerPort = Number(process.env.STYLE_L1_PORT || devPorts.stylePort)
 const externalBaseURL = String(process.env.STYLE_L1_BASE_URL || '').trim()
 const baseURL = externalBaseURL || `http://127.0.0.1:${devServerPort}`
 const headless = process.env.HEADED !== '1'
@@ -176,6 +179,7 @@ function startDevServer() {
       env: {
         ...process.env,
         BROWSER: 'none',
+        DEV_WEB_RUNTIME_PORT: String(devServerPort),
         VITE_ENABLE_RPC_MOCK: 'true',
       },
       stdio: ['ignore', 'pipe', 'pipe'],

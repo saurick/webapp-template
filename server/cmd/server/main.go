@@ -6,8 +6,10 @@ import (
 	"flag"
 	"fmt"
 	"math"
+	"net"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"server/internal/conf"
@@ -101,6 +103,57 @@ func resolveLocalConfPath(confPath string) string {
 		return localPath
 	}
 	return ""
+}
+
+func replaceAddressPort(address, rawPort string) (string, error) {
+	rawPort = strings.TrimSpace(rawPort)
+	if rawPort == "" {
+		return address, nil
+	}
+	port, err := strconv.Atoi(rawPort)
+	if err != nil || port < 1024 || port > 65535 {
+		return "", fmt.Errorf("invalid local development port %q", rawPort)
+	}
+	host, _, err := net.SplitHostPort(strings.TrimSpace(address))
+	if err != nil {
+		return "", fmt.Errorf("split server address %q: %w", address, err)
+	}
+	return net.JoinHostPort(host, strconv.Itoa(port)), nil
+}
+
+func isDevConfigPath(confPath string) bool {
+	cleanPath := "/" + strings.Trim(filepath.ToSlash(filepath.Clean(confPath)), "/") + "/"
+	return strings.Contains(cleanPath, "/configs/dev/")
+}
+
+func overrideDevServerPortsFromEnv(confPath string, serverCfg *conf.Server) error {
+	if !isDevConfigPath(confPath) {
+		return nil
+	}
+	if serverCfg == nil {
+		return fmt.Errorf("server config is nil")
+	}
+	if rawPort := strings.TrimSpace(os.Getenv("DEV_HTTP_PORT")); rawPort != "" {
+		if serverCfg.Http == nil {
+			return fmt.Errorf("server http config is nil")
+		}
+		address, err := replaceAddressPort(serverCfg.Http.Addr, rawPort)
+		if err != nil {
+			return fmt.Errorf("override DEV_HTTP_PORT: %w", err)
+		}
+		serverCfg.Http.Addr = address
+	}
+	if rawPort := strings.TrimSpace(os.Getenv("DEV_GRPC_PORT")); rawPort != "" {
+		if serverCfg.Grpc == nil {
+			return fmt.Errorf("server grpc config is nil")
+		}
+		address, err := replaceAddressPort(serverCfg.Grpc.Addr, rawPort)
+		if err != nil {
+			return fmt.Errorf("override DEV_GRPC_PORT: %w", err)
+		}
+		serverCfg.Grpc.Addr = address
+	}
+	return nil
 }
 
 func overrideFromEnv(dataCfg *conf.Data, baseLogger log.Logger) {
@@ -293,6 +346,9 @@ func main() {
 	serverCfg := bc.Server
 	if serverCfg == nil {
 		panic(fmt.Errorf("bootstrap server config is nil, please check %s", confPath))
+	}
+	if err := overrideDevServerPortsFromEnv(confPath, serverCfg); err != nil {
+		panic(fmt.Errorf("apply local development ports: %w", err))
 	}
 
 	dataCfg := bc.Data
