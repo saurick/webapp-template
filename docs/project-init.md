@@ -61,6 +61,7 @@ bash scripts/qa/full.sh
 - `pre-commit` / `pre-push` / `doctor` / `fast` / `full` / `strict`
 - 登录、注册、管理员登录、账号目录与通用鉴权骨架
 - antd admin preset 与 basic RBAC 骨架；若当前项目不是后台项目，应按需裁掉后台页面和 admin preset 文案
+- 统一路由失败恢复、异步状态、浅色 / 深色主题和公开运行时品牌配置
 - 基本日志 / trace 约束
 
 ## 模板里通常按需裁剪的能力
@@ -69,6 +70,7 @@ bash scripts/qa/full.sh
 - Jaeger / OTLP / Prometheus 相关 compose 服务
 - 远端一键发布脚本与默认 SSH 发布流程
 - 任何项目特有的会员体系、邀请码体系、组织层级、积分体系
+- 默认关闭的移动工作队列、审计、附件、打印与历史扩展；只有接入正式接口后才启用
 
 ## 给 AI 的标准输入模板
 

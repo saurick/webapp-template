@@ -26,6 +26,7 @@
 
 - 模板初始化、默认模块裁剪、模板残留替换：`/Users/simon/projects/webapp-template/docs/project-init.md`
 - 管理台模板形态、antd admin preset 与 basic RBAC 边界：`/Users/simon/projects/webapp-template/docs/admin-preset.md`
+- 前端运行时品牌、主题、异步状态、移动工作队列与可选扩展边界：`/Users/simon/projects/webapp-template/docs/frontend-presets.md`
 - 部署边界、Compose / lab-ha / Helm / Kustomize：`/Users/simon/projects/webapp-template/docs/deployment-conventions.md`、`/Users/simon/projects/webapp-template/server/deploy/README.md`
 - 服务端运行、配置、接口、DB、可观测性：`/Users/simon/projects/webapp-template/server/docs/README.md`
 - 脚本与 QA 入口：`/Users/simon/projects/webapp-template/scripts/README.md`

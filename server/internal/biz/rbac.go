@@ -54,12 +54,13 @@ func DefaultAdminPermissionKeys() []string {
 }
 
 type RBACRoleSummary struct {
-	ID          int
-	Key         string
-	Name        string
-	Description string
-	Builtin     bool
-	AdminCount  int
+	ID             int
+	Key            string
+	Name           string
+	Description    string
+	Builtin        bool
+	AdminCount     int
+	PermissionKeys []string
 }
 
 type RBACPermissionSummary struct {

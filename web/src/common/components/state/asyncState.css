@@ -1,0 +1,43 @@
+.async-state {
+  display: grid;
+  gap: 10px;
+  min-height: 180px;
+  padding: 28px;
+  color: var(--app-text);
+  text-align: center;
+  background: var(--app-surface-muted);
+  border: 1px dashed var(--app-border);
+  border-radius: 8px;
+  place-content: center;
+}
+
+.async-state p {
+  max-width: 48ch;
+  margin: 0;
+  color: var(--app-text-muted);
+  line-height: 1.6;
+}
+
+.async-state button,
+.async-state__inline-error button {
+  min-height: 40px;
+  padding: 0 16px;
+  color: #fff;
+  cursor: pointer;
+  background: var(--app-primary);
+  border: 0;
+  border-radius: 6px;
+}
+
+.async-state__inline-error {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  margin-bottom: 14px;
+  color: var(--app-danger);
+  background: var(--app-danger-soft);
+  border: 1px solid color-mix(in srgb, var(--app-danger) 35%, transparent);
+  border-radius: 6px;
+}

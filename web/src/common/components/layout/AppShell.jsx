@@ -4,7 +4,7 @@ import React from 'react'
 export default function AppShell({ children, className = '' }) {
   return (
     <div
-      className={`relative min-h-screen overflow-hidden bg-[#f4f8f6] text-[#172b3f] ${className}`}
+      className={`relative min-h-screen overflow-hidden bg-[var(--app-bg)] text-[var(--app-text)] ${className}`}
     >
       <div className="relative min-h-screen">{children}</div>
     </div>

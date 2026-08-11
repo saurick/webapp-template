@@ -113,8 +113,10 @@ HTTP 路由：
 
 返回：
 
-- `roles`
-- `permissions`
+- `roles`：每项包含 `id`、`key`、`name`、`description`、`builtin`、`admin_count` 与该角色真实绑定的 `permission_keys`
+- `permissions`：完整权限目录，包含 `key`、`name`、`group`、`description` 与 `builtin`
+
+前端可以用 `permission_keys` 将角色与权限目录关联后展示业务名称，但服务端权限校验仍是最终授权边界。
 
 ## 不再属于模板主干的业务能力
 

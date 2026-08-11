@@ -396,3 +396,13 @@
 - 验证：`node --test scripts/dev-ports.test.mjs` 9 / 9 通过，覆盖完整辅助区间、环境覆盖、extra listener、backend-only manifest、dev YAML 同步与文档 parity；`bash scripts/init-project.sh --template-source`、7 个兄弟仓 manifest 审计、`make -C server -n dev/dev_stop`、`go test ./...`、目标文件 Prettier、`pnpm exec vite build` 与 `pnpm style:l1`（10 个场景，实际使用 `6177`）通过；preview 在 `15490` 实际监听并响应。loadtest 脚本通过系统 Bash 3.2 语法检查、ShellCheck 和 `--help` 启动检查，xtrace 确认默认读取 HTTP `8200` 与 dashboard `15480`。另确认 canonical `5177` 被占用及传入其他项目 runtime port 时 Vite 不顺延并直接失败，Go 的环境端口覆盖在 production config 下保持 no-op。
 - 下一步：派生新仓库时先分配项目 ID 与固定端口；若 canonical port 被占用，定位占用者或显式调整 manifest，不把运行时顺延当成长期方案。
 - 阻塞/风险：本轮未运行仓库级 `fast/full/strict` 或真实数据库启动；未提交或推送。
+
+## 2026-08-11 18:44 CST Plush 可迁移交互基线落地
+
+- 完成：按模板边界落地可从 Plush 借鉴的 P0/P1 通用能力。首页删除虚构最近活动，账号目录删除按用户名猜角色；新增公开运行时品牌/feature 配置、跟随系统/浅色/深色主题、路由懒加载重试与恢复页、404、统一首次加载/保留旧数据刷新/空数据/失败重试状态，以及可恢复焦点、Esc 关闭和焦点循环的通用弹窗。
+- 完成：Admin preset 改为低密度行动入口，补齐桌面侧栏、移动抽屉、页面标题说明、刷新、主题和账号菜单；账号搜索/分页写入 URL，状态切换增加确认与局部加载。`rbac.overview` 直接返回角色真实 `permission_keys`，页面改为角色选择 + 业务能力分组，角色标识和权限码降为折叠技术明细，并补数据仓与 JSON-RPC 映射测试。
+- 完成：新增默认关闭的移动工作队列 preset，提供普通用户 scope 下的分类列表 → 详情 → 动作确认 → 回执、请求乱序保护、刷新保留旧数据、版本冲突参数和移动底部导航；生产启用前必须由派生项目实现 `work_item.list/detail/act`。审计、业务附件、打印、历史只定义扩展责任与开关，不新增虚构 schema、接口或事实。同步前端、初始化、Admin、API 与 current-source 文档。
+- 完成：全量 QA 首轮发现 5 个可达依赖漏洞后，将 Go toolchain 升至 `go1.26.5`，并按修复版本升级 gRPC、pgx、OpenTelemetry、`x/text` 及其兼容依赖；严格 `govulncheck` 已回到 0 个可达漏洞。
+- 验证：`bash scripts/qa/full.sh` 与 `bash scripts/qa/strict.sh` 全部通过，覆盖 skill/db/secrets/shell/漏洞、前端 16 个单元测试、前后端构建和服务端全测试；`cd web && pnpm style:l1` 通过 16 个真实浏览器场景，覆盖主题持久化、管理员旧权限恢复、桌面/移动导航、账号搜索与确认、RBAC 折叠、帮助、功能关闭、移动队列动作回执、404 和横向溢出检查。浏览器截图复核了首页深色、移动 RBAC、账号目录与工作队列完成态。
+- 下一步：派生项目若需要移动队列，先实现并测试正式 `work_item` 服务端合同，再打开 `mobileWorkQueue`；审计/附件/打印/历史同样在各自真源、权限、异常恢复和测试齐备后接入。
+- 阻塞/风险：本轮没有 schema/migration 变更，也未部署目标环境或执行人工 UAT；移动工作队列当前只有显式开发 mock 和浏览器合同测试，默认部署保持关闭，不能视为任何派生项目的业务后端已经完成。

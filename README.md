@@ -6,13 +6,13 @@ Web 全后端单体模板项目，提供用户端基础页面、可选 antd admi
 
 ## 目录结构
 
-| 路径 | 职责 |
-| --- | --- |
-| `web/` | 前端项目（Vite + React），内部目录职责见 [`web/README.md`](web/README.md) |
-| `server/` | 后端项目（Kratos + Ent + Atlas），内部目录职责见 [`server/README.md`](server/README.md) |
-| `scripts/` | 本地质量门禁与 Git hooks，详见 [`scripts/README.md`](scripts/README.md) |
+| 路径                                          | 职责                                                                                                            |
+| --------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| `web/`                                        | 前端项目（Vite + React），内部目录职责见 [`web/README.md`](web/README.md)                                       |
+| `server/`                                     | 后端项目（Kratos + Ent + Atlas），内部目录职责见 [`server/README.md`](server/README.md)                         |
+| `scripts/`                                    | 本地质量门禁与 Git hooks，详见 [`scripts/README.md`](scripts/README.md)                                         |
 | [`.agents/skills/`](.agents/skills/README.md) | Codex 项目专项 SOP：代码审查、文档、模板边界、页面、测试和统一 operations；通用提示词与 Git 收口使用全局 skills |
-| `docs/` | 根目录文档与说明，阅读入口见 [`docs/README.md`](docs/README.md) |
+| `docs/`                                       | 根目录文档与说明，阅读入口见 [`docs/README.md`](docs/README.md)                                                 |
 
 若需要查看 `web/` 或 `server/` 的内部目录，不在根 README 继续展开，以各自子目录 README 为准，避免同一份结构说明在多处漂移。
 
@@ -40,12 +40,12 @@ make run
 
 本地固定端口 bundle：
 
-| 用途 | manifest 字段 |
-| --- | --- |
-| Vite | `DEV_WEB_PORT` |
-| HTTP | `DEV_HTTP_PORT` |
-| gRPC | `DEV_GRPC_PORT` |
-| `style:l1` | `DEV_STYLE_PORT` |
+| 用途              | manifest 字段                          |
+| ----------------- | -------------------------------------- |
+| Vite              | `DEV_WEB_PORT`                         |
+| HTTP              | `DEV_HTTP_PORT`                        |
+| gRPC              | `DEV_GRPC_PORT`                        |
+| `style:l1`        | `DEV_STYLE_PORT`                       |
 | 临时/预览保留区间 | 从 `DEV_AUX_PORT_START` 起的完整辅助块 |
 
 ### 3) 数据迁移（Ent + Atlas）
@@ -84,7 +84,7 @@ bash /Users/simon/projects/webapp-template/scripts/qa/govulncheck.sh
 bash /Users/simon/projects/webapp-template/scripts/setup-git-hooks.sh
 ```
 
-说明：模板当前已内置最小前端回归测试，可执行 `cd /Users/simon/projects/webapp-template/web && pnpm test` 验证错误码常量与登录态错误分类。
+说明：模板当前已内置前端单元与浏览器回归，可执行 `cd /Users/simon/projects/webapp-template/web && pnpm test` 验证运行时配置、路由重试、错误合同和移动工作队列数据边界，并用 `pnpm style:l1` 验证真实浏览器交互。
 说明：当前仓库里 `bash scripts/qa/fast.sh` 更接近粗粒度冒烟，`bash scripts/qa/full.sh` 是仓库级全量 QA；若本轮是前端样式/布局任务，仍应额外执行 `cd /Users/simon/projects/webapp-template/web && pnpm lint && pnpm css && pnpm test`，并做浏览器级回归。
 
 ## 新项目初始化
@@ -108,8 +108,9 @@ bash /Users/simon/projects/webapp-template/scripts/qa/full.sh
 - 正式文档只引用 manifest 字段或 `node scripts/dev-ports.mjs show`，不复制端口数字；初始化审计会阻断 manifest、dev YAML 与文档真源漂移。
 - 初始化专项说明与“给 AI 的标准输入模板”见：`/Users/simon/projects/webapp-template/docs/project-init.md`
 - 部署模板总览见：`/Users/simon/projects/webapp-template/server/deploy/README.md`
-- 当前模板前台与后台入口分离：`/`、`/login`、`/register` 只承载普通用户工作台与注册登录；后台从 `/admin-login` 进入，登录后访问 `/admin-menu`、`/admin-accounts`、`/admin-rbac`。
-- 当前模板后台按 admin preset 保留 antd 简约后台、账号目录、角色权限概览和 basic RBAC 服务端校验；积分 / 订阅 / 邀请码 / 层级等业务模块已从模板主干移除，具体项目若需要，应在派生仓库按需新增。
+- 当前模板前台与后台入口分离：`/`、`/login`、`/register` 承载普通用户基础入口；后台从 `/admin-login` 进入，登录后访问工作台、账号目录、角色权限和使用说明。默认关闭的 `/work-queue` 只有在派生项目接入正式接口后才启用。
+- 当前模板后台按 admin preset 保留 antd 简约后台、响应式导航、账号目录、角色权限概览和 basic RBAC 服务端校验；积分 / 订阅 / 邀请码 / 层级等业务模块已从模板主干移除，具体项目若需要，应在派生仓库按需新增。
+- 公开品牌、主题、移动工作队列与审计 / 附件 / 打印 / 历史扩展边界见 `/Users/simon/projects/webapp-template/docs/frontend-presets.md`。
 - 如果派生项目不是后台项目，可按 `/Users/simon/projects/webapp-template/docs/admin-preset.md` 的边界裁掉 admin preset。
 - 若当前项目明确只用 `compose`，可按需移除 K8s 清单与相关文档；删除文件默认移动到系统回收站。
 
@@ -152,6 +153,7 @@ bash /Users/simon/projects/webapp-template/scripts/qa/full.sh
 - 根级 docs 说明：`/Users/simon/projects/webapp-template/docs/README.md`
 - 新项目初始化：`/Users/simon/projects/webapp-template/docs/project-init.md`
 - Admin preset 与 basic RBAC：`/Users/simon/projects/webapp-template/docs/admin-preset.md`
+- 前端运行时配置与可选 preset：`/Users/simon/projects/webapp-template/docs/frontend-presets.md`
 
 ### 专题文档
 

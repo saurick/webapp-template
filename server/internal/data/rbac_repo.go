@@ -41,14 +41,46 @@ func (r *rbacRepo) Overview(ctx context.Context) (*biz.RBACOverview, error) {
 	}()
 
 	roles := make([]biz.RBACRoleSummary, 0)
+	roleIndexes := make(map[int]int)
 	for roleRows.Next() {
-		var role biz.RBACRoleSummary
+		role := biz.RBACRoleSummary{PermissionKeys: make([]string, 0)}
 		if err := roleRows.Scan(&role.ID, &role.Key, &role.Name, &role.Description, &role.Builtin, &role.AdminCount); err != nil {
 			return nil, err
 		}
+		roleIndexes[role.ID] = len(roles)
 		roles = append(roles, role)
 	}
 	if err := roleRows.Err(); err != nil {
+		return nil, err
+	}
+
+	rolePermissionRows, err := r.data.sqldb.QueryContext(
+		ctx,
+		`SELECT arp.admin_role_id, ap.key
+		 FROM admin_role_permissions arp
+		 JOIN admin_permissions ap ON ap.id = arp.admin_permission_id
+		 ORDER BY arp.admin_role_id ASC, ap.key ASC`,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		if err := rolePermissionRows.Close(); err != nil {
+			r.log.WithContext(ctx).Warnf("close role permission rows failed err=%v", err)
+		}
+	}()
+
+	for rolePermissionRows.Next() {
+		var roleID int
+		var permissionKey string
+		if err := rolePermissionRows.Scan(&roleID, &permissionKey); err != nil {
+			return nil, err
+		}
+		if roleIndex, ok := roleIndexes[roleID]; ok {
+			roles[roleIndex].PermissionKeys = append(roles[roleIndex].PermissionKeys, permissionKey)
+		}
+	}
+	if err := rolePermissionRows.Err(); err != nil {
 		return nil, err
 	}
 

@@ -44,6 +44,28 @@ const scenarios = [
     },
   },
   {
+    name: 'home-theme-persistence',
+    path: '/',
+    viewport: { width: 390, height: 844 },
+    verify: async (page) => {
+      await page
+        .getByRole('button', { name: '切换界面主题，当前：跟随系统' })
+        .click()
+      await page
+        .getByRole('button', { name: '切换界面主题，当前：浅色' })
+        .click()
+      assert.equal(
+        await page.evaluate(() => document.documentElement.dataset.appTheme),
+        'dark'
+      )
+      await page.reload({ waitUntil: 'domcontentloaded' })
+      assert.equal(
+        await page.evaluate(() => document.documentElement.dataset.appTheme),
+        'dark'
+      )
+    },
+  },
+  {
     name: 'login-desktop',
     path: '/login',
     viewport: { width: 1280, height: 800 },
@@ -93,9 +115,10 @@ const scenarios = [
     setup: seedAdminAuth,
     verify: async (page) => {
       await expectText(page, 'Admin Preset')
-      await expectText(page, '管理控制台')
+      await expectText(page, '管理工作台')
       await expectText(page, '账号目录')
       await expectText(page, '角色权限')
+      await expectText(page, '使用说明')
     },
   },
   {
@@ -123,6 +146,28 @@ const scenarios = [
       await expectText(page, '账号目录')
       await expectText(page, 'demo_user')
       await expectText(page, '共 8 条')
+      assert.equal(await page.getByText('管理员', { exact: true }).count(), 0)
+      await page.getByPlaceholder('按用户名搜索').fill('demo')
+      await page.getByPlaceholder('按用户名搜索').press('Enter')
+      await expectText(page, '共 1 条')
+      assert.equal(new URL(page.url()).searchParams.get('q'), 'demo')
+      await page.getByRole('switch', { name: 'demo_user 允许登录' }).click()
+      await expectText(page, '禁用后')
+      await page.locator('.ant-modal-footer button').first().click()
+      await page.locator('.ant-modal-wrap').waitFor({ state: 'hidden' })
+    },
+  },
+  {
+    name: 'admin-navigation-auth-mobile',
+    path: '/admin-accounts',
+    viewport: { width: 390, height: 844 },
+    setup: seedAdminAuth,
+    verify: async (page) => {
+      await page.getByRole('button', { name: '打开后台导航' }).click()
+      await expectText(page, '工作台')
+      await expectText(page, '使用说明')
+      await page.getByText('角色权限', { exact: true }).last().click()
+      await waitForPath(page, '/admin-rbac')
     },
   },
   {
@@ -132,8 +177,74 @@ const scenarios = [
     setup: seedAdminAuth,
     verify: async (page) => {
       await expectText(page, '角色权限')
-      await expectText(page, 'super_admin')
-      await expectText(page, 'admin.user.read')
+      await expectText(page, '超级管理员')
+      await expectText(page, '后台访问')
+      await expectText(page, '查看账号')
+      const rawPermission = page.getByText('admin.user.read', { exact: true })
+      assert.equal(await rawPermission.isVisible(), false)
+      await page.getByText('查看权限码', { exact: true }).nth(1).click()
+      await rawPermission.waitFor({ state: 'visible' })
+    },
+  },
+  {
+    name: 'admin-guide-auth-desktop',
+    path: '/admin-guide',
+    viewport: { width: 1280, height: 800 },
+    setup: seedAdminAuth,
+    verify: async (page) => {
+      await expectHeading(page, '使用说明')
+      await expectText(page, '前端开关不等于权限')
+      await expectText(page, '移动工作队列')
+      await expectText(page, '业务附件')
+    },
+  },
+  {
+    name: 'work-queue-disabled',
+    path: '/work-queue',
+    viewport: { width: 390, height: 844 },
+    verify: async (page) => {
+      await expectHeading(page, '移动工作队列未启用')
+      await expectRole(page, 'link', '返回首页')
+    },
+  },
+  {
+    name: 'work-queue-mobile-interaction',
+    path: '/work-queue',
+    viewport: { width: 390, height: 844 },
+    setup: seedMobileWorkQueue,
+    verify: async (page) => {
+      await expectHeading(page, '移动工作队列')
+      await expectText(page, '确认客户资料')
+      await page.getByRole('button', { name: /确认客户资料/ }).click()
+      assert.equal(new URL(page.url()).searchParams.get('item'), 'WQ-1001')
+      await expectHeading(page, '确认客户资料')
+      await page.getByRole('button', { name: '标记完成' }).click()
+      await expectHeading(page, '标记完成')
+      assert.equal(
+        await page.evaluate(() => document.activeElement?.textContent?.trim()),
+        '取消'
+      )
+      await page.keyboard.press('Escape')
+      assert.equal(await page.getByRole('dialog').count(), 0)
+      await page.getByRole('button', { name: '标记完成' }).click()
+      await page.getByRole('button', { name: '确认执行' }).click()
+      await expectHeading(page, '操作已完成')
+      await expectText(page, '结果已写入当前数据源')
+      await page.getByRole('button', { name: '返回工作队列' }).click()
+      assert.equal(new URL(page.url()).searchParams.get('item'), null)
+      await page.getByRole('button', { name: '已完成' }).click()
+      await expectText(page, '确认客户资料')
+      await expectText(page, '已完成')
+      assert.equal(new URL(page.url()).searchParams.get('view'), 'completed')
+    },
+  },
+  {
+    name: 'not-found-mobile',
+    path: '/missing-page',
+    viewport: { width: 390, height: 844 },
+    verify: async (page) => {
+      await expectHeading(page, '没有找到这个页面')
+      await expectRole(page, 'link', '返回首页')
     },
   },
 ]
@@ -385,6 +496,33 @@ async function seedStaleAdminAuth(page) {
     window.localStorage.setItem('admin_username', 'admin')
     window.localStorage.removeItem('admin_roles')
     window.localStorage.removeItem('admin_permissions')
+  })
+}
+
+async function seedMobileWorkQueue(page) {
+  await page.addInitScript(() => {
+    window.__WEBAPP_CONFIG__ = {
+      branding: {
+        productName: 'Project Workspace',
+        shortName: 'Workspace',
+        adminName: 'Admin Preset',
+        adminSubtitle: 'basic RBAC',
+      },
+      features: {
+        adminGuide: true,
+        mobileWorkQueue: true,
+      },
+    }
+    const payload = {
+      uid: 101,
+      uname: 'mobile-user',
+      role: 0,
+      exp: Math.floor(Date.now() / 1000) + 3600,
+    }
+    const token = `${window.btoa(JSON.stringify({ alg: 'none', typ: 'JWT' }))}.${window.btoa(JSON.stringify(payload))}.mock`
+    window.localStorage.setItem('user_access_token', token)
+    window.localStorage.setItem('user_user_id', '101')
+    window.localStorage.setItem('user_username', 'mobile-user')
   })
 }
 

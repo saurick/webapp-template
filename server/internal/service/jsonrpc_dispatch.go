@@ -734,12 +734,13 @@ func rbacRoleResults(roles []biz.RBACRoleSummary) []any {
 	out := make([]any, 0, len(roles))
 	for _, role := range roles {
 		out = append(out, map[string]any{
-			"id":          role.ID,
-			"key":         role.Key,
-			"name":        role.Name,
-			"description": role.Description,
-			"builtin":     role.Builtin,
-			"admin_count": role.AdminCount,
+			"id":              role.ID,
+			"key":             role.Key,
+			"name":            role.Name,
+			"description":     role.Description,
+			"builtin":         role.Builtin,
+			"admin_count":     role.AdminCount,
+			"permission_keys": role.PermissionKeys,
 		})
 	}
 	return out

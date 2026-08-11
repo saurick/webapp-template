@@ -16,16 +16,24 @@ export default function AlertDialog({
   }
 
   return (
-    <AppModal open={open} onClose={onClose} className={className}>
+    <AppModal
+      open={open}
+      onClose={onClose}
+      className={className}
+      labelledBy="app-alert-title"
+    >
       <div className="flex flex-col items-center gap-5 py-2 text-center">
         {title ? (
-          <div className="text-xl font-semibold tracking-wide text-slate-50 sm:text-2xl">
+          <div
+            id="app-alert-title"
+            className="text-xl font-semibold tracking-wide text-[var(--app-text)] sm:text-2xl"
+          >
             {title}
           </div>
         ) : null}
 
         {message ? (
-          <div className="whitespace-pre-line text-sm leading-7 text-slate-300 sm:text-base">
+          <div className="whitespace-pre-line text-sm leading-7 text-[var(--app-text-muted)] sm:text-base">
             {message}
           </div>
         ) : null}
@@ -33,7 +41,7 @@ export default function AlertDialog({
         <button
           type="button"
           onClick={handleConfirm}
-          className="min-w-[152px] rounded-full bg-cyan-300 px-6 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-cyan-200 active:bg-cyan-400"
+          className="app-primary-button min-w-[152px] rounded-full px-6 py-2.5 text-sm font-semibold transition"
         >
           {confirmText}
         </button>

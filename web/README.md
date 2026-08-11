@@ -2,22 +2,23 @@
 
 ## 目录结构（简版）
 
-| 路径          | 职责                                             |
-| ------------- | ------------------------------------------------ |
-| `src/common/` | 通用认证、组件、hooks、状态、常量与工具函数      |
-| `src/pages/`  | 首页、登录、注册、管理员登录与 admin preset 页面 |
-| `src/mocks/`  | 本地 mock 与前端基线测试辅助                     |
-| `src/assets/` | 图标等静态资源                                   |
-| `public/`     | 静态公开资源                                     |
-| `scripts/`    | 最小浏览器级样式回归等前端侧脚本                 |
-| `build/`      | 构建产物，不作为日常开发真源                     |
+| 路径           | 职责                                                          |
+| -------------- | ------------------------------------------------------------- |
+| `src/common/`  | 通用认证、运行时配置、主题、路由、组件、状态、常量与工具函数  |
+| `src/pages/`   | 首页、登录、注册、管理员登录、admin preset 与可选工作队列页面 |
+| `src/presets/` | 默认关闭、需要派生接口的数据和交互 preset                     |
+| `src/mocks/`   | 本地 mock 与前端基线测试辅助                                  |
+| `src/assets/`  | 图标等静态资源                                                |
+| `public/`      | 静态公开资源                                                  |
+| `scripts/`     | 最小浏览器级样式回归等前端侧脚本                              |
+| `build/`       | 构建产物，不作为日常开发真源                                  |
 
 日常开发入口优先关注 `src/`、`scripts/` 与 `public/`；`build/`、`output/` 更偏本地产物，不建议当成业务实现入口。
 
 ## 前后台入口边界
 
-- 前台普通用户：`/`、`/login`、`/register`，只展示普通用户工作台、登录和注册，不提供后台登录或管理控制台入口。
-- 后台管理员：`/admin-login`、`/admin-menu`、`/admin-accounts`、`/admin-rbac`，使用 antd admin preset 与独立管理员登录态。
+- 前台普通用户：`/`、`/login`、`/register`；启用并接入移动工作队列后增加 `/work-queue`。普通用户页面不提供后台登录或管理控制台入口。
+- 后台管理员：`/admin-login`、`/admin-menu`、`/admin-accounts`、`/admin-rbac`、`/admin-guide`，使用 antd admin preset 与独立管理员登录态。
 - 两套登录态分别使用 `AUTH_SCOPE.USER` 与 `AUTH_SCOPE.ADMIN`，页面文案和导航也应保持分离，避免把普通用户入口和管理员入口放到同一页面。
 
 ## 启动与构建
@@ -46,10 +47,14 @@ pnpm style:l1
 pnpm build
 ```
 
-- `pnpm style:l1` 是当前仓库浏览器级样式回归入口，会自动拉起本地 Vite；覆盖范围以 `web/scripts/styleL1.mjs` 的 scenario list 为真源，当前包含公开入口、管理员登录/重定向、已登录菜单、stale-auth recovery、账号与 RBAC 页面。
+- `pnpm style:l1` 是当前仓库浏览器级样式回归入口，会自动拉起本地 Vite；覆盖范围以 `web/scripts/styleL1.mjs` 的 scenario list 为真源，当前包含公开入口、主题、管理员鉴权/导航、账号与 RBAC 交互、帮助页、移动工作队列、功能关闭态和 404。
 - 当前后台 preset 使用 antd；antd 只进入管理员后台页面，不作为用户端页面的默认设计体系。
 - 若本轮改动触达更复杂的后台页面、弹窗、表格或更多响应式状态，仍需在 `style:l1` 之外继续补针对性浏览器回归。
-- `pnpm test` 当前只负责验证错误码常量与登录态错误分类这类最小前端基线；它不替代浏览器里的样式 / box 模型验收。
+- `pnpm test` 当前验证运行时配置、错误码、路由导入重试、错误翻译和移动工作队列数据归一化；它不替代浏览器里的交互、样式 / box 模型验收。
+
+## 运行时展示配置
+
+`public/app-config.js` 在 React 启动前加载，用于替换公开品牌名称和已经完成接口接入的 feature 开关。它不能保存 secret，也不能替代服务端权限。移动工作队列 JSON-RPC 合同和审计 / 附件 / 打印 / 历史扩展边界见 `/Users/simon/projects/webapp-template/docs/frontend-presets.md`。
 
 ## 环境变量
 

@@ -1,12 +1,38 @@
 .loading-page {
-  position: absolute;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  left: 0;
+  position: fixed;
+  inset: 0;
   display: flex;
-  justify-content: center;
+  gap: 12px;
   align-items: center;
+  justify-content: center;
   font-size: 16px;
-  color: #666;
+  color: var(--app-text-muted);
+  background: var(--app-bg);
+}
+
+.loading-page--embedded {
+  position: static;
+  min-height: 180px;
+  background: transparent;
+}
+
+.loading-page__spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--app-border);
+  border-top-color: var(--app-primary);
+  border-radius: 50%;
+  animation: loading-spin 800ms linear infinite;
+}
+
+@keyframes loading-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .loading-page__spinner {
+    animation-duration: 1600ms;
+  }
 }

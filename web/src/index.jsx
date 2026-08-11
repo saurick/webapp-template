@@ -6,6 +6,7 @@ import { HelmetProvider } from 'react-helmet-async'
 import './tailwind.css'
 import App from './App'
 import { AppAlertProvider } from '@/common/components/modal/AppAlertProvider'
+import { ThemeProvider } from '@/common/theme/ThemeProvider'
 
 // 只在开发环境 & 打开开关时启用 mock
 if (import.meta.env.DEV && import.meta.env.VITE_ENABLE_RPC_MOCK === 'true') {
@@ -25,11 +26,13 @@ const root = ReactDOM.createRoot(rootElement)
 root.render(
   <StrictMode>
     <HelmetProvider>
-      <Router basename={import.meta.env.BASE_URL}>
-        <AppAlertProvider>
-          <App />
-        </AppAlertProvider>
-      </Router>
+      <ThemeProvider>
+        <Router basename={import.meta.env.BASE_URL}>
+          <AppAlertProvider>
+            <App />
+          </AppAlertProvider>
+        </Router>
+      </ThemeProvider>
     </HelmetProvider>
   </StrictMode>
 )
