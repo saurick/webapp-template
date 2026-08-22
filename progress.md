@@ -4,6 +4,12 @@
 - 2026-04 到 2026-05-03 早前流水快照：`docs/archive/progress-2026-04-to-2026-05-03-pre-admin-preset.md`。
 - 当前文件只保留近期活跃事项和后续新增记录；归档文件只作追溯线索，不作为当前正式真源。
 
+## 2026-08-22 当前目标与最小闭环边界
+
+- 完成：项目 `AGENTS.md` 明确只实现当前目标所需最小闭环，不把模型推断升级为需求；真源、状态、权限、异常恢复、测试和基础易用性只补当前目标必要项，任务外发现只报告。
+- 下一步：后续模板任务先区分用户目标、模板真源与模型推断；一次性或派生项目需求继续下沉，不扩入模板核心。
+- 阻塞/风险：本轮仅调整协作规则，未触达模板运行代码、初始化脚本、schema、migration、页面或部署，也未提交或推送。
+
 ## 2026-06-15 21:50 CST
 
 - 完成：新增 `scripts/deploy/production-preflight.sh` 和 `server/Makefile` 的 `production_preflight` 入口，作为 Compose 单机发布前门禁；检查运行时 `.env`、占位 secret、镜像 tag、Compose 禁止 `build:`、Jaeger loopback、宿主机 Atlas migration 和可选运行态 `/healthz` / `/readyz`。
