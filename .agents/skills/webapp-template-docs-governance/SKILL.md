@@ -1,69 +1,30 @@
 ---
 name: webapp-template-docs-governance
-description: 项目文档治理（webapp-template）。Use when creating, reviewing, renaming, reorganizing, or updating template current-source, project-init, deployment, README, AGENTS, or progress docs.
+description: 项目文档治理（webapp-template）。Use to maintain template current-source, project-init, deployment, README, AGENTS, and progress docs.
 ---
 
 # Webapp Template 文档治理 Docs Governance
 
-用这个 skill 维护 `/Users/simon/projects/webapp-template` 的文档可读性和真源边界。它服务模板本身，不要把派生项目的业务需求写回模板通用规则。
+区分维护模板与初始化派生项目；派生业务需求、品牌和凭据不写回通用规则。
 
-- 先确认代码、migration、测试、README、正式 docs 和 AGENTS 的优先级，不让过程记录覆盖当前真源。
-- 结论、适用范围、主路径、验收方式和风险边界前置；表格、Mermaid、链接和摘要只在减少查找成本时使用。
-- 行为、入口、配置、测试或部署口径变化时，同步相关索引、README 和 progress；只改措辞时不机械扩大同步面。
-- 不为普通说明引入重模板、重复负面清单或并行 metadata；能由现有脚本、索引或文档承接的规则，不再造一套真源。
+## Scope and Truth
 
-## 工作流 Workflow
+- 读取 `AGENTS.md`、`docs/current-source-of-truth.md` 和相关 README / `docs/README.md`；用 `GIT_OPTIONAL_LOCKS=0` 核对 scoped diff，保护外部改动。
+- 初始化 / 裁剪看 `docs/project-init.md`；部署看 `docs/deployment-conventions.md` 和对应 server/deploy docs；QA / 脚本看 `scripts/README.md`。只读相关分支，不重复加载未变化内容。
+- 当前事实核对代码、脚本、测试和正式 docs；live 现场、历史 patch、模板残留及 progress 不替代模板主路径。
+- 用户明确要求长期规则治理时可编辑 AGENTS，普通说明不改政策。必要行为修改转入对应领域流程并继续已有授权；只有实质扩域或未授权动作才暂停。
 
-1. Snapshot scope。
-   - 运行 `git -C /Users/simon/projects/webapp-template status --short`。
-   - 判断任务是 docs-only、docs-adjacent 还是行为变更。
-   - 如果触达 runtime、schema、API、部署脚本、页面或 QA 行为，停止把它当纯文档任务。
+## Maintain Template Docs
 
-2. 读文档真源链。
-   - 永远先读 `AGENTS.md`，但普通文档治理不默认编辑它。
-   - 维护模板本身：读 `docs/current-source-of-truth.md`、`docs/README.md`、`README.md`。
-   - 初始化/裁剪：读 `docs/project-init.md`。
-   - 部署：读 `docs/deployment-conventions.md`、`server/deploy/README.md`、`server/docs/README.md`。
-   - 脚本/QA：读 `scripts/README.md`。
-   - `progress.md` 只作过程流水，不作模板当前真源。
+- 保留初始化、auth / admin preset、错误码、health/ready、基础可观测、migration 和 QA 边界，不能因为“像模板”就删。
+- 部署说明区分 Compose 主路径、lab-ha、Helm / Kustomize / Argo 与现场 patch；低配目标不承担重构建。
+- 结论、读者、范围、主路径与命令前置；比较用表格，步骤用编号，命令用代码块，复杂关系才用 Mermaid，并链接具体文件 / 稳定章节。
+- 同一口径只维护一处；普通运行说明进入专题，不堆进 AGENTS。metadata 仅服务真实消费者，不另造索引或审批模板。
+- 文档增删 / 改名 / 职责变化时同步 `docs/README.md`、相关 README、锚点与引用；行为、命令、初始化和部署口径变化同步对应专题 / 消费者，纯正文通常不改目录。
+- progress 按 AGENTS 触发条件维护；写入前检查 600 行 / 80 KiB，达到后显式归档并保留活跃事项和索引。
 
-3. 保护 `AGENTS.md`。
-   - 只有用户明确要求改长期规则、禁止项、必跑流程或仓库级策略时才编辑。
-   - 普通 runbook、模板解释、初始化步骤、部署说明优先进入对应 docs/README，而不是堆进 `AGENTS.md`。
-   - 最终回复说明 `AGENTS.md` 是只读还是修改。
+## Validate and Deliver
 
-4. 设计给人读。
-   - 开头先给目标、适用范围、当前真源、主路径、验收命令和风险边界。
-   - 表格用于短字段、路径矩阵、命令目录、状态比较、风险登记。
-   - 编号列表用于初始化、部署、迁移、排障、验证顺序。
-   - 代码块用于命令、配置、SQL、API 示例。
-   - Mermaid 只在能降低理解成本时使用：真源链、初始化流程、部署路径、Helm/Kustomize/Compose 边界、决策树。
-   - 链接尽量指向最具体的稳定章节或文件，不要让读者在多份文档里猜入口。
-   - 不为视觉整齐强行表格化长流程或 FAQ。
+运行 `git diff --check`、定向路径 / 命令 / 术语扫描；Skills 运行 validator 与元数据 / 引用检查；Mermaid 变更检查语法和标签。仅在实际脚本 / 页面合同变化时运行相应测试，不因文档治理执行初始化、migration 或全量 QA。
 
-5. 维护模板边界。
-   - 区分“维护模板本身”和“基于模板初始化新项目”。
-   - 不把 live 现场状态、历史 patch、模板残留或派生项目需求当成模板主路径。
-   - 不因为“像模板”就删除质量门禁、错误码治理、最小健康检查、基础可观测性、通用鉴权骨架。
-   - 部署文档必须区分 Compose 主路径、`lab-ha`、Helm、Kustomize、Argo CD 和现场 patch。
-
-6. 同步相关入口。
-   - 新增、删除、重命名或改变长期维护文档职责时，检查 `README.md`、`docs/README.md`、附近 README 和正文引用。
-   - 行为、命令、部署、配置、页面文案或质量入口变化时，同轮检查相关 README/docs。
-   - 文件改动后按 `AGENTS.md` 更新 `progress.md`；写入前检查行数和大小，达到 600 行或 80KB 先归档。
-
-7. 验证。
-   - 运行 `git -C /Users/simon/projects/webapp-template diff --check`。
-   - 针对旧路径、旧标题、旧命令、旧部署口径、旧模板残留做 `rg` 检查。
-   - Mermaid 变更要检查 fenced block、节点标签和周边说明。
-   - docs-only 不跑无关 migration 或全量 QA；若文档改变脚本/页面/部署入口，运行对应命令。
-
-## 交付标准 Deliverable
-
-最终说明：
-
-- 读了哪些真源，`AGENTS.md` 是否只读。
-- 改了哪些 docs/README/progress，为什么需要或不需要同步索引。
-- 是否新增表格、图、链接、命令块，以及它们解决的阅读问题。
-- `progress.md` 是否检查了归档阈值。
-- 验证命令和剩余盲区。
+报告关键修改、AGENTS 是否变更、必要同步、验证和盲区；未触达图表 / metadata 等不逐项汇报。

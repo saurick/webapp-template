@@ -18,7 +18,7 @@ description: 项目测试治理（webapp-template）。Use when choosing, runnin
 2. 读取相关真源：`README.md`、`AGENTS.md`、`docs/current-source-of-truth.md`、`docs/project-init.md`、`server/README.md`、`web/README.md`、`scripts/README.md`。
 3. 按影响面选择最小充分命令；模板不应因为一次文档改动跑完整负载测试。
 4. 部署相关改动按低配边界执行：本地/CI 构建，远端加载制品、migration、启动、健康检查。
-5. 汇报命令、结果、未覆盖项；有正式改动时更新 `progress.md`。
+5. 汇报实际命令、结果及相关盲区；仅在命中 `AGENTS.md` 的过程记录条件时更新 `progress.md`。
 
 ## Test Shapes
 

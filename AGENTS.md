@@ -4,8 +4,7 @@
 
 ## AGENTS 体积治理
 
-- 本仓库所有 `AGENTS.md` 目标小于 16 KiB；达到 16 KiB 先去重，超过 24 KiB 必须按全局治理顺序精简，`bash scripts/qa/agents-size.sh` 负责预警和阻断。
-- 脚本只检查大小，不自动改写；模板/派生项目、迁移、部署和安全边界不得为过门禁被删除。
+运行 `bash scripts/qa/agents-size.sh`；阈值、精简顺序及只检查不改写的边界沿用全局 AGENTS，项目安全和业务约束必须保留。
 
 ## 真源与阅读顺序
 
@@ -19,7 +18,7 @@
 
 ## 过程记录与工作区
 
-- 完成代码或正式文档改动后更新 `progress.md`；仅讨论可跳过。
+- 仅在跨会话续做、阻塞或显著风险、schema / migration、发布 / 回滚、重大产品或架构决策，或用户明确要求时更新 `progress.md`；普通已闭环改动由 diff 与验证结果留痕，仅讨论可跳过。
 - 更新前检查 600 行/80KiB 阈值；达到后显式归档并保留活跃事项和索引。
 - 开始/收口检查 worktree；其他会话的无关改动只隔离，不回退、格式化、stage 或提交。
 
@@ -28,7 +27,7 @@
 - 项目 skills 位于 `.agents/skills/`，入口见其 README；只保留模板专项 SOP。
 - 默认只选一个主 skill；真实跨模板边界、页面、测试或 operations 时再组合。
 - runtime、可迁移观测、安全、发布和回滚统一使用 `$webapp-template-operations-governance`。
-- 提示词整理显式使用全局 `$prompt-governance`；Git 收口使用 `$git-closeout-coordination`。
+- 提示词整理使用全局 `$prompt-governance`；只有已授权 commit / push 且实时现场复杂时使用 `$git-closeout-coordination`，普通完成不自动触发 Git 动作。
 - fixture/admin preset/default data 规则由 domain + test 承接，不单建 seed skill。
 - 修改 skill 后同步 metadata/引用并运行 validator、YAML/metadata、引用扫描和 `git diff --check`。
 
@@ -59,7 +58,7 @@
 ## 数据库与迁移
 
 - 已存在 migration 且明确命中当前本地开发库时，可按项目命令 apply 并只读确认 schema。
-- 新 migration、手改 SQL、回滚、清库、大规模回填、共享/生产库或高风险锁表变更先说明并确认。
+- 本地 schema / migration 文件的设计与生成按已授权实现范围继续；真实 apply、回滚、清库、大回填、共享 / 生产库或高风险变更，执行前说明目标、方案和风险并核对已有授权，缺少时只暂停该动作。不得手改结构性 SQL 绕过迁移流程。
 - schema/migration/ent 或依赖新列的逻辑发布前必须核对目标 migration；pending 时不得先发布依赖版本。
 - 发布后 smoke 要命中新 schema 的真实业务链，不只检查 health/首页。
 

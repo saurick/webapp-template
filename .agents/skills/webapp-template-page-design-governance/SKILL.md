@@ -5,6 +5,8 @@ description: 项目页面治理（webapp-template）。Use when designing, revie
 
 # Webapp Template 页面设计治理 Page Design Governance
 
+从当前任务的 checkout / Worktree 内用 `git rev-parse --show-toplevel` 核对仓库根；下文命令以该根目录为工作目录，仓库内文件引用也相对它解析。
+
 用这个 skill 把 `webapp-template` 的页面做成可复用、低心智负担、容易派生的模板基线。不要把某个派生项目的品牌、业务字段或客户口径写进模板主干。
 
 - 每个元素都要支持明确角色、判断、动作或反馈；无决策价值、重复入口、假快捷方式和装饰性卡片应删除、合并或降级。
@@ -15,7 +17,7 @@ description: 项目页面治理（webapp-template）。Use when designing, revie
 ## 工作流 Workflow
 
 1. 先确认页面角色和模板边界。
-   - 运行 `git -C /Users/simon/projects/webapp-template status --short`。
+   - 运行 `GIT_OPTIONAL_LOCKS=0 git status --short`。
    - 读 `AGENTS.md`、`docs/current-source-of-truth.md`、`README.md`、`web/README.md`。
    - 如果任务涉及初始化、默认模块裁剪或模板残留，继续读 `docs/project-init.md`。
    - 如果涉及部署入口或运维可视化，继续读 `docs/deployment-conventions.md` 和相关 deploy docs。
@@ -41,18 +43,18 @@ description: 项目页面治理（webapp-template）。Use when designing, revie
    - 优先复用现有组件、auth scope、request helper、error message helper、CSS 变量和 admin preset。
    - 样式局部收口，不滥用 `!important`。
    - 页面设计变更不要顺手改 schema、migration、部署主路径或后端业务规则。
-   - 如果页面设计要求新增或修改 schema、API、RBAC、transaction、error code、server usecase 或持久化语义，停止把它当页面任务，改用 `webapp-template-domain-boundary-governance` 收敛后端边界。
-   - 若设计要求需要新业务能力，先停下来说明后端/API/RBAC/文档范围。
+   - 当前目标需要 schema、API、RBAC、事务或持久化变更时，使用 `webapp-template-domain-boundary-governance` 核对合同，继续授权范围内的实现与验证。
+   - 只有新业务能力实质扩大任务范围时才提出具体选择；不依赖该选择的已授权工作继续。
 
 6. 回归验证。
    - 样式/布局任务先用真实浏览器或 Playwright 确认 DOM、computed style、box metrics、overflow、相邻区域和响应式状态。
-   - 默认执行：
+   - 按 `$webapp-template-test-governance` 从下列入口选择受影响测试和浏览器场景，不把所有命令作为每次必跑组合：
      ```bash
-     cd /Users/simon/projects/webapp-template/web && pnpm lint && pnpm css && pnpm test
-     cd /Users/simon/projects/webapp-template/web && pnpm style:l1
+     (cd web && pnpm lint && pnpm css && pnpm test)
+     (cd web && pnpm style:l1)
      ```
    - 以 `web/scripts/styleL1.mjs` 当前 scenario list 为覆盖真源；当前还包含 authenticated admin menu、stale-auth recovery、accounts 和 RBAC。目标页面/状态不在清单时补定向回归或说明盲区，不在 skill 中写死总数。
-   - 文件改动后按 `AGENTS.md` 更新 `progress.md`，并说明验证状态。
+   - 仅在命中 `AGENTS.md` 的过程记录条件时更新 `progress.md`；交付说明实际验证状态。
 
 ## 交付标准 Deliverable
 
