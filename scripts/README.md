@@ -24,22 +24,33 @@
 | `scripts/qa/error-code-sync.sh` | 校验前端生成错误码是否与后端目录同步 | 新增/修改错误码后 |
 | `scripts/qa/error-codes.sh` | 检查业务代码是否裸写已注册错误码 | 改动接口/鉴权/前端错误处理后 |
 | `scripts/qa/fast.sh` | 快速检查（web lint+css、server 快速测试） | 日常开发高频执行 |
-| `scripts/qa/full.sh` | 全量检查（pre-push 默认调用） | 提交前 / 推送前 |
+| `scripts/qa/full.sh` | 全量检查（pre-push 的代码、未知影响或新 ref 分支调用） | 代码与跨层验证 / 推送前 |
 | `scripts/qa/strict.sh` | 严格检查（warning 视为失败） | 发版前 / 主分支前 |
 | `scripts/loadtest/run.sh` | 运行最小 `k6` 压测场景 | 需要验证健康检查 / JSON-RPC / 登录链路时 |
 | `scripts/git-hooks/commit-msg.sh` | 校验提交信息规范 | commit-msg hook 自动执行 |
+| `scripts/git-hooks/pre-push.mjs` | 解析实际推送 ref、选择检查并验证提交快照 | pre-push 自动调用 |
+| `scripts/git-hooks/hooks.test.mjs` | 部分暂存、生成漂移、密钥与推送范围回归 | hook 改动 / full QA |
 
 补充说明：前端浏览器级样式回归入口不在 `scripts/qa` 下，而是 `cd /Users/simon/projects/webapp-template/web && pnpm style:l1`。覆盖范围以 `web/scripts/styleL1.mjs` 的 scenario list 为真源，当前包含公开入口、管理员登录/重定向、已登录菜单、stale-auth recovery、账号与 RBAC 页面。
 
 ## Hook 对应关系
 
 - `pre-commit` -> `scripts/git-hooks/pre-commit.sh`
-  - 增量 `prettier + eslint --fix + shfmt`
+  - 先检查暂存 diff，再从 index 导出临时快照；所有 checker 读取暂存源码和配置。
+  - 增量 `prettier --check + eslint + shfmt`（`SHFMT_CHECK=1`），禁止 hook 自动格式化、生成或 `git add`。
   - `shellcheck + error-code-sync + error-codes + gitleaks`
   - Go 变更时执行 `go vet + golangci-lint`（仅改动包 + 仅新增问题）
   - YAML 变更时执行 `yamllint`（仅暂存 YAML + .yamllint 降噪规则）
-- `pre-push` -> `scripts/git-hooks/pre-push.sh` -> `scripts/qa/shellcheck.sh`（`SHELLCHECK_STRICT=1`）-> `scripts/qa/full.sh`（`SECRETS_STRICT=1`）
+- `pre-push` -> `scripts/git-hooks/pre-push.sh` -> `scripts/git-hooks/pre-push.mjs`
+  - 接收 Git 的 remote 参数与 stdin ref 更新列表，逐个验证实际推送提交；临时快照拥有独立 HEAD 和 index，不使用当前工作区的未提交修改替代推送内容。
+  - 既有 ref 仅变更根 README/AGENTS/CHANGELOG/progress、`docs/**/*.md`、scripts/server/web README 或 Skill 的 SKILL.md、`agents/openai.yaml`、Markdown references 时，执行 diff 格式检查、严格提交历史密钥扫描和 `skill-health`。
+  - 代码、依赖、CI、生成器、Skill 脚本、可执行文件、符号链接、未知路径及新 ref 执行上述密钥扫描、严格 shellcheck 与 `SECRETS_STRICT=1 scripts/qa/full.sh`。中间提交、删除和重命名前路径也参与判断。
+  - 删除 ref 无内容待检查；远端对象缺失时提示先 fetch，非快进分支更新阻断。每个 remote 的范围独立计算，不假定 origin 或当前 HEAD。
 - `commit-msg` -> `scripts/git-hooks/commit-msg.sh`
+
+格式或生成同步失败时，显式修复相关工作区文件（错误码使用 `node scripts/gen-error-codes.mjs`），审查 diff 后重新选择要暂存的文件或 hunk；hook 不代替用户扩大提交范围。临时检查目录退出时删除，仅复用本地 `web/node_modules` 依赖。
+
+hook 回归使用 `node --test scripts/git-hooks/hooks.test.mjs`，在临时 Git 仓库验证部分暂存、错误暂存、生成漂移、推送其他提交、多 ref、新 ref、重命名和历史密钥；需要 Node.js、Git 和 gitleaks。手动全量验证仍使用 `bash scripts/qa/full.sh`，直接运行 pre-push 且没有 stdin ref 更新不等于完成全量 QA。
 
 ## 1) bootstrap
 
@@ -237,7 +248,8 @@ bash scripts/qa/fast.sh
 bash scripts/qa/full.sh
 ```
 
-- pre-push 默认以 `SECRETS_STRICT=1` 执行此脚本
+- pre-push 的代码、未知影响或新 ref 分支以 `SECRETS_STRICT=1` 执行此脚本；纯文档和 Skill 说明使用上面的轻量分支。
+- 包含 hook 回归、`skill-health`、DB/错误码/密钥守卫、Go 漏洞扫描及 web/server 测试与构建。
 - 若定义了前端 `test`，会在 `full` 中一并执行，但它仍然属于仓库级 QA 全量检查，不替代样式/布局任务的浏览器级回归。
 
 ## 16) loadtest

@@ -131,8 +131,8 @@ bash /Users/simon/projects/webapp-template/scripts/qa/full.sh
 
 ## 本地质量门禁（无 CI）
 
-- `pre-commit`：增量 `Prettier + ESLint --fix + shfmt`，并执行 `shellcheck + error-code-sync + error-codes + gitleaks + go vet + golangci-lint + yamllint`（Go/YAML 按改动触发，golangci-lint 仅拦截新增问题）
-- `pre-push`：先执行 `scripts/qa/shellcheck.sh`（严格）再执行 `SECRETS_STRICT=1 scripts/qa/full.sh`
+- `pre-commit`：在暂存快照中执行格式、静态检查和生成同步检查，只检查、不改写或重新暂存；支持部分暂存。具体门禁与修复方式见 [`scripts/README.md`](scripts/README.md#hook-对应关系)。
+- `pre-push`：按实际推送的每个 ref 检查提交快照；纯文档和 Skill 说明执行轻量检查，代码、脚本、依赖、未知影响及新 ref 仍执行严格 shellcheck 与全量 QA，所有内容推送均扫描提交历史中的密钥。
 - `commit-msg`：校验提交信息（Conventional Commits）
 
 质量脚本详细说明见：`/Users/simon/projects/webapp-template/scripts/README.md`

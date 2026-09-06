@@ -7,9 +7,10 @@ print_help() {
   bash scripts/qa/full.sh
 
 作用:
-  执行推送前全量质量检查（pre-push 默认调用）
+  执行全量质量检查（pre-push 的代码、未知影响或新 ref 分支调用）
 
 检查内容:
+  git-hooks: 暂存保护与推送范围回归
   skill-health: 项目 Skill 结构、metadata、索引和引用
   error-code-sync: 前端生成错误码同步检查
   error-codes: 统一错误码魔法数字检查
@@ -45,6 +46,7 @@ if ! command -v node >/dev/null 2>&1; then
 fi
 
 node "$ROOT_DIR/scripts/qa/skill-health.mjs"
+node --test "$ROOT_DIR"/scripts/git-hooks/*.test.mjs
 
 if ! command -v pnpm >/dev/null 2>&1; then
 	echo "[qa:full] 未找到 pnpm，请先安装 pnpm"

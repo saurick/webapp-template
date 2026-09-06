@@ -115,7 +115,7 @@ if [[ -z "$(find "$tmp_dir" -type f -print -quit)" ]]; then
 	exit 0
 fi
 
-if gitleaks detect --source "$tmp_dir" --no-banner --redact >/dev/null 2>&1; then
+if gitleaks detect --no-git --source "$tmp_dir" --no-banner --redact >/dev/null 2>&1; then
 	echo "[qa:secrets] 通过"
 	exit 0
 fi

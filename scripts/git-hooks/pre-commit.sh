@@ -1,23 +1,27 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-ROOT_DIR="$(git rev-parse --show-toplevel)"
-cd "$ROOT_DIR"
+CALLER_DIR="$(pwd -P)"
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+if [[ -n "${GIT_INDEX_FILE:-}" && "$GIT_INDEX_FILE" != /* ]]; then
+	export GIT_INDEX_FILE="$CALLER_DIR/$GIT_INDEX_FILE"
+fi
+export GIT_OPTIONAL_LOCKS=0
+cd "$REPO_ROOT"
 
 collect_staged_files() {
 	STAGED_FILES=()
 	while IFS= read -r -d '' file; do
 		STAGED_FILES+=("$file")
-	done < <(git diff --cached --name-only --diff-filter=ACMR -z)
+	done < <(git diff --cached --name-only --diff-filter=ACMRD -z)
 }
 
 build_web_targets() {
 	PRETTIER_TARGETS_WEB=()
-	PRETTIER_TARGETS_ROOT=()
 	ESLINT_TARGETS_WEB=()
-	ESLINT_TARGETS_ROOT=()
 
 	for file in "${STAGED_FILES[@]}"; do
+		[[ -f "$file" ]] || continue
 		[[ "$file" =~ ^web/ ]] || continue
 
 		case "$file" in
@@ -29,13 +33,11 @@ build_web_targets() {
 		case "$file" in
 		*.js | *.jsx | *.ts | *.tsx | *.cjs | *.mjs | *.css | *.scss | *.sass | *.json | *.md | *.html | *.yml | *.yaml)
 			PRETTIER_TARGETS_WEB+=("${file#web/}")
-			PRETTIER_TARGETS_ROOT+=("$file")
 			;;
 		esac
 
 		if [[ "$file" =~ ^web/src/.*\.(js|jsx)$ ]]; then
 			ESLINT_TARGETS_WEB+=("${file#web/}")
-			ESLINT_TARGETS_ROOT+=("$file")
 		fi
 	done
 }
@@ -67,6 +69,9 @@ detect_go_targets() {
 			HAS_GO_CHANGES=1
 			rel="${file#server/}"
 			dir="$(dirname "$rel")"
+			if [[ ! -d "server/$dir" ]]; then
+				RUN_GO_ALL=1
+			fi
 			if [[ "$dir" == "." ]]; then
 				add_go_target "./"
 			else
@@ -104,6 +109,7 @@ detect_yaml_targets() {
 	YAML_TARGETS=()
 	local file
 	for file in "${STAGED_FILES[@]}"; do
+		[[ -f "$file" ]] || continue
 		case "$file" in
 		*.yml | *.yaml)
 			if is_yaml_ignored "$file"; then
@@ -140,65 +146,51 @@ if [[ "${#STAGED_FILES[@]}" -eq 0 ]]; then
 	exit 0
 fi
 
+git diff --cached --check
+ROOT_DIR="$(mktemp -d "${TMPDIR:-/tmp}/webapp-pre-commit-index.XXXXXX")"
+ROOT_DIR="$(cd "$ROOT_DIR" && pwd -P)"
+trap 'rm -rf "$ROOT_DIR"' EXIT
+GIT_DIR_PATH="$(git rev-parse --absolute-git-dir)"
+
+# 所有 checker 消费暂存快照；未暂存修改不能替代待提交内容。
+git checkout-index --all --prefix="$ROOT_DIR/"
+export GIT_DIR="$GIT_DIR_PATH"
+export GIT_WORK_TREE="$ROOT_DIR"
+cd "$ROOT_DIR"
+
 build_web_targets
 if [[ "${#PRETTIER_TARGETS_WEB[@]}" -gt 0 || "${#ESLINT_TARGETS_WEB[@]}" -gt 0 ]]; then
-	if ! command -v pnpm >/dev/null 2>&1; then
-		echo "[pre-commit] 未找到 pnpm，请先安装 pnpm"
+	if [[ ! -d "$REPO_ROOT/web/node_modules" || -e web/node_modules || -L web/node_modules ]]; then
+		echo "[pre-commit] 需要本地 web/node_modules，且暂存快照不得包含该目录"
 		exit 1
 	fi
+	ln -s "$REPO_ROOT/web/node_modules" web/node_modules
 fi
 
 if [[ "${#PRETTIER_TARGETS_WEB[@]}" -gt 0 ]]; then
-	echo "[pre-commit] 运行 Prettier（仅暂存文件）"
+	echo "[pre-commit] 检查暂存 web 文件格式"
 	(
 		cd "$ROOT_DIR/web"
-		pnpm exec prettier --write "${PRETTIER_TARGETS_WEB[@]}"
+		"$REPO_ROOT/web/node_modules/.bin/prettier" --check "${PRETTIER_TARGETS_WEB[@]}"
 	)
-	git add -- "${PRETTIER_TARGETS_ROOT[@]}"
 fi
 
 if [[ "${#ESLINT_TARGETS_WEB[@]}" -gt 0 ]]; then
-	echo "[pre-commit] 运行 ESLint --fix（仅暂存文件）"
+	echo "[pre-commit] 检查暂存 JavaScript"
 	(
 		cd "$ROOT_DIR/web"
-		pnpm exec eslint --fix --ext .js --ext .jsx "${ESLINT_TARGETS_WEB[@]}"
+		"$REPO_ROOT/web/node_modules/.bin/eslint" --ext .js --ext .jsx "${ESLINT_TARGETS_WEB[@]}"
 	)
-	git add -- "${ESLINT_TARGETS_ROOT[@]}"
-fi
-
-collect_staged_files
-if [[ "${#STAGED_FILES[@]}" -eq 0 ]]; then
-	exit 0
 fi
 
 detect_shell_targets
 if [[ "${#SHFMT_TARGETS_ROOT[@]}" -gt 0 ]]; then
-	echo "[pre-commit] 运行 shfmt（仅暂存脚本）"
-	SHFMT_STRICT=1 bash "$ROOT_DIR/scripts/qa/shfmt.sh" "${SHFMT_TARGETS_ROOT[@]}"
-	git add -- "${SHFMT_TARGETS_ROOT[@]}"
-fi
-
-collect_staged_files
-if [[ "${#STAGED_FILES[@]}" -eq 0 ]]; then
-	exit 0
+	echo "[pre-commit] 检查暂存 shell 文件格式"
+	SHFMT_STRICT=1 SHFMT_CHECK=1 bash "$ROOT_DIR/scripts/qa/shfmt.sh" "${SHFMT_TARGETS_ROOT[@]}"
 fi
 
 echo "[pre-commit] 运行 shellcheck"
 SHELLCHECK_STRICT=1 bash "$ROOT_DIR/scripts/qa/shellcheck.sh"
-
-if [[ -f "$ROOT_DIR/scripts/gen-error-codes.mjs" ]]; then
-	if ! command -v node >/dev/null 2>&1; then
-		echo "[pre-commit] 未找到 node，无法同步前端错误码生成产物"
-		exit 1
-	fi
-
-	# 先同步生成产物，再做守卫检查，避免把目录真源与前端常量拆开提交。
-	echo "[pre-commit] 同步前端错误码生成产物"
-	node "$ROOT_DIR/scripts/gen-error-codes.mjs"
-	if [[ -f "$ROOT_DIR/web/src/common/consts/errorCodes.generated.js" ]]; then
-		git add -- "$ROOT_DIR/web/src/common/consts/errorCodes.generated.js"
-	fi
-fi
 
 echo "[pre-commit] 运行错误码生成同步检查"
 bash "$ROOT_DIR/scripts/qa/error-code-sync.sh"
@@ -224,4 +216,4 @@ if [[ "${#YAML_TARGETS[@]}" -gt 0 ]]; then
 	YAMLLINT_STRICT=1 bash "$ROOT_DIR/scripts/qa/yamllint.sh" "${YAML_TARGETS[@]}"
 fi
 
-echo "[pre-commit] 完成"
+echo "[pre-commit] 完成（check-only，未改写或重新暂存文件）"
