@@ -185,6 +185,15 @@ function checkUpdate(line) {
         stdio: 'inherit',
       })
     }
+    const changed = git(['status', '--porcelain=v1', '--untracked-files=no'], {
+      cwd: directory,
+    }).trim()
+    const checkedHead = git(['rev-parse', 'HEAD'], { cwd: directory }).trim()
+    if (changed || checkedHead !== commit) {
+      throw new Error(
+        `检查器改写了推送快照，请显式修复后重新提交：\n${changed}`
+      )
+    }
   } finally {
     fs.rmSync(directory, { recursive: true, force: true })
   }

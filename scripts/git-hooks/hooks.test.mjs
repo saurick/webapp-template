@@ -361,6 +361,21 @@ test('a secret removed by a later docs commit still blocks the push', (t) => {
   assert.ok(!result.stderr.includes(fakeToken))
 })
 
+test('a checker cannot silently repair the pushed candidate before reporting success', (t) => {
+  const f = fixture(t)
+  f.write(
+    'scripts/qa/full.sh',
+    '#!/usr/bin/env bash\nset -euo pipefail\nprintf "autofixed\\n" >> README.md\n',
+    true
+  )
+  const tip = f.commit()
+  const before = f.state()
+  const result = f.push([f.ref(tip)])
+  assert.notEqual(result.status, 0)
+  assert.match(result.stderr, /检查器改写了推送快照/u)
+  assert.deepEqual(f.state(), before)
+})
+
 test('unknown remote objects and non-fast-forward branch updates fail closed', (t) => {
   const f = fixture(t)
   f.write('README.md', '# Next\n')

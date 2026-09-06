@@ -14,7 +14,7 @@ print_help() {
   skill-health: 项目 Skill 结构、metadata、索引和引用
   error-code-sync: 前端生成错误码同步检查
   error-codes: 统一错误码魔法数字检查
-  web: pnpm lint -> pnpm css -> (若存在 test 脚本则 pnpm test) -> pnpm build
+  web: ESLint check-only -> pnpm css -> (若存在 test 脚本则 pnpm test) -> pnpm build
   server: go test ./... -> make build
 
 环境变量:
@@ -83,7 +83,7 @@ fi
 echo "[qa:full] 运行 web 全量检查"
 (
 	cd "$ROOT_DIR/web"
-	pnpm lint
+	pnpm exec eslint --ext .js --ext .jsx src/
 	pnpm css
 
 	# 兼容模板差异：只有定义了 test 脚本才执行前端测试。

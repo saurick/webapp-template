@@ -42,7 +42,7 @@
   - Go 变更时执行 `go vet + golangci-lint`（仅改动包 + 仅新增问题）
   - YAML 变更时执行 `yamllint`（仅暂存 YAML + .yamllint 降噪规则）
 - `pre-push` -> `scripts/git-hooks/pre-push.sh` -> `scripts/git-hooks/pre-push.mjs`
-  - 接收 Git 的 remote 参数与 stdin ref 更新列表，逐个验证实际推送提交；临时快照拥有独立 HEAD 和 index，不使用当前工作区的未提交修改替代推送内容。
+  - 接收 Git 的 remote 参数与 stdin ref 更新列表，逐个验证实际推送提交；临时快照拥有独立 HEAD 和 index，不使用当前工作区的未提交修改替代推送内容。全量 ESLint 只检查，结束时核对 HEAD 和已跟踪文件未被 checker 改写。
   - 既有 ref 仅变更根 README/AGENTS/CHANGELOG/progress、`docs/**/*.md`、scripts/server/web README 或 Skill 的 SKILL.md、`agents/openai.yaml`、Markdown references 时，执行 diff 格式检查、严格提交历史密钥扫描和 `skill-health`。
   - 代码、依赖、CI、生成器、Skill 脚本、可执行文件、符号链接、未知路径及新 ref 执行上述密钥扫描、严格 shellcheck 与 `SECRETS_STRICT=1 scripts/qa/full.sh`。中间提交、删除和重命名前路径也参与判断。
   - 删除 ref 无内容待检查；远端对象缺失时提示先 fetch，非快进分支更新阻断。每个 remote 的范围独立计算，不假定 origin 或当前 HEAD。
