@@ -7,6 +7,13 @@
 3. 按 [`config.toml.example`](config.toml.example) 配置独立管理进程。填写真实 GitLab URL 和注册产生的 token，权限设为 `0600`；保留已存在的 Runner 配置和服务。
 4. 通过原有 systemd / 容器服务管理此配置。核对 online、project ID、locked、protected、tag、executor 和资源限制，再启动根 CI。
 
+Ubuntu 24.04+ 若出现 RootlessKit `operation not permitted`，先核对内核 AppArmor 的 `userns_create` 拒绝记录。为非标准路径 `/usr/local/bin/rootlesskit` 安装 [`rootlesskit.apparmor`](rootlesskit.apparmor)，仅加载该规则，无需重启 AppArmor 或修改全局 sysctl。规则来自 [Rootless Containers 官方说明](https://rootlesscontaine.rs/getting-started/common/apparmor/)；保留 `kernel.apparmor_restrict_unprivileged_userns=1`，其他普通 job 仍使用 Docker 默认保护。
+
+```bash
+sudo install -m 0644 server/deploy/ci-runner/rootlesskit.apparmor /etc/apparmor.d/template-rootlesskit
+sudo apparmor_parser -r /etc/apparmor.d/template-rootlesskit
+```
+
 示例管理进程全局并发为 1；job 上限 3 GiB / 4 CPU，DinD service 上限 4 GiB / 4 CPU。构建机需为其他任务另留资源。job 使用普通容器；只有官方 `docker:*-dind-rootless` service 可获得 privileged 模式，服务与 job 通过 TLS 和每 job 独立网络通信。该范围沿用 [GitLab 官方的 restricted rootless DinD 方案](https://docs.gitlab.com/runner/executors/docker/#use-rootless-docker-in-docker-with-restricted-privileged-mode)。
 
 构建机的 Docker 拉取代理、管理进程代理、job / DinD 代理需分别检查。私有地址、NO_PROXY、证书及 Runner token 只放运行配置或受控变量；不写入模板。job 中的 Docker 主机名 `docker` 必须加入 NO_PROXY。必要时设置公开 HTTPS `ALPINE_MIRROR`，参数合同见 [`docs/image-build.md`](../../../docs/image-build.md)。

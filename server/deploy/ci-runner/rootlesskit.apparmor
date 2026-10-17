@@ -1,0 +1,7 @@
+# Ubuntu 24.04+ 的 rootlesskit userns 规则；来源见同目录 README。
+abi <abi/4.0>,
+include <tunables/global>
+
+profile template-rootlesskit /usr/local/bin/rootlesskit flags=(unconfined) {
+  userns,
+}

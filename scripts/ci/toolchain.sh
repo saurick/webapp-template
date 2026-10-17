@@ -4,6 +4,11 @@ set -euo pipefail
 
 ci_root="$(git rev-parse --show-toplevel)"
 ci_tools_root="$ci_root/.cache/ci-tools"
+if ! command -v xz >/dev/null 2>&1 || ! command -v shellcheck >/dev/null 2>&1; then
+	sed -i 's@http://deb.debian.org@https://deb.debian.org@g' /etc/apt/sources.list.d/debian.sources
+	apt-get -o Acquire::Retries=3 -o Acquire::https::Timeout=30 update
+	DEBIAN_FRONTEND=noninteractive apt-get -o Acquire::Retries=3 -o Acquire::https::Timeout=30 install --yes --no-install-recommends xz-utils shellcheck
+fi
 ci_node_version="$(tr -d '[:space:]' <"$ci_root/.n-node-version")"
 case "$(uname -m)" in
 x86_64) ci_node_arch=x64 ;;
@@ -20,8 +25,9 @@ if [[ ! -x "$ci_tools_root/node-$ci_node_version/bin/node" ]]; then
 		ci_download="$(mktemp -d "$ci_tools_root/download.XXXXXX")"
 		trap 'rm -rf -- "$ci_download"' EXIT
 		ci_archive="node-v$ci_node_version-linux-$ci_node_arch.tar.xz"
-		curl -fsSL --retry 3 --max-time 180 "https://nodejs.org/dist/v$ci_node_version/$ci_archive" -o "$ci_download/$ci_archive"
-		curl -fsSL --retry 3 --max-time 60 "https://nodejs.org/dist/v$ci_node_version/SHASUMS256.txt" -o "$ci_download/SHASUMS256.txt"
+		# 固定下载协议以兼容代理的 HTTP/2 stream reset，完整性仍由官方 SHA-256 核对。
+		curl --http1.1 -fsSL --retry 3 --retry-max-time 180 --max-time 180 "https://nodejs.org/dist/v$ci_node_version/$ci_archive" -o "$ci_download/$ci_archive"
+		curl --http1.1 -fsSL --retry 3 --retry-max-time 60 --max-time 60 "https://nodejs.org/dist/v$ci_node_version/SHASUMS256.txt" -o "$ci_download/SHASUMS256.txt"
 		cd "$ci_download"
 		grep -F "  $ci_archive" SHASUMS256.txt | sha256sum --check --strict
 		tar -xJf "$ci_archive"
@@ -47,10 +53,6 @@ if [[ ! -x "$ci_qa_bin/shfmt" ]]; then
 fi
 if [[ ! -x "$ci_qa_bin/govulncheck" ]]; then
 	GOBIN="$ci_qa_bin" go install golang.org/x/vuln/cmd/govulncheck@v1.6.0
-fi
-if ! command -v shellcheck >/dev/null 2>&1; then
-	apt-get update
-	DEBIAN_FRONTEND=noninteractive apt-get install --yes --no-install-recommends shellcheck
 fi
 pnpm config set store-dir "$ci_root/.cache/pnpm"
 node "$ci_root/scripts/check-toolchain.mjs"
