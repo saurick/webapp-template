@@ -2,6 +2,11 @@
 
 当前事实以 `docs/current-source-of-truth.md`、`docs/project-init.md`、`docs/deployment-conventions.md`、代码和测试为准；本文只保留当前模板交付进展。
 
+## 2026-10-18 新项目 CI 一键接入
+
+- 增加项目级 Runner 初始化脚本与私有 host 配置示例，统一 Runner 注册、默认分支保护、网络环境、独立 systemd 服务和 online 回读；重复执行复用本脚本 Runner，保留其他项目配置。
+- 增加幂等、主机失败恢复、权限 / 归属漂移、活动 job、凭据脱敏回归，接入 strict；使用临时派生 GitLab 项目验收真实注册与完整流水线，终态与清理记录保存在忽略的 `output/runner-init/`。
+
 ## 2026-10-18 远端 CI 基线
 
 - 增加项目专用 Docker Runner 合同，保持已有 Runner 配置独立，job 不挂载宿主机 Docker socket；镜像阶段采用 TLS rootless DinD 和受限的官方 service 权限。

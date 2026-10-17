@@ -1,0 +1,6 @@
+{
+  "gitlab_url": "https://gitlab.example.com",
+  "api_token_file": "/etc/gitlab-runner-projects/api-token",
+  "environment": {},
+  "extra_hosts": []
+}

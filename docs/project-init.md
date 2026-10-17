@@ -88,7 +88,14 @@ make -C server build_server
 
 ### 6. 接入远端 CI
 
-按 [`gitlab-ci.md`](gitlab-ci.md) 注册匹配 `template-docker` 标签的项目专用 Runner，并保持主分支保护。默认流水线会对模板与离线派生样例分别执行 strict 和镜像打包，交付含校验值的镜像归档。新项目复制的是通用流水线；Runner token、节点、代理和真实部署凭据由该项目单独配置。
+按 [`CI Runner 初始化`](../server/deploy/ci-runner/README.md) 一次准备构建机配置，然后在构建机执行：
+
+```bash
+sudo python3 scripts/ci/setup-runner.py \
+  --config /etc/gitlab-runner-projects/host.json --project your-group/your-project
+```
+
+命令自动创建项目专用 Runner、保护默认分支、配置 CI 网络和独立服务，并等待 online；重复执行不会重复注册。默认流水线会对当前项目与离线派生样例分别执行 strict 和镜像打包，交付含校验值的镜像归档。流水线验收见 [`gitlab-ci.md`](gitlab-ci.md)；Runner token、节点、代理和真实部署凭据留在私有配置。
 
 ## 模板里通常建议保留的能力
 

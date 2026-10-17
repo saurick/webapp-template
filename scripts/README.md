@@ -329,6 +329,8 @@ bash scripts/qa/strict.sh --help
 
 ## GitLab CI runner
 
-根 `.gitlab-ci.yml` 使用 `template-docker` 能力标签；`ci/toolchain.sh` 在 job 内按源码合同安装 Node / pnpm 和固定 QA 工具，Go 由版本一致的 job image 提供。`ci/initialize-project.mjs` 在独立 Git 副本上执行派生配置、正式初始化扫描和 strict，输出 SHA 绑定的 bundle；`ci/package-image.sh` 复用 Make 构建模板 / 派生镜像，检查二进制、静态资源、代理隔离和归档加载一致性。Runner、资源、TLS DinD、工具缓存、制品与远端验收见 [`docs/gitlab-ci.md`](../docs/gitlab-ci.md)。节点、token、代理和部署凭据不进入脚本。
+根 `.gitlab-ci.yml` 使用 `template-docker` 能力标签；`ci/setup-runner.py` 在已准备的 Linux 构建机上读取私有 host JSON 和 API token 文件，按项目路径一次完成 Runner 注册、主分支保护、网络环境和独立 systemd 服务；重复、检查、停用与恢复见 [`CI Runner`](../server/deploy/ci-runner/README.md)。其权限、幂等与失败恢复回归由 `setup-runner.test.mjs` 接入 fast / full / strict。
+
+`ci/toolchain.sh` 在 job 内按源码合同安装 Node / pnpm 和固定 QA 工具，Go 由版本一致的 job image 提供。`ci/initialize-project.mjs` 在独立 Git 副本上执行派生配置、正式初始化扫描和 strict，输出 SHA 绑定的 bundle；`ci/package-image.sh` 复用 Make 构建模板 / 派生镜像，检查二进制、静态资源、代理隔离和归档加载一致性。Runner、资源、TLS DinD、工具缓存、制品与远端验收见 [`docs/gitlab-ci.md`](../docs/gitlab-ci.md)。节点、token、代理和部署凭据不进入脚本。
 
 压测通过 `PIPELINE_MODE=loadtest` 提供手动任务，必须显式填写 `LOADTEST_BASE_URL`；报告写入忽略的 `output/loadtest/`，GitLab artifacts 的过期时间配置为 14 天（最新流水线还遵循实例保留策略）。实际发布由派生项目按部署合同增加任务。
