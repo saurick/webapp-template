@@ -2,6 +2,13 @@
 
 当前事实以 `docs/current-source-of-truth.md`、`docs/project-init.md`、`docs/deployment-conventions.md`、代码和测试为准；本文只保留当前模板交付进展。
 
+## 2026-10-18 远端 CI 基线
+
+- 增加项目专用 Docker Runner 合同，保持已有 Runner 配置独立，job 不挂载宿主机 Docker socket；镜像阶段采用 TLS rootless DinD 和受限的官方 service 权限。
+- 流水线扩为模板 strict、离线派生初始化 / strict、模板镜像、派生镜像四个必要任务。派生 bundle 绑定 source / derived SHA 和 pipeline；制品包含校验值与 save / load 回验。
+- 工具缓存与镜像上下文隔离，CI Go 镜像加入版本一致性检查；镜像 Make 入口不再要求宿主机 Go SDK。
+- 远端终态与现场资源记录以实际 GitLab pipeline / job 和忽略的 `output/ci-delivery/` 为准，不把 Runner online 或本地检查写成远端成功。
+
 ## 2026-10-17 通用基线与历史残留收口
 
 - 初始化：基础配置工具统一项目身份、品牌与固定端口；bootstrap / doctor 按仓库工具链合同运行，派生项目以 init --project --strict 与 strict 收口。

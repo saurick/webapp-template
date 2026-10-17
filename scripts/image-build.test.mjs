@@ -18,7 +18,7 @@ function buildFixture(t, overrides = {}, buildArgs = []) {
   fs.writeFileSync(path.join(root, "config/dev-ports.env"), "");
   fs.writeFileSync(
     path.join(root, "bin/go"),
-    '#!/bin/sh\ncase "$2" in GOHOSTOS) echo linux;; GOPATH) echo /tmp;; esac\n',
+    '#!/bin/sh\necho "image build must not require host Go" >&2\nexit 99\n',
     { mode: 0o755 },
   );
   const callsPath = path.join(root, "docker-calls.jsonl");
@@ -90,6 +90,12 @@ test("镜像构建失败会返回失败，不执行后续清理或推送", (t) =
   assert.notEqual(result.status, 0);
   assert.equal(calls.length, 1);
   assert.deepEqual(calls[0].slice(0, 2), ["buildx", "build"]);
+});
+
+test("镜像打包不依赖构建宿主机的 Go SDK", (t) => {
+  const { result } = buildFixture(t);
+  assert.equal(result.status, 0, result.stdout + result.stderr);
+  assert.doesNotMatch(result.stderr, /image build must not require host Go/u);
 });
 
 test("未指定 builder 时使用当前构建器，默认交付平台保持 amd64", (t) => {

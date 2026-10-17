@@ -329,6 +329,6 @@ bash scripts/qa/strict.sh --help
 
 ## GitLab CI runner
 
-根 `.gitlab-ci.yml` 默认执行 bootstrap、strict 与 hook 回归。runner 必须预装仓库声明的 Node / pnpm / Go，以及 gitleaks、ShellCheck、shfmt、govulncheck；先用 `bash scripts/doctor.sh` 核对，bootstrap 只安装锁文件依赖，不安装系统 QA 工具。模板不绑定 runner 标签、kubeconfig、个人节点或自动部署。runner 需接受无标签任务；若团队要求 runner 标签，在派生仓库显式配置匹配的 tags。
+根 `.gitlab-ci.yml` 使用 `template-docker` 能力标签；`ci/toolchain.sh` 在 job 内按源码合同安装 Node / pnpm 和固定 QA 工具，Go 由版本一致的 job image 提供。`ci/initialize-project.mjs` 在独立 Git 副本上执行派生配置、正式初始化扫描和 strict，输出 SHA 绑定的 bundle；`ci/package-image.sh` 复用 Make 构建模板 / 派生镜像，检查二进制、静态资源、代理隔离和归档加载一致性。Runner、资源、TLS DinD、工具缓存、制品与远端验收见 [`docs/gitlab-ci.md`](../docs/gitlab-ci.md)。节点、token、代理和部署凭据不进入脚本。
 
 压测通过 `PIPELINE_MODE=loadtest` 提供手动任务，必须显式填写 `LOADTEST_BASE_URL`；报告写入忽略的 `output/loadtest/`，GitLab artifacts 的过期时间配置为 14 天（最新流水线还遵循实例保留策略）。实际发布由派生项目按部署合同增加任务。

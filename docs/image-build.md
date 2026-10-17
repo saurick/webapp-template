@@ -38,6 +38,8 @@ docker run --rm --platform linux/amd64 \
 
 构建成功只证明镜像可打包。首次运行仍需提供该项目的生产配置、JWT 与管理员配置、数据库和正式 migration；按 Compose 发布合同执行 preflight、migration、health/ready 和业务 smoke。
 
+远端 CI 使用同一 Make / Dockerfile 入口，并执行 save → load 的 image ID 回验；任务依赖、隔离 Runner、制品与初始化证明见 [`gitlab-ci.md`](gitlab-ci.md)。镜像打包入口只依赖 Git、Make 和 Docker CLI，Go / Node 编译发生在 Dockerfile 构建阶段。
+
 已有直接传入 `RUNTIMEPLATFORM`、`GO_TARGETOS` 或 `GO_TARGETARCH` 的调用，需统一迁移为 Docker 的 `--platform` 或 Make 的 `IMAGE_PLATFORM`，避免分别设置运行镜像和二进制架构。
 
 ## Docker Hub EOF 或镜像清单异常

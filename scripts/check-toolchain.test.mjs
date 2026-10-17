@@ -100,3 +100,15 @@ test("本机 Go 已升级但容器仍使用旧版时阻断", (t) => {
   );
   assert.deepEqual(checkToolchain({ rootDir, versions }).errors, []);
 });
+
+test("CI 镜像不能使用低于源码合同的 Go 基线", (t) => {
+  const rootDir = fixture(t);
+  const ciPath = path.join(rootDir, ".gitlab-ci.yml");
+  const versions = { node: "24.21.0", pnpm: "10.34.5", go: "1.26.9" };
+  fs.writeFileSync(ciPath, 'variables:\n  CI_GO_IMAGE: "golang:1.26.8"\n');
+  assert.deepEqual(checkToolchain({ rootDir, versions }).errors, [
+    ".gitlab-ci.yml CI_GO_IMAGE 必须与 server/go.mod 的 Go 版本一致",
+  ]);
+  fs.writeFileSync(ciPath, 'variables:\n  CI_GO_IMAGE: "golang:1.26.9"\n');
+  assert.deepEqual(checkToolchain({ rootDir, versions }).errors, []);
+});

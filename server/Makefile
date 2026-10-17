@@ -1,6 +1,4 @@
-GOHOSTOS:=$(shell go env GOHOSTOS)
-# ⚠️ 注意：数据库迁移必须使用 `make data` 生成，严禁手动修改 SQL 文件！详见 internal/data/AI_DB_WORKFLOW.md
-GOPATH:=$(shell go env GOPATH)
+# 数据库迁移使用 `make data` 生成，流程见 internal/data/AI_DB_WORKFLOW.md。
 
 # ========================
 # Git 信息（兼容在子目录执行 & 没有提交的情况）
@@ -43,7 +41,7 @@ IMAGE_REGISTRY ?=
 # 发布脚本的同名环境变量含 tag；仓库名只接受 make 命令行覆盖。
 IMAGE_NAME = $(if $(IMAGE_REGISTRY),$(IMAGE_REGISTRY)/)webapp-template-server
 
-ifeq ($(GOHOSTOS), windows)
+ifeq ($(OS),Windows_NT)
 	Git_Bash=$(subst \,/,$(subst cmd\,bin\bash.exe,$(dir $(shell where git))))
 	INTERNAL_PROTO_FILES=$(shell $(Git_Bash) -c "find internal -name *.proto")
 	API_PROTO_FILES=$(shell $(Git_Bash) -c "find api -name *.proto")

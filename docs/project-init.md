@@ -86,6 +86,10 @@ make -C server build_server
 
 默认构建 `linux/amd64` 镜像并加载到本机，不执行推送或旧镜像清理。需要独立代理构建器时传入 `BUILDER`；镜像仓库用 `IMAGE_REGISTRY`，不要复用 Docker daemon 的 `DOCKER_HOST`。完整参数、Docker Hub EOF 排障和制品验证见 [`image-build.md`](image-build.md)。
 
+### 6. 接入远端 CI
+
+按 [`gitlab-ci.md`](gitlab-ci.md) 注册匹配 `template-docker` 标签的项目专用 Runner，并保持主分支保护。默认流水线会对模板与离线派生样例分别执行 strict 和镜像打包，交付含校验值的镜像归档。新项目复制的是通用流水线；Runner token、节点、代理和真实部署凭据由该项目单独配置。
+
 ## 模板里通常建议保留的能力
 
 - `/healthz`、`/readyz` 与数据库启动就绪等待

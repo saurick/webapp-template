@@ -31,7 +31,7 @@
 
 默认配置只包含可识别的占位符。真实密码、token、证书与密文由派生项目的本地覆盖配置或受控 secret 管理；已有环境加密的 Secret 不能作为新项目的默认配置继承。
 
-根 `.gitlab-ci.yml` 默认安装锁文件依赖并运行 strict 与 hook 回归，按 [脚本说明](../scripts/README.md) 准备 runner 工具链。压测必须手动指定目标并启动，结果写入 `output/loadtest/`。模板 CI 不访问个人节点、不读取宿主机 kubeconfig，也不自动发布或部署。
+根 `.gitlab-ci.yml` 默认执行模板 strict / hook 回归、离线派生初始化与 strict，以及模板 / 派生镜像打包、导出加载回验。Runner 与制品合同见 [GitLab CI](gitlab-ci.md)。压测必须手动指定目标并启动，结果写入 `output/loadtest/`。模板 CI 不访问个人业务节点、不读取宿主机 kubeconfig，也不自动发布或部署。
 
 ## 清理与回滚
 

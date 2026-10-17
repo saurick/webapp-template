@@ -12,6 +12,7 @@ server/bin
 server/server
 server/vendor
 output
+.cache
 .playwright-cli
 **/*.log
 **/*.key

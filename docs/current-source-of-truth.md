@@ -8,6 +8,7 @@
 - 涉及“模板应该保留什么、删除什么、替换什么”时，当前正式真源是 `docs/project-init.md`。
 - 涉及部署路径、Compose 与通用 Kubernetes 边界、`Helm / Kustomize / Argo CD` 主路径时，当前正式真源是 `docs/deployment-conventions.md`，以及对应的 `server/deploy/README.md`。
 - 涉及本地镜像构建、Buildx 平台、Docker Hub 与构建代理排障时，使用 `docs/image-build.md`、`server/Dockerfile` 和 `server/Makefile`；打包不触发推送、部署或旧镜像清理。
+- 涉及 GitLab Runner、远端初始化 / strict / 镜像流水线时，使用 `docs/gitlab-ci.md`、根 `.gitlab-ci.yml`、`scripts/ci/` 与 `server/deploy/ci-runner/`；远端验收绑定实际 commit 的 pipeline / job。
 - 涉及服务端运行、配置、接口、数据库迁移与可观测性时，优先从 `server/docs/README.md` 继续分流，而不是直接靠印象改某个目录。
 - 涉及本地 `pnpm start` / `make dev` 端口时，`config/dev-ports.env` 是固定 bundle 真源；Vite、前端代理、Make 与服务端环境覆盖共同消费它，派生分配器同步 dev YAML fallback，正式文档只引用字段或查询命令。
 - `progress.md`、临时 shell 命令、live 现场操作记录、局部注释和单份 runbook 只能补充演进原因与现场背景，不能越权覆盖这里定义的阅读顺序。

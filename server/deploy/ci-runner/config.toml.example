@@ -1,0 +1,30 @@
+concurrent = 1
+check_interval = 3
+shutdown_timeout = 30
+
+[[runners]]
+  name = "template-isolated-docker"
+  url = "https://gitlab.example.com"
+  token = ""
+  executor = "docker"
+  limit = 1
+  request_concurrency = 1
+  environment = ["FF_NETWORK_PER_BUILD=true"]
+  output_limit = 16384
+
+  [runners.docker]
+    image = "golang:1.26.9"
+    privileged = false
+    services_privileged = true
+    allowed_privileged_services = ["docker:*-dind-rootless", "docker.io/library/docker:*-dind-rootless"]
+    allowed_services = ["docker:*-dind-rootless", "docker.io/library/docker:*-dind-rootless"]
+    allowed_images = ["golang:*", "docker.io/library/golang:*", "docker:*-cli", "docker.io/library/docker:*-cli"]
+    volumes = ["/cache", "/certs/client"]
+    cpus = "4"
+    memory = "3g"
+    memory_swap = "3g"
+    service_cpus = "4"
+    service_memory = "4g"
+    service_memory_swap = "4g"
+    shm_size = 67108864
+    pull_policy = ["if-not-present"]

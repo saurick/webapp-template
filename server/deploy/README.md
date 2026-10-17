@@ -7,6 +7,7 @@
 | `compose/prod/` | 单机或单宿主机部署，默认 PostgreSQL 18 | [Compose](compose/prod/README.md) |
 | `dev/`、`prod/` | Kubernetes 开发与生产 Kustomize 骨架 | [Kubernetes](../docs/k8s.md) |
 | `dashboard/` | 可选的 Kubernetes Dashboard 辅助清单 | [Dashboard](dashboard/README.md) |
+| `ci-runner/` | 隔离构建机上的项目专用 Docker Runner | [CI Runner](ci-runner/README.md) |
 
 ## 选择与初始化
 
@@ -21,4 +22,4 @@
 
 Compose 正式迁移使用宿主机 `/usr/local/bin/atlas` 与 `flock /tmp/atlas-migrate.lock`，不把 Atlas 放进业务 Compose。发布后核对健康、就绪、受影响业务链和回滚点；通用约定见 [部署真源](../../docs/deployment-conventions.md)。
 
-根 GitLab CI 只执行质量检查和显式启动的压测，不自动部署。需要 CI 发布的派生项目再按自己的环境增加受控任务。
+根 GitLab CI 执行模板和派生项目的初始化 / strict、镜像打包及加载验证；压测须显式启动。流水线与制品见 [GitLab CI](../../docs/gitlab-ci.md)，默认不自动部署。

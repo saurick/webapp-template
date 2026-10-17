@@ -11,6 +11,7 @@ Web 全后端单体模板项目，提供用户端基础页面、可选 antd admi
 | `web/`                                        | 前端项目（Vite + React），内部目录职责见 [`web/README.md`](web/README.md)                                       |
 | `server/`                                     | 后端项目（Kratos + Ent + Atlas），内部目录职责见 [`server/README.md`](server/README.md)                         |
 | `scripts/`                                    | 本地质量门禁与 Git hooks，详见 [`scripts/README.md`](scripts/README.md)                                         |
+| `.gitlab-ci.yml` | 模板 / 派生初始化、strict 与镜像归档流水线，见 [`docs/gitlab-ci.md`](docs/gitlab-ci.md) |
 | [`.agents/skills/`](.agents/skills/README.md) | Codex 项目专项 SOP：代码审查、文档、模板边界、页面、测试和统一 operations；通用提示词与 Git 收口使用全局 skills |
 | `docs/`                                       | 根目录文档与说明，阅读入口见 [`docs/README.md`](docs/README.md)                                                 |
 

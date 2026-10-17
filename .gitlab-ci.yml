@@ -1,8 +1,22 @@
 stages:
   - validate
+  - initialize
+  - package
   - loadtest
 
+default:
+  image: "$CI_GO_IMAGE"
+  tags: ["template-docker"]
+  interruptible: true
+  timeout: 40m
+
 variables:
+  CI_GO_IMAGE: "golang:1.26.9"
+  GIT_DEPTH: "0"
+  GIT_OPTIONAL_LOCKS: "0"
+  GOMAXPROCS: "4"
+  GOFLAGS: "-p=4"
+  GOMEMLIMIT: "2GiB"
   PIPELINE_MODE:
     value: "default"
     options: ["default", "loadtest"]
@@ -21,10 +35,72 @@ variables:
 
 validate_template:
   stage: validate
+  cache: &tool_cache
+    key: "template-tools-${CI_COMMIT_REF_SLUG}"
+    paths: [".cache/"]
+  before_script:
+    - source scripts/ci/toolchain.sh
   script:
     - bash scripts/bootstrap.sh
     - bash scripts/qa/strict.sh
     - node --test scripts/git-hooks/*.test.mjs
+
+initialize_project:
+  stage: initialize
+  needs: ["validate_template"]
+  cache: *tool_cache
+  before_script:
+    - source scripts/ci/toolchain.sh
+  script:
+    - node scripts/ci/initialize-project.mjs
+  artifacts:
+    expire_in: 7 days
+    paths:
+      - output/ci/derived.bundle
+      - output/ci/derived.json
+
+.package_image:
+  stage: package
+  image: "docker:29.7.2-cli"
+  services:
+    - name: "docker:29.7.2-dind-rootless"
+      alias: docker
+  variables:
+    DOCKER_HOST: "tcp://docker:2376"
+    DOCKER_TLS_CERTDIR: "/certs"
+    DOCKER_TLS_VERIFY: "1"
+    DOCKER_CERT_PATH: "/certs/client"
+    FF_NETWORK_PER_BUILD: "true"
+  before_script:
+    - |
+      if [ -n "${ALPINE_MIRROR:-}" ]; then
+        case "$ALPINE_MIRROR" in https://*/alpine|https://*/alpine/) ;; *) exit 1 ;; esac
+        case "$ALPINE_MIRROR" in *[[:space:]@?#]*) exit 1 ;; esac
+        version="$(cut -d. -f1,2 /etc/alpine-release)"
+        printf '%s/v%s/main\n%s/v%s/community\n' "${ALPINE_MIRROR%/}" "$version" "${ALPINE_MIRROR%/}" "$version" > /etc/apk/repositories
+      fi
+    - apk add --no-cache bash make git python3
+    - docker info
+  artifacts:
+    expire_in: 7 days
+    paths:
+      - output/ci/images/
+
+package_template:
+  extends: .package_image
+  needs:
+    - job: initialize_project
+      artifacts: false
+  script:
+    - bash scripts/ci/package-image.sh template
+
+package_derived:
+  extends: .package_image
+  needs:
+    - job: initialize_project
+      artifacts: true
+  script:
+    - bash scripts/ci/package-image.sh derived
 
 loadtest:
   stage: loadtest
@@ -38,6 +114,9 @@ loadtest:
     - 'export LOADTEST_RUN_ID="gitlab-${CI_PIPELINE_ID}-${CI_JOB_ID}"'
     - 'export LOADTEST_SOURCE="gitlab-ci"'
     - 'BASE_URL="${LOADTEST_BASE_URL}" bash scripts/loadtest/run.sh "${LOADTEST_SCENARIO}"'
+  before_script:
+    - source scripts/ci/toolchain.sh
+    - go install go.k6.io/k6@v1.6.0
   artifacts:
     when: always
     expire_in: 14 days

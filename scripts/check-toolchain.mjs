@@ -84,6 +84,16 @@ export function checkToolchain({ rootDir = ROOT, versions } = {}) {
         `${relativePath} GO_BUILDER_IMAGE 默认值必须与 server/go.mod 的 Go 版本一致`,
       );
   }
+  const ciPath = path.join(rootDir, ".gitlab-ci.yml");
+  if (fs.existsSync(ciPath)) {
+    const ciGoVersion = fs
+      .readFileSync(ciPath, "utf8")
+      .match(/^\s+CI_GO_IMAGE:\s*["']?golang:([0-9.]+)["']?\s*$/mu)?.[1];
+    if (ciGoVersion !== normalizedGo)
+      errors.push(
+        ".gitlab-ci.yml CI_GO_IMAGE 必须与 server/go.mod 的 Go 版本一致",
+      );
+  }
   if (versions.node !== nodeVersion)
     errors.push(
       `Node 当前 ${versions.node || "未安装"}，要求 ${nodeVersion}；可使用 n auto 或现有版本管理器切换`,

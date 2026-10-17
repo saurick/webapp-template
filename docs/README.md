@@ -14,6 +14,7 @@
 - 前端运行时配置、交互基线与可选 preset：`/Users/simon/projects/webapp-template/docs/frontend-presets.md`
 - 部署真源约定：`/Users/simon/projects/webapp-template/docs/deployment-conventions.md`
 - 镜像打包、构建平台、代理与 Docker Hub 排障：[`image-build.md`](image-build.md)
+- GitLab Runner、派生初始化、strict 与镜像制品流水线：[`gitlab-ci.md`](gitlab-ci.md)
 - 当前模板进展：仓库根 `progress.md`
 
 ## 当前模板与派生项目记录
