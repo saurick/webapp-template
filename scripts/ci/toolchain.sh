@@ -4,10 +4,10 @@ set -euo pipefail
 
 ci_root="$(git rev-parse --show-toplevel)"
 ci_tools_root="$ci_root/.cache/ci-tools"
-if ! command -v xz >/dev/null 2>&1 || ! command -v shellcheck >/dev/null 2>&1; then
+if ! command -v xz >/dev/null 2>&1 || ! command -v shellcheck >/dev/null 2>&1 || ! command -v rg >/dev/null 2>&1; then
 	sed -i 's@http://deb.debian.org@https://deb.debian.org@g' /etc/apt/sources.list.d/debian.sources
 	apt-get -o Acquire::Retries=3 -o Acquire::https::Timeout=30 update
-	DEBIAN_FRONTEND=noninteractive apt-get -o Acquire::Retries=3 -o Acquire::https::Timeout=30 install --yes --no-install-recommends xz-utils shellcheck
+	DEBIAN_FRONTEND=noninteractive apt-get -o Acquire::Retries=3 -o Acquire::https::Timeout=30 install --yes --no-install-recommends xz-utils shellcheck ripgrep
 fi
 ci_node_version="$(tr -d '[:space:]' <"$ci_root/.n-node-version")"
 case "$(uname -m)" in
