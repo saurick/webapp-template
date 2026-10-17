@@ -48,7 +48,9 @@ validate_template:
 initialize_project:
   stage: initialize
   needs: ["validate_template"]
-  cache: *tool_cache
+  cache:
+    <<: *tool_cache
+    policy: pull
   before_script:
     - source scripts/ci/toolchain.sh
   script:

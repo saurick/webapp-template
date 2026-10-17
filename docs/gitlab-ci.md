@@ -20,13 +20,13 @@
 1. 按 [`ci-runner/README.md`](../server/deploy/ci-runner/README.md) 在隔离构建机准备项目专用、locked、protected 的 Docker Runner，标签为 `template-docker`。主分支须受保护；其他分支或 MR 按项目的信任边界配置独立 Runner。
 2. 普通 job 不挂载宿主机 Docker socket。镜像 job 使用同版本 Docker CLI / rootless DinD，启用 TLS 和独立网络；Runner 仅允许官方 rootless DinD service 的 privileged 模式。
 3. `CI_GO_IMAGE` 与 `server/go.mod` 必须一致，`check-toolchain` 自动阻断漂移。Node 与 pnpm 分别读取 `.n-node-version` / `web/package.json`。job 从发行版 HTTPS 源安装 xz / ShellCheck / ripgrep；Node 下载使用 HTTP/1.1 兼容部分代理的 HTTP/2 stream reset，并核对官方 SHASUMS，QA 工具固定版本。TLS 验证与签名 / 校验值不变。
-4. 工具、pnpm 与 Go 缓存写入忽略的 `.cache/`，不进入源码或镜像上下文。缓存仅减少下载与编译，不跳过 strict、锁文件或密钥检查。
+4. 工具、pnpm 与 Go 缓存写入忽略的 `.cache/`，不进入源码或镜像上下文。`validate_template` 是缓存的唯一上传者，初始化任务只读取，避免重复压缩和上传。缓存仅减少下载与编译，不跳过 strict、锁文件或密钥检查。
 
 Runner 管理进程、宿主 Docker、job、DinD 与 Dockerfile RUN 的代理是不同层。环境需要代理时，仅在 Runner 的私有运行配置或受控 CI 变量中设置 `HTTP_PROXY` / `HTTPS_PROXY` 及大小写变体；NO_PROXY 必须包含 GitLab 的真实可达入口、`docker` 和本地地址。不要把私有节点写入模板、关闭 TLS，或修改共享引擎解决单项目问题。Alpine 网络受限时，使用 [`image-build.md`](image-build.md) 约定的公开 HTTPS `ALPINE_MIRROR`。
 
 ## 制品与回读
 
-成功的镜像 job 在 `output/ci/images/` 生成 `.tar.gz`、`.sha256` 和各自的 JSON 元数据，默认保留 7 天。元数据绑定流水线 SHA、实际源码 SHA、镜像 ID、平台、归档校验值，以及 load / 二进制 / 静态文件 / 代理不入镜像的结果。派生源码 bundle 也仅保留 7 天；该保留时间还受实例“保留最新成功流水线制品”策略影响。
+成功的镜像 job 在 `output/ci/images/` 生成 `.tar.gz`、`.sha256` 和各自的 JSON 元数据，默认保留 7 天。元数据绑定流水线 SHA、实际源码 SHA、CI 引擎镜像 ID、归档配置的 `config_digest`、未压缩层的 `rootfs_diff_ids`、平台和归档校验值，以及 load / 二进制 / 静态文件 / 代理不入镜像的结果。派生源码 bundle 也仅保留 7 天；该保留时间还受实例“保留最新成功流水线制品”策略影响。
 
 下载某一个成功镜像任务的制品后，在对应目录执行：
 
@@ -35,7 +35,7 @@ sha256sum --check ./*.sha256
 gzip -dc ./template-*-linux-amd64.tar.gz | docker image load
 ```
 
-将加载的 image ID 与同目录 `template.json` 对比。真实发布继续按 Compose / Kubernetes 的配置、迁移、preflight、health/ready 和业务 smoke 合同执行；默认流水线不推送 Registry 或部署。
+CI 在同一引擎中要求 save / load 前后 `image_id` 相同。跨引擎读取时，containerd 存储的 ID 可能是 OCI index / manifest digest，classic 存储的 ID 则是 config digest，不能仅凭这两个 ID 不同就判断制品损坏。先核对归档 SHA-256；classic 引擎的加载 ID 应等于 `config_digest`，两种引擎的 `.RootFS.Layers` 均应等于 `rootfs_diff_ids`，并核对平台与 `GIT_SHA`。真实发布继续按配置、迁移、preflight、health/ready 和业务 smoke 合同执行；默认流水线不推送 Registry 或部署。
 
 ## 故障与恢复
 

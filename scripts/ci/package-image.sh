@@ -45,7 +45,7 @@ docker image rm "$ci_image"
 gzip -dc "$ci_archive" | docker image load
 [[ "$(docker image inspect --format '{{.Id}}' "$ci_image")" == "$ci_image_id" ]]
 python3 - "$ci_image" "$ci_source_sha" "$ci_archive" "$ci_variant" <<'PY'
-import hashlib, json, os, pathlib, subprocess, sys
+import hashlib, json, os, pathlib, subprocess, sys, tarfile
 image, source, archive, variant = sys.argv[1:]
 data = json.loads(subprocess.check_output(['docker', 'image', 'inspect', image], text=True))[0]
 assert data['Os'] == 'linux' and data['Architecture'] == 'amd64'
@@ -58,8 +58,17 @@ for key in ['HTTP_PROXY', 'HTTPS_PROXY', 'http_proxy', 'https_proxy']:
     assert not value or value not in history
 file = pathlib.Path(archive)
 digest = hashlib.sha256(file.read_bytes()).hexdigest()
+with tarfile.open(file, 'r:gz') as saved:
+    manifests = json.load(saved.extractfile('manifest.json'))
+    assert len(manifests) == 1 and image in manifests[0]['RepoTags']
+    raw_config = saved.extractfile(manifests[0]['Config']).read()
+    config = json.loads(raw_config)
+config_digest = 'sha256:' + hashlib.sha256(raw_config).hexdigest()
+assert config['rootfs']['diff_ids'] == data['RootFS']['Layers']
+assert config['architecture'] == data['Architecture'] and config['os'] == data['Os']
+assert config['config']['Env'] == data['Config']['Env']
 file.with_suffix(file.suffix + '.sha256').write_text(digest + '  ' + file.name + '\n')
-metadata = {'source_sha': source, 'pipeline_sha': os.environ['CI_COMMIT_SHA'], 'pipeline_id': os.environ['CI_PIPELINE_ID'], 'variant': variant, 'fixture_only': variant == 'derived', 'image': image, 'image_id': data['Id'], 'platform': 'linux/amd64', 'archive': file.name, 'sha256': digest, 'load': 'passed', 'binary_and_web': 'passed', 'proxy_absent': True}
+metadata = {'source_sha': source, 'pipeline_sha': os.environ['CI_COMMIT_SHA'], 'pipeline_id': os.environ['CI_PIPELINE_ID'], 'variant': variant, 'fixture_only': variant == 'derived', 'image': image, 'image_id': data['Id'], 'config_digest': config_digest, 'rootfs_diff_ids': config['rootfs']['diff_ids'], 'platform': 'linux/amd64', 'archive': file.name, 'sha256': digest, 'load': 'passed', 'binary_and_web': 'passed', 'proxy_absent': True}
 file.with_name(variant + '.json').write_text(json.dumps(metadata, indent=2) + '\n')
 print(json.dumps(metadata))
 PY
