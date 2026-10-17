@@ -1,0 +1,40 @@
+---
+name: webapp-template-domain-boundary-governance
+description: 模板边界设计（webapp-template），运行、发布和压测使用对应专项治理。Use for template/derived-project ownership, initialization, schema/API/RBAC, server/web boundaries, default data and field truth.
+---
+
+# Webapp Template 业务边界治理 Domain Boundary Governance
+
+用这个 skill 在实现 `webapp-template` 功能前收敛 template/derived-project ownership、source of truth、API/RBAC、frontend/backend responsibility 和 default-data boundary。
+
+它是模板后端/领域实现主治理入口，覆盖 schema、API、RBAC、transaction、error code、server usecase、repo、migration 和 persisted-data 语义。页面 skill 只负责判断 UI 是否清晰、可用、可回归；如果页面需要后端能力，先回到本 skill 定边界。
+
+- 新增 schema、migration、repo、usecase、API、RBAC 权限、状态、字段或配置前，先证明现有真源不能承接，并说明新增复杂度的收益和退出边界。
+- 优先主路径修复，不用页面私有逻辑、脚本补写、兼容 fallback、重复派生字段或宽松校验掩盖后端合同缺口。
+- 初始化替换、默认数据、字段残值/缺值、幂等、事务与权限必须可测试、可解释、可回滚；不能只让当前 happy path 通过。
+- 若任务跨太多层，先收窄成一个可验证切片；不在一轮里无约束扩张到 schema、RBAC、UI、docs、deploy 全链路。
+
+## 真源链 Truth Chain
+
+- 先读 `AGENTS.md`、`docs/current-source-of-truth.md`、`docs/project-init.md`、README、server/web/scripts/deploy docs 和 tests。
+- 代码、schema/migrations、tests、formal docs 强于聊天规划或旧 reference notes。
+
+## 项目规则 Project Rules
+
+- 先区分模板自身、derived project、project-init、server/web、schema/API/RBAC 和 default data；compose/Kubernetes runtime 与发布切 `$webapp-template-operations-governance`，loadtest/manifest render 验证切 `$webapp-template-test-governance`。
+- 后端责任要落到 server/API/RBAC/transaction/error-code 真源，不把页面提示、模板占位或 demo 配置当成事实实现。
+- 不把某个派生项目名称、域名、密钥、管理员密码或客户流程硬编码进模板核心。
+- 模板默认值要可替换、可审计、可初始化验证。
+
+## 工作流 Workflow
+
+1. 写出 single domain outcome 和 owning layer。
+2. 找到 source-of-truth fields、states、identifiers、permissions、derived values。
+3. 检查现有 table/usecase/API/helper 是否已经拥有该行为。
+4. 覆盖 stale/missing value paths：初始化 defaults、替换/清空、list/detail/query、派生项目 readback 和历史残留扫描。
+5. UI 不补造 backend facts；派生项目特例不反向污染 template core。
+6. 按影响面选择 unit、integration、contract、browser、migration validation。
+
+## 输出 Output
+
+汇报 ownership decisions、source truth、changed layers、intentionally untouched layers、stale/missing paths、validation 和 residual risks。

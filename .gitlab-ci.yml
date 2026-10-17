@@ -1,0 +1,45 @@
+stages:
+  - validate
+  - loadtest
+
+variables:
+  PIPELINE_MODE:
+    value: "default"
+    options: ["default", "loadtest"]
+    description: "default=模板质量检查；loadtest=同时提供手动压测任务。"
+  LOADTEST_BASE_URL:
+    value: ""
+    description: "压测目标；启动压测前必须显式提供已授权的服务 URL。"
+  LOADTEST_SCENARIO:
+    value: "system"
+    options: ["health", "system", "auth", "mixed"]
+    description: "默认 system 只查询；auth/mixed 需要提供测试账号或显式选择 register。"
+  LOADTEST_AUTH_MODE:
+    value: "login"
+    options: ["login", "register"]
+    description: "login 使用受控 CI 变量中的账号；register 会创建真实用户。"
+
+validate_template:
+  stage: validate
+  script:
+    - bash scripts/bootstrap.sh
+    - bash scripts/qa/strict.sh
+    - node --test scripts/git-hooks/*.test.mjs
+
+loadtest:
+  stage: loadtest
+  resource_group: template-loadtest
+  rules:
+    - if: '$PIPELINE_MODE == "loadtest"'
+      when: manual
+    - when: never
+  script:
+    - ': "${LOADTEST_BASE_URL:?请提供已授权的 LOADTEST_BASE_URL}"'
+    - 'export LOADTEST_RUN_ID="gitlab-${CI_PIPELINE_ID}-${CI_JOB_ID}"'
+    - 'export LOADTEST_SOURCE="gitlab-ci"'
+    - 'BASE_URL="${LOADTEST_BASE_URL}" bash scripts/loadtest/run.sh "${LOADTEST_SCENARIO}"'
+  artifacts:
+    when: always
+    expire_in: 14 days
+    paths:
+      - output/loadtest/

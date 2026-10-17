@@ -1,0 +1,127 @@
+# server 后端说明
+
+## 技术栈
+
+- Kratos
+- Ent + Atlas
+- PostgreSQL
+- OpenTelemetry（可选）
+
+## 构建版本基线
+
+`go.mod` 的 `go` 指令声明最低安全补丁版本；本机 Go 在 `server/` 中按该声明选择工具链。Dockerfile 与 Makefile 的 `GO_BUILDER_IMAGE` 默认值使用同一版本，`scripts/check-toolchain.mjs` 在 bootstrap、doctor 和 strict 中核对三者。
+
+修改依赖后运行 `go mod tidy`，再执行仓库根 `bash scripts/qa/strict.sh`。漏洞检查以模块声明的工具链或最低 Go 版本扫描标准库，strict 对漏洞、密钥扫描和质量检查失败返回非零。发布制品可使用 `go version -m <二进制>` 回读实际 Go 与依赖版本；源码升级后的制品需重新构建，部署按正式发布合同执行。
+
+HTTP 入口显式设置独立的 404 / 405 回退，隔离依赖注册在 `http.DefaultServeMux` 的诊断路由；已配置的静态页面与 SPA 回退仍由静态处理器负责。
+
+## 镜像打包
+
+在仓库根执行 `make -C server build_server`，默认构建并加载 `linux/amd64` 镜像。需要独立 builder 时设置 `BUILDER`；使用 `IMAGE_PLATFORM` 切换运行平台，Node / Go 构建阶段使用构建器本机架构。镜像仓库前缀使用 `IMAGE_REGISTRY`，`DOCKER_HOST` 专用于 daemon 连接；从旧参数迁移时需同步调整本地或 CI 命令。
+
+打包不会自动清理旧镜像、推送或部署；完整参数、构建上下文边界和代理排障见 [`docs/image-build.md`](../docs/image-build.md)。
+
+## 架构分层
+
+执行链路：`server -> service -> biz -> data`
+
+- `server`：协议接入层（HTTP/gRPC/JSON-RPC）
+- `service`：接口适配层（DTO 转换与调用编排）
+- `biz`：业务规约与 UseCase
+- `data`：数据库/缓存/外部依赖访问
+
+JSON-RPC 的具体链路是 `/rpc/{url} -> JsonrpcService -> jsonrpcDispatcher -> biz usecase -> data repo`。协议分发、权限检查和结果映射留在 `service`，业务规则留在 `biz`，数据库和外部依赖访问留在 `data`。
+
+## 快速开始
+
+```bash
+cd /Users/simon/projects/webapp-template/server
+make init
+make run
+```
+
+本地开发端口真源是仓库根 `config/dev-ports.env` 的 `DEV_HTTP_PORT` / `DEV_GRPC_PORT`；可运行 `node ../scripts/dev-ports.mjs show` 查看。`make run` / `make dev` 会把该组端口应用到 dev server；`configs/dev/config.yaml` 保留直接启动服务时的同值 fallback，初始化分配器会同步两者，审计会阻断漂移。
+
+`make dev_stop` 只会停止 cwd 位于当前 `server/` 的监听进程；若端口属于其他项目会拒绝操作并报告 PID、端口和 cwd。
+
+临时联调可以显式整组覆盖 `DEV_HTTP_PORT` / `DEV_GRPC_PORT`；这不会改写 manifest，也不会触发自动顺延，调用者必须自行保证端口归属与冲突检查。
+
+## 常用命令
+
+```bash
+# 代码生成
+make api
+make all
+
+# 数据模型与迁移
+make data
+make migrate_apply
+make print_db_url
+make migrate_status
+
+# 测试与构建
+go test ./...
+make build
+```
+
+## 数据库迁移说明
+
+- `make migrate_apply` 默认优先读取 `server/configs/dev/config.yaml`，并允许 `config.local.yaml` 覆盖私有 DSN。
+- 若 shell 里残留了历史 `DB_URL`，默认不会直接生效；只有显式设置 `USE_ENV_DB_URL=1` 才会改用环境变量。
+- 可先执行 `make print_db_url` 确认当前真正命中的开发库，再执行 `make migrate_status` / `make migrate_apply`。
+- `server/cmd/dburl` 只是迁移辅助命令，用来统一解析当前仓库默认 DSN，不属于服务运行时入口。
+
+## 目录结构（简版）
+
+```text
+server/
+├── api/
+├── cmd/
+├── configs/
+├── internal/
+│   ├── biz/
+│   ├── data/
+│   ├── server/
+│   └── service/
+├── pkg/
+└── Makefile
+```
+
+| 路径                | 职责                                                      |
+| ------------------- | --------------------------------------------------------- |
+| `api/`              | 协议定义与生成入口，目前包含 JSON-RPC 相关接口描述        |
+| `cmd/`              | 服务启动、迁移辅助、排障与运维命令入口                    |
+| `configs/`          | 按环境拆分的配置文件                                      |
+| `internal/server/`  | HTTP/gRPC/JSON-RPC 接入、中间件与路由装配                 |
+| `internal/service/` | 接口适配层，负责 DTO 转换与调用编排                       |
+| `internal/biz/`     | 业务规约与 UseCase 真源                                   |
+| `internal/data/`    | 数据访问、外部依赖与持久化实现                            |
+| `internal/conf/`    | 配置结构定义与加载相关代码                                |
+| `internal/errcode/` | 服务端错误码目录真源                                      |
+| `pkg/`              | 可复用基础设施组件，如日志、JWT、任务编排与 Telegram 辅助 |
+| `deploy/`           | Compose、通用 K8s 与相关部署模板                       |
+| `docs/`             | 后端专题文档索引与 runbook                                |
+| `third_party/`      | 第三方 proto / OpenAPI 依赖                               |
+
+## 文档索引
+
+- 文档索引：`/Users/simon/projects/webapp-template/server/docs/README.md`
+- 部署模板：`/Users/simon/projects/webapp-template/server/deploy/README.md`
+- 运行说明：`/Users/simon/projects/webapp-template/server/docs/runtime.md`
+- 配置说明：`/Users/simon/projects/webapp-template/server/docs/config.md`
+- API 说明：`/Users/simon/projects/webapp-template/server/docs/api.md`
+- 可观测性：`/Users/simon/projects/webapp-template/server/docs/observability.md`
+- Ent / Atlas：`/Users/simon/projects/webapp-template/server/docs/ent.md`
+- K8s：`/Users/simon/projects/webapp-template/server/docs/k8s.md`
+- DB 工作流：`/Users/simon/projects/webapp-template/server/internal/data/AI_DB_WORKFLOW.md`
+- 业务层说明：`/Users/simon/projects/webapp-template/server/internal/biz/README.md`
+- 数据层说明：`/Users/simon/projects/webapp-template/server/internal/data/README.md`
+- 服务层说明：`/Users/simon/projects/webapp-template/server/internal/service/README.md`
+
+## 部署模板
+
+- Docker Compose 模板：`/Users/simon/projects/webapp-template/server/deploy/compose/prod`
+- Kubernetes 模板：`/Users/simon/projects/webapp-template/server/deploy/dev`、`/Users/simon/projects/webapp-template/server/deploy/prod`
+- 如需了解占位符替换和目录用途，优先看 `/Users/simon/projects/webapp-template/server/deploy/README.md`
+
+开发数据库、目标校验与追踪入口见 [开发数据库与追踪](docs/development-database.md)。

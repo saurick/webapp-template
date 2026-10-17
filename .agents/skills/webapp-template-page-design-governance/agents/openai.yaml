@@ -1,0 +1,4 @@
+interface:
+  display_name: "Webapp Template Page Design Governance"
+  short_description: "模板用户端与管理端页面、响应式、可访问性和回归治理 Page"
+  default_prompt: "Use $webapp-template-page-design-governance 核对通用页面、admin preset、响应式与可访问性，并按 scenario list 回归。"

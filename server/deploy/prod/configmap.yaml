@@ -1,0 +1,38 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: your-project-server-config
+  namespace: your-project-prod
+data:
+  # 生产环境建议把敏感字段迁移到 Secret / ExternalSecret；这里仅保留模板占位。
+  config.yaml: |
+    server:
+      http:
+        addr: 0.0.0.0:8000
+        timeout: 10s
+      grpc:
+        addr: 0.0.0.0:9000
+        timeout: 10s
+
+    log:
+      debug: false
+
+    trace:
+      jaeger:
+        traceName: your-project-server.service
+        endpoint: otel-collector.observability.svc.cluster.local:4318
+        ratio: 0.1
+
+    data:
+      postgres:
+        debug: false
+        dsn: postgres://postgres:replace-me@postgres.your-project-prod.svc.cluster.local:5432/app?sslmode=disable
+      etcd:
+        hosts:
+          - etcd.your-project-prod.svc.cluster.local:2379
+      auth:
+        jwtSecret: replace-me
+        jwtExpireSeconds: 604800
+        admin:
+          username: admin
+          password: replace-me

@@ -1,0 +1,334 @@
+# QA 脚本说明
+
+本文档说明本仓库本地质量门禁脚本的用途、执行时机与常见用法。
+
+## 总览
+
+| 脚本                                     | 主要作用                                                                                                       | 建议时机                                 |
+| ---------------------------------------- | -------------------------------------------------------------------------------------------------------------- | ---------------------------------------- |
+| `scripts/bootstrap.sh`                   | 初始化依赖、启用 hooks、跑快速自检                                                                             | 首次拉仓库后 / 新机器环境                |
+| `scripts/init-project.sh`                | 扫描模板残留、默认配置和模块裁剪点                                                                             | 新项目由模板初始化后                     |
+| `scripts/configure-project.mjs`          | 预览并统一新项目身份、公开品牌、端口与 dev 本机连接占位                                                        | 复制模板后，实际配置与裁剪前             |
+| `scripts/check-toolchain.mjs`            | 核对 Node / pnpm / Go 版本合同，供 bootstrap / doctor 使用                                                     | 安装依赖前 / 环境排查                    |
+| `scripts/dev-ports.mjs`                  | 读取、审计和初始化固定开发端口 bundle，同步 dev YAML 并守住文档真源                                            | 项目初始化 / 多项目端口排查              |
+| `scripts/doctor.sh`                      | 检查本机依赖、hooks 与关键脚本状态                                                                             | 新机器初始化 / 异常排查                  |
+| `scripts/qa/db-guard.sh`                 | 检查 Ent schema/ent 变更是否附带 migration                                                                     | 改动数据模型后                           |
+| `scripts/qa/agents-size.sh`              | 扫描全部 AGENTS.md；16 KiB 预警、超过 24 KiB 阻断，不自动改写                                                  | 修改长期协作规则后                       |
+| `scripts/qa/skill-health.mjs`            | 检查项目 Skill frontmatter、目录名、metadata、README 索引和相对引用；不依赖 PyYAML，并由 fast/full/strict 调用 | 修改 `.agents/skills/**` 后              |
+| `scripts/deploy/production-preflight.sh` | 产品级生产发布前门禁，检查运行时 env、Compose、migration 脚本、Jaeger loopback 和低配部署边界                  | 每次生产发布 / 部署后运行态复核前        |
+| `scripts/qa/secrets.sh`                  | 扫描变更文件中的疑似密钥泄露                                                                                   | 提交前 / 推送前                          |
+| `scripts/qa/shellcheck.sh`               | 检查 shell 脚本静态问题                                                                                        | 调整脚本后                               |
+| `scripts/qa/go-vet.sh`                   | 执行 Go vet 静态检查                                                                                           | 改动 Go 代码后                           |
+| `scripts/qa/golangci-lint.sh`            | 执行 golangci-lint（默认仅新增问题）                                                                           | 改动 Go 代码后                           |
+| `scripts/qa/yamllint.sh`                 | 检查 YAML 语法与风格（基线降噪）                                                                               | 改动 YAML 后                             |
+| `scripts/qa/shfmt.sh`                    | 统一 shell 脚本格式                                                                                            | 调整脚本后                               |
+| `scripts/qa/govulncheck.sh`              | 扫描 Go 依赖与代码可达漏洞                                                                                     | 推送前 / 发版前                          |
+| `scripts/qa/error-code-sync.sh`          | 校验前端生成错误码是否与后端目录同步                                                                           | 新增/修改错误码后                        |
+| `scripts/qa/error-codes.sh`              | 检查业务代码是否裸写已注册错误码                                                                               | 改动接口/鉴权/前端错误处理后             |
+| `scripts/qa/fast.sh`                     | 快速检查（web lint+css、server 快速测试）                                                                      | 日常开发高频执行                         |
+| `scripts/qa/full.sh`                     | 全量检查（pre-push 的代码、未知影响或新 ref 分支调用）                                                         | 代码与跨层验证 / 推送前                  |
+| `scripts/qa/strict.sh`                   | 严格检查（warning 视为失败）                                                                                   | 发版前 / 主分支前                        |
+| `scripts/loadtest/run.sh`                | 运行最小 `k6` 压测场景                                                                                         | 需要验证健康检查 / JSON-RPC / 登录链路时 |
+| `scripts/git-hooks/commit-msg.sh`        | 校验提交信息规范                                                                                               | commit-msg hook 自动执行                 |
+| `scripts/git-hooks/pre-push.mjs`         | 解析实际推送 ref、选择检查并验证提交快照                                                                       | pre-push 自动调用                        |
+| `scripts/git-hooks/hooks.test.mjs`       | 部分暂存、生成漂移、密钥与推送范围回归                                                                         | hook 改动 / full QA                      |
+
+补充说明：前端浏览器级样式回归入口不在 `scripts/qa` 下，而是 `cd web && pnpm style:l1`。覆盖范围以 `web/scripts/styleL1.mjs` 的 scenario list 为真源，当前包含公开入口、管理员登录/重定向、已登录菜单、stale-auth recovery、账号与 RBAC 页面。
+
+## Hook 对应关系
+
+- `pre-commit` -> `scripts/git-hooks/pre-commit.sh`
+  - 先检查暂存 diff，再从 index 导出临时快照；所有 checker 读取暂存源码和配置。
+  - 增量 `prettier --check + eslint + shfmt`（`SHFMT_CHECK=1`），禁止 hook 自动格式化、生成或 `git add`。
+  - `shellcheck + error-code-sync + error-codes + gitleaks`
+  - Go 变更时执行 `go vet + golangci-lint`（仅改动包 + 仅新增问题）
+  - YAML 变更时执行 `yamllint`（仅暂存 YAML + .yamllint 降噪规则）
+- `pre-push` -> `scripts/git-hooks/pre-push.sh` -> `scripts/git-hooks/pre-push.mjs`
+  - 接收 Git 的 remote 参数与 stdin ref 更新列表，逐个验证实际推送提交；临时快照拥有独立 HEAD 和 index，不使用当前工作区的未提交修改替代推送内容。全量 ESLint 只检查，结束时核对 HEAD 和已跟踪文件未被 checker 改写。
+  - 既有 ref 仅变更根 README/AGENTS/CHANGELOG/progress、`docs/**/*.md`、scripts/server/web README 或 Skill 的 SKILL.md、`agents/openai.yaml`、Markdown references 时，执行 diff 格式检查、严格提交历史密钥扫描和 `skill-health`。
+  - 代码、依赖、CI、生成器、Skill 脚本、可执行文件、符号链接、未知路径及新 ref 执行上述密钥扫描、严格 shellcheck 与 `SECRETS_STRICT=1 scripts/qa/full.sh`。中间提交、删除和重命名前路径也参与判断。
+  - 删除 ref 无内容待检查；远端对象缺失时提示先 fetch，非快进分支更新阻断。每个 remote 的范围独立计算，不假定 origin 或当前 HEAD。
+- `commit-msg` -> `scripts/git-hooks/commit-msg.sh`
+
+格式或生成同步失败时，显式修复相关工作区文件（错误码使用 `node scripts/gen-error-codes.mjs`），审查 diff 后重新选择要暂存的文件或 hunk；hook 不代替用户扩大提交范围。临时检查目录退出时删除，仅复用本地 `web/node_modules` 依赖。
+
+hook 回归使用 `node --test scripts/git-hooks/hooks.test.mjs`，在临时 Git 仓库验证部分暂存、错误暂存、生成漂移、推送其他提交、多 ref、新 ref、重命名和历史密钥；需要 Node.js、Git 和 gitleaks。手动全量验证仍使用 `bash scripts/qa/full.sh`，直接运行 pre-push 且没有 stdin ref 更新不等于完成全量 QA。
+
+## 1) bootstrap
+
+```bash
+bash scripts/bootstrap.sh
+```
+
+- 默认行为：核对版本合同 -> 按锁文件安装 web/server 依赖 -> 启用 hooks -> 运行 `scripts/qa/fast.sh`
+- 脚本结束后会提示：若当前仓库是由模板初始化的新项目，继续执行 `scripts/init-project.sh`
+- 常用环境变量：
+  - `BOOTSTRAP_SKIP_INSTALL=1`：跳过依赖安装
+  - `BOOTSTRAP_SKIP_FAST_QA=1`：跳过快速自检
+
+## 2) init-project
+
+```bash
+bash scripts/init-project.sh
+```
+
+- 用于扫描“由模板初始化后的新项目”仍需处理的内容：
+  - 项目名 / 服务名 / 页面标题
+  - 默认密码 / JWT 密钥 / 数据库名
+  - 远端主机 / 镜像仓库 / 部署目录 / base path
+  - K8s / Jaeger / 远端发布脚本 / 后台业务骨架等按需裁剪点
+- 常用参数：
+  - `--project`：按派生项目模式执行
+  - `--template-source`：按模板源仓库模式执行
+  - `--strict`：派生项目模式下，命中必须处理项时返回非 0
+  - `--allocate-dev-ports --project-id <id>`：扫描兄弟仓 manifest，为派生项目顺序分配一组固定端口并同步 dev YAML fallback
+- 推荐二次校验：
+  - `bash scripts/init-project.sh --project --strict`
+- 公开运行时品牌和 dev/prod `config.local.yaml` 也参与扫描；所有类别只显示文件和行号，不输出配置值。已分配项目身份时自动按派生模式执行，即使 origin 仍指向原模板。
+
+基础配置优先使用可预览命令：
+
+```bash
+node scripts/configure-project.mjs --project-id my-project --name '我的项目'
+node scripts/configure-project.mjs --project-id my-project --name '我的项目' --write
+```
+
+命令使用原有端口分配器；重复执行保留已配置项目，写入前检查计划是否过期。范围、输入限制和仍需手工完成的配置见 [`docs/project-init.md`](../docs/project-init.md#2-统一基础配置)。
+
+端口分配只在创建派生项目时执行：
+
+```bash
+bash scripts/init-project.sh --project --allocate-dev-ports --project-id my-project
+node scripts/dev-ports.mjs audit
+```
+
+日常 `pnpm start` / `make dev` 固定使用 `config/dev-ports.env`，端口占用时失败；不会为了“启动成功”静默顺延到别的项目端口。`DEV_AUX_PORT_START` 同时保留从该值起的 100 个端口，辅助进程只在这个项目区间内探测。
+
+## 3) doctor
+
+```bash
+bash scripts/doctor.sh
+```
+
+- 检查必需依赖：`git`、`node`、`pnpm`、`go`
+- 检查可选依赖：`gitleaks`、`shellcheck`、`golangci-lint`、`yamllint`、`shfmt`、`govulncheck`
+- 检查 `core.hooksPath` 与关键脚本存在性
+- 必需版本：Node 与 `.n-node-version` 完全一致，`engines.node` 与其主版本一致；pnpm 与 `packageManager` 完全一致；Go 满足 `server/go.mod` 的 toolchain / go directive。保留 Dockerfile / Makefile 时，还检查其 Node / pnpm / Go 构建默认值是否与版本真源一致。
+- 缺少版本声明、重复 Node 版本文件或本机版本不匹配时阻断；不自动修改本机工具
+
+## 4) db-guard
+
+```bash
+bash scripts/qa/db-guard.sh
+```
+
+- 当检测到以下变更但没有 migration 文件时，会阻断：
+  - `server/internal/data/model/schema/*`
+  - `server/internal/data/model/ent/*`
+- 需要配套包含：
+  - `server/internal/data/model/migrate/*`
+- 常用环境变量：
+  - `SKIP_DB_GUARD=1`：跳过检查
+  - `QA_BASE_RANGE=origin/master...HEAD`：显式指定 diff 范围
+
+## 5) secrets
+
+```bash
+bash scripts/qa/secrets.sh
+```
+
+- 默认扫描全部已跟踪文件和未忽略的未跟踪文件，覆盖干净工作区中继承的配置；staged-only 模式仍只读取本轮暂存内容
+- 依赖：`gitleaks`
+- 行为规则：
+  - 未安装 `gitleaks`：默认提示后跳过，`SECRETS_STRICT=1` 时阻断
+  - 命中疑似密钥：默认提示不阻断，`SECRETS_STRICT=1` 时阻断
+- 常用环境变量：
+  - `SKIP_SECRETS_SCAN=1`
+  - `SECRETS_STRICT=1`
+  - `SECRETS_STAGED_ONLY=1`（仅扫描 staged 内容）
+  - `QA_BASE_RANGE=origin/master...HEAD`
+
+## 6) shellcheck
+
+```bash
+bash scripts/qa/shellcheck.sh
+```
+
+- 使用 `shellcheck` 检查 `scripts/` 与 `.githooks/` 下脚本。
+- 常用环境变量：
+  - `SKIP_SHELLCHECK=1`
+  - `SHELLCHECK_STRICT=1`（未安装 shellcheck 时阻断；pre-push 默认开启）
+
+## 7) go-vet
+
+```bash
+bash scripts/qa/go-vet.sh
+```
+
+- 在 `server` 目录执行 `go vet`（默认 `./...`，可传包参数）。
+- 常用环境变量：
+  - `SKIP_GO_VET=1`
+
+## 8) golangci-lint
+
+```bash
+bash scripts/qa/golangci-lint.sh
+```
+
+- 在 `server` 目录执行 `golangci-lint run`。
+- 默认仅拦截“相对 `HEAD` 的新增问题”，降低历史基线噪音。
+- 常用环境变量：
+  - `SKIP_GOLANGCI_LINT=1`
+  - `GOLANGCI_STRICT=1`（未安装 golangci-lint 时阻断）
+  - `GOLANGCI_ONLY_NEW=1`（默认）
+
+## 9) yamllint
+
+```bash
+bash scripts/qa/yamllint.sh
+```
+
+- 检查 YAML 语法与风格（默认仅检查变更 YAML，`YAMLLINT_ALL=1` 才全量扫描）。
+- 默认读取根目录 `.yamllint` 规则，排除锁文件与生成目录，降低历史基线噪声。
+- 常用环境变量：
+  - `SKIP_YAMLLINT=1`
+  - `YAMLLINT_STRICT=1`（未安装 yamllint 时阻断）
+  - `YAMLLINT_ALL=1`（全量扫描仓库 YAML）
+
+## 10) shfmt
+
+```bash
+bash scripts/qa/shfmt.sh
+```
+
+- 格式化 `scripts/` 与 `.githooks/` 下 shell 脚本。
+- 常用环境变量：
+  - `SKIP_SHFMT=1`
+  - `SHFMT_STRICT=1`（未安装 shfmt 时阻断）
+  - `SHFMT_CHECK=1`（仅检查格式，不改写文件）
+
+## 11) govulncheck
+
+```bash
+bash scripts/qa/govulncheck.sh
+```
+
+- 在 `server` 目录执行 `govulncheck`（默认 `./...`）。
+- 默认跟随 `server/go.mod` 中声明的 `toolchain` 扫描；未声明时使用 `go` 指令的最低版本，避免较新的本机标准库掩盖构建基线漏洞。如需覆盖可显式设置 `GOTOOLCHAIN`。
+- 常用环境变量：
+  - `SKIP_GOVULNCHECK=1`
+  - `GOVULNCHECK_STRICT=1`（非 0 退出码时阻断）
+  - `GOTOOLCHAIN=<value>`
+
+## 12) error-code-sync
+
+```bash
+bash scripts/qa/error-code-sync.sh
+```
+
+- 使用 `scripts/gen-error-codes.mjs --check` 校验 `web/src/common/consts/errorCodes.generated.js` 是否已和 `server/internal/errcode/catalog.go` 同步。
+- 常用环境变量：
+  - `SKIP_ERROR_CODE_SYNC=1`
+
+## 13) error-codes
+
+```bash
+bash scripts/qa/error-codes.sh
+```
+
+- 从 `server/internal/errcode/catalog.go` 提取已注册错误码，阻止在业务代码里直接裸写这些数字。
+- 默认检查 `server/` 与 `web/src/` 下业务代码；测试、文档、错误码目录、生成文件默认跳过。
+- 常用环境变量：
+  - `SKIP_ERROR_CODE_GUARD=1`
+  - `ERROR_CODE_GUARD_STAGED_ONLY=1`（pre-commit 默认使用）
+
+## 14) fast
+
+```bash
+bash scripts/qa/fast.sh
+```
+
+- `error-code-sync`：前端生成错误码同步检查
+- `template-init`：`node --test scripts/*.test.mjs`，覆盖基础配置、固定端口与工具链合同
+- `error-codes`：统一错误码魔法数字检查
+- web：`pnpm lint && pnpm css`
+- server：优先执行 `go test ./internal/... ./pkg/...`（目录存在才执行）
+- 适合在开发中频繁执行，快速发现明显问题；它更接近“粗粒度冒烟/快速检查”，不替代前端浏览器级样式回归。
+- 前端样式/布局任务至少应额外执行 `cd web && pnpm style:l1`。
+
+## 15) full
+
+```bash
+bash scripts/qa/full.sh
+```
+
+- pre-push 的代码、未知影响或新 ref 分支以 `SECRETS_STRICT=1` 执行此脚本；纯文档和 Skill 说明使用上面的轻量分支。
+- 包含模板初始化 / 端口 / 工具链回归、hook 回归、`skill-health`、DB/错误码/密钥守卫、Go 漏洞扫描及 web/server 测试与构建。
+- 若定义了前端 `test`，会在 `full` 中一并执行，但它仍然属于仓库级 QA 全量检查，不替代样式/布局任务的浏览器级回归。
+
+## 16) loadtest
+
+```bash
+bash scripts/loadtest/run.sh mixed
+```
+
+- 提供最小 `k6` 压测能力，覆盖 `health`、`system`、`auth`、`mixed` 四类场景。
+- 默认结果落到 `output/loadtest/<run-id>/`。
+- 详细用法见 `scripts/loadtest/README.md`。
+- 执行顺序：
+  - `db-guard` -> `error-code-sync` -> `error-codes` -> `secrets` -> `govulncheck`（默认提示模式）
+  - web：`lint -> css -> (若定义 test 则执行) -> build`
+  - server：`go test ./... -> make build`
+- 适合在提交前/推送前做最终兜底检查。
+- 若本轮确实触达前端样式链路，应在 `full` 之外补跑 `cd web && pnpm style:l1`，因为 `full` 不会自动打开浏览器验证 box 模型与重定向页面。
+
+## 16) strict
+
+```bash
+bash scripts/qa/strict.sh
+```
+
+- 在 `full` 基础上追加严格规则：
+  - 工具链与 Dockerfile / Makefile 默认版本一致性
+  - `secrets` 使用严格模式，扫描失败或缺少工具时阻断
+  - `eslint --max-warnings=0`
+  - `stylelint --max-warnings=0`
+  - 默认运行 `shellcheck + shfmt(check) + govulncheck(strict)`
+- 适合发版前或主分支合并前执行。
+- 镜像入口使用 `make -C server build_server`，打包与 Docker Hub 连接排障见 [`docs/image-build.md`](../docs/image-build.md)；脚本回归还覆盖 builder / 平台 / 镜像仓库分离与构建失败不清理。
+
+## 17) commit-msg
+
+```bash
+printf "chore(hooks): 校验提交信息\n" > /tmp/commit-msg.txt
+bash scripts/git-hooks/commit-msg.sh /tmp/commit-msg.txt
+```
+
+- 标题模式：
+  - `type(scope): subject`
+  - 或 `type: subject`
+- 允许类型：
+  - `feat|fix|chore|docs|refactor|test|ci|build|perf|style`
+- 自动放行：`Merge`、`Revert`、`fixup!`、`squash!`
+
+## 版本锁定
+
+- 根目录 `.n-node-version` 用于约束 Node 版本（`n auto` 会优先读取）。
+- `web/package.json` 的 `engines.node` 声明 Node 主版本，`packageManager` 固定 pnpm 版本；`server/go.mod` 的 `go` 指令声明最低安全补丁版本，需要独立建议版本时才声明 `toolchain`。容器构建默认值与同一版本合同一致。
+- 使用 `n auto` 或已有版本管理器切换后运行 `bash scripts/doctor.sh`。`bootstrap` 在安装依赖前执行同一版本检查，并使用 `pnpm install --frozen-lockfile`；不自动安装或替换全局版本管理器。
+
+## `-h/--help`
+
+上述脚本均支持 `-h/--help`，可直接在终端查看脚本说明。
+
+示例：
+
+```bash
+bash scripts/qa/strict.sh --help
+```
+
+## GitLab CI runner
+
+根 `.gitlab-ci.yml` 默认执行 bootstrap、strict 与 hook 回归。runner 必须预装仓库声明的 Node / pnpm / Go，以及 gitleaks、ShellCheck、shfmt、govulncheck；先用 `bash scripts/doctor.sh` 核对，bootstrap 只安装锁文件依赖，不安装系统 QA 工具。模板不绑定 runner 标签、kubeconfig、个人节点或自动部署。runner 需接受无标签任务；若团队要求 runner 标签，在派生仓库显式配置匹配的 tags。
+
+压测通过 `PIPELINE_MODE=loadtest` 提供手动任务，必须显式填写 `LOADTEST_BASE_URL`；报告写入忽略的 `output/loadtest/`，GitLab artifacts 的过期时间配置为 14 天（最新流水线还遵循实例保留策略）。实际发布由派生项目按部署合同增加任务。

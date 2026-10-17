@@ -1,0 +1,347 @@
+GOHOSTOS:=$(shell go env GOHOSTOS)
+# ⚠️ 注意：数据库迁移必须使用 `make data` 生成，严禁手动修改 SQL 文件！详见 internal/data/AI_DB_WORKFLOW.md
+GOPATH:=$(shell go env GOPATH)
+
+# ========================
+# Git 信息（兼容在子目录执行 & 没有提交的情况）
+# ========================
+GIT_ROOT := $(shell git rev-parse --show-toplevel 2>/dev/null)
+
+ifeq ($(GIT_ROOT),)
+  VERSION       := local
+  GIT_SHA       := local
+  GIT_SHA_SHORT := local
+  GIT_DIRTY     :=
+else
+  # 工作区是否有未提交改动（包含 staged/unstaged/未跟踪）
+  GIT_DIRTY     := $(shell cd "$(GIT_ROOT)" 2>/dev/null && test -n "$$(git status --porcelain)" && echo "-local" || echo "")
+
+  VERSION       := $(shell git -C "$(GIT_ROOT)" describe --tags --always 2>/dev/null || echo local)
+
+  # 有 commit 就取 sha；如果仓库还没 commit（或异常）就 local
+  GIT_SHA       := $(shell sh -c 'cd "$(GIT_ROOT)" && git rev-parse --verify HEAD >/dev/null 2>&1 && git rev-parse HEAD || echo local')$(GIT_DIRTY)
+  GIT_SHA_SHORT := $(shell sh -c 'cd "$(GIT_ROOT)" && git rev-parse --verify HEAD >/dev/null 2>&1 && git rev-parse --short=8 HEAD || echo local')$(GIT_DIRTY)
+endif
+
+# `make dev` 的固定端口 bundle 由仓库根 manifest 统一提供；环境或命令行变量仍可显式覆盖。
+DEV_HTTP_PORT_ENV_OVERRIDE := $(if $(filter environment,$(origin DEV_HTTP_PORT)),$(DEV_HTTP_PORT))
+DEV_GRPC_PORT_ENV_OVERRIDE := $(if $(filter environment,$(origin DEV_GRPC_PORT)),$(DEV_GRPC_PORT))
+DEV_PORTS_FILE ?= $(if $(GIT_ROOT),$(GIT_ROOT)/config/dev-ports.env,$(abspath ../config/dev-ports.env))
+include $(DEV_PORTS_FILE)
+ifneq ($(strip $(DEV_HTTP_PORT_ENV_OVERRIDE)),)
+DEV_HTTP_PORT := $(DEV_HTTP_PORT_ENV_OVERRIDE)
+endif
+ifneq ($(strip $(DEV_GRPC_PORT_ENV_OVERRIDE)),)
+DEV_GRPC_PORT := $(DEV_GRPC_PORT_ENV_OVERRIDE)
+endif
+export DEV_PROJECT_ID DEV_WEB_PORT DEV_HTTP_PORT DEV_GRPC_PORT DEV_STYLE_PORT DEV_AUX_PORT_START
+
+BUILD_TIME ?= $(shell date +"%Y%m%dT%H%M%S")
+IMAGE_TAG  := $(BUILD_TIME)-$(GIT_SHA_SHORT)
+# DOCKER_HOST 保留 Docker daemon 语义；镜像仓库单独配置。
+IMAGE_REGISTRY ?=
+# 发布脚本的同名环境变量含 tag；仓库名只接受 make 命令行覆盖。
+IMAGE_NAME = $(if $(IMAGE_REGISTRY),$(IMAGE_REGISTRY)/)webapp-template-server
+
+ifeq ($(GOHOSTOS), windows)
+	Git_Bash=$(subst \,/,$(subst cmd\,bin\bash.exe,$(dir $(shell where git))))
+	INTERNAL_PROTO_FILES=$(shell $(Git_Bash) -c "find internal -name *.proto")
+	API_PROTO_FILES=$(shell $(Git_Bash) -c "find api -name *.proto")
+else
+	INTERNAL_PROTO_FILES=$(shell find internal -name *.proto)
+	API_PROTO_FILES=$(shell find api -name *.proto)
+endif
+
+.PHONY: init
+# init env
+init:
+	go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
+	go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
+	go install github.com/go-kratos/kratos/cmd/kratos/v2@latest
+	go install github.com/go-kratos/kratos/cmd/protoc-gen-go-http/v2@latest
+	go install github.com/google/gnostic/cmd/protoc-gen-openapi@latest
+	go install github.com/google/wire/cmd/wire@latest
+
+.PHONY: config
+# generate internal proto
+config:
+	protoc --proto_path=./internal \
+	       --proto_path=./third_party \
+	       --go_out=paths=source_relative:./internal \
+	       $(INTERNAL_PROTO_FILES)
+
+# 自动收集 api 目录下所有 .proto 文件
+API_PROTO_FILES := $(shell find api -name '*.proto')
+
+# api：使用 protoc 一次性生成
+#   - Go 结构体 (*.pb.go)
+#   - gRPC 接口代码 (*_grpc.pb.go)
+#   - gRPC-Gateway 反向代理 (*_gw.go)，rest -> grpc
+#   - Kratos HTTP Handler (*_http.pb.go)
+#   - OpenAPI / Swagger 文档 (swagger.json)
+.PHONY: api
+api:
+	@echo ">>> Generating proto files..."
+	protoc --proto_path=. \
+	       --proto_path=./third_party \
+	       --go_out=paths=source_relative:. \
+	       --go-grpc_out=paths=source_relative:. \
+	       --grpc-gateway_out=paths=source_relative:. \
+	       --go-http_out=paths=source_relative:. \
+	       --openapiv2_out . \
+	       $(API_PROTO_FILES)
+
+.PHONY: build
+# build
+build:
+	mkdir -p bin/ && go build -ldflags "-X main.Version=$(VERSION)" -o ./bin/ ./...
+
+.PHONY: production_preflight
+production_preflight:
+	@cd "$(GIT_ROOT)" && bash scripts/deploy/production-preflight.sh --env-file server/deploy/compose/prod/.env
+
+.PHONY: build_linux
+build_linux:
+	mkdir -p bin/ && GOOS=linux GOARCH=amd64 go build -ldflags "-X main.Version=$(VERSION)" -o ./bin/ ./...
+
+.PHONY: generate
+# generate
+generate:
+	go mod tidy
+	go get github.com/google/wire/cmd/wire@latest
+	go generate ./...
+
+.PHONY: validate
+# generate validate proto
+validate:
+	protoc --proto_path=. \
+           --proto_path=./third_party \
+           --go_out=paths=source_relative:. \
+           --validate_out=paths=source_relative,lang=go:. \
+           $(API_PROTO_FILES)
+
+.PHONY: all
+# generate all
+all:
+	make api;
+	make config;
+	make generate;
+
+.PHONY: ent_migrate
+# 生成 migration（仅生成，不执行）
+ent_migrate:
+	@if ! command -v atlas >/dev/null 2>&1; then \
+		echo "Installing Atlas..."; \
+		curl -sSf https://atlasgo.sh | sh; \
+	fi
+	atlas migrate diff migrate \
+		--dir "file://internal/data/model/migrate" \
+		--to "ent://internal/data/model/schema" \
+		--dev-url "docker://postgres/18/dev?search_path=public"
+
+# 重新计算迁移目录校验，如果改了 migration 的 sql 文件，必须重新计算校验，否则migrate_apply会报错，提示Error: checksum mismatch
+.PHONY: migrate_hash
+migrate_hash:
+	atlas migrate hash --dir "file://internal/data/model/migrate"
+
+ENV_FILE := .env
+
+ifneq ("$(wildcard $(ENV_FILE))","")
+  include $(ENV_FILE)
+  export
+endif
+
+# Atlas commands resolve the same effective DSN as development startup and fail closed.
+.PHONY: migrate_apply migrate_status migrate_set print_db_url
+migrate_apply:
+	@set -eu; URL=$$(go run ./cmd/dburl -conf ./configs/dev/config.yaml -verify-target); \
+	atlas migrate apply --dir "file://internal/data/model/migrate" --url "$$URL"
+
+migrate_status:
+	@set -eu; URL=$$(go run ./cmd/dburl -conf ./configs/dev/config.yaml -verify-target); \
+	atlas migrate status --dir "file://internal/data/model/migrate" --url "$$URL"
+
+# Mark a version only as part of an explicitly authorized migration repair.
+migrate_set:
+	@set -eu; test -n "$$MIGRATE_VERSION" || { echo "MIGRATE_VERSION is required"; exit 1; }; \
+	URL=$$(go run ./cmd/dburl -conf ./configs/dev/config.yaml -verify-target); \
+	atlas migrate set --dir "file://internal/data/model/migrate" --url "$$URL" "$$MIGRATE_VERSION"
+
+print_db_url:
+	@go run ./cmd/dburl -conf ./configs/dev/config.yaml -redact && echo
+
+.PHONY: ent_generate
+# 用 ent generate 生成 ent 代码
+ent_generate:
+	go run -mod=mod entgo.io/ent/cmd/ent generate --target ./internal/data/model/ent ./internal/data/model/schema
+
+.PHONY: data
+# 最推荐流程：只生成 diff，不自动 apply
+data: ent_migrate ent_generate
+
+.PHONY: db_create
+db_create:
+	@if [ -z "$$DB_URL" ]; then \
+		echo "ERROR: DB_URL is not set"; exit 1; \
+	fi
+	@python3 -c 'import sys, urllib.parse; u = urllib.parse.urlparse(sys.argv[1]); db = (u.path or "").lstrip("/"); admin = u._replace(path="/postgres"); print(db); print(urllib.parse.urlunparse(admin))' "$$DB_URL" | { \
+		read DBNAME; \
+		read ADMIN_URL; \
+		echo "Creating database $$DBNAME ..."; \
+		psql "$$ADMIN_URL" -v ON_ERROR_STOP=1 -c "CREATE DATABASE \"$$DBNAME\"" 2>/dev/null || psql "$$ADMIN_URL" -v ON_ERROR_STOP=1 -c "SELECT 1 FROM pg_database WHERE datname = '$$DBNAME'" >/dev/null; \
+	}
+
+# show help
+help:
+	@echo ''
+	@echo 'Usage:'
+	@echo ' make [target]'
+	@echo ''
+	@echo 'Targets:'
+	@awk '/^[a-zA-Z\-\_0-9]+:/ { \
+	helpMessage = match(lastLine, /^# (.*)/); \
+		if (helpMessage) { \
+			helpCommand = substr($$1, 0, index($$1, ":")); \
+			helpMessage = substr(lastLine, RSTART + 2, RLENGTH); \
+			printf "\033[36m%-22s\033[0m %s\n", helpCommand,helpMessage; \
+		} \
+	} \
+	{ lastLine = $$0 }' $(MAKEFILE_LIST)
+
+.DEFAULT_GOAL := help
+
+
+# ========================
+# Local Dev Run (替代 kratos run，避免 LuLu 每次弹窗)
+# ========================
+
+MAIN_PKG ?= ./cmd/server
+DEV_BIN ?= ./bin/server-dev
+ARGS ?=
+
+# 当前项目本地 dev 会占用的端口；端口来自仓库 manifest。
+DEV_PORTS := $(DEV_HTTP_PORT) $(DEV_GRPC_PORT)
+
+.PHONY: dev_build
+# build dev binary (stable path)
+dev_build:
+	@mkdir -p $(dir $(DEV_BIN))
+	@echo ">>> building $(DEV_BIN) from $(MAIN_PKG)"
+	@go build -ldflags "-X main.Version=$(VERSION)" -o $(DEV_BIN) $(MAIN_PKG)
+
+.PHONY: run
+# run dev binary (stable path)
+run: dev_build
+	@echo ">>> running: $(DEV_BIN) $(ARGS)"
+	@$(DEV_BIN) $(ARGS)
+
+.PHONY: dev
+# alias of run
+dev: run
+
+.PHONY: dev_stop
+# stop local dev process only when every listener belongs to this server working directory
+dev_stop:
+	@echo ">>> stopping dev listeners on: $(DEV_PORTS)"
+	@command -v lsof >/dev/null 2>&1 || { echo "ERROR: lsof is required for ownership-safe dev_stop"; exit 1; }
+	@for p in $(DEV_PORTS); do \
+		for pid in $$(lsof -tiTCP:$$p -sTCP:LISTEN 2>/dev/null || true); do \
+			owner_cwd="$$(lsof -a -p $$pid -d cwd -Fn 2>/dev/null | sed -n 's/^n//p' | head -n 1)"; \
+			case "$$owner_cwd" in \
+				"$(CURDIR)"|"$(CURDIR)"/*) ;; \
+				*) echo "ERROR: refuse to kill foreign listener pid=$$pid port=$$p cwd=$${owner_cwd:-unknown}"; exit 1 ;; \
+			esac; \
+		done; \
+	done
+	@for p in $(DEV_PORTS); do \
+		for pid in $$(lsof -tiTCP:$$p -sTCP:LISTEN 2>/dev/null || true); do \
+			owner_cwd="$$(lsof -a -p $$pid -d cwd -Fn 2>/dev/null | sed -n 's/^n//p' | head -n 1)"; \
+			case "$$owner_cwd" in \
+				"$(CURDIR)"|"$(CURDIR)"/*) echo ">>> stop owned listener on port $$p: $$pid"; kill $$pid 2>/dev/null || true ;; \
+				*) echo "ERROR: listener ownership changed; refuse pid=$$pid port=$$p cwd=$${owner_cwd:-unknown}"; exit 1 ;; \
+			esac; \
+		done; \
+	done
+	@sleep 1
+	@for p in $(DEV_PORTS); do \
+		for pid in $$(lsof -tiTCP:$$p -sTCP:LISTEN 2>/dev/null || true); do \
+			owner_cwd="$$(lsof -a -p $$pid -d cwd -Fn 2>/dev/null | sed -n 's/^n//p' | head -n 1)"; \
+			case "$$owner_cwd" in \
+				"$(CURDIR)"|"$(CURDIR)"/*) echo ">>> force stop owned listener on port $$p: $$pid"; kill -9 $$pid 2>/dev/null || true ;; \
+				*) echo "ERROR: listener ownership changed; refuse pid=$$pid port=$$p cwd=$${owner_cwd:-unknown}"; exit 1 ;; \
+			esac; \
+		done; \
+	done
+
+.PHONY: dev_restart
+# restart local dev binary after clearing stale listeners
+dev_restart: dev_stop dev
+
+.PHONY: clean_dev
+# clean dev binary
+clean_dev:
+	@rm -f $(DEV_BIN)
+
+# 清理 dangling / builder 缓存
+.PHONY: docker_prune
+docker_prune:
+	@echo ">>> Pruning build cache and dangling images..."
+	@docker builder prune -f
+	@docker image prune -f
+
+# ========================
+# Docker 构建 / 推送
+# ========================
+
+# 保留本地最新 N 个镜像（同一个 repo:tag 列表里按创建时间）
+KEEP_IMAGES ?= 4
+
+.PHONY: image_gc
+image_gc:
+	@echo ">>> Keeping latest $(KEEP_IMAGES) images for $(IMAGE_NAME), removing older ones..."
+	@docker images --format '{{.Repository}}:{{.Tag}} {{.CreatedAt}}' '$(IMAGE_NAME)' \
+		| sort -rk2 \
+		| awk 'NR>$(KEEP_IMAGES){print $$1}' \
+		| xargs -r docker rmi -f || true
+
+.PHONY: build_server push_server
+
+# 本地/开发环境额外打一个固定tag，可以是dev或者latest
+# 部署时就可以一直写 webapp-template-server:dev（或 :latest）
+FIXED_TAG ?= dev
+IMAGE_PLATFORM ?= linux/amd64
+BUILDER ?=
+NODE_BUILDER_IMAGE ?= node:24.21.0
+GO_BUILDER_IMAGE ?= golang:1.26.9
+RUNTIME_BASE_IMAGE ?= alpine:3.21
+PNPM_VERSION ?= 10.34.5
+ALPINE_MIRROR ?=
+BUILD_PROXY ?=
+
+build_server: export IMAGE_BUILD_PROXY = $(BUILD_PROXY)
+build_server: export IMAGE_ALPINE_MIRROR = $(ALPINE_MIRROR)
+
+# 构建服务器镜像（在 server/ 目录执行）
+build_server:
+	docker buildx build --load \
+		$(if $(strip $(BUILDER)),--builder "$(BUILDER)") \
+		$(if $(strip $(BUILD_PROXY)),--build-arg HTTP_PROXY="$$IMAGE_BUILD_PROXY" --build-arg HTTPS_PROXY="$$IMAGE_BUILD_PROXY") \
+		--platform "$(IMAGE_PLATFORM)" \
+		--build-arg NODE_BUILDER_IMAGE="$(NODE_BUILDER_IMAGE)" \
+		--build-arg GO_BUILDER_IMAGE="$(GO_BUILDER_IMAGE)" \
+		--build-arg RUNTIME_BASE_IMAGE="$(RUNTIME_BASE_IMAGE)" \
+		--build-arg ALPINE_MIRROR="$$IMAGE_ALPINE_MIRROR" \
+		--build-arg PNPM_VERSION="$(PNPM_VERSION)" \
+		--build-arg GIT_SHA="$(GIT_SHA)" \
+		--build-arg GIT_SHA_SHORT="$(GIT_SHA_SHORT)" \
+		--build-arg BUILD_TIME="$(BUILD_TIME)" \
+		--build-arg IMAGE_TAG="$(IMAGE_TAG)" \
+		-f Dockerfile \
+		-t $(IMAGE_NAME):$(IMAGE_TAG) \
+		-t $(IMAGE_NAME):$(FIXED_TAG) ..
+
+# 推送服务器镜像
+push_server:
+	@if [ -z "$(IMAGE_REGISTRY)" ]; then echo "ERROR: IMAGE_REGISTRY is empty"; exit 1; fi
+	docker push $(IMAGE_NAME):$(IMAGE_TAG)
+	docker push $(IMAGE_NAME):$(FIXED_TAG)

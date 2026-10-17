@@ -1,0 +1,4 @@
+interface:
+  display_name: "Webapp Template Docs Governance"
+  short_description: "模板真源、派生初始化、部署路径与读者导航治理 Docs"
+  default_prompt: "Use $webapp-template-docs-governance 核对 current source、project-init 与 deployment docs，整理读者路径和引用。"

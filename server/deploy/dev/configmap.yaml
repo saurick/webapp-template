@@ -1,0 +1,38 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: your-project-server-config
+  namespace: your-project-dev
+data:
+  # 初始化项目后请替换 traceName、DSN 和 JWT 密钥；默认管理员密码只从配置文件读取。
+  config.yaml: |
+    server:
+      http:
+        addr: 0.0.0.0:8000
+        timeout: 10s
+      grpc:
+        addr: 0.0.0.0:9000
+        timeout: 10s
+
+    log:
+      debug: true
+
+    trace:
+      jaeger:
+        traceName: your-project-server.service
+        endpoint: otel-collector.observability.svc.cluster.local:4318
+        ratio: 1
+
+    data:
+      postgres:
+        debug: true
+        dsn: postgres://postgres:replace-me@postgres.your-project-dev.svc.cluster.local:5432/app?sslmode=disable
+      etcd:
+        hosts:
+          - etcd.your-project-dev.svc.cluster.local:2379
+      auth:
+        jwtSecret: replace-me
+        jwtExpireSeconds: 604800
+        admin:
+          username: admin
+          password: replace-me

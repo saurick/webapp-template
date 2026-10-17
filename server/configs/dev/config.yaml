@@ -1,0 +1,46 @@
+# server/configs/dev/config.yaml
+server:
+  http:
+    addr: 0.0.0.0:8200
+    timeout: 10s
+  grpc:
+    addr: 0.0.0.0:9200
+    timeout: 10s
+
+log:
+  debug: true
+
+# 链路追踪服务器
+trace:
+  jaeger:
+    traceName: ""
+    # http endpoint
+    endpoint: ""
+    # gRPC endpoint
+    # 采集率,ratio>=1表示采集所有
+    ratio: 1
+
+# 数据相关
+data:
+  # 主数据库，保存核心数据
+  postgres:
+    # if true output sql
+    debug: true
+    # 开发连接仅为本机占位；真实连接与凭据由 POSTGRES_DSN 或 config.local.yaml 提供。
+    dsn: "postgres://webapp_template:replace-me@127.0.0.1:5432/webapp_template?sslmode=disable"
+
+  etcd:
+    hosts:
+      - etcd:2379
+  # 认证相关：仓库只保留公开占位值，真实私钥/密码请在本地覆盖。
+  auth:
+    jwtSecret: "replace-me-dev-jwt-secret"
+    jwtExpireSeconds: 604800 # 7 days
+    admin:
+      username: "admin"
+      password: "replace-me-admin-password"
+
+# notify:
+#   telegram:
+#     apiToken: "replace-me-telegram-token"
+#     chatId: 0

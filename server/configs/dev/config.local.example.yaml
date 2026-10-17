@@ -1,0 +1,13 @@
+# 本地联调私有覆盖示例：复制为 config.local.yaml 后填写真实值，禁止把真实密码提交进仓库。
+trace:
+  jaeger:
+    endpoint: ""
+
+data:
+  postgres:
+    dsn: "postgres://webapp_template:replace-me@127.0.0.1:5432/webapp_template?sslmode=disable"
+  auth:
+    jwtSecret: "replace-with-local-dev-jwt-secret"
+    admin:
+      username: "admin"
+      password: "replace-with-local-admin-password"

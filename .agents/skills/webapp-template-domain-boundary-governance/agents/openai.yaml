@@ -1,0 +1,4 @@
+interface:
+  display_name: "Webapp Template Domain Boundary Governance"
+  short_description: "模板与派生项目初始化、Schema、API、RBAC 和默认数据治理 Domain"
+  default_prompt: "Use $webapp-template-domain-boundary-governance 收敛模板/派生项目、初始化、schema/API/RBAC 与默认数据真源。"

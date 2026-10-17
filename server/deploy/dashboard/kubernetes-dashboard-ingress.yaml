@@ -1,0 +1,27 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: kubernetes-dashboard-ingress
+  namespace: kubernetes-dashboard
+  annotations:
+    nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    # 如果接入 cert-manager，请替换为真实 issuer。
+    # cert-manager.io/cluster-issuer: "replace-me"
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: dashboard.example.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: kubernetes-dashboard-kong-proxy
+                port:
+                  number: 80
+  tls:
+    - hosts:
+        - dashboard.example.local
+      secretName: dashboard-example-tls

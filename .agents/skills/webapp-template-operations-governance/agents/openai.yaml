@@ -1,0 +1,4 @@
+interface:
+  display_name: "Webapp Template Operations Governance"
+  short_description: "模板运行诊断、安全、可观测与发布 Operations"
+  default_prompt: "Use $webapp-template-operations-governance 处理模板或派生项目运行与发布，并核对可迁移性、证据、验证和回滚。"

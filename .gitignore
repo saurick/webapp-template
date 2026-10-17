@@ -1,0 +1,13 @@
+.cursor/
+.DS_Store
+
+web/node_modules/
+web/build/
+web/.vite-cache/
+
+server/bin/
+output/
+.playwright-cli/
+
+# 旧实验室本地制品保留现场，不随模板分发。
+/server/deploy/lab-ha/

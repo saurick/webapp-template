@@ -1,0 +1,4 @@
+interface:
+  display_name: "Webapp Template Code Review Governance"
+  short_description: "代码审查治理 Code review / 工程质量门禁"
+  default_prompt: "Use $webapp-template-code-review-governance 审查模板 diff，先列初始化、通用性、RBAC、部署与回归 findings。"
