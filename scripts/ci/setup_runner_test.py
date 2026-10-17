@@ -196,7 +196,9 @@ class SetupRunnerTests(unittest.TestCase):
         (self.root / "token").chmod(0o600)
         real_api = RealAPI(self.config)
         from urllib.error import HTTPError
-        with patch.object(real_api.client, "open", side_effect=HTTPError("https://private/", 403, "fixture-api-value", {}, io.BytesIO(b"fixture-api-value"))):
+        response = HTTPError("https://private/", 403, "fixture-api-value", {}, io.BytesIO(b"fixture-api-value"))
+        self.addCleanup(response.close)
+        with patch.object(real_api.client, "open", side_effect=response):
             with self.assertRaises(module.SetupError) as result:
                 real_api.call("POST", "/user/runners", {"token": "fixture-api-value"})
         self.assertNotIn("fixture-api-value", str(result.exception))

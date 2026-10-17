@@ -128,6 +128,7 @@ class API:
                 body = response.read()
                 return json.loads(body) if body else None
         except error.HTTPError as exc:
+            exc.close()
             if missing_ok and exc.code == 404:
                 return None
             raise SetupError(f"GitLab {method} API 返回 HTTP {exc.code}；请核对项目权限和 token scopes") from None
