@@ -17,7 +17,7 @@ HTTP 入口显式设置独立的 404 / 405 回退，隔离依赖注册在 `http.
 
 ## 镜像打包
 
-在仓库根执行 `make -C server build_server`，默认构建并加载 `linux/amd64` 镜像。需要独立 builder 时设置 `BUILDER`；使用 `IMAGE_PLATFORM` 切换运行平台，Node / Go 构建阶段使用构建器本机架构。镜像仓库前缀使用 `IMAGE_REGISTRY`，`DOCKER_HOST` 专用于 daemon 连接；从旧参数迁移时需同步调整本地或 CI 命令。
+在仓库根执行 `make -C server build_server`，默认构建并加载 `linux/amd64` 镜像；入口需要 Python 3，自动对 Docker Hub 拉取瞬断作有界重试，真实构建错误仍阻断。需要独立 builder 时设置 `BUILDER`；使用 `IMAGE_PLATFORM` 切换运行平台，Node / Go 构建阶段使用构建器本机架构。镜像仓库前缀使用 `IMAGE_REGISTRY`，`DOCKER_HOST` 专用于 daemon 连接；从旧参数迁移时需同步调整本地或 CI 命令。
 
 打包不会自动清理旧镜像、推送或部署；完整参数、构建上下文边界和代理排障见 [`docs/image-build.md`](../docs/image-build.md)。
 

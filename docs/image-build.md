@@ -38,11 +38,24 @@ docker run --rm --platform linux/amd64 \
 
 构建成功只证明镜像可打包。首次运行仍需提供该项目的生产配置、JWT 与管理员配置、数据库和正式 migration；按 Compose 发布合同执行 preflight、migration、health/ready 和业务 smoke。
 
-远端 CI 使用同一 Make / Dockerfile 入口，并执行 save → load 的 image ID 回验；任务依赖、隔离 Runner、制品与初始化证明见 [`gitlab-ci.md`](gitlab-ci.md)。镜像打包入口只依赖 Git、Make 和 Docker CLI，Go / Node 编译发生在 Dockerfile 构建阶段。
+远端 CI 使用同一 Make / Dockerfile 入口，并执行 save → load 的 image ID 回验；任务依赖、隔离 Runner、制品与初始化证明见 [`gitlab-ci.md`](gitlab-ci.md)。镜像打包入口依赖 Git、Make、Python 3 和 Docker CLI，Go / Node 编译发生在 Dockerfile 构建阶段。
 
 已有直接传入 `RUNTIMEPLATFORM`、`GO_TARGETOS` 或 `GO_TARGETARCH` 的调用，需统一迁移为 Docker 的 `--platform` 或 Make 的 `IMAGE_PLATFORM`，避免分别设置运行镜像和二进制架构。
 
 ## Docker Hub EOF 或镜像清单异常
+
+`make build_server` 通过 [`scripts/build-image.py`](../scripts/build-image.py) 自动恢复明确的 Docker Hub 网络瞬断。本地和 CI 共用此入口，不需要手动重启 job，也不对整条流水线设置宽泛重试。
+
+| 判定 / 结果 | 行为 |
+| --- | --- |
+| BuildKit 失败步骤是 `docker.io/` 的 metadata / FROM 拉取，终态同时为 EOF、连接重置或传输超时 | 最多 3 次构建，重试前分别等待 3 秒、10 秒；复用同一参数与 builder 缓存 |
+| 编译、RUN 依赖安装、Dockerfile / COPY、权限、证书、401 / 403 / 404 / 429、镜像标签 / 平台、校验或磁盘错误 | 立即失败；日志中的 EOF 文本不触发重试 |
+| 未知输出格式、缺少失败步骤、非 Docker Hub 地址、取消或超出次数 | 阻断，不按网络问题掩盖 |
+| 构建后运行、归档、加载或摘要验证失败 | 阻断，不重试验证步骤 |
+
+判定读取 Buildx 的结构化 `rawjson` 状态，容器输出单独解码为可读日志；不从任意 RUN 输出中搜索重试关键字。该格式见 [Docker Buildx 进度说明](https://docs.docker.com/reference/cli/docker/buildx/build/#set-type-of-progress-output---progress)。每次构建写入 `output/image-build/build-*/` 的逐次日志和 `result.json`（尝试次数、退出码、网络判定与最终状态），网络恢复后保留失败尝试以便追溯。取消信号会终止本次 Buildx 子进程，不继续重试。
+
+CI 将日志放入 `output/ci/images/build-logs/<template|derived>/` 并在 job 成功或失败时保存制品。只有构建与后续验证全部通过才生成成功镜像元数据；重试耗尽仍返回非零。重试只用于不可控的瞬断，持续 EOF 仍须按下表修复网络配置。
 
 先分层检查，避免将单个客户端失败直接归因为镜像版本不存在：
 

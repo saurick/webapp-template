@@ -295,7 +295,7 @@ bash scripts/qa/strict.sh
   - `stylelint --max-warnings=0`
   - 默认运行 `shellcheck + shfmt(check) + govulncheck(strict)`
 - 适合发版前或主分支合并前执行。
-- 镜像入口使用 `make -C server build_server`，打包与 Docker Hub 连接排障见 [`docs/image-build.md`](../docs/image-build.md)；脚本回归还覆盖 builder / 平台 / 镜像仓库分离与构建失败不清理。
+- 镜像入口使用 `make -C server build_server`，由 `build-image.py` 读取 BuildKit 结构化状态，只对 Docker Hub 拉取瞬断最多重试 3 次并保留逐次日志；真实构建错误仍阻断。打包与连接排障见 [`docs/image-build.md`](../docs/image-build.md)；脚本回归还覆盖恢复、耗尽、编译 / 权限 / 校验阻断、取消、脱敏，以及 builder / 平台 / 镜像仓库分离与失败不清理。
 
 ## 17) commit-msg
 

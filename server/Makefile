@@ -321,7 +321,7 @@ build_server: export IMAGE_ALPINE_MIRROR = $(ALPINE_MIRROR)
 
 # 构建服务器镜像（在 server/ 目录执行）
 build_server:
-	docker buildx build --load \
+	python3 ../scripts/build-image.py -- --load \
 		$(if $(strip $(BUILDER)),--builder "$(BUILDER)") \
 		$(if $(strip $(BUILD_PROXY)),--build-arg HTTP_PROXY="$$IMAGE_BUILD_PROXY" --build-arg HTTPS_PROXY="$$IMAGE_BUILD_PROXY") \
 		--platform "$(IMAGE_PLATFORM)" \

@@ -4,6 +4,8 @@
 
 ## 2026-10-18 新项目 CI 一键接入
 
+- 镜像 Make 入口增加 Docker Hub 网络瞬断的有界恢复：结构化 BuildKit 失败步骤与终态共同判定，最多 3 次；编译、权限、校验、未知错误和取消继续阻断。CI 保留逐次日志及结果，失败也上传；恢复与完整流水线证据另存忽略的 `output/image-retry-delivery/`。
+
 - 增加项目级 Runner 初始化脚本与私有 host 配置示例，统一 Runner 注册、默认分支保护、网络环境、独立 systemd 服务和 online 回读；重复执行复用本脚本 Runner，保留其他项目配置。
 - 增加幂等、主机失败恢复、权限 / 归属漂移、活动 job、凭据脱敏回归，接入 strict；使用临时派生 GitLab 项目验收真实注册与完整流水线，终态与清理记录保存在忽略的 `output/runner-init/`。
 

@@ -32,6 +32,7 @@ ci_source_sha="$(git -C "$ci_source" rev-parse HEAD)"
 ci_image="${CI_PROJECT_PATH_SLUG:?}-$ci_variant:ci-$CI_PIPELINE_ID"
 ci_output="$ci_root/output/ci/images"
 mkdir -p "$ci_output"
+export IMAGE_BUILD_LOG_ROOT="$ci_output/build-logs/$ci_variant"
 ci_archive="$ci_output/$ci_variant-${CI_COMMIT_SHA:0:8}-linux-amd64.tar.gz"
 
 make --silent -C "$ci_source/server" build_server \

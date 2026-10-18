@@ -84,7 +84,7 @@ bash scripts/qa/strict.sh
 make -C server build_server
 ```
 
-默认构建 `linux/amd64` 镜像并加载到本机，不执行推送或旧镜像清理。需要独立代理构建器时传入 `BUILDER`；镜像仓库用 `IMAGE_REGISTRY`，不要复用 Docker daemon 的 `DOCKER_HOST`。完整参数、Docker Hub EOF 排障和制品验证见 [`image-build.md`](image-build.md)。
+默认构建 `linux/amd64` 镜像并加载到本机，不执行推送或旧镜像清理。入口需要 Python 3，自动对明确的 Docker Hub 拉取瞬断作有界重试；真实构建错误仍阻断。需要独立代理构建器时传入 `BUILDER`；镜像仓库用 `IMAGE_REGISTRY`，不要复用 Docker daemon 的 `DOCKER_HOST`。完整参数、重试日志、Docker Hub EOF 排障和制品验证见 [`image-build.md`](image-build.md)。
 
 ### 6. 接入远端 CI
 

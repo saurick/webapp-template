@@ -8,12 +8,22 @@ import test from "node:test";
 function buildFixture(t, overrides = {}, buildArgs = []) {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "template-image-"));
   t.after(() => fs.rmSync(root, { recursive: true, force: true }));
-  for (const dir of ["server/internal", "server/api", "config", "bin"]) {
+  for (const dir of [
+    "server/internal",
+    "server/api",
+    "config",
+    "scripts",
+    "bin",
+  ]) {
     fs.mkdirSync(path.join(root, dir), { recursive: true });
   }
   fs.copyFileSync(
     path.join(import.meta.dirname, "../server/Makefile"),
     path.join(root, "server/Makefile"),
+  );
+  fs.copyFileSync(
+    path.join(import.meta.dirname, "build-image.py"),
+    path.join(root, "scripts/build-image.py"),
   );
   fs.writeFileSync(path.join(root, "config/dev-ports.env"), "");
   fs.writeFileSync(
@@ -69,7 +79,12 @@ test("镜像打包独立选择仓库、builder 和目标平台，不清理或推
   assert.equal(result.status, 0, result.stdout + result.stderr);
   assert.equal(calls.length, 1, JSON.stringify(calls));
   const [args] = calls;
-  assert.deepEqual(args.slice(0, 3), ["buildx", "build", "--load"]);
+  assert.deepEqual(args.slice(0, 4), [
+    "buildx",
+    "build",
+    "--progress=rawjson",
+    "--load",
+  ]);
   assert.equal(args[args.indexOf("--builder") + 1], "isolated-builder");
   assert.equal(args[args.indexOf("--platform") + 1], "linux/arm64");
   const tags = args.flatMap((arg, index) =>

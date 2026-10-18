@@ -26,6 +26,8 @@ Runner 管理进程、宿主 Docker、job、DinD 与 Dockerfile RUN 的代理是
 
 ## 制品与回读
 
+镜像构建复用 [`image-build.md`](image-build.md) 的有界恢复：只重试 BuildKit 明确报告的 Docker Hub metadata / FROM 网络瞬断，最多 3 次，等待 3 / 10 秒。真实构建、认证权限、校验与未知错误立即阻断；不对整个 job 配置无差别重试。每次尝试及最终状态写入 `output/ci/images/build-logs/`，失败也上传日志；其余制品只在相应步骤完成后产生。
+
 成功的镜像 job 在 `output/ci/images/` 生成 `.tar.gz`、`.sha256` 和各自的 JSON 元数据，默认保留 7 天。元数据绑定流水线 SHA、实际源码 SHA、CI 引擎镜像 ID、归档配置的 `config_digest`、未压缩层的 `rootfs_diff_ids`、平台和归档校验值，以及 load / 二进制 / 静态文件 / 代理不入镜像的结果。派生源码 bundle 也仅保留 7 天；该保留时间还受实例“保留最新成功流水线制品”策略影响。
 
 下载某一个成功镜像任务的制品后，在对应目录执行：
