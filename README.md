@@ -19,6 +19,8 @@ Web 全后端单体模板项目，提供用户端基础页面、可选 antd admi
 
 ## 快速开始
 
+创建新 GitLab 项目并接入 CI，可直接使用 [一键创建入口](docs/project-bootstrap.md)；已有项目的日常开发按下列步骤启动。
+
 ### 1) 启动前端
 
 ```bash

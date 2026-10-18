@@ -17,6 +17,8 @@
 
 ## Runner 与工具链
 
+从零创建项目时使用 [统一入口](project-bootstrap.md)，一次完成创建、工程初始化、专属 Runner 接入和首轮 CI 回读；以下独立 Runner 流程用于已有仓库。
+
 1. 按 [`ci-runner/README.md`](../server/deploy/ci-runner/README.md) 一次准备构建机私有配置；在构建机执行 `sudo python3 scripts/ci/setup-runner.py --config /etc/gitlab-runner-projects/host.json --project your-group/your-project`，自动配置主分支保护、项目专用 Runner、CI 网络环境与独立服务，等待 online。重复执行复用已有 Runner；`--check` 回读，`--pause` 安全停用。主分支须受保护；其他分支或 MR 按项目的信任边界配置独立 Runner。
 2. 普通 job 不挂载宿主机 Docker socket。镜像 job 使用同版本 Docker CLI / rootless DinD，启用 TLS 和独立网络；Runner 仅允许官方 rootless DinD service 的 privileged 模式。
 3. `CI_GO_IMAGE` 与 `server/go.mod` 必须一致，`check-toolchain` 自动阻断漂移。Node 与 pnpm 分别读取 `.n-node-version` / `web/package.json`。job 从发行版 HTTPS 源安装 xz / ShellCheck / ripgrep；Node 下载使用 HTTP/1.1 兼容部分代理的 HTTP/2 stream reset，并核对官方 SHASUMS，QA 工具固定版本。TLS 验证与签名 / 校验值不变。

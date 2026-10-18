@@ -2,6 +2,11 @@
 
 当前事实以 `docs/current-source-of-truth.md`、`docs/project-init.md`、`docs/deployment-conventions.md`、代码和测试为准；本文只保留当前模板交付进展。
 
+## 2026-10-18 新项目统一创建入口
+
+- 串联私有 GitLab 项目创建、正式模板配置 / 初始化 strict、专属 Runner 注册、初始 commit 推送、首轮 CI 与制品元数据回读；状态绑定模板 SHA、创建标识和目标目录，失败保留现场供同命令恢复。
+- 工程骨架清空公开凭据、保留 Compose / Kubernetes 与基础能力，明确部署未配置；不使用演示凭据或新增管理员密码覆盖。临时 namespace / 项目从零验收与资源收口记录保存在忽略的 `output/project-bootstrap/`。
+
 ## 2026-10-18 新项目 CI 一键接入
 
 - 镜像 Make 入口增加 Docker Hub 网络瞬断的有界恢复：结构化 BuildKit 失败步骤与终态共同判定，最多 3 次；编译、权限、校验、未知错误和取消继续阻断。CI 保留逐次日志及结果，失败也上传；恢复与完整流水线证据另存忽略的 `output/image-retry-delivery/`。
