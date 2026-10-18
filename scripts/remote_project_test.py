@@ -157,6 +157,10 @@ class RemoteTests(unittest.TestCase):
                 self.assertIn('Acquire::IndexTargets::deb::CNF::DefaultEnabled=false',args)
                 self.assertIn('Acquire::IndexTargets::deb::DEP-11::DefaultEnabled=false',args)
                 if fail=='apt':return subprocess.CompletedProcess(args,100,'','signature verification failed')
+                if fail in ('apt-network','apt-network-exhausted') and args[-1]=='update':
+                    count=sum(call[0]=='apt-get' and call[-1]=='update' for call in calls)
+                    if fail=='apt-network-exhausted' or count<3:
+                        return subprocess.CompletedProcess(args,100,'',"E: Failed to fetch http://archive.ubuntu.com/ubuntu/dists/noble-backports/InRelease  502  Bad Gateway [IP: 192.0.2.1 3128]\nE: The repository 'http://archive.ubuntu.com/ubuntu noble-backports InRelease' is not signed.\n")
                 if 'install' in args:
                     installed.add('git')
                     if 'docker-ce' in args:
@@ -217,5 +221,25 @@ class RemoteTests(unittest.TestCase):
         self.assertEqual(foreign.read_text(),'[Service]\nEnvironment=OWNER=other\n')
         self.assertFalse((state/'docker.env').exists())
         self.assertFalse(any('docker-ce' in args or args[0]=='systemctl' for args in calls))
+    def test_apt_gateway_retry_is_bounded_and_never_retries_signature_or_package_errors(self):
+        gateway="E: Failed to fetch http://archive.ubuntu.com/ubuntu/dists/noble-backports/InRelease  502  Bad Gateway [IP: 192.0.2.1 3128]\nE: The repository 'http://archive.ubuntu.com/ubuntu noble-backports InRelease' is not signed.\n"
+        self.assertTrue(host.transient_apt_update(gateway))
+        for error in ("E: Unable to locate package missing",gateway+"E: dpkg returned an error code",gateway.replace('noble-backports InRelease','noble-security InRelease'),gateway+"W: GPG error: BADSIG invalid signature",gateway.replace('502  Bad Gateway','403 Forbidden')):
+            self.assertFalse(host.transient_apt_update(error))
+        for failure in ('apt-network','apt-network-exhausted'):
+            with self.subTest(failure=failure),tempfile.TemporaryDirectory() as directory:
+                original=self.root;self.root=Path(directory)
+                try:
+                    stage,system,tools,state,calls,mapped,which,run=self.fresh_host(failure)
+                    with patch.object(host,'TOOLS',tools),patch.object(host,'STATE',state),patch.object(host,'Path',side_effect=mapped),patch.object(host.shutil,'which',side_effect=which),patch.object(host.subprocess,'run',side_effect=run),patch.object(host.time,'sleep') as sleep:
+                        if failure=='apt-network-exhausted':
+                            with self.assertRaisesRegex(runner.SetupError,'apt-get'):host.prepare({'environment':{}},stage,runner)
+                        else:
+                            host.prepare({'environment':{'HTTPS_PROXY':'http://proxy.example.com:3128'}},stage,runner)
+                        self.assertEqual([call.args[0] for call in sleep.call_args_list],[3,10])
+                    updates=[call for call in calls if call[0]=='apt-get' and call[-1]=='update']
+                    self.assertEqual(len(updates),3 if failure=='apt-network-exhausted' else 4)
+                    if failure=='apt-network-exhausted':self.assertFalse(any('install' in call for call in calls))
+                finally:self.root=original
 
 if __name__=='__main__':unittest.main()

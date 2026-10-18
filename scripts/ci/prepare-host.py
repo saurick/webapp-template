@@ -11,9 +11,37 @@ import shutil
 import subprocess
 import tarfile
 import tempfile
+import time
 
 TOOLS = Path('/opt/webapp-template-host-tools')
 STATE = Path('/var/lib/webapp-template-host')
+
+
+def transient_apt_update(output):
+    """仅重试可配对的网关错误；APT 的后续未签名摘要不代表绕过签名校验。"""
+    errors = [line for line in output.splitlines() if line.startswith('E:')]
+    fetches = set()
+    remaining = []
+    if any(re.search(r'NO_PUBKEY|EXPKEYSIG|BADSIG|GPG error|Hash Sum mismatch|signature', line, re.I)
+           for line in output.splitlines()):
+        return False
+    for line in errors:
+        match = re.fullmatch(r'E: Failed to fetch (https?://\S+)\s+(.+)', line)
+        if match:
+            if not re.search(r'\b(?:502\s+Bad\s+Gateway|503\s+Service\s+Unavailable|504\s+Gateway\s+Time-?out)\b', match[2], re.I):
+                return False
+            fetches.add(match[1])
+        else:
+            remaining.append(line)
+    if not fetches:
+        return False
+    for line in remaining:
+        if line == 'E: Some index files failed to download. They have been ignored, or old ones used instead.':
+            continue
+        match = re.fullmatch(r"E: The repository '(https?://\S+) (\S+) (InRelease|Release)' is not signed\.", line)
+        if not match or match[1].rstrip('/') + '/dists/' + match[2] + '/' + match[3] not in fetches:
+            return False
+    return True
 
 
 def prepare(config, root, runner):
@@ -32,7 +60,7 @@ def prepare(config, root, runner):
 
 def prepare_locked(config, root, runner):
     require = runner.require
-    env = {**os.environ, **config['environment'], 'DEBIAN_FRONTEND': 'noninteractive', 'NEEDRESTART_MODE': 'l'}
+    env = {**os.environ, **config['environment'], 'DEBIAN_FRONTEND': 'noninteractive', 'NEEDRESTART_MODE': 'l', 'LC_ALL': 'C'}
     actions = []
     log = STATE / 'prepare.log'
     if log.exists():
@@ -40,10 +68,14 @@ def prepare_locked(config, root, runner):
     else:
         runner.atomic_write(log, '')
 
-    def run(args, timeout=600):
+    def execute(args, timeout=600):
         result = subprocess.run(args, env=env, capture_output=True, text=True, timeout=timeout)
         with log.open('a') as stream:
             stream.write((result.stdout or '') + (result.stderr or ''))
+        return result
+
+    def run(args, timeout=600):
+        result = execute(args, timeout)
         require(result.returncode == 0, f'主机准备命令失败：{Path(args[0]).name}；日志 {log}')
         return result.stdout.strip()
 
@@ -59,8 +91,20 @@ def prepare_locked(config, root, runner):
            '-o', 'Acquire::https::Timeout=30', '-o', 'APT::Update::Error-Mode=any',
            '-o', 'Acquire::Languages=none', '-o', 'Acquire::IndexTargets::deb::CNF::DefaultEnabled=false',
            '-o', 'Acquire::IndexTargets::deb::DEP-11::DefaultEnabled=false']
+    def apt_update():
+        for attempt in range(3):
+            result = execute([*apt, 'update'])
+            with log.open('a') as stream:
+                stream.write(f'\n[host:apt-update] attempt={attempt + 1}/3 exit={result.returncode}\n')
+            if result.returncode == 0:
+                return
+            require(attempt < 2 and result.returncode == 100
+                    and transient_apt_update((result.stdout or '') + '\n' + (result.stderr or '')),
+                    f'主机准备命令失败：apt-get；日志 {log}')
+            print(f'[remote:host] APT 网关瞬断，等待后重试 {attempt + 2}/3', flush=True)
+            time.sleep((3, 10)[attempt])
     if missing:
-        run([*apt, 'update'])
+        apt_update()
         run([*apt, 'install', '--yes', '--no-install-recommends', *missing])
         actions.append('install missing Ubuntu base packages')
     contract = json.loads((root / 'server/deploy/ci-runner/host-tools.json').read_text())
@@ -111,7 +155,7 @@ def prepare_locked(config, root, runner):
             # 在 apt 首次启动 daemon 前提供网络配置，不重启已存在的 Docker。
             run(['systemctl', 'daemon-reload'])
             actions.append('configure private proxy environment for new Docker service')
-        run([*apt, 'update'])
+        apt_update()
         run([*apt, 'install', '--yes', '--no-install-recommends', 'docker-ce', 'docker-ce-cli', 'containerd.io',
              'docker-buildx-plugin', 'docker-compose-plugin'])
         run(['systemctl', 'enable', '--now', 'docker'])

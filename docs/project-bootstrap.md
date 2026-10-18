@@ -30,7 +30,7 @@ python3 scripts/create-project-remote.py \
 
 下载和主机命令有超时；源码或权限不符、健康服务异常、下载校验失败和真实 CI 错误都会阻断。已有 Docker 数据 / 配置但缺少 binary、冲突安装包或不同 apt source 时保留现场，不自动卸载或接管。主机准备日志位于 `/var/lib/webapp-template-host/prepare.log`，权限 `0600`。
 
-APT 仅在本次命令中关闭翻译、命令查询与桌面应用索引，保留发行版签名和软件包索引校验；下载使用有界重试和 HTTP(S) 超时，必要索引、包或签名失败仍返回非零。首次安装 Docker 且提供代理时，脚本在 apt 启动服务前写入专属 systemd drop-in，代理值保存在 root-only 的 `/var/lib/webapp-template-host/docker.env`。仅传递代理与绕过地址，不传 GitLab API token；已有 Docker 的代理、配置和服务不改动，已有其他 drop-in 时阻断接管。参见 [Docker daemon 代理合同](https://docs.docker.com/engine/daemon/proxy/)。
+APT 仅在本次命令中关闭翻译、命令查询与桌面应用索引，保留发行版签名和软件包索引校验；下载使用有界重试和 HTTP(S) 超时。主机准备只对明确的 502 / 503 / 504 索引网关错误重试整个 update，最多 3 次、间隔 3 / 10 秒；APT 因同一索引网关失败产生的未签名摘要须与 URL 配对，真实签名、校验、权限、包或未知错误继续阻断。首次安装 Docker 且提供代理时，脚本在 apt 启动服务前写入专属 systemd drop-in，代理值保存在 root-only 的 `/var/lib/webapp-template-host/docker.env`。仅传递代理与绕过地址，不传 GitLab API token；已有 Docker 的代理、配置和服务不改动，已有其他 drop-in 时阻断接管。参见 [Docker daemon 代理合同](https://docs.docker.com/engine/daemon/proxy/)。
 
 重复同一 Mac 命令会复用安装工具、精确源码和原项目状态，不重复创建项目 / Runner / pipeline。SSH 断开后远端 CI 可能继续；重跑同一参数和模板 HEAD 回读。进程被 SIGKILL 或主机断电时无法执行清理，管理员须核对 `/var/lib/webapp-template-remote/request-*` 的归属和活动进程后清理；不自动扫描删除其他调用的目录。开发机可从创建出的 GitLab 仓库正常 clone。
 
