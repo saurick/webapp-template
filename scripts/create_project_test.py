@@ -52,6 +52,7 @@ class CreateProjectTests(unittest.TestCase):
         self.init_git(self.source)
         self.target=self.root/'starter';self.journal=self.root/'journals';self.api=FakeAPI();self.remote='';self.pushes=0;self.registers=0
         self.config={'gitlab_url':'https://gitlab.example.com','api_token_file':str(self.root/'token'),'environment':{},'extra_hosts':[]}
+        self.real_prepare=module.prepare_source
         patches=[patch.object(module,'ROOT',self.source),patch.object(module,'JOURNALS',self.journal),
                  patch.object(module.runner,'API',return_value=self.api),patch.object(module,'prepare_source',side_effect=self.prepare),
                  patch.object(module.runner,'setup',side_effect=self.setup_runner),patch.object(module,'remote_git',side_effect=self.remote_git)]
@@ -125,6 +126,30 @@ class CreateProjectTests(unittest.TestCase):
         self.assertEqual(subprocess.check_output([script,'Password:'],env=env,text=True).strip(),'fixture-credential')
         self.assertNotIn('fixture-credential',Path(script).read_text());self.assertNotIn('fixture-credential',json.dumps(env))
         self.assertEqual(Path(script).stat().st_mode&0o777,0o700)
+    def test_unfinished_source_edits_and_index_changes_are_detected(self):
+        self.target.mkdir();(self.target/'file.txt').write_text('baseline')
+        sha=module.git(['rev-parse','HEAD'],self.source)
+        (self.target/'.project-bootstrap.json').write_text(json.dumps({'creation_id':'proof','template_sha':sha}))
+        self.init_git(self.target)
+        self.journal.mkdir(mode=0o700)
+        baseline=module.source_checkpoint(self.target)
+        module.runner.atomic_write(self.journal/'source-checkpoint.json',json.dumps(baseline))
+        (self.target/'file.txt').write_text('user edit')
+        with self.assertRaisesRegex(module.runner.SetupError,'拒绝自动暂存'):
+            self.real_prepare(self.source,sha,self.target,'starter','项目','proof',self.journal)
+        self.assertEqual((self.target/'file.txt').read_text(),'user edit')
+        self.assertEqual(baseline['index'],module.source_checkpoint(self.target)['index'])
+        (self.target/'file.txt').write_text('baseline')
+        self.assertEqual(baseline,module.source_checkpoint(self.target))
+        (self.target/'new.txt').write_text('unique file')
+        self.assertNotEqual(baseline,module.source_checkpoint(self.target))
+        module.runner.atomic_write(self.journal/'source-checkpoint.json',json.dumps(module.source_checkpoint(self.target)))
+        subprocess.run(['git','add','new.txt'],cwd=self.target,check=True)
+        indexed=module.source_checkpoint(self.target)
+        with self.assertRaisesRegex(module.runner.SetupError,'拒绝自动暂存'):
+            self.real_prepare(self.source,sha,self.target,'starter','项目','proof',self.journal)
+        self.assertEqual(indexed,module.source_checkpoint(self.target))
+
     def test_pipeline_timeout_does_not_create_another_pipeline(self):
         self.api.head='a'*40
         state={}

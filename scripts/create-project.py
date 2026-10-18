@@ -64,6 +64,17 @@ def require_clean(directory, sha):
             "初始化源码已有修改或 HEAD 漂移，保留现场并停止")
 
 
+def source_checkpoint(target):
+    files = git(["ls-files", "--cached", "--others", "--exclude-standard", "-z"], target).split("\0")
+    fingerprints = {}
+    for name in set(files) - {""}:
+        path = target / name
+        require(path.is_file() and not path.is_symlink(), "初始化目录存在不支持的文件类型")
+        fingerprints[name] = {"sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
+                              "mode": path.stat().st_mode & 0o777}
+    return {"files": fingerprints, "index": git(["ls-files", "--stage"], target)}
+
+
 def auth_env(config, journal):
     # 凭据仅由 askpass 子进程读取；URL、命令参数、Git 配置和 CI 环境均不携带 token。
     askpass = journal / "git-askpass.py"
@@ -80,10 +91,15 @@ def remote_git(args, directory, env):
 
 
 def prepare_source(source, sha, target, project_id, name, creation_id, journal):
+    checkpoint = journal / "source-checkpoint.json"
+    def save_checkpoint():
+        runner.atomic_write(checkpoint, json.dumps(source_checkpoint(target)) + "\n")
     if target.exists():
         marker = json.loads((target / ".project-bootstrap.json").read_text())
         require(marker["creation_id"] == creation_id and marker["template_sha"] == sha,
                 "目标目录不属于本次初始化")
+        require(checkpoint.exists() and json.loads(runner.private_read(checkpoint)) == source_checkpoint(target),
+                "未完成初始化的源码或 index 已变化，保留现场，拒绝自动暂存")
         head = subprocess.run(["git", "rev-parse", "--verify", "HEAD"], cwd=target,
                               env=environment(), capture_output=True, text=True)
         if head.returncode == 0:
@@ -104,13 +120,16 @@ def prepare_source(source, sha, target, project_id, name, creation_id, journal):
                             and not member.issym() and not member.islnk(), "模板归档存在不支持的路径")
                 package.extractall(target, filter="data")
             git(["init", "--quiet", "-b", "main"], target)
+            save_checkpoint()
     node = command(["node", "--version"], source).removeprefix("v")
     require(node == (target / ".n-node-version").read_text().strip(), "Node 版本必须匹配模板 .n-node-version")
     command(["bash", "scripts/init-project.sh"], target, log=journal / "init-before.log")
     command(["node", str(source / "scripts/project-scaffold.mjs"), str(target), project_id,
              name, sha, creation_id], source, log=journal / "configure.log")
+    save_checkpoint()
     command(["bash", "scripts/init-project.sh", "--project", "--strict"], target, log=journal / "init-strict.log")
     git(["add", "."], target)
+    save_checkpoint()
     git(["-c", "user.name=Project Bootstrap", "-c", "user.email=project-bootstrap@example.invalid",
          "commit", "--quiet", "-m", "chore(init): 初始化项目工程基线"], target)
     initial_sha = git(["rev-parse", "HEAD"], target)
