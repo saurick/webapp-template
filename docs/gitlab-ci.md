@@ -24,6 +24,8 @@
 3. `CI_GO_IMAGE` 与 `server/go.mod` 必须一致，`check-toolchain` 自动阻断漂移。Node 与 pnpm 分别读取 `.n-node-version` / `web/package.json`。job 从发行版 HTTPS 源安装 xz / ShellCheck / ripgrep；Node 下载使用 HTTP/1.1 兼容部分代理的 HTTP/2 stream reset，并核对官方 SHASUMS，QA 工具固定版本。TLS 验证与签名 / 校验值不变。
 4. 工具、pnpm 与 Go 缓存写入忽略的 `.cache/`，不进入源码或镜像上下文。`validate_template` 是缓存的唯一上传者，初始化任务只读取，避免重复压缩和上传。缓存仅减少下载与编译，不跳过 strict、锁文件或密钥检查。
 
+`web/.npmrc` 将包下载并发限制为 4，约束冷缓存首轮安装的连接峰值；沿用 pnpm 原有的有界网络重试和完整性校验，下载失败仍阻断，不重试整个 job。
+
 Runner 管理进程、宿主 Docker、job、DinD 与 Dockerfile RUN 的代理是不同层。环境需要代理时，仅在 Runner 的私有运行配置或受控 CI 变量中设置 `HTTP_PROXY` / `HTTPS_PROXY` 及大小写变体；NO_PROXY 必须包含 GitLab 的真实可达入口、`docker` 和本地地址。不要把私有节点写入模板、关闭 TLS，或修改共享引擎解决单项目问题。Alpine 网络受限时，使用 [`image-build.md`](image-build.md) 约定的公开 HTTPS `ALPINE_MIRROR`。
 
 ## 制品与回读
