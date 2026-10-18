@@ -175,6 +175,11 @@ class RemoteTests(unittest.TestCase):
                         installed.add('docker')
             elif args[0]=='curl':
                 url=args[-3];target=Path(args[-1])
+                if 'nodejs.org' in url and fail in ('download-network','download-network-exhausted','download-certificate'):
+                    count=sum(call[0]=='curl' and 'nodejs.org' in call[-3] for call in calls)
+                    if fail=='download-certificate':return subprocess.CompletedProcess(args,60,'','SSL certificate problem: certificate has expired')
+                    if fail=='download-network-exhausted' or count<3:
+                        return subprocess.CompletedProcess(args,35,'','OpenSSL SSL_connect: SSL_ERROR_SYSCALL in connection to nodejs.org:443')
                 if url.endswith('/gpg'):content=b'fixture Docker signing key'
                 elif url.endswith('/gitlab-runner-linux-amd64'):content=b'corrupt' if fail=='runner-checksum' else binary
                 elif url.endswith('SHASUMS256.txt'):content=(digest+'  node-v24.21.0-linux-x64.tar.xz\n').encode()
@@ -240,6 +245,26 @@ class RemoteTests(unittest.TestCase):
                     updates=[call for call in calls if call[0]=='apt-get' and call[-1]=='update']
                     self.assertEqual(len(updates),3 if failure=='apt-network-exhausted' else 4)
                     if failure=='apt-network-exhausted':self.assertFalse(any('install' in call for call in calls))
+                finally:self.root=original
+    def test_tool_download_recovers_only_transport_errors_and_stops_at_three_attempts(self):
+        self.assertTrue(host.transient_download(35,'OpenSSL SSL_connect: SSL_ERROR_SYSCALL'))
+        self.assertTrue(host.transient_download(22,'The requested URL returned error: 503'))
+        for code,message in ((60,'certificate has expired'),(22,'error: 403'),(23,'write error'),(35,'wrong version number'),(56,'CONNECT tunnel failed, response 407'),(-15,'connection reset')):
+            self.assertFalse(host.transient_download(code,message))
+        for failure in ('download-network','download-network-exhausted','download-certificate'):
+            with self.subTest(failure=failure),tempfile.TemporaryDirectory() as directory:
+                original=self.root;self.root=Path(directory)
+                try:
+                    stage,system,tools,state,calls,mapped,which,run=self.fresh_host(failure)
+                    with patch.object(host,'TOOLS',tools),patch.object(host,'STATE',state),patch.object(host,'Path',side_effect=mapped),patch.object(host.shutil,'which',side_effect=which),patch.object(host.subprocess,'run',side_effect=run),patch.object(host.time,'sleep') as sleep:
+                        if failure!='download-network':
+                            with self.assertRaisesRegex(runner.SetupError,'curl'):host.prepare({'environment':{'HTTPS_PROXY':'http://proxy.example.com:3128'}},stage,runner)
+                        else:
+                            host.prepare({'environment':{'HTTPS_PROXY':'http://proxy.example.com:3128'}},stage,runner)
+                        self.assertEqual([call.args[0] for call in sleep.call_args_list],[] if failure=='download-certificate' else [3,10])
+                    downloads=[call for call in calls if call[0]=='curl' and call[-3].endswith('/SHASUMS256.txt')]
+                    self.assertEqual(len(downloads),1 if failure=='download-certificate' else 3)
+                    self.assertEqual((tools/'node-v24.21.0').exists(),failure=='download-network')
                 finally:self.root=original
 
 if __name__=='__main__':unittest.main()

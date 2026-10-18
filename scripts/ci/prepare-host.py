@@ -17,6 +17,16 @@ TOOLS = Path('/opt/webapp-template-host-tools')
 STATE = Path('/var/lib/webapp-template-host')
 
 
+def transient_download(code, diagnostic):
+    if re.search(r'certificate|authentication|login denied|(?:response|error:)\s+(?:401|403|404|407)\b', diagnostic, re.I):
+        return False
+    if code in (5, 6, 7, 18, 28, 52, 55, 56):
+        return True
+    if code == 35:
+        return bool(re.search(r'SSL_ERROR_SYSCALL|unexpected eof|connection reset', diagnostic, re.I))
+    return code == 22 and bool(re.search(r'error:\s*(?:408|429|500|502|503|504)\b', diagnostic, re.I))
+
+
 def transient_apt_update(output):
     """仅重试可配对的网关错误；APT 的后续未签名摘要不代表绕过签名校验。"""
     errors = [line for line in output.splitlines() if line.startswith('E:')]
@@ -80,7 +90,16 @@ def prepare_locked(config, root, runner):
         return result.stdout.strip()
 
     def download(url, target):
-        run(['curl', '--http1.1', '-fsSL', '--retry', '2', '--retry-max-time', '180', '--max-time', '180', url, '-o', str(target)])
+        for attempt in range(3):
+            result = execute(['curl', '--http1.1', '-fsSL', '--connect-timeout', '20', '--max-time', '180', url, '-o', str(target)], timeout=210)
+            with log.open('a') as stream:
+                stream.write(f'\n[host:download] attempt={attempt + 1}/3 exit={result.returncode}\n')
+            if result.returncode == 0:
+                return
+            require(attempt < 2 and transient_download(result.returncode, result.stderr or ''),
+                    f'主机准备命令失败：curl；日志 {log}')
+            print(f'[remote:host] 工具下载网络瞬断，等待后重试 {attempt + 2}/3', flush=True)
+            time.sleep((3, 10)[attempt])
 
     missing = [package for executable, package in [('git', 'git'), ('curl', 'curl'), ('bash', 'bash'),
                ('xz', 'xz-utils'), ('apparmor_parser', 'apparmor')] if not shutil.which(executable)]
