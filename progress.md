@@ -2,6 +2,12 @@
 
 当前事实以 `docs/current-source-of-truth.md`、`docs/project-init.md`、`docs/deployment-conventions.md`、代码和测试为准；本文只保留当前模板交付进展。
 
+## 2026-10-18 空白构建机首次安装
+
+- 独立官方 Ubuntu VM 的首次实测命中 APT 可选命令查询索引代理 502；主机引导与安装仅下载所需索引，保留签名校验、必要索引错误阻断、有界重试和 HTTP(S) 超时。
+- 缺失 Docker 时，在新 daemon 首次启动前接入 root-only 私有代理；已有服务与外来 drop-in 不接管。首次安装、重复复用、真实 APT 失败、Runner 下载校验和外来配置保护由专项回归守住。
+- 空白前置状态、Mac 命令、安装日志、首轮项目 CI、制品回读与临时资源回收证据保存在忽略的 `output/blank-vm/`；以实际终态回执为准，mock 回归不替代真实 VM 验收。
+
 ## 2026-10-18 Mac 一键创建与主机准备
 
 - Mac 入口封装严格 SSH、namespace 只读授权检查、缺失工具安装、精确模板 bundle 传送、Linux 项目创建与首轮 CI；配置 / token 在仓库外，上传凭据按请求清理，已有服务复用且不升级重启。

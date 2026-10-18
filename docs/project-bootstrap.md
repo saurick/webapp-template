@@ -22,7 +22,7 @@ python3 scripts/create-project-remote.py \
 | --- | --- |
 | SSH 引导 | 核对 Ubuntu / amd64 / systemd / sudo，缺少 Python 时由 Ubuntu 软件源安装；Mac 的 Node / Go / pnpm 不参与远端初始化 |
 | 授权检查 | 仅使用 GET API，检查 token 与目标 namespace；失败时不安装 Docker、不创建项目或 Runner |
-| 主机准备 | 补齐 Git、curl、证书、xz、AppArmor；复用健康 Docker / Runner，缺失时安装官方 Docker 签名仓库包和校验值固定的 Runner binary |
+| 主机准备 | 补齐 Git、curl、证书、xz、AppArmor；复用健康 Docker / Runner，缺失时安装官方 Docker 签名仓库包和校验值固定的 Runner binary；新 Docker 在首次启动前接入私有配置的代理 |
 | 工具隔离 | 固定 Node 从官方发布与 SHA256 文件安装到 `/opt/webapp-template-host-tools/`；Runner / Docker 最低版本合同见 [`host-tools.json`](../server/deploy/ci-runner/host-tools.json)，不升级或重启已有服务 |
 | 源码传送 | Git bundle 仅包含当前干净 HEAD 的可达历史；按 SHA 安装到 `/opt/webapp-template-sources/<SHA>`，已有源码必须归属一致且干净，禁止覆盖 |
 | 远程创建 | 复用下述 Linux 入口，目标自动分配到 `/srv/webapp-template-projects/<namespace 摘要>-<项目标识>` |
@@ -30,7 +30,15 @@ python3 scripts/create-project-remote.py \
 
 下载和主机命令有超时；源码或权限不符、健康服务异常、下载校验失败和真实 CI 错误都会阻断。已有 Docker 数据 / 配置但缺少 binary、冲突安装包或不同 apt source 时保留现场，不自动卸载或接管。主机准备日志位于 `/var/lib/webapp-template-host/prepare.log`，权限 `0600`。
 
+APT 仅在本次命令中关闭翻译、命令查询与桌面应用索引，保留发行版签名和软件包索引校验；下载使用有界重试和 HTTP(S) 超时，必要索引、包或签名失败仍返回非零。首次安装 Docker 且提供代理时，脚本在 apt 启动服务前写入专属 systemd drop-in，代理值保存在 root-only 的 `/var/lib/webapp-template-host/docker.env`。仅传递代理与绕过地址，不传 GitLab API token；已有 Docker 的代理、配置和服务不改动，已有其他 drop-in 时阻断接管。参见 [Docker daemon 代理合同](https://docs.docker.com/engine/daemon/proxy/)。
+
 重复同一 Mac 命令会复用安装工具、精确源码和原项目状态，不重复创建项目 / Runner / pipeline。SSH 断开后远端 CI 可能继续；重跑同一参数和模板 HEAD 回读。进程被 SIGKILL 或主机断电时无法执行清理，管理员须核对 `/var/lib/webapp-template-remote/request-*` 的归属和活动进程后清理；不自动扫描删除其他调用的目录。开发机可从创建出的 GitLab 仓库正常 clone。
+
+### 空白构建机验收
+
+维护首次安装路径时，用支持版本的官方 Ubuntu 镜像新建独立 VM，只预置 SSH、受信任的 host key 和免交互 sudo。运行前记录 Docker / Runner / Node、Docker 数据和本入口状态目录均不存在；不要通过卸载共享构建机的软件模拟空白状态。
+
+从 Mac 执行同一入口，回执应包含官方 Docker 安装、Runner 校验安装和隔离 Node 安装。首轮 push pipeline 的四个必要 job、派生 bundle、两份镜像归档及加载回验均须通过，再重复原命令确认项目 / Runner / commit / pipeline 复用、工具不重装、Docker 不重启。专项自动回归覆盖首次安装、已有服务保护、APT 真实错误和 Runner 校验失败；真实 VM 与 CI 证据另存 `output/blank-vm/`，不将 mock 测试等同于现场验收。演练结束按本文清理临时资源。
 
 ## 构建机上的分步入口
 

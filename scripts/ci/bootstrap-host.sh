@@ -14,8 +14,15 @@ ubuntu:24.04 | ubuntu:26.04) ;;
 esac
 [ -d /run/systemd/system ]
 if ! command -v python3 >/dev/null 2>&1; then
-	apt-get -o Acquire::Retries=3 -o Acquire::https::Timeout=30 update >/dev/null 2>&1
-	DEBIAN_FRONTEND=noninteractive apt-get -o Acquire::Retries=3 -o Acquire::https::Timeout=30 install --yes --no-install-recommends python3 ca-certificates >/dev/null 2>&1
+	apt_get() {
+		apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30 \
+			-o APT::Update::Error-Mode=any -o Acquire::Languages=none \
+			-o Acquire::IndexTargets::deb::CNF::DefaultEnabled=false \
+			-o Acquire::IndexTargets::deb::DEP-11::DefaultEnabled=false "$@" >/dev/null 2>&1
+	}
+	export DEBIAN_FRONTEND=noninteractive NEEDRESTART_MODE=l
+	apt_get update
+	apt_get install --yes --no-install-recommends python3 ca-certificates
 fi
 python3 -c 'import sys; assert sys.version_info >= (3, 12), "需要 Python 3.12+"'
 echo '[remote:host] SSH / sudo / Ubuntu / Python 基础检查通过'

@@ -116,7 +116,8 @@ class RemoteTests(unittest.TestCase):
             else:value=''
             return subprocess.CompletedProcess(args,0,value,'')
         with patch.object(host,'TOOLS',self.root/'tools'),patch.object(host,'STATE',self.root/'host-state'),patch.object(host.shutil,'which',side_effect=lambda executable:'/usr/bin/'+executable),patch.object(host.subprocess,'run',side_effect=run):
-            first=host.prepare({'environment':{}},stage,runner);second=host.prepare({'environment':{}},stage,runner)
+            config={'environment':{'HTTPS_PROXY':'http://proxy.example.com:3128'}}
+            first=host.prepare(config,stage,runner);second=host.prepare(config,stage,runner)
         self.assertIn('install official checksum-verified isolated Node',first['actions']);self.assertNotIn('install official checksum-verified isolated Node',second['actions'])
         self.assertFalse(first['existing_services_restarted']);self.assertFalse(any(c[0]=='systemctl' for c in calls))
         self.assertEqual(sum(c[0]=='curl' for c in calls),2)
@@ -127,5 +128,94 @@ class RemoteTests(unittest.TestCase):
         with patch.object(host,'TOOLS',self.root/'bad-tools'),patch.object(host,'STATE',self.root/'bad-state'),patch.object(host.shutil,'which',side_effect=lambda executable:'/usr/bin/'+executable),patch.object(host.subprocess,'run',side_effect=corrupt):
             with self.assertRaisesRegex(runner.SetupError,'Node 下载校验失败'):host.prepare({'environment':{}},stage,runner)
         self.assertFalse((self.root/'bad-tools/node-v24.21.0').exists())
+    def fresh_host(self,fail=None):
+        stage=self.root/'fresh-stage';(stage/'server/deploy/ci-runner').mkdir(parents=True)
+        (stage/'.n-node-version').write_text('24.21.0\n')
+        binary=b'checksum-pinned-runner-fixture'
+        contract=json.loads((ROOT/'server/deploy/ci-runner/host-tools.json').read_text())
+        contract['runner_linux_amd64_sha256']=hashlib.sha256(binary).hexdigest()
+        (stage/'server/deploy/ci-runner/host-tools.json').write_text(json.dumps(contract))
+        data=io.BytesIO()
+        with tarfile.open(fileobj=data,mode='w:xz') as archive:
+            item=tarfile.TarInfo('node-v24.21.0-linux-x64/bin/node');item.size=1;item.mode=0o755;archive.addfile(item,io.BytesIO(b'x'))
+        archive_bytes=data.getvalue();digest=hashlib.sha256(archive_bytes).hexdigest()
+        system=self.root/'system';(system/'etc/apt/sources.list.d').mkdir(parents=True)
+        (system/'etc/os-release').write_text('VERSION_CODENAME=noble\n')
+        (system/'etc/ssl/certs').mkdir(parents=True);(system/'etc/ssl/certs/ca-certificates.crt').write_text('fixture')
+        tools=self.root/'fresh-tools';state=self.root/'fresh-state';calls=[];installed=set()
+        def mapped(value):
+            value=Path(value)
+            return system/str(value).lstrip('/') if str(value).startswith(('/etc/','/var/lib/docker')) else value
+        def which(name):
+            if name in ('docker','gitlab-runner','git') and name not in installed:return None
+            return '/usr/bin/'+name
+        def run(args,**kwargs):
+            calls.append(args);value=''
+            if args[0]=='apt-get':
+                self.assertIn('APT::Update::Error-Mode=any',args);self.assertIn('Acquire::Retries=3',args)
+                self.assertIn('Acquire::http::Timeout=30',args)
+                self.assertIn('Acquire::IndexTargets::deb::CNF::DefaultEnabled=false',args)
+                self.assertIn('Acquire::IndexTargets::deb::DEP-11::DefaultEnabled=false',args)
+                if fail=='apt':return subprocess.CompletedProcess(args,100,'','signature verification failed')
+                if 'install' in args:
+                    installed.add('git')
+                    if 'docker-ce' in args:
+                        self.assertEqual((state/'docker.env').stat().st_mode&0o777,0o600)
+                        self.assertIn('HTTPS_PROXY="http://proxy.example.com:3128"',(state/'docker.env').read_text())
+                        self.assertNotIn('GOPROXY',(state/'docker.env').read_text())
+                        self.assertIn(str(state/'docker.env'),(system/'etc/systemd/system/docker.service.d/webapp-template-network.conf').read_text())
+                        source=(system/'etc/apt/sources.list.d/webapp-template-docker.sources').read_text()
+                        self.assertIn('URIs: https://download.docker.com/linux/ubuntu',source)
+                        self.assertIn('Signed-By: '+str(system/'etc/apt/keyrings/webapp-template-docker.asc'),source)
+                        self.assertIn(['systemctl','daemon-reload'],calls)
+                        installed.add('docker')
+            elif args[0]=='curl':
+                url=args[-3];target=Path(args[-1])
+                if url.endswith('/gpg'):content=b'fixture Docker signing key'
+                elif url.endswith('/gitlab-runner-linux-amd64'):content=b'corrupt' if fail=='runner-checksum' else binary
+                elif url.endswith('SHASUMS256.txt'):content=(digest+'  node-v24.21.0-linux-x64.tar.xz\n').encode()
+                else:content=archive_bytes
+                target.write_bytes(content)
+            elif args[:2]==['docker','version']:value='29.7.2'
+            elif args[:2]==['docker','info']:value='linux/amd64'
+            elif args[-1]=='--version':value='Version: 19.3.0' if 'gitlab-runner' in args[0] else 'v24.21.0'
+            return subprocess.CompletedProcess(args,0,value,'')
+        return stage,system,tools,state,calls,mapped,which,run
+    def test_fresh_host_installs_signed_docker_pinned_runner_and_proxy_before_first_start(self):
+        stage,system,tools,state,calls,mapped,which,run=self.fresh_host()
+        config={'environment':{'HTTPS_PROXY':'http://proxy.example.com:3128','NO_PROXY':'localhost','GOPROXY':'https://proxy.golang.org'}}
+        with patch.object(host,'TOOLS',tools),patch.object(host,'STATE',state),patch.object(host,'Path',side_effect=mapped),patch.object(host.shutil,'which',side_effect=which),patch.object(host.subprocess,'run',side_effect=run):
+            first=host.prepare(config,stage,runner);boundary=len(calls);second=host.prepare(config,stage,runner)
+        self.assertIn('install Docker from official signed Ubuntu repository',first['actions'])
+        self.assertIn('install checksum-pinned GitLab Runner binary',first['actions'])
+        self.assertEqual(second['actions'],[])
+        self.assertEqual((tools/'bin/gitlab-runner').stat().st_mode&0o777,0o755)
+        self.assertEqual(sum(args[:3]==['systemctl','enable','--now'] for args in calls),1)
+        self.assertFalse(any(args[0]=='systemctl' and 'restart' in args for args in calls))
+        self.assertFalse(any(args[0] in ('apt-get','curl','systemctl') for args in calls[boundary:]))
+        self.assertFalse(first['existing_services_restarted'])
+    def test_fresh_host_blocks_real_apt_failure_and_runner_checksum_mismatch(self):
+        for failure in ('apt','runner-checksum'):
+            with self.subTest(failure=failure),tempfile.TemporaryDirectory() as directory:
+                original=self.root;self.root=Path(directory)
+                try:
+                    stage,system,tools,state,calls,mapped,which,run=self.fresh_host(failure)
+                    with patch.object(host,'TOOLS',tools),patch.object(host,'STATE',state),patch.object(host,'Path',side_effect=mapped),patch.object(host.shutil,'which',side_effect=which),patch.object(host.subprocess,'run',side_effect=run):
+                        with self.assertRaisesRegex(runner.SetupError,'apt-get' if failure=='apt' else 'Runner 下载校验失败'):
+                            host.prepare({'environment':{'HTTPS_PROXY':'http://proxy.example.com:3128'}},stage,runner)
+                    self.assertFalse((tools/'bin/gitlab-runner').exists())
+                    self.assertFalse((tools/'node-v24.21.0').exists())
+                    self.assertFalse(any(args[-1]=='--version' for args in calls))
+                finally:self.root=original
+    def test_fresh_host_preserves_foreign_docker_service_configuration(self):
+        stage,system,tools,state,calls,mapped,which,run=self.fresh_host()
+        foreign=system/'etc/systemd/system/docker.service.d/other.conf';foreign.parent.mkdir(parents=True)
+        foreign.write_text('[Service]\nEnvironment=OWNER=other\n')
+        with patch.object(host,'TOOLS',tools),patch.object(host,'STATE',state),patch.object(host,'Path',side_effect=mapped),patch.object(host.shutil,'which',side_effect=which),patch.object(host.subprocess,'run',side_effect=run):
+            with self.assertRaisesRegex(runner.SetupError,'已有 Docker service 配置'):
+                host.prepare({'environment':{'HTTPS_PROXY':'http://proxy.example.com:3128'}},stage,runner)
+        self.assertEqual(foreign.read_text(),'[Service]\nEnvironment=OWNER=other\n')
+        self.assertFalse((state/'docker.env').exists())
+        self.assertFalse(any('docker-ce' in args or args[0]=='systemctl' for args in calls))
 
 if __name__=='__main__':unittest.main()

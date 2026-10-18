@@ -4,6 +4,8 @@
 
 尚未创建项目时，优先使用 [项目创建与首轮 CI 统一入口](../../../docs/project-bootstrap.md)，Mac 入口会核对 namespace 授权并自动准备主机、传送精确源码、临时配置和凭据，再复用本文的 Runner 注册能力。缺失软件安装与已有服务保护合同见该专题。
 
+空白主机的 Docker 首次安装会在服务启动前接入私有代理配置；已有 Docker 的代理继续由宿主机维护。首次安装验收、APT 下载边界和临时 VM 回收见该专题的[空白构建机验收](../../../docs/project-bootstrap.md#空白构建机验收)。
+
 ## 一次准备构建机
 
 需要 Linux/amd64、Python 3.11+、systemd、已安装的 `gitlab-runner` 和可用 Docker。宿主 Docker 须能拉取根 CI 使用的官方镜像；脚本不安装 Docker、不调整共享 daemon 的代理或重启其他 Runner。

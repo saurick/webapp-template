@@ -54,7 +54,11 @@ def prepare_locked(config, root, runner):
                ('xz', 'xz-utils'), ('apparmor_parser', 'apparmor')] if not shutil.which(executable)]
     if not Path('/etc/ssl/certs/ca-certificates.crt').is_file():
         missing.append('ca-certificates')
-    apt = ['apt-get', '-o', 'Acquire::Retries=3', '-o', 'Acquire::https::Timeout=30']
+    # 构建机安装只需要签名与软件包索引，不下载命令查询和桌面应用元数据。
+    apt = ['apt-get', '-o', 'Acquire::Retries=3', '-o', 'Acquire::http::Timeout=30',
+           '-o', 'Acquire::https::Timeout=30', '-o', 'APT::Update::Error-Mode=any',
+           '-o', 'Acquire::Languages=none', '-o', 'Acquire::IndexTargets::deb::CNF::DefaultEnabled=false',
+           '-o', 'Acquire::IndexTargets::deb::DEP-11::DefaultEnabled=false']
     if missing:
         run([*apt, 'update'])
         run([*apt, 'install', '--yes', '--no-install-recommends', *missing])
@@ -84,6 +88,29 @@ def prepare_locked(config, root, runner):
                    f'Suites: {codename}\nComponents: stable\nArchitectures: amd64\nSigned-By: {key}\n')
         require(not source.exists() or (not source.is_symlink() and source.read_text() == content), 'Docker apt source 归属不符')
         runner.atomic_write(source, content, 0o644)
+        network = {k: v for k, v in config['environment'].items()
+                   if k in ('HTTP_PROXY', 'HTTPS_PROXY', 'http_proxy', 'https_proxy', 'NO_PROXY', 'no_proxy')}
+        if any(network.get(k) for k in ('HTTP_PROXY', 'HTTPS_PROXY', 'http_proxy', 'https_proxy')):
+            dropin = Path('/etc/systemd/system/docker.service.d/webapp-template-network.conf')
+            env_file = STATE / 'docker.env'
+            unit = ('# Managed by scripts/ci/prepare-host.py: new Docker service\n'
+                    f'[Service]\nEnvironmentFile={env_file}\n')
+            values = ''.join(k + '=' + json.dumps(v) + '\n' for k, v in sorted(network.items()))
+            require(not dropin.parent.is_symlink(), 'Docker systemd 目录不能为符号链接')
+            others = list(dropin.parent.glob('*.conf')) if dropin.parent.exists() else []
+            require(not any(p != dropin for p in others), '已有 Docker service 配置，拒绝接管')
+            if dropin.exists():
+                require(not dropin.is_symlink() and dropin.stat().st_uid == os.geteuid()
+                        and not dropin.stat().st_mode & 0o022 and dropin.read_text() == unit
+                        and runner.private_read(env_file) == values, '新 Docker 网络配置归属或内容不符')
+            else:
+                require(not env_file.exists(), 'Docker 网络配置状态不完整，保留现场')
+                dropin.parent.mkdir(mode=0o755, parents=True, exist_ok=True)
+                runner.atomic_write(env_file, values)
+                runner.atomic_write(dropin, unit, 0o644)
+            # 在 apt 首次启动 daemon 前提供网络配置，不重启已存在的 Docker。
+            run(['systemctl', 'daemon-reload'])
+            actions.append('configure private proxy environment for new Docker service')
         run([*apt, 'update'])
         run([*apt, 'install', '--yes', '--no-install-recommends', 'docker-ce', 'docker-ce-cli', 'containerd.io',
              'docker-buildx-plugin', 'docker-compose-plugin'])
@@ -99,7 +126,7 @@ def prepare_locked(config, root, runner):
     managed_binary = TOOLS / 'bin/gitlab-runner'
     binary = shutil.which('gitlab-runner')
     if not binary and managed_binary.exists():
-        require(not managed_binary.is_symlink() and managed_binary.stat().st_uid == 0
+        require(not managed_binary.is_symlink() and managed_binary.stat().st_uid == os.geteuid()
                 and hashlib.sha256(managed_binary.read_bytes()).hexdigest() == contract['runner_linux_amd64_sha256'],
                 '已安装 Runner binary 的归属或校验值不符')
         binary = str(managed_binary)
