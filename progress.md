@@ -2,6 +2,11 @@
 
 当前事实以 `docs/current-source-of-truth.md`、`docs/project-init.md`、`docs/deployment-conventions.md`、代码和测试为准；本文只保留当前模板交付进展。
 
+## 2026-10-18 Mac 一键创建与主机准备
+
+- Mac 入口封装严格 SSH、namespace 只读授权检查、缺失工具安装、精确模板 bundle 传送、Linux 项目创建与首轮 CI；配置 / token 在仓库外，上传凭据按请求清理，已有服务复用且不升级重启。
+- 权限、接收失败 / 信号清理、源码归属与工具重复准备由专项回归守住；从零临时 namespace / 项目、完整 CI 和清理回执保存在忽略的 `output/mac-bootstrap/`，实际终态以远端 pipeline 与下载制品为准。
+
 ## 2026-10-18 新项目统一创建入口
 
 - 串联私有 GitLab 项目创建、正式模板配置 / 初始化 strict、专属 Runner 注册、初始 commit 推送、首轮 CI 与制品元数据回读；状态绑定模板 SHA、创建标识和目标目录，失败保留现场供同命令恢复。

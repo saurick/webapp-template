@@ -1,0 +1,7 @@
+{
+  "ssh_host": "your-builder",
+  "gitlab_url": "https://gitlab.example.com",
+  "api_token_file": "~/.config/webapp-template/gitlab-token",
+  "environment": {},
+  "extra_hosts": []
+}

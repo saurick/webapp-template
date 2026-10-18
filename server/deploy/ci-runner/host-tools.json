@@ -1,0 +1,5 @@
+{
+  "runner_version": "19.3.0",
+  "runner_linux_amd64_sha256": "9b642c14742b5db8622352c85f809ae6a588b6885a7d1a24caf8547e73eea7c9",
+  "docker_minimum": "29.1.3"
+}

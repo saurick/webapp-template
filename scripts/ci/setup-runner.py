@@ -71,7 +71,10 @@ def run(args):
 
 
 def load_config(path):
-    config = json.loads(private_read(path))
+    return validate_config(json.loads(private_read(path)))
+
+
+def validate_config(config):
     require(isinstance(config, dict), "构建机配置必须为 JSON 对象")
     require(not set(config) - {"gitlab_url", "api_token_file", "environment", "extra_hosts"}, "未知构建机配置字段")
     url = parse.urlsplit(config["gitlab_url"])

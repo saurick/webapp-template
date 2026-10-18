@@ -2,7 +2,7 @@
 
 在隔离 Linux/amd64 构建机注册项目级 Docker executor。Runner 锁定当前项目、只接受受保护分支，并匹配 `template-docker` 标签。管理进程需要构建机 Docker 权限；job 不挂载宿主机 socket、业务目录或部署凭据。
 
-尚未创建项目时，优先使用 [项目创建与首轮 CI 统一入口](../../../docs/project-bootstrap.md)，复用本文的主机配置和 Runner 注册能力。
+尚未创建项目时，优先使用 [项目创建与首轮 CI 统一入口](../../../docs/project-bootstrap.md)，Mac 入口会核对 namespace 授权并自动准备主机、传送精确源码、临时配置和凭据，再复用本文的 Runner 注册能力。缺失软件安装与已有服务保护合同见该专题。
 
 ## 一次准备构建机
 

@@ -10,7 +10,7 @@
 - 部署模板：`/Users/simon/projects/webapp-template/server/deploy/README.md`
 - 脚本文档：`/Users/simon/projects/webapp-template/scripts/README.md`
 - 初始化扫描、基础配置预览 / 写入、工具链与 AI 输入模板：`docs/project-init.md`
-- 私有项目创建、工程初始化、Runner 注册与首轮 CI 一键验收：[`project-bootstrap.md`](project-bootstrap.md)
+- Mac 远程准备、namespace 授权、私有项目创建与首轮 CI 一键验收：[`project-bootstrap.md`](project-bootstrap.md)
 - Admin preset 与 basic RBAC：`/Users/simon/projects/webapp-template/docs/admin-preset.md`
 - 前端运行时配置、交互基线与可选 preset：`/Users/simon/projects/webapp-template/docs/frontend-presets.md`
 - 部署真源约定：`/Users/simon/projects/webapp-template/docs/deployment-conventions.md`

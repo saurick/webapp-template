@@ -329,7 +329,9 @@ bash scripts/qa/strict.sh --help
 
 ## GitLab CI runner
 
-`create-project.py` 是新项目统一入口：从干净模板 HEAD 初始化独立目录，创建私有 GitLab 项目，复用 Runner 注册，再推送并验收绑定 SHA 的首轮 CI 和制品。`project-scaffold.mjs` 复用基础配置工具，清空公开凭据并保留必填的私有部署输入；归属、恢复和使用合同见 [`project-bootstrap.md`](../docs/project-bootstrap.md)。
+`create-project-remote.py` 是 Mac 入口：通过严格 SSH 连接和 stdin 上传，先核对 namespace 授权，再用 `ci/prepare-host.py` 准备工具，以版本化 bundle 复用 Linux 创建入口；`ci/remote-create.py` 编排远程阶段。管理凭据只在 root-only 上传目录中，结束或失败时清理；回归由 `create-project-remote.test.mjs` 接入门禁。
+
+`create-project.py` 是构建机上的新项目统一入口：从干净模板 HEAD 初始化独立目录，创建私有 GitLab 项目，复用 Runner 注册，再推送并验收绑定 SHA 的首轮 CI 和制品。`project-scaffold.mjs` 复用基础配置工具，清空公开凭据并保留必填的私有部署输入；归属、恢复和使用合同见 [`project-bootstrap.md`](../docs/project-bootstrap.md)。
 
 根 `.gitlab-ci.yml` 使用 `template-docker` 能力标签；`ci/setup-runner.py` 在已准备的 Linux 构建机上读取私有 host JSON 和 API token 文件，按项目路径一次完成 Runner 注册、主分支保护、网络环境和独立 systemd 服务；重复、检查、停用与恢复见 [`CI Runner`](../server/deploy/ci-runner/README.md)。其权限、幂等与失败恢复回归由 `setup-runner.test.mjs` 接入 fast / full / strict。
 
